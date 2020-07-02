@@ -1,0 +1,285 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Default: superluminar-io
+  RepositoryName:
+    Type: String
+    Default: founopticum
+  BranchName:
+    Type: String
+    Default: master
+  GithubTokenSecretsManagerPath:
+    Type: String
+    Default: /founopticum/github-token
+
+Resources:
+
+  ArtifactStoreS3Location:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 14
+            Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          -  ServerSideEncryptionByDefault:
+               SSEAlgorithm: AES256
+
+  PipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
+      Filters:
+        - JsonPath: '$.ref'
+          MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref Pipeline
+      TargetAction: SourceAction
+      Name: !Sub ${AWS::StackName}-PipelineWebhook
+      TargetPipelineVersion: !GetAtt Pipeline.Version
+      RegisterWithThirdParty: true
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              RunOrder: 1
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
+                PollForSourceChanges: false
+        - Name: SetupControlTower
+          Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: Build
+              RunOrder: 1
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactStoreS3Location
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-pipeline-role-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - s3:GetObject*
+                  - s3:GetBucket*
+                  - s3:List*
+                  - s3:DeleteObject*
+                  - s3:PutObject*
+                  - s3:Abort*
+                Effect: Allow
+                Resource:
+                  - !Sub ${ArtifactStoreS3Location.Arn}
+                  - !Sub ${ArtifactStoreS3Location.Arn}/*
+              - Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                Effect: Allow
+                Resource: !GetAtt CodeBuildProject.Arn
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-buildproject
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt BuildProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - aws synthetics start-canary --name ${SetupControlTowerCanary}
+
+
+  BuildProjectRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Retain
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-codebuild-role-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  - !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+              - Action:
+                  - s3:GetObject*
+                  - s3:GetBucket*
+                  - s3:List*
+                  - s3:DeleteObject*
+                  - s3:PutObject*
+                  - s3:Abort*
+                Effect: Allow
+                Resource:
+                  - !Sub ${ArtifactStoreS3Location.Arn}
+                  - !Sub ${ArtifactStoreS3Location.Arn}/*
+              - Action:
+                  - synthetics:StartCanary
+                Effect: Allow
+                Resource:
+                  - !Sub arn:${AWS::Partition}:synthetics:${AWS::Region}:${AWS::AccountId}:canary:${SetupControlTowerCanary}
+  SetupControlTowerCanaryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: AllowS3List
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListAllMyBuckets
+                  - s3:GetBucketLocation
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+
+  SetupControlTowerCanary:
+    Type: AWS::Synthetics::Canary
+    Properties:
+      Name: fnptcm-bootstrap-ct
+      ArtifactS3Location: !Sub s3://${SetupControlTowerArtifactLocation}
+      ExecutionRoleArn: !GetAtt SetupControlTowerCanaryRole.Arn
+      RuntimeVersion: syn-1.0
+      StartCanaryAfterCreation: true
+      RunConfig:
+        TimeoutInSeconds: 600
+      Schedule:
+        DurationInSeconds: 3600
+        Expression: rate(0 minute)
+      Code:
+        Handler: pageLoadBlueprint.handler
+        Script: !Sub
+          - |
+            var synthetics = require('Synthetics');
+            const log = require('SyntheticsLogger');
+
+            const flowBuilderBlueprint = async function () {
+              // INSERT URL here
+              let url = "https://${AwsAccountId}.signin.aws.amazon.com/console";
+
+              let page = await synthetics.getPage();
+
+              // Navigate to the initial url
+              await synthetics.executeStep('navigateToUrl', async function (timeoutInMillis = 30000) {
+                await page.goto(url, {waitUntil: ['load', 'networkidle0'], timeout: timeoutInMillis});
+              });
+
+              // Execute customer steps
+              await synthetics.executeStep('customerActions', async function () {
+                await page.type("[id='username']", "${IamUserName}");
+                await page.type("[id='password']", "${IamPassword}");
+
+                await page.click("[id='signin_button']");
+                await page.waitForNavigation({waitUntil: ['domcontentloaded']});
+              });
+
+
+              await synthetics.executeStep('gotoCT', async function () {
+                await page.goto("https://eu-west-1.console.aws.amazon.com/controltower/home?region=eu-west-1", {waitUntil: ['load', 'networkidle0']});
+              });
+
+              await synthetics.executeStep('create landing zone', async function () {
+                await page.click("#get-started-btn > button");
+                await page.waitFor(10000); // waitForNavigation does not work here, so use sleep()
+                await page.click("#awsui-input-0")
+                await page.click("#awsui-input-1")
+                await page.click("#awsui-input-2")
+                await page.type("#awsui-input-0", "founopticum-aws-test+log-archive@superluminar.io")
+                await page.type("#awsui-input-1", "founopticum-aws-test+audit@superluminar.io")
+                await page.click("#awsui-checkbox-0")
+                await page.waitFor(10000); // wait for AWS UI to settle, then click
+                await page.click("#save-button > button");
+                await page.waitForNavigation({waitUntil: ['domcontentloaded']});
+              });
+
+            };
+
+            exports.handler = async () => {
+              return await flowBuilderBlueprint();
+            };
+
+          - AwsAccountId: '{{resolve:secretsmanager:/founopticum/iam:SecretString:awsaccountid}}'
+            IamUserName: '{{resolve:secretsmanager:/founopticum/iam:SecretString:username}}'
+            IamPassword: '{{resolve:secretsmanager:/founopticum/iam:SecretString:password}}'
+
+  SetupControlTowerArtifactLocation:
+    Type: AWS::S3::Bucket
+
+  ArtifactLocationPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SetupControlTowerArtifactLocation
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: '*'
+            Resource:
+              - !GetAtt SetupControlTowerArtifactLocation.Arn
+              - !Sub ${SetupControlTowerArtifactLocation.Arn}/*
+            Principal:
+              AWS: !GetAtt SetupControlTowerCanaryRole.Arn

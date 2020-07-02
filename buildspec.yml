@@ -1,5 +1,0 @@
-version: 0.2
-phases:
-  build:
-    commands:
-      - aws synthetics start-canary --name create-ct-lz
