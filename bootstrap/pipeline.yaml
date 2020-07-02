@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
 
 Parameters:
   GitHubOwner:
@@ -78,6 +79,17 @@ Resources:
                 - Name: SourceOutput
               Name: Build
               RunOrder: 1
+            - ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: StepFunctions
+                Version: "1"
+              Configuration:
+                StateMachineArn: !Ref SimpleStateMachine
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: Wait60Minutes
+              RunOrder: 2
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactStoreS3Location
@@ -113,6 +125,11 @@ Resources:
                   - codebuild:BatchGetBuilds
                 Effect: Allow
                 Resource: !GetAtt CodeBuildProject.Arn
+              - Action:
+                  - states:DescribeStateMachine
+                  - states:StartExecution
+                Effect: Allow
+                Resource: !Ref SimpleStateMachine
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -283,3 +300,16 @@ Resources:
               - !Sub ${SetupControlTowerArtifactLocation.Arn}/*
             Principal:
               AWS: !GetAtt SetupControlTowerCanaryRole.Arn
+
+  SimpleStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Definition:
+        StartAt: Wait
+        States:
+          Wait:
+            Type: Wait
+            Seconds: 3600
+            End: true
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
