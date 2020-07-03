@@ -47,7 +47,7 @@ Resources:
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      RoleArn: !GetAtt PipelineServiceRole.Arn
       Stages:
         - Name: Source
           Actions:
@@ -85,7 +85,7 @@ Resources:
                 Provider: StepFunctions
                 Version: "1"
               Configuration:
-                StateMachineArn: !Ref SimpleStateMachine
+                StateMachineArn: !Ref WaitStateMachine
               InputArtifacts:
                 - Name: SourceOutput
               Name: Wait60Minutes
@@ -94,7 +94,7 @@ Resources:
         Type: S3
         Location: !Ref ArtifactStoreS3Location
 
-  CodePipelineServiceRole:
+  PipelineServiceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -129,7 +129,7 @@ Resources:
                   - states:DescribeStateMachine
                   - states:StartExecution
                 Effect: Allow
-                Resource: !Ref SimpleStateMachine
+                Resource: !Ref WaitStateMachine
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -301,7 +301,7 @@ Resources:
             Principal:
               AWS: !GetAtt SetupControlTowerCanaryRole.Arn
 
-  SimpleStateMachine:
+  WaitStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
       Definition:
