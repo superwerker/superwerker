@@ -130,6 +130,9 @@ Resources:
                   - states:StartExecution
                 Effect: Allow
                 Resource: !Ref WaitStateMachine
+              - Action: states:DescribeExecution
+                Effect: Allow
+                Resource: !Sub arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:execution:${WaitStateMachine.Name}:*
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
