@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Sets up GuardDuty with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
+
+Parameters:
+  AuditAWSAccountId:
+    Type: String
+
+Resources:
+
+  SetupLandingZoneTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        detail-type:
+          - AWS Service Event via CloudTrail
+        source:
+          - aws.controltower
+        detail:
+          serviceEventDetails:
+            createManagedAccountStatus:
+              state:
+                - SUCCEEDED
+          eventName:
+            - SetupLandingZone
+      State: ENABLED
+#      Targets:
+#        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}
+#          Id: EnableS3BlockPublicAccessViaSSM
+#          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+
+  SSMAutomationExecutionRoleforCWEvents:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartAutomationExecution
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:StartAutomationExecution
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}:*
+
+  EnableGuardDutyOrganizations:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt EnableGuardDutyOrganizationsRole.Arn
+        mainSteps:
+          - name: EnableOrganizationAdminAccount
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: EnableOrganizationAdminAccount
+              AdminAccountId: !Ref AuditAWSAccountId
+
+  EnableGuardDutyOrganizationsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action: sts:AssumeRole
+#    ManagedPolicyArns:
+#        -
+      Policies:
+        - PolicyName: EnableAWSServiceAccess
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - guardduty:EnableOrganizationAdminAccount
+                  - organizations:EnableAWSServiceAccess
+                  - organizations:ListAWSServiceAccessForOrganization
+                  - organizations:ListDelegatedAdministrators
+                  - organizations:RegisterDelegatedAdministrator
+                  - organizations:DescribeOrganization
+                Resource: '*'
