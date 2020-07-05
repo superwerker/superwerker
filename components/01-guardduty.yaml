@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up GuardDuty with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
 
+# TODO: the parameters don't have to be passed when set up via control tower event. Control Tower event has all the information needed
 Parameters:
   AuditAWSAccountId:
     Type: String
@@ -29,10 +30,10 @@ Resources:
           eventName:
             - SetupLandingZone
       State: ENABLED
-#      Targets:
-#        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}
-#          Id: EnableS3BlockPublicAccessViaSSM
-#          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}
+          Id: EnableS3BlockPublicAccessViaSSM
+          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
 
   SSMAutomationExecutionRoleforCWEvents:
     Type: AWS::IAM::Role
