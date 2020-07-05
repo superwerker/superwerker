@@ -130,8 +130,6 @@ Resources:
             Principal:
               AWS: !Ref AWS::AccountId
             Action: sts:AssumeRole
-#    ManagedPolicyArns:
-#        -
       Policies:
         - PolicyName: EnableAWSServiceAccess
           PolicyDocument:
