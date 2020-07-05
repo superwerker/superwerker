@@ -93,7 +93,6 @@ Resources:
               Api: CreateDetector
               Enable: true
             nextStep: EnableGuardDutyExistingAccounts
-          # TODO: check for positive execution result
           - name: EnableGuardDutyExistingAccounts
             action: aws:executeAwsApi
             inputs:
@@ -115,7 +114,23 @@ Resources:
                   - !Ref AWS::AccountId
                 MasterAWSAccountEmail:
                   - !Ref MasterAWSAccountEmail
-            isEnd: true
+            outputs:
+              - Name: AutomationExecutionId
+                Selector: $.AutomationExecutionId
+            nextStep: WaitForEnableGuardDutyExistingAccounts
+          - name: WaitForEnableGuardDutyExistingAccounts
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: ssm
+              Api: DescribeAutomationExecutions
+              Filters:
+                - Key: ExecutionId
+                  Values:
+                    - '{{ EnableGuardDutyExistingAccounts.AutomationExecutionId }}'
+              PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
+              DesiredValues:
+                - Success
 
   EnableGuardDutyOrganizationsRole:
     Type: AWS::IAM::Role
@@ -145,6 +160,7 @@ Resources:
                   - organizations:ListDelegatedAdministrators
                   - organizations:RegisterDelegatedAdministrator
                   - organizations:DescribeOrganization
+                  - ssm:DescribeAutomationExecutions
                 Resource: '*'
         - PolicyName: AllowStartAutomationExecution
           PolicyDocument:
