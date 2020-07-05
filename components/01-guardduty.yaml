@@ -5,7 +5,12 @@ Description: Sets up GuardDuty with a delegated administor and automatically ena
 Parameters:
   AuditAWSAccountId:
     Type: String
-
+  LogArchiveAWSAccountId:
+    Type: String
+  LogArchiveAWSAccountEmail:
+    Type: String
+  MasterAWSAccountEmail:
+    Type: String
 Resources:
 
   SetupLandingZoneTrigger:
@@ -56,12 +61,60 @@ Resources:
         schemaVersion: '0.3'
         assumeRole: !GetAtt EnableGuardDutyOrganizationsRole.Arn
         mainSteps:
+          - name: CheckIfOrganizationAdminAccountIsAlReadyRegistered
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: ListOrganizationAdminAccounts
+            outputs:
+              - Name: AdminAccountId
+                Selector: $.AdminAccounts[0].AdminAccountId
+            nextStep: EnableOrganizationAdminAccountChoice
+          - name: EnableOrganizationAdminAccountChoice
+            action: aws:branch
+            inputs:
+              Choices:
+                - NextStep: EnableGuardDutyInMaster
+                  Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}'
+                  StringEquals: !Ref AuditAWSAccountId
+              Default: EnableOrganizationAdminAccount
           - name: EnableOrganizationAdminAccount
             action: aws:executeAwsApi
             inputs:
               Service: guardduty
               Api: EnableOrganizationAdminAccount
               AdminAccountId: !Ref AuditAWSAccountId
+            nextStep: EnableGuardDutyInMaster
+          - name: EnableGuardDutyInMaster
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: CreateDetector
+              Enable: true
+            nextStep: EnableGuardDutyExistingAccounts
+          # TODO: check for positive execution result
+          - name: EnableGuardDutyExistingAccounts
+            action: aws:executeAwsApi
+            inputs:
+              Service: ssm
+              Api: StartAutomationExecution
+              DocumentName: !Ref EnableGuardDutyExistingAccounts
+              TargetLocations:
+                - ExecutionRoleName: AWSControlTowerExecution
+                  Accounts:
+                    - !Ref AuditAWSAccountId
+                  Regions:
+                    - !Ref AWS::Region
+              Parameters:
+                LogArchiveAWSAccountId:
+                  - !Ref LogArchiveAWSAccountId
+                LogArchiveAWSAccountEmail:
+                  - !Ref LogArchiveAWSAccountEmail
+                MasterAWSAccountId:
+                  - !Ref AWS::AccountId
+                MasterAWSAccountEmail:
+                  - !Ref MasterAWSAccountEmail
+            isEnd: true
 
   EnableGuardDutyOrganizationsRole:
     Type: AWS::IAM::Role
@@ -86,9 +139,68 @@ Resources:
               - Effect: Allow
                 Action:
                   - guardduty:EnableOrganizationAdminAccount
+                  - guardduty:ListOrganizationAdminAccounts
+                  - guardduty:CreateDetector
                   - organizations:EnableAWSServiceAccess
                   - organizations:ListAWSServiceAccessForOrganization
                   - organizations:ListDelegatedAdministrators
                   - organizations:RegisterDelegatedAdministrator
                   - organizations:DescribeOrganization
                 Resource: '*'
+        - PolicyName: AllowStartAutomationExecution
+          PolicyDocument:
+            Statement:
+                - Effect: Allow
+                  Action: ssm:StartAutomationExecution
+                  Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyExistingAccounts}:*'
+        - PolicyName: AllowCallCrossAccountAutomation
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+
+  EnableGuardDutyExistingAccounts:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        parameters:
+          LogArchiveAWSAccountId:
+            type: String
+          LogArchiveAWSAccountEmail:
+            type: String
+          MasterAWSAccountId:
+            type: String
+          MasterAWSAccountEmail:
+            type: String
+        mainSteps:
+          - name: GetDetectorId
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: ListDetectors
+            outputs:
+              - Name: DetectorId
+                Selector: $.DetectorIds[0]
+            nextStep: CreateMembers
+          - name: CreateMembers
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: CreateMembers
+              DetectorId: '{{ GetDetectorId.DetectorId }}'
+              AccountDetails:
+                - AccountId: '{{ MasterAWSAccountId }}'
+                  Email: '{{ MasterAWSAccountEmail }}'
+                - AccountId: '{{ LogArchiveAWSAccountId }}'
+                  Email: '{{ LogArchiveAWSAccountEmail }}'
+            nextStep: EnableGuardDutyExistingAccounts
+          - name: EnableGuardDutyExistingAccounts
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: UpdateOrganizationConfiguration
+              DetectorId: '{{ GetDetectorId.DetectorId }}'
+              AutoEnable: true
