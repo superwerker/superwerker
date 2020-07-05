@@ -32,7 +32,7 @@ Resources:
       State: ENABLED
       Targets:
         - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}
-          Id: EnableS3BlockPublicAccessViaSSM
+          Id: EnableGuardDutyOrganizations
           RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
 
   SSMAutomationExecutionRoleforCWEvents:
