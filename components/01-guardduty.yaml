@@ -150,7 +150,7 @@ Resources:
             Statement:
                 - Effect: Allow
                   Action: ssm:StartAutomationExecution
-                  Resource: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyExistingAccounts}:*'
+                  Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyExistingAccounts}:*
         - PolicyName: AllowCallCrossAccountAutomation
           PolicyDocument:
             Statement:
