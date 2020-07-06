@@ -75,7 +75,7 @@ Resources:
             action: aws:branch
             inputs:
               Choices:
-                - NextStep: EnableGuardDutyInMaster
+                - NextStep: EnableGuardDutyExistingAccounts
                   Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}'
                   StringEquals: !Ref AuditAWSAccountId
               Default: EnableOrganizationAdminAccount
