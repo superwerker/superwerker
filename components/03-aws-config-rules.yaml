@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Enables various best practises across accounts
+
+Parameters:
+  AuditBucketName:
+    Type: String
+    Description: Audit Bucket name from the Log Archive Account
+
+  AWSLogsS3KeyPrefix:
+    Type: String
+    Description: Organization ID to use as the S3 Key prefix for storing the audit logs
+
+Resources:
+  # Why no conformance pack? It needs a dedicated S3 bucket for delivery (prefixed with  awsconfigconforms)
+  EnableBlockPublicAccess:
+    Type: AWS::Config::OrganizationConfigRule
+    Properties:
+      ExcludedAccounts:
+        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
+      OrganizationConfigRuleName: founopticum-s3-account-level-public-access
+      OrganizationManagedRuleMetadata:
+        RuleIdentifier: S3_ACCOUNT_LEVEL_PUBLIC_ACCESS_BLOCKS
+        ResourceTypesScope:
+          - AWS::S3::AccountPublicAccessBlock
+
+  EnableEc2EbsEncryptionByDefault:
+    Type: AWS::Config::OrganizationConfigRule
+    Properties:
+      ExcludedAccounts:
+        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
+      OrganizationConfigRuleName: founopticum-ec2-ebs-encryption-by-default
+      OrganizationManagedRuleMetadata:
+        RuleIdentifier: EC2_EBS_ENCRYPTION_BY_DEFAULT
+
+
+#  EnableEc2EbsEncryptionByDefaultRemediation:
+#    Type: "AWS::Config::RemediationConfiguration"
+#    Properties:
+#      ConfigRuleName: !Ref EnableEc2EbsEncryptionByDefault
+#      TargetId: !Ref EnableEc2EbsEncryptionByDefaultDocument
+#      TargetType: "SSM_DOCUMENT"
+#      TargetVersion: "1"
+#
+  EnableEc2EbsEncryptionByDefaultDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt BasicRemediationConfigurationRole.Arn
+        mainSteps:
+          - name: CheckIfOrganizationAdminAccountIsAlReadyRegistered
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: ListOrganizationAdminAccounts
+
+  BasicRemediationConfigurationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EnableAWSServiceAccess
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - guardduty:EnableOrganizationAdminAccount
+                Resource: '*'
