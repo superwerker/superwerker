@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Sets up SecurityHub with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
+
+# TODO: the parameters don't have to be passed when set up via control tower event. Control Tower event has all the information needed
+Parameters:
+  AuditAWSAccountId:
+    Type: String
+  LogArchiveAWSAccountId:
+    Type: String
+  LogArchiveAWSAccountEmail:
+    Type: String
+  MasterAWSAccountEmail:
+    Type: String
+Resources:
+
+#  SetupLandingZoneTrigger:
+#    Type: AWS::Events::Rule
+#    Properties:
+#      EventPattern:
+#        detail-type:
+#          - AWS Service Event via CloudTrail
+#        source:
+#          - aws.controltower
+#        detail:
+#          serviceEventDetails:
+#            createManagedAccountStatus:
+#              state:
+#                - SUCCEEDED
+#          eventName:
+#            - SetupLandingZone
+#      State: ENABLED
+#      Targets:
+#        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubOrganizations}
+#          Id: EnableSecurityHubOrganizations
+#          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+
+#  SSMAutomationExecutionRoleforCWEvents:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Version: 2012-10-17
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service: events.amazonaws.com
+#            Action: sts:AssumeRole
+#      Policies:
+#        - PolicyName: AllowStartAutomationExecution
+#          PolicyDocument:
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - ssm:StartAutomationExecution
+#                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubOrganizations}:*
+
+  EnableSecurityHubMember:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt EnableSecurityHubMemberRole.Arn
+        mainSteps:
+          - name: CheckIfSecurityHubIsEnabled
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: DescribeHub
+            isCritical: false # this step can fail on purpose
+            onFailure: step:EnableSecurityHub
+          # TODO: make idempotent
+          - name: EnableSecurityHub
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: EnableSecurityHub
+
+  EnableSecurityHubMemberRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EnableSecurityHubMember
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - securityhub:DescribeHub
+                  - securityhub:EnableSecurityHub
+                  - iam:CreateServiceLinkedRole
+                Resource: '*'
+
