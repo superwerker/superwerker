@@ -67,7 +67,7 @@ Resources:
             inputs:
               DocumentName: !Ref EnableSecurityHubInOrgAccount
               RuntimeParameters:
-                AuditAWSAccountId:
+                AWSAccountId:
                   - !Ref AuditAWSAccountId
 #          - name: EnableSecurityHubMasterInAuditAccount
 #          - name: EnableSecurityHubMemberInOrgMasterAccount
@@ -103,7 +103,7 @@ Resources:
         schemaVersion: '0.3'
         assumeRole: !GetAtt EnableSecurityHubInOrgAccountRole.Arn
         parameters:
-          AuditAWSAccountId:
+          AWSAccountId:
             type: String
         mainSteps:
           - name: EnableSecurityHubInOrgAccount
@@ -115,7 +115,7 @@ Resources:
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
-                    - '{{ AuditAWSAccountId }}'
+                    - '{{ AWSAccountId }}'
                   Regions:
                     - !Ref AWS::Region
             outputs:
