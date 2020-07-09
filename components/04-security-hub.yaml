@@ -54,29 +54,26 @@ Resources:
 #                  - ssm:StartAutomationExecution
 #                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubOrganizations}:*
 
-  EnableSecurityHubMember:
+  CreateLandingZoneEnableSecurityHub:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
       Content:
         schemaVersion: '0.3'
-        assumeRole: !GetAtt EnableSecurityHubMemberRole.Arn
+        assumeRole: !GetAtt CreateLandingZoneEnableSecurityHubRole.Arn
         mainSteps:
-          - name: CheckIfSecurityHubIsEnabled
-            action: aws:executeAwsApi
+          - name: EnableSecurityHubInAuditAccount
+            action: aws:executeAutomation
             inputs:
-              Service: securityhub
-              Api: DescribeHub
-            isCritical: false # this step can fail on purpose
-            onFailure: step:EnableSecurityHub
-          # TODO: make idempotent
-          - name: EnableSecurityHub
-            action: aws:executeAwsApi
-            inputs:
-              Service: securityhub
-              Api: EnableSecurityHub
+              DocumentName: !Ref EnableSecurityHubInOrgAccount
+              RuntimeParameters:
+                AuditAWSAccountId:
+                  - !Ref AuditAWSAccountId
+#          - name: EnableSecurityHubMasterInAuditAccount
+#          - name: EnableSecurityHubMemberInOrgMasterAccount
+#          - name: EnableSecurityHubMemberInLogArchiveAccount
 
-  EnableSecurityHubMemberRole:
+  CreateLandingZoneEnableSecurityHubRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -86,18 +83,140 @@ Resources:
             Principal:
               Service: ssm.amazonaws.com
             Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartAutomationExecutionEnableSecurityHub
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:StartAutomationExecution
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
+              - Effect: Allow
+                Action:
+                  - ssm:GetAutomationExecution
+                Resource: '*'
+
+  EnableSecurityHubInOrgAccount:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt EnableSecurityHubInOrgAccountRole.Arn
+        parameters:
+          AuditAWSAccountId:
+            type: String
+        mainSteps:
+          - name: EnableSecurityHubInOrgAccount
+            action: aws:executeAwsApi
+            inputs:
+              Service: ssm
+              Api: StartAutomationExecution
+              DocumentName: !Ref EnableSecurityHub
+              TargetLocations:
+                - ExecutionRoleName: AWSControlTowerExecution
+                  Accounts:
+                    - '{{ AuditAWSAccountId }}'
+                  Regions:
+                    - !Ref AWS::Region
+            outputs:
+              - Name: AutomationExecutionId
+                Selector: $.AutomationExecutionId
+            nextStep: WaitForEnableSecurityHubInOrgAccount
+          - name: WaitForEnableSecurityHubInOrgAccount
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: ssm
+              Api: DescribeAutomationExecutions
+              Filters:
+                - Key: ExecutionId
+                  Values:
+                    - '{{ EnableSecurityHubInOrgAccount.AutomationExecutionId }}'
+              PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
+              DesiredValues:
+                - Success
+
+  EnableSecurityHubInOrgAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
           - Effect: Allow
             Principal:
-              AWS: !Ref AWS::AccountId
+              Service: ssm.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: EnableSecurityHubMember
+        - PolicyName: AllowStartAutomationExecutionEnableSecurityHub
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:StartAutomationExecution
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHub}:*
+        - PolicyName: AllowDescribeSsmAutomationExecutionStatus
           PolicyDocument:
             Statement:
               - Effect: Allow
                 Action:
-                  - securityhub:DescribeHub
-                  - securityhub:EnableSecurityHub
-                  - iam:CreateServiceLinkedRole
+                  - ssm:DescribeAutomationExecutions
                 Resource: '*'
+        - PolicyName: AllowCallCrossAccountAutomation
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+
+  EnableSecurityHub:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        mainSteps:
+          - name: CheckIfSecurityHubIsEnabled
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: DescribeHub
+            isCritical: false # this step can fail on purpose
+            onFailure: step:EnableSecurityHub
+            nextStep: NoOp
+          - name: NoOp
+            action: aws:sleep # use sleep as a workaround for no-op
+            inputs:
+              Duration: PT0S
+            isEnd: true
+          - name: EnableSecurityHub
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: EnableSecurityHub
+            isEnd: true
+
+
+#  EnableSecurityHubRole:
+#    Type: AWS::IAM::Role
+#    Properties:
+#      AssumeRolePolicyDocument:
+#        Version: 2012-10-17
+#        Statement:
+#          - Effect: Allow
+#            Principal:
+#              Service: ssm.amazonaws.com
+#            Action: sts:AssumeRole
+#          - Effect: Allow
+#            Principal:
+#              AWS: !Ref AWS::AccountId
+#            Action: sts:AssumeRole
+#      Policies:
+#        - PolicyName: EnableSecurityHubMember
+#          PolicyDocument:
+#            Statement:
+#              - Effect: Allow
+#                Action:
+#                  - securityhub:DescribeHub
+#                  - securityhub:EnableSecurityHub
+#                  - iam:CreateServiceLinkedRole
+#                Resource: '*'
 
