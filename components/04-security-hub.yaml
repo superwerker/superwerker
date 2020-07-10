@@ -69,9 +69,16 @@ Resources:
               RuntimeParameters:
                 AWSAccountId:
                   - !Ref AuditAWSAccountId
-#          - name: EnableSecurityHubMasterInAuditAccount
+          - name: EnableSecurityHubMemberInOrgLogArchiveAccount
+            action: aws:executeAutomation
+            inputs:
+              DocumentName: !Ref EnableSecurityHubInOrgAccountAndAddAsMember
+              RuntimeParameters:
+                MemberAWSAccountId:
+                  - !Ref LogArchiveAWSAccountId
+                MemberAWSAccountEmail:
+                  - !Ref LogArchiveAWSAccountEmail
 #          - name: EnableSecurityHubMemberInOrgMasterAccount
-#          - name: EnableSecurityHubMemberInLogArchiveAccount
 
   CreateLandingZoneEnableSecurityHubRole:
     Type: AWS::IAM::Role
@@ -89,11 +96,131 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: ssm:StartAutomationExecution
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
+                Resource:
+                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
+                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccountAndAddAsMember}:*
               - Effect: Allow
                 Action:
                   - ssm:GetAutomationExecution
                 Resource: '*'
+
+  EnableSecurityHubInOrgAccountAndAddAsMember:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt EnableSecurityHubInOrgAccountAndAddAsMemberRole.Arn
+        parameters:
+          MemberAWSAccountId:
+            type: String
+          MemberAWSAccountEmail:
+            type: String
+        mainSteps:
+          - name: EnableSecurityHubInOrgAccount
+            action: aws:executeAutomation
+            inputs:
+              DocumentName: !Ref EnableSecurityHubInOrgAccount
+              RuntimeParameters:
+                AWSAccountId:
+                  - '{{ MemberAWSAccountId }}'
+          - name: InviteSecurityHubMember
+            action: aws:executeAwsApi
+            inputs:
+              Service: ssm
+              Api: StartAutomationExecution
+              DocumentName: !Ref InviteSecurityHubMember
+              Parameters:
+                MemberAWSAccountId:
+                  - '{{ MemberAWSAccountId }}'
+                MemberAWSAccountEmail:
+                  - '{{ MemberAWSAccountEmail }}'
+              TargetLocations:
+                - ExecutionRoleName: AWSControlTowerExecution
+                  Accounts:
+                    - !Ref AuditAWSAccountId
+                  Regions:
+                    - !Ref AWS::Region
+            outputs:
+              - Name: AutomationExecutionId
+                Selector: $.AutomationExecutionId
+            nextStep: WaitForInviteSecurityHubMember
+          - name: WaitForInviteSecurityHubMember
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: ssm
+              Api: DescribeAutomationExecutions
+              Filters:
+                - Key: ExecutionId
+                  Values:
+                    - '{{ InviteSecurityHubMember.AutomationExecutionId }}'
+              PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
+              DesiredValues:
+                - Success
+
+  EnableSecurityHubInOrgAccountAndAddAsMemberRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartAutomationExecutionEnableSecurityHub
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:StartAutomationExecution
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${InviteSecurityHubMember}:*
+        - PolicyName: AllowDescribeSsmAutomationExecutionStatus
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:DescribeAutomationExecutions
+                  - ssm:GetAutomationExecution
+                Resource: '*'
+        - PolicyName: AllowCallCrossAccountAutomation
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+
+  InviteSecurityHubMember:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        parameters:
+          MemberAWSAccountId:
+            type: String
+          MemberAWSAccountEmail:
+            type: String
+        mainSteps:
+          - name: CreateMembers
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: CreateMembers
+              AccountDetails:
+                - AccountId: '{{ MemberAWSAccountId }}'
+                  Email: '{{ MemberAWSAccountEmail }}'
+          - name: InviteMembers
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: CreateMembers
+              AccountIds:
+                - '{{ MemberAWSAccountId }}'
+
 
   EnableSecurityHubInOrgAccount:
     Type: AWS::SSM::Document
