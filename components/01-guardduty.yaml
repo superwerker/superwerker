@@ -142,10 +142,6 @@ Resources:
             Principal:
               Service: ssm.amazonaws.com
             Action: sts:AssumeRole
-          - Effect: Allow
-            Principal:
-              AWS: !Ref AWS::AccountId
-            Action: sts:AssumeRole
       Policies:
         - PolicyName: EnableAWSServiceAccess
           PolicyDocument:
