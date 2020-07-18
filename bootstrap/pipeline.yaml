@@ -153,8 +153,14 @@ Resources:
             build:
               commands:
                 # automate https://docs.aws.amazon.com/controltower/latest/userguide/known-issues-decommissioning.html
-                - aws sso iam detach-role-policy --role-name AWSControlTowerAdmin --policy-arn arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSControlTowerAdminPolicy || true
+                - aws iam detach-role-policy --role-name AWSControlTowerAdmin --policy-arn arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSControlTowerAdminPolicy || true
                 - aws iam delete-role --role-name AWSControlTower || true
+                - aws iam detach-role-policy --role-name AWSControlTowerCloudTrailRole --policy-arn arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSControlTowerCloudTrailRolePolicy || true
+                - aws iam delete-role --role-name AWSControlTowerCloudTrailRole || true
+                - aws iam detach-role-policy --role-name AWSControlTowerStackSetRole --policy-arn arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSControlTowerStackSetRolePolicy || true
+                - aws iam delete-role --role-name AWSControlTowerStackSetRole || true
+
+                -
 
   BuildProjectRole:
     Type: AWS::IAM::Role
