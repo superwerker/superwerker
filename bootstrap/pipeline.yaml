@@ -173,6 +173,8 @@ Resources:
           Principal:
             Service: codebuild.amazonaws.com
           Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
       Policies:
         - PolicyName: !Sub ${AWS::StackName}-codebuild-role-policy
           PolicyDocument:
