@@ -79,17 +79,17 @@ Resources:
                 - Name: SourceOutput
               Name: Build
               RunOrder: 1
-            - ActionTypeId:
-                Category: Invoke
-                Owner: AWS
-                Provider: StepFunctions
-                Version: "1"
-              Configuration:
-                StateMachineArn: !Ref WaitStateMachine
-              InputArtifacts:
-                - Name: SourceOutput
-              Name: Wait60Minutes
-              RunOrder: 2
+#            - ActionTypeId:
+#                Category: Invoke
+#                Owner: AWS
+#                Provider: StepFunctions
+#                Version: "1"
+#              Configuration:
+#                StateMachineArn: !Ref WaitStateMachine
+#              InputArtifacts:
+#                - Name: SourceOutput
+#              Name: Wait60Minutes
+#              RunOrder: 2
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactStoreS3Location
