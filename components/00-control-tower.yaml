@@ -139,3 +139,165 @@ Resources:
             Principal:
               AWS: !GetAtt SetupControlTowerCanaryRole.Arn
 
+#  SetupLandingZoneRule:
+#    Type: AWS::Events::Rule
+#    Properties:
+#      EventPattern:
+#        detail-type:
+#          - AWS Service Event via CloudTrail
+#        source:
+#          - aws.controltower
+#        detail:
+#          serviceEventDetails:
+#            setupLandingZoneStatus:
+#              state:
+#                - SUCCEEDED
+#          eventName:
+#            - SetupLandingZone
+#
+#      State: ENABLED
+#      Targets:
+#        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FounopticumBootstrap}
+#          Id: SetupLandingZone
+#          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+#          InputTransformer:
+#            InputPathsMap:
+#              organizationalUnits: $.detail.serviceEventDetails.setupLandingZoneStatus.organizationalUnits
+#              accounts: $.detail.serviceEventDetails.setupLandingZoneStatus.accounts
+#            InputTemplate: |
+#              {
+#                "organizationalUnits": [<organizationalUnits>],
+#                "accounts": [<accounts>]
+#              }
+
+  UpdateLandingZoneRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+#        detail-type:
+#          - AWS Service Event via CloudTrail
+        source:
+          - schnuffer
+#        detail:
+#          serviceEventDetails:
+#            updateLandingZoneStatus:
+#              state:
+#                - SUCCEEDED
+#          eventName:
+#            - UpdateLandingZone
+
+      State: ENABLED
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FounopticumBootstrap}
+          Id: UpdateLandingZone
+          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+          InputTransformer:
+            # currently, it seems that only passing strings to SSM Automation is allowed
+            InputPathsMap:
+              organizationalUnit0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[0].organizationalUnitId
+              organizationalUnit1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[1].organizationalUnitId
+              organizationalUnit1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[1].organizationalUnitName
+              organizationalUnit0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[0].organizationalUnitName
+              accounts0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountId
+              accounts0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountName
+              accounts1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountId
+              accounts1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountName
+              accounts2Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[2].accountId
+              accounts2Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts
+            InputTemplate: |
+              {
+                "organizationalUnit0Id": [<organizationalUnit0Id>],
+                "organizationalUnit1Id": [<organizationalUnit1Id>],
+                "organizationalUnit1Name": [<organizationalUnit1Name>],
+                "organizationalUnit0Name": [<organizationalUnit0Name>],
+                "accounts0Id": [<accounts0Id>],
+                "accounts0Name": [<accounts0Name>],
+                "accounts1Id": [<accounts1Id>],
+                "accounts1Name": [<accounts1Name>],
+                "accounts2Id": [<accounts2Id>],
+                "accounts2Name": [<accounts2Name>]
+              }
+
+  SSMAutomationExecutionRoleforCWEvents:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartAutomationExecution
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:StartAutomationExecution
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FounopticumBootstrap}:*
+
+  FounopticumBootstrap:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: !GetAtt StartExecutionRoleForSSM.Arn
+        parameters:
+          organizationalUnit0Id:
+            type: String
+          organizationalUnit1Id:
+            type: String
+          organizationalUnit0Name:
+            type: String
+          organizationalUnit1Name:
+            type: String
+          accounts0Id:
+            type: String
+          accounts0Name:
+            type: String
+          accounts1Id:
+            type: String
+          accounts1Name:
+            type: String
+          accounts2Id:
+            type: String
+          accounts2Name:
+            type: StringMap
+        mainSteps:
+          - name: StartAutomationExecution
+            action: aws:executeScript
+            inputs:
+              Runtime: python3.7
+              Handler: handler
+              InputPayload:
+                organizationalUnit0Id: '{{ organizationalUnit0Id }}'
+                organizationalUnit1Id: '{{ organizationalUnit1Id }}'
+                organizationalUnit0Name: '{{ organizationalUnit0Name }}'
+                organizationalUnit1Name: '{{ organizationalUnit1Name }}'
+                accounts0Id: '{{ accounts0Id }}'
+                accounts0Name: '{{ accounts0Name }}'
+                accounts1Id: '{{ accounts1Id }}'
+                accounts1Name: '{{ accounts1Name }}'
+                accounts2Id: '{{ accounts2Id }}'
+                accounts2Name: '{{ accounts2Name }}'
+                  
+                
+              Script: |-
+                def handler(events, context):
+                    print(events)
+
+  StartExecutionRoleForSSM:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSOrganizationsReadOnlyAccess
