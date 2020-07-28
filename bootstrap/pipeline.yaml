@@ -177,16 +177,6 @@ Resources:
 
                 - aws logs delete-log-group --log-group-name aws-controltower/CloudTrailLogs || true
 
-#                - aws configure --profile logarchive set role_arn arn:aws:iam::${!account_id_logarchive}:role/OrganizationAccountAccessRole
-#                - aws configure --profile logarchive set credential_source EcsContainer
-#                - aws --profile logarchive s3 rm s3://aws-controltower-logs-${AWS::AccountId}-${AWS::Region} --recursive
-#                - aws --profile logarchive s3 rb s3://aws-controltower-logs-${AWS::AccountId}-${AWS::Region}
-#                - aws --profile logarchive s3 rm s3://aws-controltower-s3-access-logs-${AWS::AccountId}-${AWS::Region} --recursive
-#                - aws --profile logarchive s3 rb s3://aws-controltower-s3-access-logs-${AWS::AccountId}-${AWS::Region}
-
-
-
-
   BuildProjectRole:
     Type: AWS::IAM::Role
     DeletionPolicy: Retain
