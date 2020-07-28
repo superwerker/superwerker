@@ -180,17 +180,17 @@ Resources:
           Properties:
             InputPath: $.detail.serviceEventDetails.updateLandingZoneStatus
             Pattern:
-              #        detail-type:
-              #          - AWS Service Event via CloudTrail
+              detail-type:
+                - AWS Service Event via CloudTrail
               source:
-                - schnuffer
-                  #        detail:
-                  #          serviceEventDetails:
-                  #            updateLandingZoneStatus:
-                  #              state:
-                  #                - SUCCEEDED
-                  #          eventName:
-                  #            - UpdateLandingZone
+                - aws.controltower
+              detail:
+                serviceEventDetails:
+                  updateLandingZoneStatus:
+                    state:
+                      - SUCCEEDED
+                eventName:
+                  - UpdateLandingZone
 
       Handler: index.handler
       Runtime: python3.7
