@@ -192,30 +192,30 @@ Resources:
           Id: UpdateLandingZone
           RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
           InputTransformer:
-            # currently, it seems that only passing strings to SSM Automation is allowed
+            # currently, it seems that only passing strings to SSM Automation is allowed, no structures, so we have to flatten it here
             InputPathsMap:
               organizationalUnit0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[0].organizationalUnitId
               organizationalUnit1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[1].organizationalUnitId
               organizationalUnit1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[1].organizationalUnitName
               organizationalUnit0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[0].organizationalUnitName
-              accounts0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountId
-              accounts0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountName
-              accounts1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountId
-              accounts1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountName
-              accounts2Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[2].accountId
-              accounts2Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts
+              account0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountId
+              account0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountName
+              account1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountId
+              account1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountName
+              account2Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[2].accountId
+              account2Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[2].accountName
             InputTemplate: |
               {
                 "organizationalUnit0Id": [<organizationalUnit0Id>],
                 "organizationalUnit1Id": [<organizationalUnit1Id>],
                 "organizationalUnit1Name": [<organizationalUnit1Name>],
                 "organizationalUnit0Name": [<organizationalUnit0Name>],
-                "accounts0Id": [<accounts0Id>],
-                "accounts0Name": [<accounts0Name>],
-                "accounts1Id": [<accounts1Id>],
-                "accounts1Name": [<accounts1Name>],
-                "accounts2Id": [<accounts2Id>],
-                "accounts2Name": [<accounts2Name>]
+                "account0Id": [<account0Id>],
+                "account0Name": [<account0Name>],
+                "account1Id": [<account1Id>],
+                "account1Name": [<account1Name>],
+                "account2Id": [<account2Id>],
+                "account2Name": [<account2Name>]
               }
 
   SSMAutomationExecutionRoleforCWEvents:
@@ -253,17 +253,17 @@ Resources:
             type: String
           organizationalUnit1Name:
             type: String
-          accounts0Id:
+          account0Id:
             type: String
-          accounts0Name:
+          account0Name:
             type: String
-          accounts1Id:
+          account1Id:
             type: String
-          accounts1Name:
+          account1Name:
             type: String
-          accounts2Id:
+          account2Id:
             type: String
-          accounts2Name:
+          account2Name:
             type: StringMap
         mainSteps:
           - name: StartAutomationExecution
@@ -276,17 +276,50 @@ Resources:
                 organizationalUnit1Id: '{{ organizationalUnit1Id }}'
                 organizationalUnit0Name: '{{ organizationalUnit0Name }}'
                 organizationalUnit1Name: '{{ organizationalUnit1Name }}'
-                accounts0Id: '{{ accounts0Id }}'
-                accounts0Name: '{{ accounts0Name }}'
-                accounts1Id: '{{ accounts1Id }}'
-                accounts1Name: '{{ accounts1Name }}'
-                accounts2Id: '{{ accounts2Id }}'
-                accounts2Name: '{{ accounts2Name }}'
+                account0Id: '{{ account0Id }}'
+                account0Name: '{{ account0Name }}'
+                account1Id: '{{ account1Id }}'
+                account1Name: '{{ account1Name }}'
+                account2Id: '{{ account2Id }}'
+                account2Name: '{{ account2Name }}'
                   
                 
               Script: |-
+                import boto3
+                import re
+
+                ssm = boto3.client('ssm')
+
                 def handler(events, context):
-                    print(events)
+                  vars = {
+                    'organizationalUnit': [],
+                    'account': [],
+                  }
+
+                  for k, v in events.items():
+                    (what, index, key) = re.findall('(\w+)(\d)(\w+)', k)[0]
+                    index = int(index)
+
+                    if index >= len(vars[what]):
+                      vars[what].append({})
+
+                    vars[what][index][key] = v
+
+                  for ou in vars['organizationalUnit']:
+                    ssm.put_parameter(
+                      Name='/founopticum/ou_{}'.format(ou['Name'].lower()),
+                      Value=ou['Id'],
+                      Overwrite=True,
+                      Type='String',
+                    )
+
+                  for account in vars['account']:
+                    ssm.put_parameter(
+                      Name='/founopticum/account_id_{}'.format(account['Name'].lower().replace(' ', '')),
+                      Value=account['Id'],
+                      Overwrite=True,
+                      Type='String',
+                    )
 
   StartExecutionRoleForSSM:
     Type: AWS::IAM::Role
