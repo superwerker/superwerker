@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
 
 Parameters:
   AuditAWSAccountEmail:
@@ -170,167 +171,56 @@ Resources:
 #                "accounts": [<accounts>]
 #              }
 
-  UpdateLandingZoneRule:
-    Type: AWS::Events::Rule
+  FounopticumBootstrapFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      EventPattern:
-#        detail-type:
-#          - AWS Service Event via CloudTrail
-        source:
-          - schnuffer
-#        detail:
-#          serviceEventDetails:
-#            updateLandingZoneStatus:
-#              state:
-#                - SUCCEEDED
-#          eventName:
-#            - UpdateLandingZone
+      Events:
+        UpdateLandingZone:
+          Type: CloudWatchEvent
+          Properties:
+            InputPath: $.detail.serviceEventDetails.updateLandingZoneStatus
+            Pattern:
+              #        detail-type:
+              #          - AWS Service Event via CloudTrail
+              source:
+                - schnuffer
+                  #        detail:
+                  #          serviceEventDetails:
+                  #            updateLandingZoneStatus:
+                  #              state:
+                  #                - SUCCEEDED
+                  #          eventName:
+                  #            - UpdateLandingZone
 
-      State: ENABLED
-      Targets:
-        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FounopticumBootstrap}
-          Id: UpdateLandingZone
-          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
-          InputTransformer:
-            # currently, it seems that only passing strings to SSM Automation is allowed, no structures, so we have to flatten it here
-            InputPathsMap:
-              organizationalUnit0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[0].organizationalUnitId
-              organizationalUnit1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[1].organizationalUnitId
-              organizationalUnit1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[1].organizationalUnitName
-              organizationalUnit0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.organizationalUnits[0].organizationalUnitName
-              account0Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountId
-              account0Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[0].accountName
-              account1Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountId
-              account1Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[1].accountName
-              account2Id: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[2].accountId
-              account2Name: $.detail.serviceEventDetails.updateLandingZoneStatus.accounts[2].accountName
-            InputTemplate: |
-              {
-                "organizationalUnit0Id": [<organizationalUnit0Id>],
-                "organizationalUnit1Id": [<organizationalUnit1Id>],
-                "organizationalUnit1Name": [<organizationalUnit1Name>],
-                "organizationalUnit0Name": [<organizationalUnit0Name>],
-                "account0Id": [<account0Id>],
-                "account0Name": [<account0Name>],
-                "account1Id": [<account1Id>],
-                "account1Name": [<account1Name>],
-                "account2Id": [<account2Id>],
-                "account2Name": [<account2Name>]
-              }
+      Handler: index.handler
+      Runtime: python3.7
+      InlineCode: |-
+        import boto3
 
-  SSMAutomationExecutionRoleforCWEvents:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: sts:AssumeRole
+        ssm = boto3.client('ssm')
+
+        def handler(event, context):
+          for ou in event['organizationalUnits']:
+              ssm.put_parameter(
+                  Name='/founopticum/ou_{}'.format(ou['organizationalUnitName'].lower()),
+                  Value=ou['organizationalUnitId'],
+                  Overwrite=True,
+                  Type='String',
+              )
+          for account in event['accounts']:
+              ssm.put_parameter(
+                  Name='/founopticum/account_id_{}'.format(account['accountName'].lower().replace(' ', '')),
+                  Value=account['accountId'],
+                  Overwrite=True,
+                  Type='String',
+              )
+
       Policies:
-        - PolicyName: AllowStartAutomationExecution
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ssm:StartAutomationExecution
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FounopticumBootstrap}:*
+        - Version: 2012-10-17
+          Statement:
+            - Action:
+                - ssm:PutParameter
+              Effect: Allow
+              Resource:
+                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum*
 
-  FounopticumBootstrap:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Automation
-      Content:
-        schemaVersion: '0.3'
-        assumeRole: !GetAtt StartExecutionRoleForSSM.Arn
-        parameters:
-          organizationalUnit0Id:
-            type: String
-          organizationalUnit1Id:
-            type: String
-          organizationalUnit0Name:
-            type: String
-          organizationalUnit1Name:
-            type: String
-          account0Id:
-            type: String
-          account0Name:
-            type: String
-          account1Id:
-            type: String
-          account1Name:
-            type: String
-          account2Id:
-            type: String
-          account2Name:
-            type: String
-        mainSteps:
-          - name: StartAutomationExecution
-            action: aws:executeScript
-            inputs:
-              Runtime: python3.7
-              Handler: handler
-              InputPayload:
-                organizationalUnit0Id: '{{ organizationalUnit0Id }}'
-                organizationalUnit1Id: '{{ organizationalUnit1Id }}'
-                organizationalUnit0Name: '{{ organizationalUnit0Name }}'
-                organizationalUnit1Name: '{{ organizationalUnit1Name }}'
-                account0Id: '{{ account0Id }}'
-                account0Name: '{{ account0Name }}'
-                account1Id: '{{ account1Id }}'
-                account1Name: '{{ account1Name }}'
-                account2Id: '{{ account2Id }}'
-                account2Name: '{{ account2Name }}'
-                  
-                
-              Script: |-
-                import boto3
-                import re
-
-                ssm = boto3.client('ssm')
-
-                def handler(events, context):
-                  vars = {
-                    'organizationalUnit': [],
-                    'account': [],
-                  }
-
-                  for k, v in events.items():
-                    (what, index, key) = re.findall('(\w+)(\d)(\w+)', k)[0]
-                    index = int(index)
-
-                    if index >= len(vars[what]):
-                      vars[what].append({})
-
-                    vars[what][index][key] = v
-
-                  for ou in vars['organizationalUnit']:
-                    ssm.put_parameter(
-                      Name='/founopticum/ou_{}'.format(ou['Name'].lower()),
-                      Value=ou['Id'],
-                      Overwrite=True,
-                      Type='String',
-                    )
-
-                  for account in vars['account']:
-                    ssm.put_parameter(
-                      Name='/founopticum/account_id_{}'.format(account['Name'].lower().replace(' ', '')),
-                      Value=account['Id'],
-                      Overwrite=True,
-                      Type='String',
-                    )
-
-  StartExecutionRoleForSSM:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ssm.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSOrganizationsReadOnlyAccess
