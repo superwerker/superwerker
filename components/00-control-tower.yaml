@@ -264,7 +264,7 @@ Resources:
           account2Id:
             type: String
           account2Name:
-            type: StringMap
+            type: String
         mainSteps:
           - name: StartAutomationExecution
             action: aws:executeScript
