@@ -111,10 +111,11 @@ Resources:
                 StackName: founopticum-00-control-tower
                 ParameterOverrides: |
                   {
-                    "LogArchiveAWSAccountEmail": "founopticum-aws-test+log-archive6@superluminar.io"
-                    "AuditAWSAccountEmail": "founopticum-aws-test+audit6@superluminar.io"
+                    "LogArchiveAWSAccountEmail": "founopticum-aws-test+log-archive7@superluminar.io",
+                    "AuditAWSAccountEmail": "founopticum-aws-test+audit7@superluminar.io"
                   }
-                TemplatePath: components/00-control-tower.yaml
+                TemplatePath: SourceOutput::components/00-control-tower.yaml
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
 #            - ActionTypeId:
 #                Category: Invoke
