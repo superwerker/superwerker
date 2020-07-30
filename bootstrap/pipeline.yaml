@@ -66,7 +66,7 @@ Resources:
                 Branch: !Ref BranchName
                 OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
                 PollForSourceChanges: false
-        - Name: PrepareForControlTower
+        - Name: RemoveControlTowerDecommissionFallout
           Actions:
             - ActionTypeId:
                 Category: Build
@@ -77,8 +77,45 @@ Resources:
                 ProjectName: !Ref CodeBuildProject
               InputArtifacts:
                 - Name: SourceOutput
-              Name: Build
+              Name: RemoveControlTowerDecommissionFallout
               RunOrder: 1
+
+        - Name: RemoveFounopticum
+          Actions:
+            - Name: RemoveControlTowerStack
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ActionMode: DELETE_ONLY
+                RoleArn: !GetAtt BuildProjectRole.Arn
+                StackName: founopticum-00-control-tower
+
+        - Name: InstallFounopticum
+          Actions:
+            - Name: CreateControlTowerStack
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !GetAtt BuildProjectRole.Arn
+                StackName: founopticum-00-control-tower
+                ParameterOverrides: |
+                  {
+                    "LogArchiveAWSAccountEmail": "founopticum-aws-test+log-archive6@superluminar.io"
+                    "AuditAWSAccountEmail": "founopticum-aws-test+audit6@superluminar.io"
+                  }
+                TemplatePath: components/00-control-tower.yaml
+
 #            - ActionTypeId:
 #                Category: Invoke
 #                Owner: AWS
@@ -104,35 +141,8 @@ Resources:
             Principal:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
-      Policies:
-        - PolicyName: !Sub ${AWS::StackName}-pipeline-role-policy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Action:
-                  - s3:GetObject*
-                  - s3:GetBucket*
-                  - s3:List*
-                  - s3:DeleteObject*
-                  - s3:PutObject*
-                  - s3:Abort*
-                Effect: Allow
-                Resource:
-                  - !Sub ${ArtifactStoreS3Location.Arn}
-                  - !Sub ${ArtifactStoreS3Location.Arn}/*
-              - Action:
-                  - codebuild:StartBuild
-                  - codebuild:BatchGetBuilds
-                Effect: Allow
-                Resource: !GetAtt CodeBuildProject.Arn
-              - Action:
-                  - states:DescribeStateMachine
-                  - states:StartExecution
-                Effect: Allow
-                Resource: !Ref WaitStateMachine
-              - Action: states:DescribeExecution
-                Effect: Allow
-                Resource: !Sub arn:${AWS::Partition}:states:${AWS::Region}:${AWS::AccountId}:execution:${WaitStateMachine.Name}:*
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -186,7 +196,9 @@ Resources:
         Statement:
           Effect: Allow
           Principal:
-            Service: codebuild.amazonaws.com
+            Service:
+             - codebuild.amazonaws.com
+             - cloudformation.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
