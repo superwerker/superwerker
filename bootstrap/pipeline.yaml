@@ -309,7 +309,10 @@ Resources:
               await page.click("#awsui-checkbox-1");
               await page.click("#awsui-checkbox-2");
               await page.type("#awsui-input-0", "DECOMMISSION")
-              await page.click("#decommission > awsui-modal > div.awsui-modal-container > div > div > div.awsui-modal-footer.awsui-util-container-footer > span > span > awsui-button.ct-action-submit > button");
+              await page.waitFor(10000);
+              await page.click("#decommission > awsui-modal > div.awsui-modal-container > div > div > div.awsui-modal-footer.awsui-util-container-footer > span > span > awsui-button.ct-action-submit > button > span");
+              await page.waitFor(10000);
+              await page.click("#decommission > awsui-modal > div.awsui-modal-container > div > div > div.awsui-modal-footer.awsui-util-container-footer > span > span > awsui-button.ct-action-submit > button > span");
               await page.waitFor(10000);
             });
           };
