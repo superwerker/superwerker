@@ -125,6 +125,7 @@ Resources:
 
   SetupControlTowerArtifactLocation:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
 
   SetupControlTowerArtifactLocationPolicy:
     Type: AWS::S3::BucketPolicy
