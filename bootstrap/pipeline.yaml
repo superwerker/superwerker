@@ -77,6 +77,8 @@ Resources:
                 ProjectName: !Ref CodeBuildProject
               InputArtifacts:
                 - Name: SourceOutput
+              OutputArtifacts:
+                - Name: EmailRandomizer
               Name: RemoveControlTowerDecommissionFallout
               RunOrder: 1
 
@@ -105,14 +107,15 @@ Resources:
                 Version: '1'
               InputArtifacts:
                 - Name: SourceOutput
+                - Name: EmailRandomizer
               Configuration:
                 ActionMode: REPLACE_ON_FAILURE
                 RoleArn: !GetAtt BuildProjectRole.Arn
                 StackName: founopticum-00-control-tower
                 ParameterOverrides: |
                   {
-                    "LogArchiveAWSAccountEmail": "founopticum-aws-test+log-archive7@superluminar.io",
-                    "AuditAWSAccountEmail": "founopticum-aws-test+audit7@superluminar.io"
+                    "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
+                    "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]}
                   }
                 TemplatePath: SourceOutput::components/00-control-tower.yaml
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
@@ -161,6 +164,7 @@ Resources:
         BuildSpec: !Sub |
           version: 0.2
           env:
+            shell: bash
             parameter-store:
               ou_core: /founopticum/ou_core
               ou_custom: /founopticum/ou_custom
@@ -188,6 +192,12 @@ Resources:
 
                 - aws logs delete-log-group --log-group-name aws-controltower/CloudTrailLogs || true
 
+                - timestamp=$(date +%s)
+                - "printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'founopticum-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'founopticum-aws-test+%s@superluminar.io' audit$timestamp) > EmailRandomizer.json"
+          artifacts:
+            files:
+              - EmailRandomizer.json
+            name: EmailRandomizer
   BuildProjectRole:
     Type: AWS::IAM::Role
     DeletionPolicy: Retain
