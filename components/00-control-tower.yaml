@@ -180,6 +180,10 @@ Resources:
 
       Handler: index.handler
       Runtime: python3.7
+      Environment:
+        Variables:
+          SignalUrl: !Ref ControlTowerSetupLandingZoneHandle
+
       InlineCode: |-
         import boto3
 
@@ -201,6 +205,8 @@ Resources:
                   Type='String',
               )
 
+          # signal cloudformation stack that control tower setup is complete
+
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -210,3 +216,12 @@ Resources:
               Resource:
                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum*
 
+  ControlTowerSetupLandingZoneHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  ControlTowerSetupLandingZoneHandleWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: SetupControlTowerCanary
+    Properties:
+      Handle: !Ref ControlTowerSetupLandingZoneHandle
+      Timeout: 7200
