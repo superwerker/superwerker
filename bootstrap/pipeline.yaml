@@ -66,6 +66,21 @@ Resources:
                 Branch: !Ref BranchName
                 OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
                 PollForSourceChanges: false
+
+        - Name: DecomissionLandingZone
+          Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref DecomissionLandingZoneTrigger
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: DecomissionLandingZone
+              RunOrder: 1
+
         - Name: RemoveControlTowerDecommissionFallout
           Actions:
             - ActionTypeId:
@@ -236,6 +251,30 @@ Resources:
                 Resource:
                   - !Sub ${ArtifactStoreS3Location.Arn}
                   - !Sub ${ArtifactStoreS3Location.Arn}/*
+              - Action:
+                  - synthetics:StartCanary
+                Effect: Allow
+                Resource:
+                  - !Sub arn:${AWS::Partition}:synthetics:${AWS::Region}:${AWS::AccountId}:canary:${DecommissionLandingZoneCanary}
+
+  DecomissionLandingZoneTrigger:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt BuildProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                aws synthetics start-canary --name ${DecommissionLandingZoneCanary}
 
   WaitStateMachine:
     Type: AWS::Serverless::StateMachine
