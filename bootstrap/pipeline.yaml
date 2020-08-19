@@ -308,6 +308,7 @@ Resources:
                   StackName='AWSControlTowerBP-BASELINE-CLOUDTRAIL-MASTER'
               )
           except botocore.exceptions.ClientError as e:
+              # as soon as the stack is gone we assume Control Tower is decommissioned
               if e.response['Error']['Message'] == 'Stack with id AWSControlTowerBP-BASELINE-CLOUDTRAIL-MASTER does not exist':
                   return
               else:
