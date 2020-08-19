@@ -67,7 +67,7 @@ Resources:
                 OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
                 PollForSourceChanges: false
 
-        - Name: DecomissionLandingZone
+        - Name: InstallFounopticum
           Actions:
             - ActionTypeId:
                 Category: Build
@@ -80,6 +80,7 @@ Resources:
                 - Name: SourceOutput
               Name: DecomissionLandingZone
               RunOrder: 1
+
             - Name: WaitForDecommission
               ActionTypeId:
                 Category: Invoke
@@ -92,8 +93,6 @@ Resources:
                 - Name: SourceOutput
               RunOrder: 2
 
-        - Name: RemoveControlTowerDecommissionFallout
-          Actions:
             - ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -106,11 +105,10 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: RemoveControlTowerDecommissionFallout
-              RunOrder: 1
+              RunOrder: 3
 
-        - Name: RemoveFounopticum
-          Actions:
             - Name: RemoveControlTowerStack
+              RunOrder: 4
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -123,9 +121,8 @@ Resources:
                 RoleArn: !GetAtt BuildProjectRole.Arn
                 StackName: founopticum-00-control-tower
 
-        - Name: InstallFounopticum
-          Actions:
             - Name: CreateControlTowerStack
+              RunOrder: 5
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
