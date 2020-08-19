@@ -142,18 +142,6 @@ Resources:
                   }
                 TemplatePath: SourceOutput::components/00-control-tower.yaml
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
-
-#            - ActionTypeId:
-#                Category: Invoke
-#                Owner: AWS
-#                Provider: StepFunctions
-#                Version: "1"
-#              Configuration:
-#                StateMachineArn: !Ref WaitStateMachine
-#              InputArtifacts:
-#                - Name: SourceOutput
-#              Name: Wait60Minutes
-#              RunOrder: 2
       ArtifactStore:
         Type: S3
         Location: !Ref ArtifactStoreS3Location
