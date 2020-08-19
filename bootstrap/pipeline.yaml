@@ -80,6 +80,17 @@ Resources:
                 - Name: SourceOutput
               Name: DecomissionLandingZone
               RunOrder: 1
+            - Name: WaitForDecommission
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: StepFunctions
+                Version: "1"
+              Configuration:
+                StateMachineArn: !Ref WaitForDecommissionStateMachine
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 2
 
         - Name: RemoveControlTowerDecommissionFallout
           Actions:
@@ -276,19 +287,55 @@ Resources:
               commands:
                 aws synthetics start-canary --name ${DecommissionLandingZoneCanary}
 
-  WaitStateMachine:
+  WaitForDecommissionStateMachine:
     Type: AWS::Serverless::StateMachine
     Properties:
       Definition:
-        StartAt: Wait
+        StartAt: CheckDecommissionCompleted
         States:
-          Wait:
-            Type: Wait
-            Seconds: 3600
+          CheckDecommissionCompleted:
+            Type: Task
+            Resource: !GetAtt CheckDecommissionCompletedFunction.Arn
+            Retry: # check every 20 minutes for 2 hours
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 1200
+                MaxAttempts: 6
+                BackoffRate: 1
             End: true
       Policies:
-        - CloudWatchPutMetricPolicy: {}
-          
+        - LambdaInvokePolicy:
+            FunctionName: !Ref CheckDecommissionCompletedFunction
+
+  CheckDecommissionCompletedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      InlineCode: |-
+        import boto3
+        import botocore
+
+        cfn = boto3.client('cloudformation')
+        def handler(event, context):
+          try:
+              response = cfn.describe_stacks(
+                  StackName='AWSControlTowerBP-BASELINE-CLOUDTRAIL-MASTER'
+              )
+          except botocore.exceptions.ClientError as e:
+              if e.response['Error']['Message'] == 'Stack with id AWSControlTowerBP-BASELINE-CLOUDTRAIL-MASTER does not exist':
+                  return
+              else:
+                  raise e
+
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Action:
+                - cloudformation:DescribeStacks
+              Effect: Allow
+              Resource: '*'
+
   DecommissionLandingZoneCanary:
     Type: AWS::Synthetics::Canary
     Properties:
