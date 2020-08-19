@@ -182,7 +182,7 @@ Resources:
       Runtime: python3.7
       Environment:
         Variables:
-          SignalUrl: !Ref ControlTowerSetupLandingZoneHandle
+          SIGNAL_URL: !Ref ControlTowerSetupLandingZoneHandle
 
       InlineCode: |-
         import boto3
@@ -206,6 +206,19 @@ Resources:
               )
 
           # signal cloudformation stack that control tower setup is complete
+          import urllib3
+          import os
+          import json
+
+          encoded_body = json.dumps({
+              "Status": "SUCCESS",
+              "Reason": "Control Tower Setup completed",
+              "UniqueId": "doesthisreallyhavetobeunique",
+              "Data": "Control Tower Setup completed"
+          })
+
+          http = urllib3.PoolManager()
+          http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
 
       Policies:
         - Version: 2012-10-17
