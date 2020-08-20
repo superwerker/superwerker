@@ -304,9 +304,11 @@ Resources:
         cfn = boto3.client('cloudformation')
         def handler(event, context):
           try:
-              response = cfn.describe_stacks(
+              cfn.describe_stacks(
                   StackName='AWSControlTowerBP-BASELINE-CLOUDTRAIL-MASTER'
               )
+              raise Exception("Control Tower still commissioned")
+
           except botocore.exceptions.ClientError as e:
               # as soon as the stack is gone we assume Control Tower is decommissioned
               if e.response['Error']['Message'] == 'Stack with id AWSControlTowerBP-BASELINE-CLOUDTRAIL-MASTER does not exist':
