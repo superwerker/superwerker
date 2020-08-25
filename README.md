@@ -4,17 +4,14 @@ A well-architected, secure, compliant, and maintained AWS Baseline ("Landing Zon
 
 ## What's included in the setup?
 
-Founopticum provisions and maintains the following AWS 
+Founopticum provisions and maintains the following AWS services features:
 
 - AWS Control Tower / AWS SSO
 - AWS Config Rules in all given Regions
 - GuardDuty in all Regions (Delegated Administrator into Audit Account)
 - Security Hub (Delegated Administrator into Audit Account) 
-- IAM Access Advisor (Delegated Administrator into Audit Account)
 - Region Restriction Service Control Policy
-- Trusted Advisor Notifications
-- AWS Backup
-
+- and more to come / to be discussed
 
 ## FAQ
 
