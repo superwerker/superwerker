@@ -34,12 +34,20 @@ Founopticum runs in your own AWS account. You can install it via CloudFormation 
 
 Either manually by updating the CloudFormation template or via AWS Service Catalog. 
 
+### Which AWS regions are supported?
+
+Since Founopticum builds upon AWS Control Tower, it supports the same regions which Control Tower supports.
+
 ### Why not use ...
 
  - Control Tower
  - AWS Landing Zone
  - My homegrown solution?
- 
+
+Here is the feature matrix:
+
+TBD
+
 ## Thanks
 
  - Ian McKay and his AWS Account Controller
