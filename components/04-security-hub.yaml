@@ -2,16 +2,14 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up SecurityHub with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
 
-# TODO: the parameters don't have to be passed when set up via control tower event. Control Tower event has all the information needed
 Parameters:
   AuditAWSAccountId:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /founopticum/account_id_audit
   LogArchiveAWSAccountId:
-    Type: String
-  LogArchiveAWSAccountEmail:
-    Type: String
-  MasterAWSAccountEmail:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /founopticum/account_id_logarchive
+
 Resources:
 
 #  SetupLandingZoneTrigger:
@@ -76,8 +74,6 @@ Resources:
               RuntimeParameters:
                 MemberAWSAccountId:
                   - !Ref LogArchiveAWSAccountId
-                MemberAWSAccountEmail:
-                  - !Ref LogArchiveAWSAccountEmail
 #          - name: EnableSecurityHubMemberInOrgMasterAccount
 
   CreateLandingZoneEnableSecurityHubRole:
@@ -114,8 +110,6 @@ Resources:
         parameters:
           MemberAWSAccountId:
             type: String
-          MemberAWSAccountEmail:
-            type: String
         mainSteps:
           - name: EnableSecurityHubInOrgAccount
             action: aws:executeAutomation
@@ -124,6 +118,15 @@ Resources:
               RuntimeParameters:
                 AWSAccountId:
                   - '{{ MemberAWSAccountId }}'
+          - name: MemberAccount
+            action: aws:executeAwsApi
+            inputs:
+              Service: organizations
+              Api: DescribeAccount
+              AccountId: '{{ MemberAWSAccountId }}'
+            outputs:
+              - Name: EmailAddress
+                Selector: $.Account.Email
           - name: InviteSecurityHubMember
             action: aws:executeAwsApi
             inputs:
@@ -134,7 +137,7 @@ Resources:
                 MemberAWSAccountId:
                   - '{{ MemberAWSAccountId }}'
                 MemberAWSAccountEmail:
-                  - '{{ MemberAWSAccountEmail }}'
+                  - '{{ MemberAccount.EmailAddress }}'
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
@@ -192,6 +195,12 @@ Resources:
               - Effect: Allow
                 Action: sts:AssumeRole
                 Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+        - PolicyName: Organizations
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: organizations:DescribeAccount
+                Resource: '*'
 
   InviteSecurityHubMember:
     Type: AWS::SSM::Document
