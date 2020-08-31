@@ -29,22 +29,7 @@ Resources:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
 
-  PipelineWebhook:
-    Type: AWS::CodePipeline::Webhook
-    Properties:
-      Authentication: GITHUB_HMAC
-      AuthenticationConfiguration:
-        SecretToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
-      Filters:
-        - JsonPath: '$.ref'
-          MatchEquals: refs/heads/{Branch}
-      TargetPipeline: !Ref Pipeline
-      TargetAction: SourceAction
-      Name: !Sub ${AWS::StackName}-PipelineWebhook
-      TargetPipelineVersion: !GetAtt Pipeline.Version
-      RegisterWithThirdParty: true
-
-  Pipeline:
+  ContolTowerPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
       RoleArn: !GetAtt PipelineServiceRole.Arn
@@ -445,3 +430,74 @@ Resources:
                   - s3:GetBucketLocation
                   - cloudwatch:PutMetricData
                 Resource: '*'
+
+  FounopticumUpdatePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipelineServiceRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              RunOrder: 1
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref RepositoryName
+                Branch: !Ref BranchName
+                OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
+                PollForSourceChanges: false
+
+        - Name: UpdateControlTowerStack
+          Actions:
+            - Name: UpdateControlTowerStack
+              RunOrder: 1
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ActionMode: REPLACE_ON_FAILURE
+                RoleArn: !GetAtt BuildProjectRole.Arn
+                StackName: founopticum-00-control-tower
+                TemplatePath: SourceOutput::components/00-control-tower.yaml
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+      ArtifactStore:
+        Type: S3
+        Location: !Ref FounopticumUpdatePipelineArtifactStore
+
+  FounopticumUpdatePipelineWebhook:
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
+      Filters:
+        - JsonPath: '$.ref'
+          MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref FounopticumUpdatePipeline
+      TargetAction: SourceAction
+      Name: !Sub ${AWS::StackName}-FounopticumUpdatePipelineWebhook
+      TargetPipelineVersion: !GetAtt FounopticumUpdatePipeline.Version
+      RegisterWithThirdParty: true
+
+  FounopticumUpdatePipelineArtifactStore:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 14
+            Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          -  ServerSideEncryptionByDefault:
+               SSEAlgorithm: AES256
