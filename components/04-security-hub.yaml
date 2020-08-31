@@ -161,6 +161,35 @@ Resources:
               PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
               DesiredValues:
                 - Success
+          - name: AcceptInvitation
+            action: aws:executeAwsApi
+            inputs:
+              Service: ssm
+              Api: StartAutomationExecution
+              DocumentName: !Ref AcceptSecurityHubInvitation
+              TargetLocations:
+                - ExecutionRoleName: AWSControlTowerExecution
+                  Accounts:
+                    - '{{ MemberAWSAccountId }}'
+                  Regions:
+                    - !Ref AWS::Region
+            outputs:
+              - Name: AutomationExecutionId
+                Selector: $.AutomationExecutionId
+            nextStep: WaitForAcceptSecurityHubMember
+          - name: WaitForAcceptSecurityHubMember
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: ssm
+              Api: DescribeAutomationExecutions
+              Filters:
+                - Key: ExecutionId
+                  Values:
+                    - '{{ AcceptInvitation.AutomationExecutionId }}'
+              PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
+              DesiredValues:
+                - Success
 
   EnableSecurityHubInOrgAccountAndAddAsMemberRole:
     Type: AWS::IAM::Role
@@ -181,6 +210,7 @@ Resources:
                 Resource:
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${InviteSecurityHubMember}:*
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${AcceptSecurityHubInvitation}:*
         - PolicyName: AllowDescribeSsmAutomationExecutionStatus
           PolicyDocument:
             Statement:
@@ -226,10 +256,34 @@ Resources:
             action: aws:executeAwsApi
             inputs:
               Service: securityhub
-              Api: CreateMembers
+              Api: InviteMembers
               AccountIds:
                 - '{{ MemberAWSAccountId }}'
 
+  AcceptSecurityHubInvitation:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        mainSteps:
+          - name: Invitation
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: ListInvitations
+            outputs:
+              - Name: InvitationId
+                Selector: $.Invitations[0].InvitationId
+              - Name: AccountId
+                Selector: $.Invitations[0].AccountId
+          - name: AcceptInvitation
+            action: aws:executeAwsApi
+            inputs:
+              Service: securityhub
+              Api: AcceptInvitation
+              InvitationId: '{{ Invitation.InvitationId }}'
+              MasterId: '{{ Invitation.AccountId }}'
 
   EnableSecurityHubInOrgAccount:
     Type: AWS::SSM::Document
