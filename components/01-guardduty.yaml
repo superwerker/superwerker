@@ -2,16 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up GuardDuty with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
 
-# TODO: the parameters don't have to be passed when set up via control tower event. Control Tower event has all the information needed
 Parameters:
   AuditAWSAccountId:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /founopticum/account_id_audit
   LogArchiveAWSAccountId:
-    Type: String
-  LogArchiveAWSAccountEmail:
-    Type: String
-  MasterAWSAccountEmail:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /founopticum/account_id_logarchive
 Resources:
 
   SetupLandingZoneTrigger:
@@ -108,12 +105,8 @@ Resources:
               Parameters:
                 LogArchiveAWSAccountId:
                   - !Ref LogArchiveAWSAccountId
-                LogArchiveAWSAccountEmail:
-                  - !Ref LogArchiveAWSAccountEmail
                 MasterAWSAccountId:
                   - !Ref AWS::AccountId
-                MasterAWSAccountEmail:
-                  - !Ref MasterAWSAccountEmail
             outputs:
               - Name: AutomationExecutionId
                 Selector: $.AutomationExecutionId
@@ -180,11 +173,7 @@ Resources:
         parameters:
           LogArchiveAWSAccountId:
             type: String
-          LogArchiveAWSAccountEmail:
-            type: String
           MasterAWSAccountId:
-            type: String
-          MasterAWSAccountEmail:
             type: String
         mainSteps:
           - name: GetDetectorId
@@ -195,7 +184,24 @@ Resources:
             outputs:
               - Name: DetectorId
                 Selector: $.DetectorIds[0]
-            nextStep: CreateMembers
+          - name: MasterAWSAccount
+            action: aws:executeAwsApi
+            inputs:
+              Service: organizations
+              Api: DescribeAccount
+              AccountId: '{{ MasterAWSAccountId }}'
+            outputs:
+              - Name: EmailAddress
+                Selector: $.Account.Email
+          - name: LogArchiveAWSAccount
+            action: aws:executeAwsApi
+            inputs:
+              Service: organizations
+              Api: DescribeAccount
+              AccountId: '{{ LogArchiveAWSAccountId }}'
+            outputs:
+              - Name: EmailAddress
+                Selector: $.Account.Email
           - name: CreateMembers
             action: aws:executeAwsApi
             inputs:
@@ -204,10 +210,9 @@ Resources:
               DetectorId: '{{ GetDetectorId.DetectorId }}'
               AccountDetails:
                 - AccountId: '{{ MasterAWSAccountId }}'
-                  Email: '{{ MasterAWSAccountEmail }}'
+                  Email: '{{ MasterAWSAccount.EmailAddress }}'
                 - AccountId: '{{ LogArchiveAWSAccountId }}'
-                  Email: '{{ LogArchiveAWSAccountEmail }}'
-            nextStep: EnableGuardDutyExistingAccounts
+                  Email: '{{ LogArchiveAWSAccount.EmailAddress }}'
           - name: EnableGuardDutyExistingAccounts
             action: aws:executeAwsApi
             inputs:
