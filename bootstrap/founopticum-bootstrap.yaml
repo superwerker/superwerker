@@ -17,7 +17,7 @@ Parameters:
 
 Resources:
 
-  ArtifactStoreS3Location:
+  CleanupPipelineArtifactStore:
     Type: AWS::S3::Bucket
     Properties:
       LifecycleConfiguration:
@@ -29,10 +29,10 @@ Resources:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
 
-  ContolTowerPipeline:
+  CleanupPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      RoleArn: !GetAtt PipelineServiceRole.Arn
+      RoleArn: !GetAtt CleanupPipelineServiceRole.Arn
       Stages:
         - Name: Source
           Actions:
@@ -84,7 +84,7 @@ Resources:
                 Provider: CodeBuild
                 Version: "1"
               Configuration:
-                ProjectName: !Ref CodeBuildProject
+                ProjectName: !Ref CleanupBuildProject
               InputArtifacts:
                 - Name: SourceOutput
               OutputArtifacts:
@@ -103,35 +103,14 @@ Resources:
                 - Name: SourceOutput
               Configuration:
                 ActionMode: DELETE_ONLY
-                RoleArn: !GetAtt BuildProjectRole.Arn
+                RoleArn: !GetAtt CleanupBuildProjectRole.Arn
                 StackName: founopticum-00-control-tower
 
-            - Name: CreateControlTowerStack
-              RunOrder: 5
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-                - Name: EmailRandomizer
-              Configuration:
-                ActionMode: REPLACE_ON_FAILURE
-                RoleArn: !GetAtt BuildProjectRole.Arn
-                StackName: founopticum-00-control-tower
-                ParameterOverrides: |
-                  {
-                    "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
-                    "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]}
-                  }
-                TemplatePath: SourceOutput::components/00-control-tower.yaml
-                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
       ArtifactStore:
         Type: S3
-        Location: !Ref ArtifactStoreS3Location
+        Location: !Ref CleanupPipelineArtifactStore
 
-  PipelineServiceRole:
+  CleanupPipelineServiceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -144,15 +123,14 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
-  CodeBuildProject:
+  CleanupBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${AWS::StackName}-buildproject
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
         Type: LINUX_CONTAINER
-      ServiceRole: !GetAtt BuildProjectRole.Arn
+      ServiceRole: !GetAtt CleanupBuildProjectRole.Arn
       Artifacts:
         Type: CODEPIPELINE
       Source:
@@ -194,7 +172,8 @@ Resources:
             files:
               - EmailRandomizer.json
             name: EmailRandomizer
-  BuildProjectRole:
+
+  CleanupBuildProjectRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -229,8 +208,8 @@ Resources:
                   - s3:Abort*
                 Effect: Allow
                 Resource:
-                  - !Sub ${ArtifactStoreS3Location.Arn}
-                  - !Sub ${ArtifactStoreS3Location.Arn}/*
+                  - !Sub ${DecommissionLandingZoneArtifactLocation.Arn}
+                  - !Sub ${DecommissionLandingZoneArtifactLocation.Arn}/*
               - Action:
                   - synthetics:StartCanary
                 Effect: Allow
@@ -244,7 +223,7 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
         Type: LINUX_CONTAINER
-      ServiceRole: !GetAtt BuildProjectRole.Arn
+      ServiceRole: !GetAtt CleanupBuildProjectRole.Arn
       Artifacts:
         Type: CODEPIPELINE
       Source:
@@ -431,10 +410,10 @@ Resources:
                   - cloudwatch:PutMetricData
                 Resource: '*'
 
-  FounopticumUpdatePipeline:
+  FounopticumBootstrapPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      RoleArn: !GetAtt PipelineServiceRole.Arn
+      RoleArn: !GetAtt FounopticumBootstrapPipelineRole.Arn
       Stages:
         - Name: Source
           Actions:
@@ -467,13 +446,25 @@ Resources:
                 - Name: SourceOutput
               Configuration:
                 ActionMode: REPLACE_ON_FAILURE
-                RoleArn: !GetAtt BuildProjectRole.Arn
                 StackName: founopticum-00-control-tower
                 TemplatePath: SourceOutput::components/00-control-tower.yaml
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
       ArtifactStore:
         Type: S3
         Location: !Ref FounopticumUpdatePipelineArtifactStore
+
+  FounopticumBootstrapPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
   FounopticumUpdatePipelineWebhook:
     Type: AWS::CodePipeline::Webhook
@@ -484,10 +475,10 @@ Resources:
       Filters:
         - JsonPath: '$.ref'
           MatchEquals: refs/heads/{Branch}
-      TargetPipeline: !Ref FounopticumUpdatePipeline
+      TargetPipeline: !Ref FounopticumBootstrapPipeline
       TargetAction: SourceAction
       Name: !Sub ${AWS::StackName}-FounopticumUpdatePipelineWebhook
-      TargetPipelineVersion: !GetAtt FounopticumUpdatePipeline.Version
+      TargetPipelineVersion: !GetAtt FounopticumBootstrapPipeline.Version
       RegisterWithThirdParty: true
 
   FounopticumUpdatePipelineArtifactStore:
@@ -501,3 +492,6 @@ Resources:
         ServerSideEncryptionConfiguration:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
+
+#  FounopticumTestBucket:
+#    Type: AWS::S3::Bucket
