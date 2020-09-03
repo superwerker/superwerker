@@ -159,7 +159,7 @@ Resources:
                 - aws guardduty disable-organization-admin-account --admin-account-id $(aws guardduty list-organization-admin-accounts --query 'AdminAccounts[0].AdminAccountId' --output text) || true
                 - aws organizations deregister-delegated-administrator --account-id "$(aws organizations list-delegated-administrators --query 'DelegatedAdministrators[0].Id' --output text)" --service-principal guardduty.amazonaws.com || true
                 # delete detector in master account
-                aws guardduty delete-detector --detector-id $(aws guardduty list-detectors --query 'DetectorIds[0]' --output text) || true
+                - aws guardduty delete-detector --detector-id $(aws guardduty list-detectors --query 'DetectorIds[0]' --output text) || true
 
   EmailRandomizer:
     Type: AWS::CodeBuild::Project
