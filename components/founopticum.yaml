@@ -16,3 +16,7 @@ Resources:
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/01-guardduty.yaml
 
+  SecurityHub:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/04-security-hub.yaml
