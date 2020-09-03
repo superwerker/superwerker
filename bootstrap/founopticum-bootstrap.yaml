@@ -42,8 +42,22 @@ Resources:
 
         - Name: UpdateControlTowerStack
           Actions:
-            - Name: UpdateControlTowerStack
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref EmailRandomizer
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: EmailRandomizer
+              Name: EmailRandomizer
               RunOrder: 1
+
+            - Name: UpdateControlTowerStack
+              RunOrder: 2
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -51,10 +65,18 @@ Resources:
                 Version: '1'
               InputArtifacts:
                 - Name: SourceOutput
+                - Name: EmailRandomizer
               Configuration:
+                RoleArn: !GetAtt CloudFormationRole.Arn
                 ActionMode: REPLACE_ON_FAILURE
                 StackName: founopticum-00-control-tower
                 TemplatePath: SourceOutput::components/00-control-tower.yaml
+                ParameterOverrides: |
+                  {
+                    "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
+                    "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]}
+                  }
+
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
       ArtifactStore:
         Type: S3
@@ -100,5 +122,66 @@ Resources:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
 
-#  FounopticumTestBucket:
-#    Type: AWS::S3::Bucket
+  EmailRandomizer:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt EmailRandomizerRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          env:
+            shell: bash
+            parameter-store:
+              ou_core: /founopticum/ou_core
+              ou_custom: /founopticum/ou_custom
+              ou_graveyard: /founopticum_bootstrap/ou_graveyard
+              account_id_logarchive: /founopticum/account_id_logarchive
+              account_id_audit: /founopticum/account_id_audit
+          phases:
+            build:
+              commands:
+                - timestamp=$(date +%s)
+                # write random email adresses in case it's not in the parameter store
+                - "aws ssm get-parameter --name /founopticum_bootstrap/email_adresses || (printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'founopticum-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'founopticum-aws-test+%s@superluminar.io' audit$timestamp) > /tmp/EmailRandomizerTemp.json &&  aws ssm put-parameter --name /founopticum_bootstrap/email_adresses --type String --value file:///tmp/EmailRandomizerTemp.json --no-overwrite)"
+                # get the parameter value and write the artifact each time for the next pipeline step (CloudFormation)
+                - aws ssm get-parameter --name /founopticum_bootstrap/email_adresses --query Parameter.Value --output text > EmailRandomizer.json
+          artifacts:
+            files:
+              - EmailRandomizer.json
+            name: EmailRandomizer
+
+  EmailRandomizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+              - cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege

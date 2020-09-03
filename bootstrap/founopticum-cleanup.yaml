@@ -87,8 +87,6 @@ Resources:
                 ProjectName: !Ref CleanupBuildProject
               InputArtifacts:
                 - Name: SourceOutput
-              OutputArtifacts:
-                - Name: EmailRandomizer
               Name: RemoveControlTowerDecommissionFallout
               RunOrder: 3
 
@@ -165,13 +163,6 @@ Resources:
                 - aws organizations delete-organizational-unit --organizational-unit-id $ou_custom || true
 
                 - aws logs delete-log-group --log-group-name aws-controltower/CloudTrailLogs || true
-
-                - timestamp=$(date +%s)
-                - "printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'founopticum-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'founopticum-aws-test+%s@superluminar.io' audit$timestamp) > EmailRandomizer.json"
-          artifacts:
-            files:
-              - EmailRandomizer.json
-            name: EmailRandomizer
 
   CleanupBuildProjectRole:
     Type: AWS::IAM::Role
