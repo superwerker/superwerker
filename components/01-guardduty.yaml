@@ -12,6 +12,7 @@ Resources:
           - AWS Service Event via CloudTrail
         source:
           - aws.controltower
+          - founopticum.test
         detail:
           serviceEventDetails:
             createManagedAccountStatus:
