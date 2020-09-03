@@ -54,6 +54,21 @@ Resources:
               Name: Cleanup
               RunOrder: 1
 
+        - Name: DeployCfnTempatles
+          Actions:
+            - ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: S3
+                Version: "1"
+              Configuration:
+                BucketName: !Ref DeploymentBucket
+                Extract: true
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: DeployCfnTempatles
+              RunOrder: 1
+
         - Name: UpdateControlTowerStack
           Actions:
             - ActionTypeId:
@@ -135,6 +150,9 @@ Resources:
         ServerSideEncryptionConfiguration:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
+
+  DeploymentBucket:
+    Type: AWS::S3::Bucket
 
   Cleanup:
     Type: AWS::CodeBuild::Project
