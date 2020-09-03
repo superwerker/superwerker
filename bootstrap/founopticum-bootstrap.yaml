@@ -103,6 +103,31 @@ Resources:
                   }
 
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+
+            - Name: InstallFounopticum
+              RunOrder: 5
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+                - Name: EmailRandomizer
+              Configuration:
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                ActionMode: REPLACE_ON_FAILURE
+                StackName: founopticum
+                TemplatePath: SourceOutput::components/founopticum.yaml
+                ParameterOverrides: !Sub |
+                  {
+                    "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
+                    "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]},
+                    "TemplateUrlPrefix": "https://${DeploymentBucket.DomainName}"
+                  }
+
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+
       ArtifactStore:
         Type: S3
         Location: !Ref FounopticumUpdatePipelineArtifactStore
