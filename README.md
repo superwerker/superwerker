@@ -7,7 +7,6 @@ A well-architected, secure, compliant, and maintained AWS Baseline ("Landing Zon
 Founopticum provisions and maintains the following AWS services features:
 
 - AWS Control Tower / AWS SSO
-- AWS Config Rules in all given Regions
 - GuardDuty in all Regions (Delegated Administrator into Audit Account)
 - Security Hub (Delegated Administrator into Audit Account) 
 - Region Restriction Service Control Policy
