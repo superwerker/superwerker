@@ -2,55 +2,68 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up SecurityHub with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
 
-Parameters:
-  AuditAWSAccountId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /founopticum/account_id_audit
-  LogArchiveAWSAccountId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /founopticum/account_id_logarchive
-
 Resources:
 
-#  SetupLandingZoneTrigger:
-#    Type: AWS::Events::Rule
-#    Properties:
-#      EventPattern:
-#        detail-type:
-#          - AWS Service Event via CloudTrail
-#        source:
-#          - aws.controltower
-#        detail:
-#          serviceEventDetails:
-#            createManagedAccountStatus:
-#              state:
-#                - SUCCEEDED
-#          eventName:
-#            - SetupLandingZone
-#      State: ENABLED
-#      Targets:
-#        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubOrganizations}
-#          Id: EnableSecurityHubOrganizations
-#          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+  SetupLandingZoneTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        detail-type:
+          - AWS Service Event via CloudTrail
+        source:
+          - aws.controltower
+        detail:
+          serviceEventDetails:
+            setupLandingZoneStatus:
+              state:
+                - SUCCEEDED
+          eventName:
+            - SetupLandingZone
+      State: ENABLED
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${CreateLandingZoneEnableSecurityHub}
+          Id: EnableSecurityHubOrganizations
+          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
 
-#  SSMAutomationExecutionRoleforCWEvents:
-#    Type: AWS::IAM::Role
-#    Properties:
-#      AssumeRolePolicyDocument:
-#        Version: 2012-10-17
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              Service: events.amazonaws.com
-#            Action: sts:AssumeRole
-#      Policies:
-#        - PolicyName: AllowStartAutomationExecution
-#          PolicyDocument:
-#            Statement:
-#              - Effect: Allow
-#                Action:
-#                  - ssm:StartAutomationExecution
-#                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubOrganizations}:*
+  UpdateLandingZoneTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        detail-type:
+          - AWS Service Event via CloudTrail
+        source:
+          - aws.controltower
+        detail:
+          serviceEventDetails:
+            updateLandingZoneStatus:
+              state:
+                - SUCCEEDED
+          eventName:
+            - UpdateLandingZone
+      State: ENABLED
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${CreateLandingZoneEnableSecurityHub}
+          Id: EnableSecurityHubOrganizations
+          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+
+  SSMAutomationExecutionRoleforCWEvents:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartAutomationExecution
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:StartAutomationExecution
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${CreateLandingZoneEnableSecurityHub}:*
 
   CreateLandingZoneEnableSecurityHub:
     Type: AWS::SSM::Document
@@ -59,6 +72,13 @@ Resources:
       Content:
         schemaVersion: '0.3'
         assumeRole: !GetAtt CreateLandingZoneEnableSecurityHubRole.Arn
+        parameters:
+          AuditAccountId:
+            type: String
+            default: '{{ssm:/founopticum/account_id_audit}}'
+          LogArchiveAccountId:
+            type: String
+            default: '{{ssm:/founopticum/account_id_logarchive}}'
         mainSteps:
           - name: EnableSecurityHubInAuditAccount
             action: aws:executeAutomation
@@ -66,14 +86,14 @@ Resources:
               DocumentName: !Ref EnableSecurityHubInOrgAccount
               RuntimeParameters:
                 AWSAccountId:
-                  - !Ref AuditAWSAccountId
+                  - '{{ AuditAccountId }}'
           - name: EnableSecurityHubMemberInOrgLogArchiveAccount
             action: aws:executeAutomation
             inputs:
               DocumentName: !Ref EnableSecurityHubInOrgAccountAndAddAsMember
               RuntimeParameters:
                 MemberAWSAccountId:
-                  - !Ref LogArchiveAWSAccountId
+                  - '{{ LogArchiveAccountId }}'
 #          - name: EnableSecurityHubMemberInOrgMasterAccount
 
   CreateLandingZoneEnableSecurityHubRole:
@@ -99,7 +119,12 @@ Resources:
                 Action:
                   - ssm:GetAutomationExecution
                 Resource: '*'
-
+        - PolicyName: SSMParameters
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum/*
   EnableSecurityHubInOrgAccountAndAddAsMember:
     Type: AWS::SSM::Document
     Properties:
@@ -110,6 +135,9 @@ Resources:
         parameters:
           MemberAWSAccountId:
             type: String
+          AuditAccountId:
+            type: String
+            default: '{{ssm:/founopticum/account_id_audit}}'
         mainSteps:
           - name: EnableSecurityHubInOrgAccount
             action: aws:executeAutomation
@@ -141,7 +169,7 @@ Resources:
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
-                    - !Ref AuditAWSAccountId
+                    - '{{ AuditAccountId }}'
                   Regions:
                     - !Ref AWS::Region
             outputs:
@@ -231,6 +259,12 @@ Resources:
               - Effect: Allow
                 Action: organizations:DescribeAccount
                 Resource: '*'
+        - PolicyName: SSMParameters
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum/*
 
   InviteSecurityHubMember:
     Type: AWS::SSM::Document
