@@ -40,7 +40,7 @@ Resources:
                 OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
                 PollForSourceChanges: false
 
-        - Name: Cleanup
+        - Name: DeployAndTestFounopticum
           Actions:
             - ActionTypeId:
                 Category: Build
@@ -54,8 +54,6 @@ Resources:
               Name: Cleanup
               RunOrder: 1
 
-        - Name: DeployCfnTempatles
-          Actions:
             - ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -67,10 +65,8 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 1
+              RunOrder: 2
 
-        - Name: UpdateControlTowerStack
-          Actions:
             - ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -83,10 +79,10 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
-              RunOrder: 1
+              RunOrder: 3
 
             - Name: UpdateControlTowerStack
-              RunOrder: 2
+              RunOrder: 4
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
