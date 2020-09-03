@@ -161,7 +161,6 @@ Resources:
           Principal:
             Service:
               - codebuild.amazonaws.com
-              - cloudformation.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
