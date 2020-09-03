@@ -40,6 +40,20 @@ Resources:
                 OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
                 PollForSourceChanges: false
 
+        - Name: Cleanup
+          Actions:
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref Cleanup
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: Cleanup
+              RunOrder: 1
+
         - Name: UpdateControlTowerStack
           Actions:
             - ActionTypeId:
@@ -121,6 +135,31 @@ Resources:
         ServerSideEncryptionConfiguration:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
+
+  Cleanup:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt EmailRandomizerRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            build:
+              commands:
+                # remove guardduty admin delegation
+                - aws guardduty disable-organization-admin-account --admin-account-id $(aws guardduty list-organization-admin-accounts --query 'AdminAccounts[0].AdminAccountId' --output text) || true
+                - aws organizations deregister-delegated-administrator --account-id "$(aws organizations list-delegated-administrators --query 'DelegatedAdministrators[0].Id' --output text)" --service-principal guardduty.amazonaws.com || true
+                # delete detector in master account
+                aws guardduty delete-detector --detector-id $(aws guardduty list-detectors --query 'DetectorIds[0]' --output text) || true
 
   EmailRandomizer:
     Type: AWS::CodeBuild::Project
