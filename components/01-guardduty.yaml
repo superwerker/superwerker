@@ -15,7 +15,7 @@ Resources:
           - founopticum.test # allows testing the trigger
         detail:
           serviceEventDetails:
-            createManagedAccountStatus:
+            setupLandingZoneStatus:
               state:
                 - SUCCEEDED
           eventName:
