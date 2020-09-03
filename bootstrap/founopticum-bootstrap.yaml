@@ -138,12 +138,6 @@ Resources:
           version: 0.2
           env:
             shell: bash
-            parameter-store:
-              ou_core: /founopticum/ou_core
-              ou_custom: /founopticum/ou_custom
-              ou_graveyard: /founopticum_bootstrap/ou_graveyard
-              account_id_logarchive: /founopticum/account_id_logarchive
-              account_id_audit: /founopticum/account_id_audit
           phases:
             build:
               commands:
