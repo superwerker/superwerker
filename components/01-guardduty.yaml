@@ -2,13 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up GuardDuty with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
 
-Parameters:
-  AuditAWSAccountId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /founopticum/account_id_audit
-  LogArchiveAWSAccountId:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /founopticum/account_id_logarchive
 Resources:
 
   SetupLandingZoneTrigger:
@@ -58,6 +51,13 @@ Resources:
       Content:
         schemaVersion: '0.3'
         assumeRole: !GetAtt EnableGuardDutyOrganizationsRole.Arn
+        parameters:
+          AuditAccountId:
+            type: String
+            default: '{{ssm:/founopticum/account_id_audit}}'
+          LogArchiveAccountId:
+            type: String
+            default: '{{ssm:/founopticum/account_id_logarchive}}'
         mainSteps:
           - name: CheckIfOrganizationAdminAccountIsAlReadyRegistered
             action: aws:executeAwsApi
@@ -74,14 +74,14 @@ Resources:
               Choices:
                 - NextStep: EnableGuardDutyInMaster
                   Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}'
-                  StringEquals: !Ref AuditAWSAccountId
+                  StringEquals: '{{ AuditAccountId }}'
               Default: EnableOrganizationAdminAccount
           - name: EnableOrganizationAdminAccount
             action: aws:executeAwsApi
             inputs:
               Service: guardduty
               Api: EnableOrganizationAdminAccount
-              AdminAccountId: !Ref AuditAWSAccountId
+              AdminAccountId: '{{ AuditAccountId }}'
             nextStep: EnableGuardDutyInMaster
           - name: EnableGuardDutyInMaster
             action: aws:executeAwsApi
@@ -99,12 +99,12 @@ Resources:
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
-                    - !Ref AuditAWSAccountId
+                    - '{{ AuditAccountId }}'
                   Regions:
                     - !Ref AWS::Region
               Parameters:
                 LogArchiveAWSAccountId:
-                  - !Ref LogArchiveAWSAccountId
+                  - '{{ LogArchiveAccountId }}'
                 MasterAWSAccountId:
                   - !Ref AWS::AccountId
             outputs:
@@ -163,6 +163,12 @@ Resources:
               - Effect: Allow
                 Action: sts:AssumeRole
                 Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+        - PolicyName: SSMParameters
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:GetParameters
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum/*
 
   EnableGuardDutyExistingAccounts:
     Type: AWS::SSM::Document
