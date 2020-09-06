@@ -66,6 +66,8 @@ class MyTestCase(unittest.TestCase):
 
         sleep(5) # give it some time to trigger the event
 
+    @classmethod
+    def waitForSSMExecutionsToHaveFinished(cls):
         while True:
             running_executions = ssm.describe_automation_executions(
                 Filters=[
@@ -91,6 +93,7 @@ class MyTestCase(unittest.TestCase):
     def test_guardduty_should_be_set_up_with_clean_state(self):
         self.cleanUpGuardDuty()
         self.triggerGuardDutySetup()
+        self.waitForSSMExecutionsToHaveFinished()
 
         # check if audit account has become the master
         audit_account_creds = sts.assume_role(
