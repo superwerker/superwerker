@@ -96,15 +96,7 @@ class MyTestCase(unittest.TestCase):
         self.waitForSSMExecutionsToHaveFinished()
 
         # check if audit account has become the master
-        audit_account_creds = sts.assume_role(
-            RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(self.audit_account_id),
-            RoleSessionName='founopticumtest'
-        )['Credentials']
-        audit_account = boto3.session.Session(
-            aws_access_key_id=audit_account_creds['AccessKeyId'],
-            aws_secret_access_key=audit_account_creds['SecretAccessKey'],
-            aws_session_token=audit_account_creds['SessionToken']
-        )
+        audit_account = self.control_tower_exection_role_session(account_id=self.audit_account_id)
 
         guardduty_audit_account = audit_account.client('guardduty')
 
@@ -125,3 +117,22 @@ class MyTestCase(unittest.TestCase):
 
     # def test_guardduty_setup_should_be_idempotent(self):
     #     pass
+
+    def test_security_hub_is_enabled_in_audit_and_has_members(self):
+        audit_account = self.control_tower_exection_role_session(self.audit_account_id)
+        security_hub_audit = audit_account.client('securityhub')
+        log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
+        security_hub_log_archive = log_archive_account.client('securityhub')
+
+        members_result = security_hub_audit.list_members()['Members']
+        members = [member['AccountId'] for member in members_result]
+        security_hub_audit.disassociate_members(AccountIds=members)
+        security_hub_audit.delete_members(AccountIds=members)
+
+        try:
+            security_hub_audit.disable_security_hub()
+            security_hub_log_archive.disable_security_hub()
+        except:
+            pass
+
+        self.triggerGuardDutySetup()
