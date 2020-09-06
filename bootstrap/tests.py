@@ -43,7 +43,7 @@ class MyTestCase(unittest.TestCase):
             guardduty.delete_detector(DetectorId=detectors[0])
 
     @classmethod
-    def triggerGuardDutySetup(cls):
+    def triggerSetupLandingZoneCWEvent(cls, trigger_name):
         # trigger SSM automation
         events.put_events(
             Entries=[
@@ -59,7 +59,7 @@ class MyTestCase(unittest.TestCase):
                         }
                     ),
                     'DetailType': 'AWS Service Event via CloudTrail',
-                    'Source': 'founopticum.test'
+                    'Source': trigger_name
                 }
             ]
         )
@@ -92,7 +92,7 @@ class MyTestCase(unittest.TestCase):
     @unittest.skip("wait until gd api works again")
     def test_guardduty_should_be_set_up_with_clean_state(self):
         self.cleanUpGuardDuty()
-        self.triggerGuardDutySetup()
+        self.triggerSetupLandingZoneCWEvent('founopticum.test')
         self.waitForSSMExecutionsToHaveFinished()
 
         # check if audit account has become the master
@@ -112,8 +112,17 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(expected_members, actual_members)
 
-
-
+    def control_tower_exection_role_session(self, account_id):
+        audit_account_creds = sts.assume_role(
+            RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
+            RoleSessionName='founopticumtest'
+        )['Credentials']
+        audit_account = boto3.session.Session(
+            aws_access_key_id=audit_account_creds['AccessKeyId'],
+            aws_secret_access_key=audit_account_creds['SecretAccessKey'],
+            aws_session_token=audit_account_creds['SessionToken']
+        )
+        return audit_account
 
     # def test_guardduty_setup_should_be_idempotent(self):
     #     pass
