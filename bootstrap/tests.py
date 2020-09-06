@@ -135,15 +135,26 @@ class MyTestCase(unittest.TestCase):
         log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
         security_hub_log_archive = log_archive_account.client('securityhub')
 
+        self.cleanUpSecurityHub(security_hub_audit, security_hub_log_archive)
+        self.triggerSetupLandingZoneCWEvent('founopticum.security-hub-test')
+        self.waitForSSMExecutionsToHaveFinished('founopticum-SecurityHub')
+
+        members_result = security_hub_audit.list_members()['Members']
+        actual_members = [member['AccountId'] for member in members_result if member['MemberStatus'] == 'Associated']
+
+        expected_members = [
+            self.log_archive_account_id,
+        ]
+
+        self.assertEqual(expected_members, actual_members)
+
+    def cleanUpSecurityHub(self, security_hub_audit, security_hub_log_archive):
         members_result = security_hub_audit.list_members()['Members']
         members = [member['AccountId'] for member in members_result]
         security_hub_audit.disassociate_members(AccountIds=members)
         security_hub_audit.delete_members(AccountIds=members)
-
         try:
             security_hub_audit.disable_security_hub()
             security_hub_log_archive.disable_security_hub()
         except:
             pass
-
-        self.triggerGuardDutySetup()
