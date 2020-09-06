@@ -12,6 +12,7 @@ Resources:
           - AWS Service Event via CloudTrail
         source:
           - aws.controltower
+          - founopticum.security-hub-test
         detail:
           serviceEventDetails:
             setupLandingZoneStatus:
