@@ -128,6 +128,18 @@ Resources:
 
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref Test
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: Test
+              RunOrder: 6
+
       ArtifactStore:
         Type: S3
         Location: !Ref FounopticumUpdatePipelineArtifactStore
@@ -230,6 +242,46 @@ Resources:
             name: EmailRandomizer
 
   EmailRandomizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  Test:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt TestRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            install:
+              runtime-versions:
+                python: 3.x
+            build:
+              commands:
+                - cd bootstrap
+                - pip3 install -r requirements.txt
+                - python3 -munittest tests.py
+
+  TestRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
