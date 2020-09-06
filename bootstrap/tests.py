@@ -67,14 +67,14 @@ class MyTestCase(unittest.TestCase):
         sleep(5) # give it some time to trigger the event
 
     @classmethod
-    def waitForSSMExecutionsToHaveFinished(cls):
+    def waitForSSMExecutionsToHaveFinished(cls, document_name_prefix):
         while True:
             running_executions = ssm.describe_automation_executions(
                 Filters=[
                     {
                         'Key': 'DocumentNamePrefix',
                         'Values': [
-                            'founopticum-GuardDuty',
+                            document_name_prefix,
                         ]
                     },
                     {
@@ -93,7 +93,7 @@ class MyTestCase(unittest.TestCase):
     def test_guardduty_should_be_set_up_with_clean_state(self):
         self.cleanUpGuardDuty()
         self.triggerSetupLandingZoneCWEvent('founopticum.test')
-        self.waitForSSMExecutionsToHaveFinished()
+        self.waitForSSMExecutionsToHaveFinished('founopticum-GuardDuty')
 
         # check if audit account has become the master
         audit_account = self.control_tower_exection_role_session(account_id=self.audit_account_id)
