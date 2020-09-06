@@ -17,7 +17,7 @@ class MyTestCase(unittest.TestCase):
     master_account_id = sts.get_caller_identity()['Account']
 
     @classmethod
-    def setUpClass(cls):
+    def cleanUpGuardDuty(cls):
 
         # ensure clean setup
         while True:
@@ -88,6 +88,7 @@ class MyTestCase(unittest.TestCase):
                 break
 
     def test_guardduty_should_be_set_up_with_clean_state(self):
+        self.cleanUpGuardDuty()
         self.triggerGuardDutySetup()
 
         # check if audit account has become the master
