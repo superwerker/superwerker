@@ -126,9 +126,6 @@ class MyTestCase(unittest.TestCase):
         )
         return audit_account
 
-    # def test_guardduty_setup_should_be_idempotent(self):
-    #     pass
-
     def test_security_hub_is_enabled_in_audit_and_has_members(self):
         audit_account = self.control_tower_exection_role_session(self.audit_account_id)
         security_hub_audit = audit_account.client('securityhub')
