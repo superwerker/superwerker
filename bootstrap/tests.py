@@ -158,3 +158,5 @@ class MyTestCase(unittest.TestCase):
             security_hub_log_archive.disable_security_hub()
         except:
             pass
+
+        self.assertEqual([], security_hub_audit.list_members()['Members'])
