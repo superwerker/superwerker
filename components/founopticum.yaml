@@ -20,3 +20,8 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/04-security-hub.yaml
+
+  ServiceControlPolicies:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
