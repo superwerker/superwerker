@@ -4,12 +4,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 
-Parameters:
-  OrganizationAccountRoleName:
-    Default: OrganizationAccountAccessRole
-    Type: String
-    Description: The Role name used when creating the subaccount
-
 Resources:
 
   ServiceControlPolicy:
