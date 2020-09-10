@@ -148,6 +148,10 @@ class MyTestCase(unittest.TestCase):
 
         # create a temp admin role since the ControlTowerException role is allowed to disable SH
         try:
+            iam.detach_role_policy(
+                RoleName='SuperWerkerScpTestRole',
+                PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
+            )
             iam.delete_role(RoleName='SuperWerkerScpTestRole')
         except:
             pass
@@ -166,6 +170,11 @@ class MyTestCase(unittest.TestCase):
                     }
                 ]
             }))
+        iam.attach_role_policy(
+            RoleName='SuperWerkerScpTestRole',
+            PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
+        )
+
 
         log_archive_account_sts = log_archive_account.client('sts')
         scp_test_role_creds = log_archive_account_sts.assume_role(
