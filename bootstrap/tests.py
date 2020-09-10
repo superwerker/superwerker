@@ -128,14 +128,7 @@ class MyTestCase(unittest.TestCase):
         return audit_account
 
     def test_security_hub_is_enabled_in_audit_and_has_members(self):
-        audit_account = self.control_tower_exection_role_session(self.audit_account_id)
-        security_hub_audit = audit_account.client('securityhub')
-        log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
-        security_hub_log_archive = log_archive_account.client('securityhub')
-
-        self.cleanUpSecurityHub(security_hub_audit, security_hub_log_archive)
-        self.triggerSetupLandingZoneCWEvent('founopticum.security-hub-test')
-        self.waitForSSMExecutionsToHaveFinished('founopticum-SecurityHub')
+        security_hub_audit = self.setup_security_hub()
 
         members_result = security_hub_audit.list_members()['Members']
         actual_members = [member['AccountId'] for member in members_result if member['MemberStatus'] == 'Associated']
