@@ -199,12 +199,12 @@ class MyTestCase(unittest.TestCase):
         security_hub_audit = audit_account.client('securityhub')
         log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
         security_hub_log_archive = log_archive_account.client('securityhub')
-        self.cleanUpSecurityHub(security_hub_audit, security_hub_log_archive)
+        self.cleanup_security_hub(security_hub_audit, security_hub_log_archive)
         self.triggerSetupLandingZoneCWEvent('founopticum.security-hub-test')
         self.waitForSSMExecutionsToHaveFinished('founopticum-SecurityHub')
         return security_hub_audit
 
-    def cleanUpSecurityHub(self, security_hub_audit, security_hub_log_archive):
+    def cleanup_security_hub(self, security_hub_audit, security_hub_log_archive):
         members_result = security_hub_audit.list_members()['Members']
         members = [member['AccountId'] for member in members_result]
         security_hub_audit.disassociate_members(AccountIds=members)
