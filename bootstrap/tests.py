@@ -1,6 +1,7 @@
 import unittest
 import boto3
 import json
+import botocore
 from time import sleep
 
 events = boto3.client('events')
@@ -144,6 +145,62 @@ class MyTestCase(unittest.TestCase):
         ]
 
         self.assertEqual(expected_members, actual_members)
+
+    def test_security_hub_cannot_be_disabled_in_member_account(self):
+        self.setup_security_hub()
+
+        # use log archive as sample member
+        log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
+        iam = log_archive_account.client('iam')
+
+        # create a temp admin role since the ControlTowerException role is allowed to disable SH
+        try:
+            iam.delete_role(RoleName='SuperWerkerScpTestRole')
+        except:
+            pass
+
+        iam.create_role(
+            RoleName='SuperWerkerScpTestRole',
+            AssumeRolePolicyDocument=json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": f'arn:aws:iam::{self.log_archive_account_id}:root'
+                        },
+                        "Action": "sts:AssumeRole"
+                    }
+                ]
+            }))
+
+        log_archive_account_sts = log_archive_account.client('sts')
+        scp_test_role_creds = log_archive_account_sts.assume_role(
+            RoleArn=f'arn:aws:iam::{self.log_archive_account_id}:role/SuperWerkerScpTestRole',
+            RoleSessionName='SuperWerkerScpTest'
+        )['Credentials']
+        scp_test_session = boto3.session.Session(
+            aws_access_key_id=scp_test_role_creds['AccessKeyId'],
+            aws_secret_access_key=scp_test_role_creds['SecretAccessKey'],
+            aws_session_token=scp_test_role_creds['SessionToken']
+        )
+        scp_test_session_security_hub = scp_test_session.client('securityhub')
+
+        # assert that SCP forbids deletion
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            scp_test_session_security_hub.disable_security_hub()
+
+        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default', str(exception.exception))
+
+    def setup_security_hub(self):
+        audit_account = self.control_tower_exection_role_session(self.audit_account_id)
+        security_hub_audit = audit_account.client('securityhub')
+        log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
+        security_hub_log_archive = log_archive_account.client('securityhub')
+        self.cleanUpSecurityHub(security_hub_audit, security_hub_log_archive)
+        self.triggerSetupLandingZoneCWEvent('founopticum.security-hub-test')
+        self.waitForSSMExecutionsToHaveFinished('founopticum-SecurityHub')
+        return security_hub_audit
 
     def cleanUpSecurityHub(self, security_hub_audit, security_hub_log_archive):
         members_result = security_hub_audit.list_members()['Members']
