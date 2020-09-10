@@ -197,6 +197,12 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default with an explicit deny', str(exception.exception))
 
+        # assert that SCP forbids leaving
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            scp_test_session_security_hub.disassociate_from_master_account()
+
+        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default with an explicit deny', str(exception.exception))
+
     def setup_security_hub(self):
         audit_account = self.control_tower_exection_role_session(self.audit_account_id)
         security_hub_audit = audit_account.client('securityhub')
