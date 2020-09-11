@@ -6,8 +6,6 @@ A well-architected, secure, compliant, and maintained AWS Baseline ("Landing Zon
 
 In the initial release, superwerker enables the following AWS services and features in a fully automated way:
 
-- Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
-- Secure mailboxes and service catalogue aliases for all root accounts
 - AWS Control Tower as the basis for a future-proof multi-account setup
 - AWS GuardDuty for automatic detection of possible threats breaches
 - AWS Security Hub to ensure established security standards
@@ -16,6 +14,8 @@ In the initial release, superwerker enables the following AWS services and featu
 - AWS Backup for Automated creation of backups
 - Service control policies to protect the infrastructure from intentional or unintentional mistakes
   - E.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
+- Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
+- Secure mailboxes and service catalogue aliases for all root accounts
 
 ## FAQ
 
