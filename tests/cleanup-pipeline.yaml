@@ -137,12 +137,6 @@ Resources:
           version: 0.2
           env:
             shell: bash
-            parameter-store:
-              ou_core: /superwerker/ou_core
-              ou_custom: /superwerker/ou_custom
-              ou_graveyard: /superwerker_bootstrap/ou_graveyard
-              account_id_logarchive: /superwerker/account_id_logarchive
-              account_id_audit: /superwerker/account_id_audit
           phases:
             build:
               commands:
@@ -156,6 +150,13 @@ Resources:
                 - aws iam detach-role-policy --role-name AWSControlTowerStackSetRole --policy-arn arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSControlTowerStackSetRolePolicy || true
                 - aws iam delete-policy --policy-arn arn:aws:iam::${AWS::AccountId}:policy/service-role/AWSControlTowerStackSetRolePolicy || true
                 - aws iam delete-role --role-name AWSControlTowerStackSetRole || true
+
+                - root_id=$(aws organizations list-roots --query 'Roots[0].Id' --output text)
+                - ou_core=$(aws organizations list-organizational-units-for-parent --parent-id $root_id --query 'OrganizationalUnits[?Name==`Core`].Id' --output text)
+                - ou_custom=$(aws organizations list-organizational-units-for-parent --parent-id $root_id --query 'OrganizationalUnits[?Name==`Custom`].Id' --output text)
+                - ou_graveyard=$(aws organizations list-organizational-units-for-parent --parent-id $root_id --query 'OrganizationalUnits[?Name==`graveyard`].Id' --output text)
+                - account_id_audit=$(aws organizations list-accounts-for-parent --parent-id $ou_core --query 'Accounts[?Name==`Audit`].Id' --output text)
+                - account_id_logarchive=$(aws organizations list-accounts-for-parent --parent-id $ou_core --query 'Accounts[?Name==`Log archive`].Id' --output text)
 
                 - aws organizations move-account --account-id $account_id_logarchive --source-parent-id $ou_core --destination-parent-id $ou_graveyard || true
                 - aws organizations move-account --account-id $account_id_audit --source-parent-id $ou_core --destination-parent-id $ou_graveyard || true
