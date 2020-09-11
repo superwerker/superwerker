@@ -81,31 +81,8 @@ Resources:
               Name: EmailRandomizer
               RunOrder: 3
 
-            - Name: UpdateControlTowerStack
-              RunOrder: 4
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-                - Name: EmailRandomizer
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: REPLACE_ON_FAILURE
-                StackName: superwerker-00-control-tower
-                TemplatePath: SourceOutput::components/00-control-tower.yaml
-                ParameterOverrides: |
-                  {
-                    "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
-                    "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]}
-                  }
-
-                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
-
             - Name: InstallSuperwerker
-              RunOrder: 5
+              RunOrder: 4
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -138,7 +115,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 6
+              RunOrder: 5
 
       ArtifactStore:
         Type: S3

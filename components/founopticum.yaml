@@ -11,6 +11,14 @@ Parameters:
 
 Resources:
 
+  ControlTower:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/00-control-tower.yaml
+      Parameters:
+        AuditAWSAccountEmail: !Ref AuditAWSAccountEmail
+        LogArchiveAWSAccountEmail: !Ref LogArchiveAWSAccountEmail
+
   GuardDuty:
     Type: AWS::CloudFormation::Stack
     Properties:

@@ -102,7 +102,7 @@ Resources:
               Configuration:
                 ActionMode: DELETE_ONLY
                 RoleArn: !GetAtt CleanupBuildProjectRole.Arn
-                StackName: superwerker-00-control-tower
+                StackName: superwerker
 
       ArtifactStore:
         Type: S3
