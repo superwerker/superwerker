@@ -37,6 +37,29 @@ superwerker frees its users from the heavy lifting burden of setting up and main
  - Development/Ops teams in startups and SMEs who want a quick start in AWS with all the best practises set up at once.
  - AWS integrators, APN Partners, and freelancers who want to focus on solving customer problems
 
+## Design decisions
+
+### Low total cost of ownership
+
+ - use native AWS services when possible
+ - use functionless / managed runtimes when possible
+
+### Tested code
+
+All features need to have tests. We prefer integration tests which tests the correct end state.
+
+### Idempotent and re-entrant
+
+All steps have to be idempotent / re-entrant so we ensure that processes can be re-run without breaking.
+
+### Event-driven
+
+We use CloudWatch Events where possible and decouple steps.
+
+### Forward compability and adoption
+
+As soon as AWS releases a feature/service which makes parts of superwerker obsolete, we will adopt. 
+In an ideal world this project does have to exist.
 
 
 ## Thanks
