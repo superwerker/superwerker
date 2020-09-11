@@ -125,7 +125,12 @@ Resources:
 
   SetupControlTowerArtifactLocation:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Status: Enabled
+
 
   SetupControlTowerArtifactLocationPolicy:
     Type: AWS::S3::BucketPolicy
