@@ -92,7 +92,6 @@ class MyTestCase(unittest.TestCase):
 
             sleep(2)
 
-    @unittest.skip("wait until gd api works again")
     def test_guardduty_should_be_set_up_with_clean_state(self):
         self.cleanUpGuardDuty()
         self.triggerSetupLandingZoneCWEvent('superwerker.test')
