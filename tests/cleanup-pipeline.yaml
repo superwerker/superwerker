@@ -4,7 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   GitHubOwner:
     Type: String
-    Default: superluminar-io
+    Default: superwerker
   RepositoryName:
     Type: String
     Default: superwerker
