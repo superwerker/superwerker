@@ -7,20 +7,20 @@ Parameters:
     Default: superluminar-io
   RepositoryName:
     Type: String
-    Default: founopticum
+    Default: superwerker
   BranchName:
     Type: String
     Default: master
   GithubTokenSecretsManagerPath:
     Type: String
-    Default: /founopticum/github-token
+    Default: /superwerker/github-token
 
 Resources:
 
-  FounopticumBootstrapPipeline:
+  SuperwerkerBootstrapPipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
-      RoleArn: !GetAtt FounopticumBootstrapPipelineRole.Arn
+      RoleArn: !GetAtt SuperwerkerBootstrapPipelineRole.Arn
       Stages:
         - Name: Source
           Actions:
@@ -37,10 +37,10 @@ Resources:
                 Owner: !Ref GitHubOwner
                 Repo: !Ref RepositoryName
                 Branch: !Ref BranchName
-                OAuthToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
+                OAuthToken: '{{resolve:secretsmanager:/superwerker/github-token:SecretString}}'
                 PollForSourceChanges: false
 
-        - Name: DeployAndTestFounopticum
+        - Name: DeployAndTestSuperwerker
           Actions:
             - ActionTypeId:
                 Category: Build
@@ -94,7 +94,7 @@ Resources:
               Configuration:
                 RoleArn: !GetAtt CloudFormationRole.Arn
                 ActionMode: REPLACE_ON_FAILURE
-                StackName: founopticum-00-control-tower
+                StackName: superwerker-00-control-tower
                 TemplatePath: SourceOutput::components/00-control-tower.yaml
                 ParameterOverrides: |
                   {
@@ -104,7 +104,7 @@ Resources:
 
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
-            - Name: InstallFounopticum
+            - Name: InstallSuperwerker
               RunOrder: 5
               ActionTypeId:
                 Category: Deploy
@@ -117,8 +117,8 @@ Resources:
               Configuration:
                 RoleArn: !GetAtt CloudFormationRole.Arn
                 ActionMode: REPLACE_ON_FAILURE
-                StackName: founopticum
-                TemplatePath: SourceOutput::components/founopticum.yaml
+                StackName: superwerker
+                TemplatePath: SourceOutput::components/superwerker.yaml
                 ParameterOverrides: !Sub |
                   {
                     "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
@@ -142,9 +142,9 @@ Resources:
 
       ArtifactStore:
         Type: S3
-        Location: !Ref FounopticumUpdatePipelineArtifactStore
+        Location: !Ref SuperwerkerUpdatePipelineArtifactStore
 
-  FounopticumBootstrapPipelineRole:
+  SuperwerkerBootstrapPipelineRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -157,22 +157,22 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
-  FounopticumUpdatePipelineWebhook:
+  SuperwerkerUpdatePipelineWebhook:
     Type: AWS::CodePipeline::Webhook
     Properties:
       Authentication: GITHUB_HMAC
       AuthenticationConfiguration:
-        SecretToken: '{{resolve:secretsmanager:/founopticum/github-token:SecretString}}'
+        SecretToken: '{{resolve:secretsmanager:/superwerker/github-token:SecretString}}'
       Filters:
         - JsonPath: '$.ref'
           MatchEquals: refs/heads/{Branch}
-      TargetPipeline: !Ref FounopticumBootstrapPipeline
+      TargetPipeline: !Ref SuperwerkerBootstrapPipeline
       TargetAction: SourceAction
-      Name: !Sub ${AWS::StackName}-FounopticumUpdatePipelineWebhook
-      TargetPipelineVersion: !GetAtt FounopticumBootstrapPipeline.Version
+      Name: !Sub ${AWS::StackName}-SuperwerkerUpdatePipelineWebhook
+      TargetPipelineVersion: !GetAtt SuperwerkerBootstrapPipeline.Version
       RegisterWithThirdParty: true
 
-  FounopticumUpdatePipelineArtifactStore:
+  SuperwerkerUpdatePipelineArtifactStore:
     Type: AWS::S3::Bucket
     Properties:
       LifecycleConfiguration:
@@ -233,9 +233,9 @@ Resources:
               commands:
                 - timestamp=$(date +%s)
                 # write random email adresses in case it's not in the parameter store
-                - "aws ssm get-parameter --name /founopticum_bootstrap/email_adresses || (printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'founopticum-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'founopticum-aws-test+%s@superluminar.io' audit$timestamp) > /tmp/EmailRandomizerTemp.json &&  aws ssm put-parameter --name /founopticum_bootstrap/email_adresses --type String --value file:///tmp/EmailRandomizerTemp.json --no-overwrite)"
+                - "aws ssm get-parameter --name /superwerker_bootstrap/email_adresses || (printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'superwerker-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'superwerker-aws-test+%s@superluminar.io' audit$timestamp) > /tmp/EmailRandomizerTemp.json &&  aws ssm put-parameter --name /superwerker_bootstrap/email_adresses --type String --value file:///tmp/EmailRandomizerTemp.json --no-overwrite)"
                 # get the parameter value and write the artifact each time for the next pipeline step (CloudFormation)
-                - aws ssm get-parameter --name /founopticum_bootstrap/email_adresses --query Parameter.Value --output text > EmailRandomizer.json
+                - aws ssm get-parameter --name /superwerker_bootstrap/email_adresses --query Parameter.Value --output text > EmailRandomizer.json
           artifacts:
             files:
               - EmailRandomizer.json

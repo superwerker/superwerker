@@ -12,7 +12,7 @@ Resources:
           - AWS Service Event via CloudTrail
         source:
           - aws.controltower
-          - founopticum.security-hub-test
+          - superwerker.security-hub-test
         detail:
           serviceEventDetails:
             setupLandingZoneStatus:
@@ -76,10 +76,10 @@ Resources:
         parameters:
           AuditAccountId:
             type: String
-            default: '{{ssm:/founopticum/account_id_audit}}'
+            default: '{{ssm:/superwerker/account_id_audit}}'
           LogArchiveAccountId:
             type: String
-            default: '{{ssm:/founopticum/account_id_logarchive}}'
+            default: '{{ssm:/superwerker/account_id_logarchive}}'
         mainSteps:
           - name: EnableSecurityHubInAuditAccount
             action: aws:executeAutomation
@@ -125,7 +125,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: ssm:GetParameters
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum/*
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
   EnableSecurityHubInOrgAccountAndAddAsMember:
     Type: AWS::SSM::Document
     Properties:
@@ -138,7 +138,7 @@ Resources:
             type: String
           AuditAccountId:
             type: String
-            default: '{{ssm:/founopticum/account_id_audit}}'
+            default: '{{ssm:/superwerker/account_id_audit}}'
         mainSteps:
           - name: EnableSecurityHubInOrgAccount
             action: aws:executeAutomation
@@ -265,7 +265,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: ssm:GetParameters
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum/*
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
 
   InviteSecurityHubMember:
     Type: AWS::SSM::Document

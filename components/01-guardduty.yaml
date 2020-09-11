@@ -12,7 +12,7 @@ Resources:
           - AWS Service Event via CloudTrail
         source:
           - aws.controltower
-          - founopticum.test # allows testing the trigger
+          - superwerker.test # allows testing the trigger
         detail:
           serviceEventDetails:
             setupLandingZoneStatus:
@@ -55,10 +55,10 @@ Resources:
         parameters:
           AuditAccountId:
             type: String
-            default: '{{ssm:/founopticum/account_id_audit}}'
+            default: '{{ssm:/superwerker/account_id_audit}}'
           LogArchiveAccountId:
             type: String
-            default: '{{ssm:/founopticum/account_id_logarchive}}'
+            default: '{{ssm:/superwerker/account_id_logarchive}}'
         mainSteps:
           - name: CheckIfOrganizationAdminAccountIsAlReadyRegistered
             action: aws:executeAwsApi
@@ -169,7 +169,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: ssm:GetParameters
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum/*
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
 
   EnableGuardDutyExistingAccounts:
     Type: AWS::SSM::Document

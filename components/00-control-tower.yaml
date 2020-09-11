@@ -72,7 +72,7 @@ Resources:
               const AWS = require("aws-sdk");
 
               const federationEndpoint = 'https://signin.aws.amazon.com/federation';
-              const issuer = 'founopticum';
+              const issuer = 'superwerker';
               const destination = 'https://console.aws.amazon.com/';
 
               let credentials = await AWS.config.credentialProvider.resolve((err, cred) => { return cred; }).resolvePromise()
@@ -141,7 +141,7 @@ Resources:
             Principal:
               AWS: !GetAtt SetupControlTowerCanaryRole.Arn
 
-  FounopticumBootstrapFunction:
+  SuperwerkerBootstrapFunction:
     Type: AWS::Serverless::Function
     Properties:
       Events:
@@ -192,14 +192,14 @@ Resources:
         def handler(event, context):
           for ou in event['organizationalUnits']:
               ssm.put_parameter(
-                  Name='/founopticum/ou_{}'.format(ou['organizationalUnitName'].lower()),
+                  Name='/superwerker/ou_{}'.format(ou['organizationalUnitName'].lower()),
                   Value=ou['organizationalUnitId'],
                   Overwrite=True,
                   Type='String',
               )
           for account in event['accounts']:
               ssm.put_parameter(
-                  Name='/founopticum/account_id_{}'.format(account['accountName'].lower().replace(' ', '')),
+                  Name='/superwerker/account_id_{}'.format(account['accountName'].lower().replace(' ', '')),
                   Value=account['accountId'],
                   Overwrite=True,
                   Type='String',
@@ -227,7 +227,7 @@ Resources:
                 - ssm:PutParameter
               Effect: Allow
               Resource:
-                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/founopticum*
+                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker*
 
   ControlTowerSetupLandingZoneHandle:
     Type: AWS::CloudFormation::WaitConditionHandle

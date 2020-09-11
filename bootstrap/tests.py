@@ -13,8 +13,8 @@ sts = boto3.client('sts')
 
 class MyTestCase(unittest.TestCase):
 
-    audit_account_id = ssm.get_parameter(Name='/founopticum/account_id_audit')['Parameter']['Value']
-    log_archive_account_id = ssm.get_parameter(Name='/founopticum/account_id_logarchive')['Parameter']['Value']
+    audit_account_id = ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
+    log_archive_account_id = ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
     master_account_id = sts.get_caller_identity()['Account']
 
     @classmethod
@@ -95,8 +95,8 @@ class MyTestCase(unittest.TestCase):
     @unittest.skip("wait until gd api works again")
     def test_guardduty_should_be_set_up_with_clean_state(self):
         self.cleanUpGuardDuty()
-        self.triggerSetupLandingZoneCWEvent('founopticum.test')
-        self.waitForSSMExecutionsToHaveFinished('founopticum-GuardDuty')
+        self.triggerSetupLandingZoneCWEvent('superwerker.test')
+        self.waitForSSMExecutionsToHaveFinished('superwerker-GuardDuty')
 
         # check if audit account has become the master
         audit_account = self.control_tower_exection_role_session(account_id=self.audit_account_id)
@@ -118,7 +118,7 @@ class MyTestCase(unittest.TestCase):
     def control_tower_exection_role_session(self, account_id):
         audit_account_creds = sts.assume_role(
             RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
-            RoleSessionName='founopticumtest'
+            RoleSessionName='superwerkertest'
         )['Credentials']
         audit_account = boto3.session.Session(
             aws_access_key_id=audit_account_creds['AccessKeyId'],
@@ -209,8 +209,8 @@ class MyTestCase(unittest.TestCase):
         log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
         security_hub_log_archive = log_archive_account.client('securityhub')
         self.cleanup_security_hub(security_hub_audit, security_hub_log_archive)
-        self.triggerSetupLandingZoneCWEvent('founopticum.security-hub-test')
-        self.waitForSSMExecutionsToHaveFinished('founopticum-SecurityHub')
+        self.triggerSetupLandingZoneCWEvent('superwerker.security-hub-test')
+        self.waitForSSMExecutionsToHaveFinished('superwerker-SecurityHub')
         return security_hub_audit
 
     def cleanup_security_hub(self, security_hub_audit, security_hub_log_archive):
