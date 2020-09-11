@@ -26,6 +26,27 @@ Resources:
           Id: EnableGuardDutyOrganizations
           RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
 
+  UpdateLandingZoneTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        detail-type:
+          - AWS Service Event via CloudTrail
+        source:
+          - aws.controltower
+        detail:
+          serviceEventDetails:
+            updateLandingZoneStatus:
+              state:
+                - SUCCEEDED
+          eventName:
+            - UpdateLandingZone
+      State: ENABLED
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}
+          Id: EnableGuardDutyOrganizations
+          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+
   SSMAutomationExecutionRoleforCWEvents:
     Type: AWS::IAM::Role
     Properties:
