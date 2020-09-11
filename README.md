@@ -1,10 +1,11 @@
-# superwerker
+# superwerker - automated best practises for AWS
 
-A well-architected, secure, compliant, and maintained AWS Baseline ("Landing Zone") for the rest of us. 
+The superwerker open source solution automates the setup of an AWS Cloud environment with prescriptive best practises.
+It enables startups and SMEs to focus on their core business - by saving setup and maintenance time and money.
 
 ## What's included in the setup?
 
-In the initial release, superwerker enables the following AWS services and features in a fully automated way:
+In the initial release, superwerker configures the following AWS services and features in a fully automated way:
 
 - AWS Control Tower as the basis for a future-proof multi-account setup
 - AWS GuardDuty for automatic detection of possible threats breaches
