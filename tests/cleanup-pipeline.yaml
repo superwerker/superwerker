@@ -165,6 +165,13 @@ Resources:
 
                 - aws logs delete-log-group --log-group-name aws-controltower/CloudTrailLogs || true
 
+                # remove former parameters
+                - aws ssm delete-parameter --name /superwerker/account_id_audit || true
+                - aws ssm delete-parameter --name /superwerker/account_id_master || true
+                - aws ssm delete-parameter --name /superwerker/ou_core || true
+                - aws ssm delete-parameter --name /superwerker/ou_custom || true
+                - aws ssm delete-parameter --name /superwerker_bootstrap/email_adresses || true
+
   CleanupBuildProjectRole:
     Type: AWS::IAM::Role
     Properties:
