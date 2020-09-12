@@ -218,7 +218,7 @@ Resources:
                 python: 3.x
             build:
               commands:
-                - cd bootstrap
+                - cd tests
                 - pip3 install -r requirements.txt
                 - python3 -munittest tests.py
 
