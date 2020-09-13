@@ -188,6 +188,7 @@ Resources:
 
       InlineCode: |-
         import boto3
+        import json
 
         ssm = boto3.client('ssm')
         events = boto3.client('events')
