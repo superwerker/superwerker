@@ -290,7 +290,7 @@ Resources:
   DecommissionLandingZoneCanary:
     Type: AWS::Synthetics::Canary
     Properties:
-      Name: fnptcm-remove-ct
+      Name: superwerker-remove-ct
       ArtifactS3Location: !Sub s3://${DecommissionLandingZoneArtifactLocation}
       ExecutionRoleArn: !GetAtt DecommissionLandingZoneCanaryRole.Arn
       RuntimeVersion: syn-1.0
