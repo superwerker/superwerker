@@ -51,16 +51,10 @@ class MyTestCase(unittest.TestCase):
                 {
                     'Detail': json.dumps(
                         {
-                            'serviceEventDetails': {
-                                'setupLandingZoneStatus': {
-                                    'state': 'SUCCEEDED'
-                                }
-                            },
-                            'eventName': 'SetupLandingZone',
+                            'eventName': 'LandingZoneSetupOrUpdateFinished',
                         }
                     ),
-                    'DetailType': 'AWS Service Event via CloudTrail',
-                    'Source': trigger_name
+                    'Source': 'superwerker'
                 }
             ]
         )
@@ -94,7 +88,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_guardduty_should_be_set_up_with_clean_state(self):
         self.cleanUpGuardDuty()
-        self.triggerSetupLandingZoneCWEvent('superwerker.test')
+        self.triggerSetupLandingZoneCWEvent()
         self.waitForSSMExecutionsToHaveFinished('superwerker-GuardDuty')
 
         # check if audit account has become the master
@@ -208,7 +202,7 @@ class MyTestCase(unittest.TestCase):
         log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
         security_hub_log_archive = log_archive_account.client('securityhub')
         self.cleanup_security_hub(security_hub_audit, security_hub_log_archive)
-        self.triggerSetupLandingZoneCWEvent('superwerker.security-hub-test')
+        self.triggerSetupLandingZoneCWEvent()
         self.waitForSSMExecutionsToHaveFinished('superwerker-SecurityHub')
         return security_hub_audit
 

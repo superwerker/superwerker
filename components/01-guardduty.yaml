@@ -4,43 +4,15 @@ Description: Sets up GuardDuty with a delegated administor and automatically ena
 
 Resources:
 
-  SetupLandingZoneTrigger:
+  LandingZoneSetupFinishedTrigger:
     Type: AWS::Events::Rule
     Properties:
       EventPattern:
-        detail-type:
-          - AWS Service Event via CloudTrail
         source:
-          - aws.controltower
-          - superwerker.test # allows testing the trigger
+          - superwerker
         detail:
-          serviceEventDetails:
-            setupLandingZoneStatus:
-              state:
-                - SUCCEEDED
           eventName:
-            - SetupLandingZone
-      State: ENABLED
-      Targets:
-        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}
-          Id: EnableGuardDutyOrganizations
-          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
-
-  UpdateLandingZoneTrigger:
-    Type: AWS::Events::Rule
-    Properties:
-      EventPattern:
-        detail-type:
-          - AWS Service Event via CloudTrail
-        source:
-          - aws.controltower
-        detail:
-          serviceEventDetails:
-            updateLandingZoneStatus:
-              state:
-                - SUCCEEDED
-          eventName:
-            - UpdateLandingZone
+            - LandingZoneSetupOrUpdateFinished
       State: ENABLED
       Targets:
         - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyOrganizations}

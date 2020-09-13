@@ -185,14 +185,12 @@ Resources:
 
       Handler: index.handler
       Runtime: python3.7
-      Environment:
-        Variables:
-          SIGNAL_URL: !Ref ControlTowerSetupLandingZoneHandle
 
       InlineCode: |-
         import boto3
 
         ssm = boto3.client('ssm')
+        events = boto3.client('events')
 
         def handler(event, context):
           for ou in event['organizationalUnits']:
@@ -210,20 +208,19 @@ Resources:
                   Type='String',
               )
 
-          # signal cloudformation stack that control tower setup is complete
-          import urllib3
-          import os
-          import json
-
-          encoded_body = json.dumps({
-              "Status": "SUCCESS",
-              "Reason": "Control Tower Setup completed",
-              "UniqueId": "doesthisreallyhavetobeunique",
-              "Data": "Control Tower Setup completed"
-          })
-
-          http = urllib3.PoolManager()
-          http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
+          # signal Control Tower Landing ZOne Setup/Update has finished
+          events.put_events(
+              Entries=[
+                  {
+                      'Detail': json.dumps(
+                          {
+                              'eventName': 'LandingZoneSetupOrUpdateFinished',
+                          }
+                      ),
+                      'Source': 'superwerker'
+                  }
+              ]
+          )
 
       Policies:
         - Version: 2012-10-17
@@ -233,13 +230,6 @@ Resources:
               Effect: Allow
               Resource:
                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker*
-
-  ControlTowerSetupLandingZoneHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-
-  ControlTowerSetupLandingZoneHandleWaitCondition:
-    Type: AWS::CloudFormation::WaitCondition
-    DependsOn: SetupControlTowerCanary
-    Properties:
-      Handle: !Ref ControlTowerSetupLandingZoneHandle
-      Timeout: 7200
+            - Action: events:PutEvents
+              Effect: Allow
+              Resource: '*'
