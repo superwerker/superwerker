@@ -294,7 +294,7 @@ Resources:
       ArtifactS3Location: !Sub s3://${DecommissionLandingZoneArtifactLocation}
       ExecutionRoleArn: !GetAtt DecommissionLandingZoneCanaryRole.Arn
       RuntimeVersion: syn-1.0
-      StartCanaryAfterCreation: true
+      StartCanaryAfterCreation: false
       RunConfig:
         TimeoutInSeconds: 600
       Schedule:
