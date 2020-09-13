@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
             guardduty.delete_detector(DetectorId=detectors[0])
 
     @classmethod
-    def triggerSetupLandingZoneCWEvent(cls, trigger_name):
+    def triggerSetupLandingZoneCWEvent(cls):
         # trigger SSM automation
         events.put_events(
             Entries=[
