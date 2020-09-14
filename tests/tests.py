@@ -49,6 +49,7 @@ class MyTestCase(unittest.TestCase):
         events.put_events(
             Entries=[
                 {
+                    'DetailType': 'superwerker-event',
                     'Detail': json.dumps(
                         {
                             'eventName': 'LandingZoneSetupOrUpdateFinished',
