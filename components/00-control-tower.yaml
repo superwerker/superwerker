@@ -165,7 +165,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Events:
-        SetupLandingZone: # setup entirely fresh account
+        SetupLandingZone: # event from entirely fresh landing zone
           Type: CloudWatchEvent
           Properties:
             InputPath: $.detail.serviceEventDetails.setupLandingZoneStatus
@@ -181,7 +181,7 @@ Resources:
                       - SUCCEEDED
                 eventName:
                   - SetupLandingZone
-        UpdateLandingZone: # re-setup after decommissioning
+        UpdateLandingZone: # event from updated existing landing zone
           Type: CloudWatchEvent
           Properties:
             InputPath: $.detail.serviceEventDetails.updateLandingZoneStatus
