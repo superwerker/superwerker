@@ -19,6 +19,36 @@ Resources:
           Id: EnableSecurityHubOrganizations
           RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
 
+  CreateManagedAccountTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        detail-type:
+          - AWS Service Event via CloudTrail
+        source:
+          - aws.controltower
+        detail:
+          serviceEventDetails:
+            createManagedAccountStatus:
+              state:
+                - SUCCEEDED
+          eventName:
+            - CreateManagedAccount
+
+      State: ENABLED
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccountAndAddAsMember}
+          Id: CreateManagedAccountTrigger
+          RoleArn: !GetAtt SSMAutomationExecutionRoleforCWEvents.Arn
+          InputTransformer:
+            InputPathsMap:
+              AwsAccountId: $.detail.serviceEventDetails.createManagedAccountStatus.account.accountId
+            InputTemplate: !Sub |
+              {
+                "MemberAWSAccountId": [<AwsAccountId>]
+              }
+
+
   SSMAutomationExecutionRoleforCWEvents:
     Type: AWS::IAM::Role
     Properties:
@@ -36,7 +66,9 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:StartAutomationExecution
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${CreateLandingZoneEnableSecurityHub}:*
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${CreateLandingZoneEnableSecurityHub}:*
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccountAndAddAsMember}:*
 
   CreateLandingZoneEnableSecurityHub:
     Type: AWS::SSM::Document
