@@ -209,13 +209,6 @@ Resources:
         events = boto3.client('events')
 
         def handler(event, context):
-          for ou in event['organizationalUnits']:
-              ssm.put_parameter(
-                  Name='/superwerker/ou_{}'.format(ou['organizationalUnitName'].lower()),
-                  Value=ou['organizationalUnitId'],
-                  Overwrite=True,
-                  Type='String',
-              )
           for account in event['accounts']:
               ssm.put_parameter(
                   Name='/superwerker/account_id_{}'.format(account['accountName'].lower().replace(' ', '')),
