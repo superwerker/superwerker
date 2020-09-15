@@ -43,6 +43,20 @@ Resources:
         - Name: DeployAndTestSuperwerker
           Actions:
 
+            - Name: RemoveSuperwerkerStack
+              RunOrder: 1
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                ActionMode: DELETE_ONLY
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                StackName: superwerker
+
             - ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -54,7 +68,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 1
+              RunOrder: 2
 
             - ActionTypeId:
                 Category: Build
@@ -68,10 +82,10 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
-              RunOrder: 2
+              RunOrder: 3
 
             - Name: InstallSuperwerker
-              RunOrder: 3
+              RunOrder: 4
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -104,7 +118,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 4
+              RunOrder: 5
 
       ArtifactStore:
         Type: S3
