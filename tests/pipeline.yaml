@@ -298,6 +298,9 @@ Resources:
                 # cleanup S3 buckets so they can be deleted by CFN
                 - aws s3 rm s3://superwerker-cwsyn-artifacts-${AWS::AccountId}/ --recursive
 
+                # ensure clean state for tests
+                - python3 tests/cleanup.py
+
 
   CleanupBuildProjectRole:
     Type: AWS::IAM::Role
