@@ -43,8 +43,20 @@ Resources:
         - Name: DeployAndTestSuperwerker
           Actions:
 
-            - Name: RemoveSuperwerkerStack
+            - ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CleanupBuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              Name: Cleanup
               RunOrder: 1
+
+            - Name: RemoveSuperwerkerStack
+              RunOrder: 2
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -68,7 +80,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 2
+              RunOrder: 3
 
             - ActionTypeId:
                 Category: Build
@@ -82,10 +94,10 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
-              RunOrder: 3
+              RunOrder: 4
 
             - Name: InstallSuperwerker
-              RunOrder: 4
+              RunOrder: 5
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -118,7 +130,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 5
+              RunOrder: 6
 
       ArtifactStore:
         Type: S3
@@ -260,6 +272,43 @@ Resources:
           Principal:
             Service:
               - cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  CleanupBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt CleanupBuildProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            build:
+              commands:
+                # cleanup S3 buckets so they can be deleted by CFN
+                - aws s3 rm s3://superwerker-cwsyn-artifacts-${AWS::AccountId}/ --recursive
+
+
+  CleanupBuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
