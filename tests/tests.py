@@ -109,7 +109,8 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(expected_members, actual_members)
 
-    def control_tower_exection_role_session(self, account_id):
+    @classmethod
+    def control_tower_exection_role_session(cls, account_id):
         audit_account_creds = sts.assume_role(
             RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
             RoleSessionName='superwerkertest'
@@ -198,16 +199,15 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default with an explicit deny', str(exception.exception))
 
     def setup_security_hub(self):
-        audit_account = self.control_tower_exection_role_session(self.audit_account_id)
-        security_hub_audit = audit_account.client('securityhub')
-        log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
-        security_hub_log_archive = log_archive_account.client('securityhub')
-        self.cleanup_security_hub(security_hub_audit, security_hub_log_archive)
         self.triggerSetupLandingZoneCWEvent()
         self.waitForSSMExecutionsToHaveFinished('superwerker-SecurityHub')
-        return security_hub_audit
 
-    def cleanup_security_hub(self, security_hub_audit, security_hub_log_archive):
+    @classmethod
+    def cleanup_security_hub(cls):
+        audit_account = cls.control_tower_exection_role_session(cls.audit_account_id)
+        security_hub_audit = audit_account.client('securityhub')
+        log_archive_account = cls.control_tower_exection_role_session(cls.log_archive_account_id)
+        security_hub_log_archive = log_archive_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
         members = [member['AccountId'] for member in members_result]
         security_hub_audit.disassociate_members(AccountIds=members)
@@ -217,5 +217,3 @@ class MyTestCase(unittest.TestCase):
             security_hub_log_archive.disable_security_hub()
         except:
             pass
-
-        self.assertEqual([], security_hub_audit.list_members()['Members'])
