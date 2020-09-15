@@ -39,28 +39,32 @@ superwerker frees its users from the heavy lifting burden of setting up and main
 
 ## Design decisions
 
+
+### Forward compability and adoption
+
+As soon as AWS releases a feature/service which makes parts of superwerker obsolete, we will adopt. 
+In an ideal world this project would have to exist.
+
 ### Low total cost of ownership
 
  - use native AWS services when possible
  - use functionless / managed runtimes when possible
 
+Preferred services: CloudFormation, Systems Manager Parameter Store / Automation, Lambda, CodePipeline/Build
+
 ### Tested code
 
-All features need to have tests. We prefer integration tests which tests the correct end state.
+All features need to have tests. We prefer integration tests which tests the correct end state. This usually results in the use of real AWS APIs for tests and no mocks.
 
-### Idempotent and re-entrant
+### Idempotent and convergent
 
-All steps have to be idempotent / re-entrant so we ensure that processes can be re-run without breaking.
+All code has to be idempotent so we ensure that tasks can be re-run without breaking and without changing the result.
+All code has to be convergent so we ensure that tasks which have been interrupted formerly can re-run and converge to the final state.
 
 ### Event-driven
 
-We use CloudWatch Events where possible and decouple steps.
-
-### Forward compability and adoption
-
-As soon as AWS releases a feature/service which makes parts of superwerker obsolete, we will adopt. 
-In an ideal world this project does have to exist.
-
+We use CloudWatch Events where possible in order to decouple architecture.
+We ackknowledge this decision makes end-to-end testing harder sometimes.
 
 ## Thanks
 
