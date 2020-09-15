@@ -120,6 +120,18 @@ Resources:
 
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
+            - Name: WaitForSuperwerkerSetupFinish
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: StepFunctions
+                Version: "1"
+              Configuration:
+                StateMachineArn: !Ref WaitForSuperwerkerSetupFinishedStateMachine
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 6
+
             - ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -130,7 +142,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 6
+              RunOrder: 7
 
       ArtifactStore:
         Type: S3
@@ -321,3 +333,40 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  WaitForSuperwerkerSetupFinishedStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Definition:
+        StartAt: CheckDecommissionCompleted
+        States:
+          CheckDecommissionCompleted:
+            Type: Task
+            Resource: !GetAtt WaitForSuperwerkerSetupFinishedFunction.Arn
+            Retry: # check every 5 minutes for 1 hours
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 300
+                MaxAttempts: 12
+                BackoffRate: 1
+            End: true
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref WaitForSuperwerkerSetupFinishedFunction
+
+  WaitForSuperwerkerSetupFinishedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      InlineCode: |-
+        import boto3
+
+        ssm = boto3.client('ssm')
+
+        def handler(event, context):
+            # once this parameter occures, the control tower setup is finished
+            audit_account_id = ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: superwerker*
