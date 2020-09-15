@@ -311,7 +311,7 @@ Resources:
                 - aws s3 rm s3://superwerker-cwsyn-artifacts-${AWS::AccountId}/ --recursive
 
                 # ensure clean state for tests
-                - python3 tests/cleanup.py
+                - python3 tests/cleanup.py || true
 
                 # remove former superwerker parameters
                 - aws ssm delete-parameter --name /superwerker/account_id_audit || true
