@@ -39,18 +39,18 @@ superwerker frees its users from the heavy lifting burden of setting up and main
 
 ## Design decisions
 
-
 ### Forward compability and adoption
 
-As soon as AWS releases a feature/service which makes parts of superwerker obsolete, we will adopt. 
-In an ideal world this project would have to exist.
+As soon as AWS releases a feature/service which makes parts of superwerker obsolete, we will adopt.
+In an ideal world this project would not have to exist.
 
 ### Low total cost of ownership
 
  - use native AWS services when possible
  - use functionless / managed runtimes when possible
+ - whenever the cost of a service or option (e.g. logging to S3 as opposed to logging to CloudWatch Logs) is negligible it will be added without opt-out
 
-Preferred services: CloudFormation, Systems Manager Parameter Store / Automation, Lambda, CodePipeline/Build
+Preferred services: CloudFormation, Systems Manager Parameter Store / Automation, Lambda, CodePipeline / Build
 
 ### Tested code
 
@@ -63,8 +63,7 @@ All code has to be convergent so we ensure that tasks which have been interrupte
 
 ### Event-driven
 
-We use CloudWatch Events where possible in order to decouple architecture.
-We ackknowledge this decision makes end-to-end testing harder sometimes.
+We use CloudWatch Events where possible in order to decouple architecture. We acknowledge this decision makes end-to-end testing harder sometimes.
 
 ## Thanks
 
