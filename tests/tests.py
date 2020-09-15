@@ -43,55 +43,7 @@ class MyTestCase(unittest.TestCase):
         if len(detectors) > 0:
             guardduty.delete_detector(DetectorId=detectors[0])
 
-    @classmethod
-    def triggerSetupLandingZoneCWEvent(cls):
-        # trigger SSM automation
-        events.put_events(
-            Entries=[
-                {
-                    'DetailType': 'superwerker-event',
-                    'Detail': json.dumps(
-                        {
-                            'eventName': 'LandingZoneSetupOrUpdateFinished',
-                        }
-                    ),
-                    'Source': 'superwerker'
-                }
-            ]
-        )
-
-        sleep(5) # give it some time to trigger the event
-
-    @classmethod
-    def waitForSSMExecutionsToHaveFinished(cls, document_name_prefix):
-        while True:
-            running_executions = ssm.describe_automation_executions(
-                Filters=[
-                    {
-                        'Key': 'DocumentNamePrefix',
-                        'Values': [
-                            document_name_prefix,
-                        ]
-                    },
-                    {
-                        'Key': 'ExecutionStatus',
-                        'Values': [
-                            'InProgress',
-                        ]
-                    },
-                ],
-            )['AutomationExecutionMetadataList']
-
-            if len(running_executions) == 0:
-                break
-
-            sleep(2)
-
     def test_guardduty_should_be_set_up_with_clean_state(self):
-        self.cleanUpGuardDuty()
-        self.triggerSetupLandingZoneCWEvent()
-        self.waitForSSMExecutionsToHaveFinished('superwerker-GuardDuty')
-
         # check if audit account has become the master
         audit_account = self.control_tower_exection_role_session(account_id=self.audit_account_id)
 
@@ -123,8 +75,8 @@ class MyTestCase(unittest.TestCase):
         return audit_account
 
     def test_security_hub_is_enabled_in_audit_and_has_members(self):
-        security_hub_audit = self.setup_security_hub()
-
+        audit_account = self.control_tower_exection_role_session(self.audit_account_id)
+        security_hub_audit = audit_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
         actual_members = [member['AccountId'] for member in members_result if member['MemberStatus'] == 'Associated']
 
@@ -135,7 +87,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(expected_members, actual_members)
 
     def test_security_hub_cannot_be_disabled_in_member_account(self):
-        self.setup_security_hub()
 
         # use log archive as sample member
         log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
@@ -197,10 +148,6 @@ class MyTestCase(unittest.TestCase):
             scp_test_session_security_hub.disassociate_from_master_account()
 
         self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default with an explicit deny', str(exception.exception))
-
-    def setup_security_hub(self):
-        self.triggerSetupLandingZoneCWEvent()
-        self.waitForSSMExecutionsToHaveFinished('superwerker-SecurityHub')
 
     @classmethod
     def cleanup_security_hub(cls):
