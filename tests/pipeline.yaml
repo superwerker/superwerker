@@ -338,9 +338,9 @@ Resources:
     Type: AWS::Serverless::StateMachine
     Properties:
       Definition:
-        StartAt: CheckDecommissionCompleted
+        StartAt: CheckSuperwerkerSetupFinished
         States:
-          CheckDecommissionCompleted:
+          SuperwerkerSetupFinished:
             Type: Task
             Resource: !GetAtt WaitForSuperwerkerSetupFinishedFunction.Arn
             Retry: # check every 5 minutes for 1 hours
