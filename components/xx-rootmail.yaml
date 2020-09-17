@@ -1,0 +1,329 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  Domain:
+    Type: String
+  Subdomain:
+    Default: aws
+    Type: String
+
+Mappings:
+  RegionMap: # https://docs.aws.amazon.com/general/latest/gr/s3.html#s3_website_region_endpoints
+    us-east-1:
+      Endpoint: s3-website-us-east-1.amazonaws.com
+      HostedZoneID: Z3AQBSTGFYJSTF
+    eu-central-1:
+      Endpoint: s3-website.eu-central-1.amazonaws.com
+      HostedZoneID: Z21DNDUVLTQW6Q
+    eu-west-1:
+      Endpoint: s3-website-eu-west-1.amazonaws.com
+      HostedZoneID: Z1BKCTXD74EZPE
+
+Outputs:
+
+  DelegationTarget:
+    Description: Nameservers for the hosted zone delegation
+    Value: !Join [ ',', !GetAtt HostedZone.NameServers ]
+
+Resources:
+
+  DomainBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Subdomain}.${Domain}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: "example.com"
+          Protocol: "https"
+
+  DomainBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DomainBucket
+      PolicyDocument: !Sub |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "aws:Referer": "${AWS::AccountId}"
+                }
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ses.amazonaws.com"
+              },
+              "Resource": [
+                "arn:${AWS::Partition}:s3:::${DomainBucket}/RootEmails/*"
+              ],
+              "Sid": "EnableSESReceive"
+            }
+          ]
+        }
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Sub ${Subdomain}.${Domain}
+      HostedZoneConfig:
+        Comment: Created by superwerker
+
+  HostedZoneDelegationHealthCheck:
+    DependsOn: HostedZoneDelegationHealthCheckRecord
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        FailureThreshold: 3
+        FullyQualifiedDomainName: !Sub ${Subdomain}.${Domain}
+        RequestInterval: 30
+        Type: HTTP
+      HealthCheckTags:
+        - Key: Name
+          Value: RootEmailsHostedZoneDelegationHealthCheck
+
+  HostedZoneDelegationHealthCheckRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      AliasTarget:
+        DNSName: !Sub
+          - "${DomainBucket}.${Endpoint}"
+          - Endpoint: !FindInMap
+            - RegionMap
+            - !Ref "AWS::Region"
+            - Endpoint
+        HostedZoneId: !FindInMap
+          - RegionMap
+          - !Ref "AWS::Region"
+          - HostedZoneID
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub ${Subdomain}.${Domain}
+      Type: A
+
+  HostedZoneDKIMAndVerificationRecords:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt HostedZoneDKIMAndVerificationRecordsCustomerResource.Arn
+      Domain: !Sub ${Subdomain}.${Domain}
+
+  HostedZoneDKIMAndVerificationRecordsCustomerResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 200
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # TODO: least privilege
+                - ses:*
+              Resource: "*"
+      InlineCode: |
+        import boto3
+        import cfnresponse
+
+        ses = boto3.client("ses")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+            Domain = Properties["Domain"]
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            if RequestType == CREATE:
+
+                print('Creating Domain verification and DKIM records: {}'.format(LogicalResourceId))
+
+                response = ses.verify_domain_identity(
+                  Domain=Domain,
+                )
+
+                data["VerificationToken"] = response["VerificationToken"]
+
+                response = ses.verify_domain_dkim(
+                  Domain=Domain,
+                )
+
+                data["DkimTokens"] = response["DkimTokens"]
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
+  HostedZoneDKIMTokenRecord0:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub
+        - "${Token}._domainkey.${Subdomain}.${Domain}"
+        - { Token: !Select [ 0, !GetAtt HostedZoneDKIMAndVerificationRecords.DkimTokens ]}
+      ResourceRecords:
+        - !Sub
+          - "${Token}.dkim.amazonses.com"
+          - { Token: !Select [ 0, !GetAtt HostedZoneDKIMAndVerificationRecords.DkimTokens ]}
+      TTL: 60
+      Type: CNAME
+
+  HostedZoneDKIMTokenRecord1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub
+        - "${Token}._domainkey.${Subdomain}.${Domain}"
+        - { Token: !Select [ 1, !GetAtt HostedZoneDKIMAndVerificationRecords.DkimTokens ]}
+      ResourceRecords:
+        - !Sub
+          - "${Token}.dkim.amazonses.com"
+          - { Token: !Select [ 1, !GetAtt HostedZoneDKIMAndVerificationRecords.DkimTokens ]}
+      TTL: 60
+      Type: CNAME
+
+  HostedZoneDKIMTokenRecord2:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub
+        - "${Token}._domainkey.${Subdomain}.${Domain}"
+        - { Token: !Select [ 2, !GetAtt HostedZoneDKIMAndVerificationRecords.DkimTokens ]}
+      ResourceRecords:
+        - !Sub
+          - "${Token}.dkim.amazonses.com"
+          - { Token: !Select [ 2, !GetAtt HostedZoneDKIMAndVerificationRecords.DkimTokens ]}
+      TTL: 60
+      Type: CNAME
+
+  HostedZoneMXRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub ${Subdomain}.${Domain}.
+      ResourceRecords:
+        - !Sub 10 inbound-smtp.${AWS::Region}.amazonaws.com
+      TTL: 60
+      Type: MX
+
+  HostedZoneVerificationTokenRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub _amazonses.${Subdomain}.${Domain}.
+      ResourceRecords:
+        - !Sub "\"${HostedZoneDKIMAndVerificationRecords.VerificationToken}\""
+      TTL: 60
+      Type: TXT
+
+  SESReceiptRuleSet:
+    Type: AWS::SES::ReceiptRuleSet
+    Properties:
+      RuleSetName: RootEmails
+
+  SESReceiptRuleSetActivation:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt SESReceiptRuleSetActivationCustomResource.Arn
+      RuleSetName: !Ref SESReceiptRuleSet
+
+  SESReceiptRuleSetActivationCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 200
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # TODO: least privilege
+                - ses:*
+              Resource: "*"
+      InlineCode: |
+        import boto3
+        import cfnresponse
+
+        ses = boto3.client("ses")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+            RuleSetName = Properties["RuleSetName"]
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            if RequestType == CREATE or RequestType == UPDATE:
+
+                print('Activating SES ReceiptRuleSet: {}'.format(LogicalResourceId))
+
+                ses.set_active_receipt_rule_set(
+                  RuleSetName=RuleSetName,
+                )
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, id)
+
+  SESReceiptRule: # TODO: enable encryption
+    Type: AWS::SES::ReceiptRule
+    Properties:
+      Rule:
+        Actions:
+          - S3Action:
+              BucketName: !Ref DomainBucket
+              ObjectKeyPrefix: "RootEmails"
+        Enabled: true
+        Name: Receive
+        Recipients:
+          - !Sub root@${Subdomain}.${Domain}
+        ScanEnabled: true
+        TlsPolicy: "Require"
+      RuleSetName: !Ref SESReceiptRuleSet
