@@ -20,18 +20,6 @@ class MyTestCase(unittest.TestCase):
     @classmethod
     def cleanUpGuardDuty(cls):
 
-        # ensure clean setup
-        while True:
-            admin_accounts = guardduty.list_organization_admin_accounts()['AdminAccounts']
-            if len(admin_accounts) == 0:
-                break
-
-            guardduty.disable_organization_admin_account(
-                AdminAccountId=admin_accounts[0]['AdminAccountId']
-            )
-
-            sleep(1)
-
         delegated_administators = organizations.list_delegated_administrators(ServicePrincipal='guardduty.amazonaws.com')['DelegatedAdministrators']
         if len(delegated_administators) > 0:
             organizations.deregister_delegated_administrator(
