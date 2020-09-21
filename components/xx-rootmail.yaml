@@ -324,6 +324,8 @@ Resources:
           - S3Action:
               BucketName: !Ref DomainBucket
               ObjectKeyPrefix: "RootEmails"
+          - LambdaAction:
+              FunctionArn: !Sub ${OpsSantaFunction.Arn}
         Enabled: true
         Name: Receive
         Recipients:
@@ -331,3 +333,87 @@ Resources:
         ScanEnabled: true
         TlsPolicy: "Require"
       RuleSetName: !Ref SESReceiptRuleSet
+
+  OpsSantaFunctionSESPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OpsSantaFunction
+      Principal: ses.amazonaws.com
+      SourceAccount: !Sub ${AWS::AccountId}
+
+  OpsSantaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 60
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub ${DomainBucket.Arn}/RootEmails/*
+            - Effect: Allow
+              Action:
+                - ssm:CreateOpsItem
+              Resource: "*"
+      InlineCode: !Sub |
+        import boto3
+        import email
+        from email import policy
+        import hashlib
+        import json
+
+        s3 = boto3.client("s3")
+        ssm = boto3.client("ssm")
+
+        def handler(event, context):
+
+            # TODO: logging, error handling, spam/dkim/spf/av handling
+
+            id = event["Records"][0]["ses"]["mail"]["messageId"]
+            key = "RootEmails/{key}".format(key=id)
+
+            response = s3.get_object(
+              Bucket="${DomainBucket}",
+              Key=key,
+            )
+
+            msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
+
+            title=msg["subject"]
+            title=title[:1020] + " ..." * (len(title) > 1020)
+
+            description=msg.get_body("plain").get_content()
+            description=description[:1020] + " ..." * (len(description) > 1020)
+
+            source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
+            source=source[:60] + ' ...' * (len(source) > 60)
+
+            operational_data={
+              "/aws/dedup":{
+                "Value":json.dumps(
+                  {
+                    "dedupString":id,
+                  }
+                ),
+                "Type":"SearchableString",
+              },
+              "/aws/resources":{
+                "Value":json.dumps([
+                  {
+                    "arn":"arn:aws:s3:::${DomainBucket.Arn}/{key}".format(key=key),
+                  }
+                ]),
+                "Type":"SearchableString",
+              },
+            }
+
+            ssm.create_ops_item(
+              Description=description,
+              OperationalData=operational_data,
+              Source=source,
+              Title=title,
+            )
