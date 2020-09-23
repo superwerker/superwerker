@@ -115,6 +115,7 @@ Resources:
                   {
                     "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
                     "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]},
+                    "Domain": "a4662202-595c-46a8-87be-22c29f9d33ad.net",
                     "TemplateUrlPrefix": "https://${DeploymentBucket.DomainName}"
                   }
 
