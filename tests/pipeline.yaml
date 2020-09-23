@@ -55,8 +55,22 @@ Resources:
               Name: Cleanup
               RunOrder: 1
 
-            - Name: RemoveSuperwerkerStack
+            - Name: RemoveWireRootMailDomain
               RunOrder: 2
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                ActionMode: DELETE_ONLY
+                StackName: superwerker-pipeline-dns-wiring
+
+            - Name: RemoveSuperwerkerStack
+              RunOrder: 3
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -80,7 +94,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 3
+              RunOrder: 4
 
             - ActionTypeId:
                 Category: Build
@@ -94,10 +108,10 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
-              RunOrder: 4
+              RunOrder: 5
 
             - Name: InstallSuperwerker
-              RunOrder: 5
+              RunOrder: 6
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -131,7 +145,22 @@ Resources:
                 StateMachineArn: !Ref WaitForSuperwerkerSetupFinishedStateMachine
               InputArtifacts:
                 - Name: SourceOutput
-              RunOrder: 6
+              RunOrder: 7
+
+            - Name: WireRootMailDomain
+              RunOrder: 8
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                ActionMode: REPLACE_ON_FAILURE
+                StackName: superwerker-pipeline-dns-wiring
+                TemplatePath: SourceOutput::tests/pipeline-dns-wiring.yaml
 
             - ActionTypeId:
                 Category: Build
@@ -143,7 +172,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 7
+              RunOrder: 9
 
       ArtifactStore:
         Type: S3
