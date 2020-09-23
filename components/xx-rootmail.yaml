@@ -25,6 +25,8 @@ Outputs:
   DelegationTarget:
     Description: Nameservers for the hosted zone delegation
     Value: !Join [ ',', !GetAtt HostedZone.NameServers ]
+    Export:
+      Name: !Sub superwerker-rootmail-DelegationTarget
 
 Resources:
 
