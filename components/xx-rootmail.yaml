@@ -315,6 +315,10 @@ Resources:
                 ses.set_active_receipt_rule_set(
                   RuleSetName=RuleSetName,
                 )
+            elif RequestType == DELETE:
+                print('Deactivating SES ReceiptRuleSet: {}'.format(LogicalResourceId))
+
+                ses.set_active_receipt_rule_set()
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, id)
 
