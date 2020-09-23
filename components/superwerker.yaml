@@ -6,6 +6,8 @@ Parameters:
     Type: String
   LogArchiveAWSAccountEmail:
     Type: String
+  Domain:
+    Type: String
   TemplateUrlPrefix:
     Type: String
 
@@ -18,6 +20,13 @@ Resources:
       Parameters:
         AuditAWSAccountEmail: !Ref AuditAWSAccountEmail
         LogArchiveAWSAccountEmail: !Ref LogArchiveAWSAccountEmail
+
+  RootMail:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/xx-rootmail.yaml
+      Parameters:
+        Domain: !Ref Domain
 
   GuardDuty:
     Type: AWS::CloudFormation::Stack
