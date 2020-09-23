@@ -340,7 +340,7 @@ Resources:
       Definition:
         StartAt: CheckSuperwerkerSetupFinished
         States:
-          SuperwerkerSetupFinished:
+          CheckSuperwerkerSetupFinished:
             Type: Task
             Resource: !GetAtt WaitForSuperwerkerSetupFinishedFunction.Arn
             Retry: # check every 5 minutes for 1 hours
