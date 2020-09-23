@@ -135,20 +135,8 @@ Resources:
 
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
-            - Name: WaitForSuperwerkerSetupFinish
-              ActionTypeId:
-                Category: Invoke
-                Owner: AWS
-                Provider: StepFunctions
-                Version: "1"
-              Configuration:
-                StateMachineArn: !Ref WaitForSuperwerkerSetupFinishedStateMachine
-              InputArtifacts:
-                - Name: SourceOutput
-              RunOrder: 7
-
             - Name: WireRootMailDomain
-              RunOrder: 8
+              RunOrder: 7
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -161,6 +149,18 @@ Resources:
                 ActionMode: REPLACE_ON_FAILURE
                 StackName: superwerker-pipeline-dns-wiring
                 TemplatePath: SourceOutput::tests/pipeline-dns-wiring.yaml
+
+            - Name: WaitForSuperwerkerSetupFinish
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Provider: StepFunctions
+                Version: "1"
+              Configuration:
+                StateMachineArn: !Ref WaitForSuperwerkerSetupFinishedStateMachine
+              InputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 8
 
             - ActionTypeId:
                 Category: Build
