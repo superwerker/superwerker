@@ -1,0 +1,8 @@
+#!/bin/bash -Eeuo pipefail
+# use this in shebang lines like this: #! scripts/run aws cloudformation deploy --stack-name test --template-file $TEMPLATE
+TEMPLATE=$(mktemp)
+trap "{ rm -f $TEMPLATE; }" EXIT
+tail -n +2 "${!#}" > $TEMPLATE
+
+export TEMPLATE=$TEMPLATE
+eval "${@:1:$#-1}"
