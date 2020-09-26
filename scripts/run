@@ -1,8 +1,14 @@
 #!/bin/bash -Eeuo pipefail
-# use this in shebang lines like this: #! scripts/run aws cloudformation deploy --stack-name test --template-file $TEMPLATE
+# use this in shebang lines like this
+#
+#! scripts/run
+# aws cloudformation deploy --stack-name test --template-file $TEMPLATE
+#
+# usage of a second line is required to due shebang limits in execve
 TEMPLATE=$(mktemp)
 trap "{ rm -f $TEMPLATE; }" EXIT
-tail -n +2 "${!#}" > $TEMPLATE
+tail -n +3 "${!#}" > $TEMPLATE
 
 export TEMPLATE=$TEMPLATE
-eval "${@:1:$#-1}"
+
+eval $(sed -n "s/#[[:space:]]*//g; 2p" "${!#}")
