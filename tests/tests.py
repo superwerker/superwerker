@@ -31,6 +31,12 @@ class MyTestCase(unittest.TestCase):
         if len(detectors) > 0:
             guardduty.delete_detector(DetectorId=detectors[0])
 
+        iam = boto3.client('iam')
+        try:
+            iam.delete_service_linked_role('AWSServiceRoleForAmazonGuardDuty')
+        except:
+            pass
+
     def test_guardduty_should_be_set_up_with_clean_state(self):
         # check if audit account has become the master
         audit_account = self.control_tower_exection_role_session(account_id=self.audit_account_id)
