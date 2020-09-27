@@ -6,8 +6,54 @@ Transform: AWS::Serverless-2016-10-31
 
 Resources:
 
+  ControlTowerReadyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        LZOrUpdateFinished:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - superwerker
+              detail:
+                eventName:
+                  - LandingZoneSetupOrUpdateFinished
+
+      Handler: index.handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          SIGNAL_URL: !Ref ControlTowerReadyHandle
+      InlineCode: |
+        # signal cloudformation stack that control tower setup is complete
+        import urllib3
+        import os
+        import json
+
+        def handler(event, context):
+            encoded_body = json.dumps({
+                "Status": "SUCCESS",
+                "Reason": "Control Tower Setup completed",
+                "UniqueId": "doesthisreallyhavetobeunique",
+                "Data": "Control Tower Setup completed"
+            })
+
+            http = urllib3.PoolManager()
+            http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
+
+  ControlTowerReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  ControlTowerReadyHandleWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref ControlTowerReadyHandle
+      Timeout: 7200
+
   ServiceControlPolicy:
     Type: AWS::CloudFormation::CustomResource
+    DependsOn: ControlTowerReadyHandleWaitCondition
     Properties:
       ServiceToken: !GetAtt SCPCustomResource.Arn
       Policy: |
@@ -183,6 +229,7 @@ Resources:
 
   SCPEnable:
     Type: AWS::CloudFormation::CustomResource
+    DependsOn: ControlTowerReadyHandleWaitCondition
     Properties:
       ServiceToken: !GetAtt SCPEnableCustomResource.Arn
 
