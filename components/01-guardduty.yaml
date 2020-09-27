@@ -163,6 +163,12 @@ Resources:
               - Effect: Allow
                 Action: ssm:GetParameters
                 Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
+        - PolicyName: ServiceLinkedRole
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/guardduty.amazonaws.com/AWSServiceRoleForAmazonGuardDuty
 
   EnableGuardDutyExistingAccounts:
     Type: AWS::SSM::Document
