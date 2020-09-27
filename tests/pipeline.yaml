@@ -14,6 +14,8 @@ Parameters:
   GithubTokenSecretsManagerPath:
     Type: String
     Default: /superwerker/github-token
+  RootMailDomain:
+    Type: String
 
 Resources:
 
@@ -129,7 +131,7 @@ Resources:
                   {
                     "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
                     "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]},
-                    "Domain": "a4662202-595c-46a8-87be-22c29f9d33ad.net",
+                    "Domain": "${RootMailDomain}",
                     "TemplateUrlPrefix": "https://${DeploymentBucket.DomainName}"
                   }
 
@@ -149,6 +151,10 @@ Resources:
                 ActionMode: REPLACE_ON_FAILURE
                 StackName: superwerker-pipeline-dns-wiring
                 TemplatePath: SourceOutput::tests/pipeline-dns-wiring.yaml
+                ParameterOverrides: !Sub |
+                  {
+                    "RootMailDomain": "${RootMailDomain}"
+                  }
 
             - Name: WaitForSuperwerkerSetupFinish
               ActionTypeId:

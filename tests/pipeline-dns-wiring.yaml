@@ -1,13 +1,16 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Parameters:
+  RootMailDomain:
+    Type: String
 
 Resources:
 
   RootMailZoneDelegation:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneName: a4662202-595c-46a8-87be-22c29f9d33ad.net. # FIXME: don't hardcode
-      Name: aws.a4662202-595c-46a8-87be-22c29f9d33ad.net # FIXME: don't hardcode
+      HostedZoneName: !Sub ${RootMailDomain}.
+      Name: !Sub aws.${RootMailDomain}
       ResourceRecords: !Split
         - ','
         - !ImportValue superwerker-rootmail-DelegationTarget
