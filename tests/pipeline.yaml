@@ -331,31 +331,17 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
         Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: ROOT_MAIL_DOMAIN
+            Value: !Ref RootMailDomain
+          - Name: SUPERWERKER_CW_SYN_ARTIFACTS_BUCKET
+            Value: !Sub superwerker-cwsyn-artifacts-${AWS::AccountId}
       ServiceRole: !GetAtt CleanupBuildProjectRole.Arn
       Artifacts:
         Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          env:
-            shell: bash
-          phases:
-            build:
-              commands:
-                # cleanup S3 buckets so they can be deleted by CFN
-                - aws s3 rm s3://superwerker-cwsyn-artifacts-${AWS::AccountId}/ --recursive || true
-                - aws s3 rm s3://aws.${RootMailDomain}/ --recursive || true
-
-                # ensure clean state for tests
-                - python3 tests/cleanup.py || true
-
-                # remove former superwerker parameters
-                - aws ssm delete-parameter --name /superwerker/account_id_audit || true
-                - aws ssm delete-parameter --name /superwerker/account_id_master || true
-                - aws ssm delete-parameter --name /superwerker/account_id_logarchive || true
-
-
+        BuildSpec: tests/buildspec-pipeline-cleanup.yml
 
   CleanupBuildProjectRole:
     Type: AWS::IAM::Role
