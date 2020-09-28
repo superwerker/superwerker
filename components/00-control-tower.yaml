@@ -162,6 +162,15 @@ Resources:
             Principal:
               AWS: !GetAtt SetupControlTowerCanaryRole.Arn
 
+  ControlTowerReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  ControlTowerReadyHandleWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref ControlTowerReadyHandle
+      Timeout: 7200
+
   SuperwerkerBootstrapFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -201,13 +210,17 @@ Resources:
 
       Handler: index.handler
       Runtime: python3.7
-
+      Environment:
+        Variables:
+          SIGNAL_URL: !Ref ControlTowerReadyHandle
       InlineCode: |-
         import boto3
         import json
 
         ssm = boto3.client('ssm')
         events = boto3.client('events')
+        import urllib3
+        import os
 
         def handler(event, context):
           for account in event['accounts']:
@@ -217,6 +230,16 @@ Resources:
                   Overwrite=True,
                   Type='String',
               )
+
+          # signal cloudformation stack that control tower setup is complete
+          encoded_body = json.dumps({
+              "Status": "SUCCESS",
+              "Reason": "Control Tower Setup completed",
+              "UniqueId": "doesthisreallyhavetobeunique",
+              "Data": "Control Tower Setup completed"
+          })
+          http = urllib3.PoolManager()
+          http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
 
           # signal Control Tower Landing ZOne Setup/Update has finished
           events.put_events(

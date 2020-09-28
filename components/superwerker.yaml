@@ -40,5 +40,6 @@ Resources:
 
   ServiceControlPolicies:
     Type: AWS::CloudFormation::Stack
+    DependsOn: ControlTower
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
