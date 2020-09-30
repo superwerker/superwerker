@@ -1,0 +1,55 @@
+#!scripts/run
+# aws s3 sync --acl public-read components/ s3://$(aws cloudformation describe-stacks --stack-name dev --query "Stacks[0].Outputs[?OutputKey=='Bucket'].OutputValue" --output text)/components/ && aws cloudformation deploy --template-file $TEMPLATE --stack-name dev-main --capabilities CAPABILITY_AUTO_EXPAND --parameter-overrides IncludeA=false IncludeB=true IncludeC=true TemplateUrlPrefix=$(aws cloudformation describe-stacks --stack-name dev --query "Stacks[0].Outputs[?OutputKey=='TemplateUrlPrefix'].OutputValue" --output text) && aws s3 ls | grep dev-main
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  IncludeA:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  IncludeB:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  IncludeC:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  TemplateUrlPrefix:
+    Type: String
+
+Conditions:
+  IncludeA: !Equals [ !Ref IncludeA, true ]
+  IncludeB: !And
+    - !Condition IncludeA
+    - !Equals [ !Ref IncludeB, true ]
+  IncludeC: !And
+    - !Condition IncludeA
+    - !Equals [ !Ref IncludeC, true ]
+
+Resources:
+
+  A:
+    Condition: IncludeA
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/dev-a.yaml
+
+  B:
+    Condition: IncludeB
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/dev-b.yaml
+
+  C:
+    Condition: IncludeC
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/dev-c.yaml
