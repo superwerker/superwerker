@@ -18,12 +18,11 @@ In the initial release, superwerker configures the following AWS services and fe
 - AWS Control Tower as the basis for a future-proof multi-account setup
 - AWS GuardDuty for automatic detection of possible threats breaches
 - AWS Security Hub to ensure established security standards
-- AWS Trusted Advisor for service limits checks
 - Budget alarms for cost control
 - AWS Backup for Automated creation of backups
-- Service control policies to protect the infrastructure from intentional or unintentional mistakes
-  - E.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
+- Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
 - Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
+- Systems Manager OpsCenter/Items notification aggregation and incident response handling
 - Secure mailboxes and service catalogue aliases for all root accounts
 
 
