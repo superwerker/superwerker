@@ -5,9 +5,18 @@ It enables startups and SMEs to focus on their core business - by saving setup a
 
 superwerker is brought to you by AWS Advanced Partners [kreuzwerker](https://kreuzwerker.de/) and [superluminar](https://superluminar.io/).
 
-## Project state / Roadmap
+## Quick install
 
-This project is currently under heavy delopment, no preview yet.
+This project is currently under heavy development.
+
+You can install the current `master` branch via CloudFormation in the following AWS regions:
+
+ - [🇪🇺 eu-west-1](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
+ - [🇺🇸 us-east-1](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
+ - [🇺🇸 us-east-2](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
+ - [🇺🇸 us-west-2](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
+ - [🇦🇺 ap-southeast-2](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
+## Roadmap
 
 [Roadmap and Kanban board](https://github.com/superwerker/superwerker/projects/1)
 
