@@ -26,6 +26,12 @@ In the initial release, superwerker configures the following AWS services and fe
 - Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
 - Secure mailboxes and service catalogue aliases for all root accounts
 
+
+## Help & Feedback
+
+ - Join our [mailing list](https://groups.google.com/forum/#!forum/superwerker/join)
+ - Chat with us on the [#superwerker](https://app.slack.com/client/T0DCZS0NA/C01BYE3S57X) channel in the AWS Community Slack ([invite link](https://aws-community-slack-invite.herokuapp.com/)).
+
 ## FAQ
 
 More FAQ are currently in the makings.
