@@ -226,6 +226,23 @@ Resources:
 
   DeploymentBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub superwerker-deployment-${BranchName}
+
+  DeploymentBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DeploymentBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicRead
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Resource: !Sub ${DeploymentBucket.Arn}/*
 
   EmailRandomizer:
     Type: AWS::CodeBuild::Project
