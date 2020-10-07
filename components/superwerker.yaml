@@ -43,3 +43,9 @@ Resources:
     DependsOn: ControlTower
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
+
+Outputs:
+
+  RootMailDelegationTarget:
+    Description: Nameservers for the hosted zone delegation
+    Value: !GetAtt RootMail.Outputs.NameServers

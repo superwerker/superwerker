@@ -4,6 +4,9 @@ Parameters:
   RootMailDomain:
     Type: String
 
+  RootMailDelegationTarget:
+    Type: CommaDelimitedList
+
 Resources:
 
   RootMailZoneDelegation:
@@ -13,6 +16,6 @@ Resources:
       Name: !Sub aws.${RootMailDomain}
       ResourceRecords: !Split
         - ','
-        - !ImportValue superwerker-rootmail-DelegationTarget
+        - !Ref RootMailDelegationTarget
       TTL: 60
       Type: NS

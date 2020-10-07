@@ -114,6 +114,7 @@ Resources:
 
             - Name: InstallSuperwerker
               RunOrder: 6
+              Namespace: superwerker
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -153,7 +154,8 @@ Resources:
                 TemplatePath: SourceOutput::tests/pipeline-dns-wiring.yaml
                 ParameterOverrides: !Sub |
                   {
-                    "RootMailDomain": "${RootMailDomain}"
+                    "RootMailDomain": "${RootMailDomain}",
+                    "RootMailDelegationTarget": "#{superwerker.RootMailDelegationTarget}"
                   }
 
             - ActionTypeId:
