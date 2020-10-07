@@ -169,8 +169,9 @@ class MyTestCase(unittest.TestCase):
         security_hub_log_archive = log_archive_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
         members = [member['AccountId'] for member in members_result]
-        security_hub_audit.disassociate_members(AccountIds=members)
-        security_hub_audit.delete_members(AccountIds=members)
+        if members:
+            security_hub_audit.disassociate_members(AccountIds=members)
+            security_hub_audit.delete_members(AccountIds=members)
         try:
             security_hub_audit.disable_security_hub()
             security_hub_log_archive.disable_security_hub()
