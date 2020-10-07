@@ -21,7 +21,7 @@ class MyTestCase(unittest.TestCase):
 
     @classmethod
     def get_log_archive_account_id(cls):
-        log_archive_account_id = ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
+        return ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
 
     @classmethod
     def cleanUpGuardDuty(cls):
