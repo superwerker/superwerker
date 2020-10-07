@@ -48,4 +48,4 @@ Outputs:
 
   RootMailDelegationTarget:
     Description: Nameservers for the hosted zone delegation
-    Value: !GetAtt RootMail.Outputs.NameServers
+    Value: !GetAtt RootMail.Outputs.DelegationTarget
