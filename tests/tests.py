@@ -45,7 +45,7 @@ class MyTestCase(unittest.TestCase):
 
     @classmethod
     # wait until delegated admin de-registration is completed and detector can be deleted
-    @retry(tries=10, delay=2)
+    @retry(delay=2)
     def delete_guardduty_detector(cls, detector_id):
         guardduty.delete_detector(DetectorId=detector_id)
 
