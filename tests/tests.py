@@ -65,7 +65,7 @@ class MyTestCase(unittest.TestCase):
             self.master_account_id,
         ]
 
-        self.assertEqual(expected_members, actual_members)
+        self.assertCountEqual(expected_members, actual_members)
 
     @classmethod
     def control_tower_exection_role_session(cls, account_id):
