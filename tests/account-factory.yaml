@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Provision an AWS Account with Control Tower through Service Catalog
+Parameters:
+  AccountName:
+    Description: "Account name, the new managed Account will be created with this name."
+    Type: String
+    AllowedPattern : "[a-zA-Z0-9][a-zA-Z0-9._-]*"
+  AccountEmail:
+    Description: "Account email, must be unique for each AWS Account."
+    Type: String
+    AllowedPattern : "[^\\s@]+@[^\\s@]+\\.[^\\s@]+"
+  SSOUserFirstName:
+    Description:  "SSO user first name."
+    Type: String
+    AllowedPattern : ".+"
+  SSOUserLastName:
+    Description:  "SSO user last name."
+    Type: String
+    AllowedPattern : ".+"
+  SSOUserEmail:
+    Description: "SSO user email. A new SSO user will be created for this email, if it does not exist. This SSO user will be associated with the new managed Account."
+    Type: String
+    AllowedPattern : "[^\\s@]+@[^\\s@]+\\.[^\\s@]+"
+  ManagedOrganizationalUnit:
+    Description: "Managed organizational unit. The managed Account will be placed under this Organizational Unit."
+    Type: String
+Resources:
+  Account:
+    Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
+    Properties:
+      ProductName: AWS Control Tower Account Factory
+      ProvisionedProductName: !Ref AccountName
+      ProvisioningArtifactName: AWS Control Tower Account Factory
+      ProvisioningParameters:
+        - Key: SSOUserEmail
+          Value: !Ref SSOUserEmail
+        - Key: AccountEmail
+          Value: !Ref AccountEmail
+        - Key: SSOUserFirstName
+          Value: !Ref SSOUserFirstName
+        - Key: SSOUserLastName
+          Value: !Ref SSOUserLastName
+        - Key: ManagedOrganizationalUnit
+          Value: !Ref ManagedOrganizationalUnit
+        - Key: AccountName
+          Value: !Ref AccountName
+
+Outputs:
+
+  RootMailDelegationTarget:
+    Description: Nameservers for the hosted zone delegation
+    Value: !GetAtt Account.Outputs.AccountId

@@ -57,8 +57,22 @@ Resources:
               Name: Cleanup
               RunOrder: 1
 
-            - Name: RemoveWireRootMailDomain
+            - Name: RemoveAccountFactoryFixture
               RunOrder: 2
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                ActionMode: DELETE_ONLY
+                StackName: superwerker-pipeline-account-factory-fixture
+
+            - Name: RemoveWireRootMailDomain
+              RunOrder: 3
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -72,7 +86,7 @@ Resources:
                 StackName: superwerker-pipeline-dns-wiring
 
             - Name: RemoveSuperwerkerStack
-              RunOrder: 3
+              RunOrder: 4
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -96,7 +110,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 4
+              RunOrder: 5
 
             - ActionTypeId:
                 Category: Build
@@ -110,10 +124,10 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
-              RunOrder: 5
+              RunOrder: 6
 
             - Name: InstallSuperwerker
-              RunOrder: 6
+              RunOrder: 7
               Namespace: superwerker
               ActionTypeId:
                 Category: Deploy
@@ -139,7 +153,7 @@ Resources:
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
             - Name: WireRootMailDomain
-              RunOrder: 7
+              RunOrder: 8
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -158,6 +172,30 @@ Resources:
                     "RootMailDelegationTarget": "#{superwerker.RootMailDelegationTarget}"
                   }
 
+            - Name: AccountFactoryFixture
+              RunOrder: 9
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                ActionMode: REPLACE_ON_FAILURE
+                StackName: superwerker-pipeline-account-factory-fixture
+                TemplatePath: SourceOutput::tests/account-factory.yaml
+                ParameterOverrides: !Sub |
+                  {
+                    "AccountName": "superwerker-test-#{codepipeline.PipelineExecutionId}",
+                    "AccountEmail": "#{codepipeline.PipelineExecutionId}@aws.${RootMailDomain}",
+                    "SSOUserFirstName": "Arno",
+                    "SSOUserLastName": "Nym",
+                    "SSOUserEmail": "#{codepipeline.PipelineExecutionId}@aws.${RootMailDomain}",
+                    "ManagedOrganizationalUnit": "Custom",
+                  }
+
             - ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -168,7 +206,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 8
+              RunOrder: 10
 
       ArtifactStore:
         Type: S3
