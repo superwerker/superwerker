@@ -2,7 +2,6 @@ import unittest
 import boto3
 import json
 import botocore
-from time import sleep
 
 events = boto3.client('events')
 guardduty = boto3.client('guardduty')
