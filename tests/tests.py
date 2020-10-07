@@ -13,9 +13,15 @@ sts = boto3.client('sts')
 
 class MyTestCase(unittest.TestCase):
 
-    audit_account_id = ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
-    log_archive_account_id = ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
     master_account_id = sts.get_caller_identity()['Account']
+
+    @classmethod
+    def get_audit_account_id(cls):
+        return ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
+
+    @classmethod
+    def get_log_archive_account_id(cls):
+        log_archive_account_id = ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
 
     @classmethod
     def cleanUpGuardDuty(cls):
@@ -45,7 +51,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_guardduty_should_be_set_up_with_clean_state(self):
         # check if audit account has become the master
-        audit_account = self.control_tower_exection_role_session(account_id=self.audit_account_id)
+        audit_account = self.control_tower_exection_role_session(account_id=self.get_audit_account_id())
 
         guardduty_audit_account = audit_account.client('guardduty')
 
@@ -75,13 +81,13 @@ class MyTestCase(unittest.TestCase):
         return audit_account
 
     def test_security_hub_is_enabled_in_audit_and_has_members(self):
-        audit_account = self.control_tower_exection_role_session(self.audit_account_id)
+        audit_account = self.control_tower_exection_role_session(self.get_audit_account_id())
         security_hub_audit = audit_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
         actual_members = [member['AccountId'] for member in members_result if member['MemberStatus'] == 'Associated']
 
         expected_members = [
-            self.log_archive_account_id,
+            self.get_log_archive_account_id(),
         ]
 
         self.assertEqual(expected_members, actual_members)
@@ -89,7 +95,7 @@ class MyTestCase(unittest.TestCase):
     def test_security_hub_cannot_be_disabled_in_member_account(self):
 
         # use log archive as sample member
-        log_archive_account = self.control_tower_exection_role_session(self.log_archive_account_id)
+        log_archive_account = self.control_tower_exection_role_session(self.get_log_archive_account_id())
         iam = log_archive_account.client('iam')
 
         # create a temp admin role since the ControlTowerException role is allowed to disable SH
@@ -113,7 +119,7 @@ class MyTestCase(unittest.TestCase):
                     {
                         "Effect": "Allow",
                         "Principal": {
-                            "AWS": f'arn:aws:iam::{self.log_archive_account_id}:root'
+                            "AWS": f'arn:aws:iam::{self.get_log_archive_account_id()}:root'
                         },
                         "Action": "sts:AssumeRole"
                     }
@@ -127,7 +133,7 @@ class MyTestCase(unittest.TestCase):
 
         log_archive_account_sts = log_archive_account.client('sts')
         scp_test_role_creds = log_archive_account_sts.assume_role(
-            RoleArn=f'arn:aws:iam::{self.log_archive_account_id}:role/SuperWerkerScpTestRole',
+            RoleArn=f'arn:aws:iam::{self.get_log_archive_account_id()}:role/SuperWerkerScpTestRole',
             RoleSessionName='SuperWerkerScpTest'
         )['Credentials']
         scp_test_session = boto3.session.Session(
@@ -141,19 +147,25 @@ class MyTestCase(unittest.TestCase):
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_security_hub.disable_security_hub()
 
-        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default with an explicit deny', str(exception.exception))
+        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:eu-west-1:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
 
         # assert that SCP forbids leaving
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_security_hub.disassociate_from_master_account()
 
-        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:eu-west-1:{self.log_archive_account_id}:hub/default with an explicit deny', str(exception.exception))
+        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:eu-west-1:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
 
     @classmethod
     def cleanup_security_hub(cls):
-        audit_account = cls.control_tower_exection_role_session(cls.audit_account_id)
+        try:
+            audit_account_id = cls.get_audit_account_id()
+            log_archive_account_id = cls.get_log_archive_account_id()
+        except ssm.exceptions.ParameterNotFound:
+            return
+
+        audit_account = cls.control_tower_exection_role_session(audit_account_id)
         security_hub_audit = audit_account.client('securityhub')
-        log_archive_account = cls.control_tower_exection_role_session(cls.log_archive_account_id)
+        log_archive_account = cls.control_tower_exection_role_session(log_archive_account_id)
         security_hub_log_archive = log_archive_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
         members = [member['AccountId'] for member in members_result]

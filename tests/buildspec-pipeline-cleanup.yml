@@ -9,7 +9,7 @@ phases:
       - aws s3 rm s3://aws.${ROOT_MAIL_DOMAIN}/ --recursive || true
 
       # ensure clean state for tests
-      - python3 tests/cleanup.py || true
+      - python3 tests/cleanup.py
 
       # remove former superwerker parameters
       - aws ssm delete-parameter --name /superwerker/account_id_audit || true
