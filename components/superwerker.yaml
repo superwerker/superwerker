@@ -8,12 +8,56 @@ Parameters:
     Type: String
   Domain:
     Type: String
+  IncludeControlTower:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  IncludeGuardDuty:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  IncludeSecurityHub:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  IncludeServiceControlPolicies:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
+  IncludeRootMail:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Type: String
   TemplateUrlPrefix:
     Type: String
+
+Conditions:
+  IncludeControlTower: !Equals [ !Ref IncludeControlTower, true ]
+  IncludeGuardDuty: !And
+    - !Condition IncludeControlTower
+    - !Equals [ !Ref IncludeGuardDuty, true ]
+  IncludeRootMail: !Equals [ !Ref IncludeRootMail, true ]
+  IncludeSecurityHub: !And
+    - !Condition IncludeControlTower
+    - !Equals [ !Ref IncludeSecurityHub, true ]
+  IncludeServiceControlPolicies: !And
+    - !Condition IncludeControlTower
+    - !Equals [ !Ref IncludeServiceControlPolicies, true ]
 
 Resources:
 
   ControlTower:
+    Condition: IncludeControlTower
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/00-control-tower.yaml
@@ -21,24 +65,28 @@ Resources:
         AuditAWSAccountEmail: !Ref AuditAWSAccountEmail
         LogArchiveAWSAccountEmail: !Ref LogArchiveAWSAccountEmail
 
-  RootMail:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/xx-rootmail.yaml
-      Parameters:
-        Domain: !Ref Domain
-
   GuardDuty:
+    Condition: IncludeGuardDuty
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/01-guardduty.yaml
 
+  RootMail:
+    Condition: IncludeRootMail
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/06-rootmail.yaml
+      Parameters:
+        Domain: !Ref Domain
+
   SecurityHub:
+    Condition: IncludeSecurityHub
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/04-security-hub.yaml
 
   ServiceControlPolicies:
+    Condition: IncludeServiceControlPolicies
     Type: AWS::CloudFormation::Stack
     DependsOn: ControlTower
     Properties:
