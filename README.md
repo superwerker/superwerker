@@ -5,9 +5,13 @@ It enables startups and SMEs to focus on their core business - by saving setup a
 
 superwerker is brought to you by AWS Advanced Partners [kreuzwerker](https://kreuzwerker.de/) and [superluminar](https://superluminar.io/).
 
-## Quick install
+## Project state / Roadmap
 
-This project is currently under heavy development.
+This project is currently under heavy development. We are working towards [1.0 milestone](https://github.com/superwerker/superwerker/milestone/1).
+
+There is a [Long term roadmap and list of ideas](https://github.com/superwerker/superwerker/projects/1) as well. Feel free to comment and add ideas.
+
+## Quick install
 
 You can install the current `master` branch via CloudFormation in the following AWS regions:
 
@@ -16,9 +20,6 @@ You can install the current `master` branch via CloudFormation in the following 
  - [🇺🇸 us-east-2](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
  - [🇺🇸 us-west-2](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
  - [🇦🇺 ap-southeast-2](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment-master.s3.amazonaws.com/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment-master.s3.amazonaws.com)
-## Roadmap
-
-[Roadmap and Kanban board](https://github.com/superwerker/superwerker/projects/1)
 
 ## What's included in the setup?
 
