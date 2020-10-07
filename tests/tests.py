@@ -90,7 +90,7 @@ class MyTestCase(unittest.TestCase):
             self.get_log_archive_account_id(),
         ]
 
-        self.assertEqual(expected_members, actual_members)
+        self.assertCountEqual(expected_members, actual_members)
 
     def test_security_hub_cannot_be_disabled_in_member_account(self):
 
