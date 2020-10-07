@@ -14,8 +14,6 @@ Resources:
     Properties:
       HostedZoneName: !Sub ${RootMailDomain}.
       Name: !Sub aws.${RootMailDomain}
-      ResourceRecords: !Split
-        - ','
-        - !Ref RootMailDelegationTarget
+      ResourceRecords: !Ref RootMailDelegationTarget
       TTL: 60
       Type: NS
