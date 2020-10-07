@@ -2,6 +2,7 @@ import unittest
 import boto3
 import json
 import botocore
+from retry import retry
 
 events = boto3.client('events')
 guardduty = boto3.client('guardduty')
@@ -28,13 +29,19 @@ class MyTestCase(unittest.TestCase):
 
         detectors = guardduty.list_detectors()['DetectorIds']
         if len(detectors) > 0:
-            guardduty.delete_detector(DetectorId=detectors[0])
+            cls.delete_guardduty_detector(detectors[0])
 
         iam = boto3.client('iam')
         try:
             iam.delete_service_linked_role('AWSServiceRoleForAmazonGuardDuty')
         except:
             pass
+
+    @classmethod
+    # wait until delegated admin de-registration is completed and detector can be deleted
+    @retry(tries=10, delay=2)
+    def delete_guardduty_detector(cls, detector_id):
+        guardduty.delete_detector(DetectorId=detector_id)
 
     def test_guardduty_should_be_set_up_with_clean_state(self):
         # check if audit account has become the master
