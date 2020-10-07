@@ -9,6 +9,7 @@ phases:
       - aws s3 rm s3://aws.${ROOT_MAIL_DOMAIN}/ --recursive || true
 
       # ensure clean state for tests
+      - pip3 install -r tests/requirements.txt
       - python3 tests/cleanup.py
 
       # remove former superwerker parameters
