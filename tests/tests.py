@@ -61,7 +61,7 @@ class MyTestCase(unittest.TestCase):
         actual_members = [a['AccountId'] for a in members if a['RelationshipStatus'] == 'Enabled']
 
         expected_members = [
-            self.log_archive_account_id,
+            self.get_log_archive_account_id(),
             self.master_account_id,
         ]
 
