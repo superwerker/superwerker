@@ -117,8 +117,8 @@ Resources:
         - Key: AccountName
           Value: !Ref AccountName
 
-#Outputs:
-#
-#  AccountId:
-#    Description: Nameservers for the hosted zone delegation
-#    Value: !GetAtt Account.Outputs.AccountId
+Outputs:
+
+  AccountId:
+    Description: Nameservers for the hosted zone delegation
+    Value: !GetAtt Account.Outputs.AccountId
