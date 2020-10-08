@@ -23,3 +23,8 @@
  - The CT LZ setup/update/repair has to be supervised since it fails sometimes and has to be restarted (TODO)
  - superwerker provides links to how-tos for wiring existing IdPs like GSuite, AzureAD, etc. (TODO)
  - Since AWS SSO is used, IAM users are deprecated and should only be used for machine users. Key rotation is supervised by Security Hub.
+
+## TODO
+
+ - [ ] How to handle SSO and Users
+ - [ ] Document CW Events / SSM Parameters
