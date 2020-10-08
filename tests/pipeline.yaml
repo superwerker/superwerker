@@ -401,3 +401,75 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  ControlTowerServiceCatalogLookup:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt ControlTowerServiceCatalogLookupCustomResource.Arn
+
+  ControlTowerServiceCatalogLookupCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - servicecatalog:DescribeProductAsAdmin
+                - servicecatalog:ListPortfoliosForProduct
+              Resource: '*'
+      InlineCode: |
+        import boto3
+        import cfnresponse
+
+        sc = boto3.client("servicecatalog")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            ct_account_factory_sc_product = sc.describe_product_as_admin(
+                Name='AWS Control Tower Account Factory'
+            )
+
+            ct_account_factory_sc_product_detail = ct_account_factory_sc_product['ProductViewDetail']['ProductViewSummary']
+            ct_account_factory_sc_product_id = ct_account_factory_sc_product_detail['ProductId']
+            ct_account_factory_portfolio_id = sc.list_portfolios_for_product(ProductId=ct_account_factory_sc_product_id)['PortfolioDetails'][0]['Id']
+            data['PortfolioId'] = ct_account_factory_portfolio_id
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
+  CloudFormationRoleToAccountFactoryAssociation:
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
+    Properties:
+      PortfolioId: !GetAtt ControlTowerServiceCatalogLookup.PortfolioId
+      PrincipalARN: !GetAtt CloudFormationRole.Arn
+      PrincipalType: IAM
