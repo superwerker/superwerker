@@ -58,7 +58,7 @@ Resources:
               RunOrder: 1
 
             - Name: RemoveAccountFactoryFixture
-              RunOrder: 2
+              RunOrder: 1
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -72,7 +72,7 @@ Resources:
                 StackName: superwerker-pipeline-account-factory-fixture
 
             - Name: RemoveWireRootMailDomain
-              RunOrder: 3
+              RunOrder: 1
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
