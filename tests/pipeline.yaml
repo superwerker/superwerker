@@ -193,7 +193,7 @@ Resources:
                     "SSOUserFirstName": "Arno",
                     "SSOUserLastName": "Nym",
                     "SSOUserEmail": "#{codepipeline.PipelineExecutionId}@aws.${RootMailDomain}",
-                    "ManagedOrganizationalUnit": "Custom",
+                    "ManagedOrganizationalUnit": "Custom"
                   }
 
             - ActionTypeId:
