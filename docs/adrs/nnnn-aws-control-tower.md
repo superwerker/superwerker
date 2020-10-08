@@ -28,3 +28,4 @@
 
  - [ ] How to handle SSO and Users
  - [ ] Document CW Events / SSM Parameters
+ - [ ] Should we enable additional GuardRails? Overlaps with SH?
