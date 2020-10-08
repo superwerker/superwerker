@@ -110,7 +110,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 5
+              RunOrder: 4
 
             - ActionTypeId:
                 Category: Build
@@ -124,7 +124,7 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
-              RunOrder: 6
+              RunOrder: 4
 
             - Name: InstallSuperwerker
               RunOrder: 7
