@@ -3,6 +3,8 @@
 
 ## Context
 
+AWS proposes Multi-Account architectures as best practise (see e.g. Well-Architected) framework, so superwerker is following this best practise.
+CT is the native service as the foundation for a secure multi-account. Since superwerker prefers to use native services whenever possible, CT is used.
 
 ## Decision
 
@@ -21,9 +23,8 @@
  - CT implies additional costs (e.g. Config Rules)
  - Using CWS Canaries provides an audit log of the Click Ops because of the screenshots
  - The CT LZ setup/update/repair has to be supervised since it fails sometimes and has to be restarted (TODO)
- - superwerker provides links to how-tos for wiring existing IdPs like GSuite, AzureAD, etc. (TODO)
- - Since AWS SSO is used, IAM users are deprecated and should only be used for machine users. Key rotation is supervised by Security Hub.
-
+ - superwerker provides links to how-tos for wiring existing IdPs like GSuite, AzureAD, etc. (TODO)\
+ 
 ## TODO
 
  - [ ] How to handle SSO and Users
