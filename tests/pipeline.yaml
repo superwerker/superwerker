@@ -124,6 +124,7 @@ Resources:
               OutputArtifacts:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
+              Namespace: randomizer
               RunOrder: 4
 
             - Name: InstallSuperwerker
@@ -189,11 +190,11 @@ Resources:
                 TemplatePath: SourceOutput::tests/account-factory.yaml
                 ParameterOverrides: !Sub |
                   {
-                    "AccountName": "superwerker-test-#{codepipeline.PipelineExecutionId}",
-                    "AccountEmail": "#{codepipeline.PipelineExecutionId}@aws.${RootMailDomain}",
+                    "AccountName": "sw-#{randomizer.account_factory_email_prefix}",
+                    "AccountEmail": "#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
                     "SSOUserFirstName": "Arno",
                     "SSOUserLastName": "Nym",
-                    "SSOUserEmail": "#{codepipeline.PipelineExecutionId}@aws.${RootMailDomain}",
+                    "SSOUserEmail": "#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
                     "ManagedOrganizationalUnit": "Custom"
                   }
 
@@ -296,6 +297,8 @@ Resources:
           version: 0.2
           env:
             shell: bash
+            exported-variables:
+              - account_factory_email_prefix
           phases:
             build:
               commands:
@@ -304,6 +307,9 @@ Resources:
                 - "aws ssm get-parameter --name /superwerker_bootstrap/email_adresses || (printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'superwerker-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'superwerker-aws-test+%s@superluminar.io' audit$timestamp) > /tmp/EmailRandomizerTemp.json &&  aws ssm put-parameter --name /superwerker_bootstrap/email_adresses --type String --value file:///tmp/EmailRandomizerTemp.json --no-overwrite)"
                 # get the parameter value and write the artifact each time for the next pipeline step (CloudFormation)
                 - aws ssm get-parameter --name /superwerker_bootstrap/email_adresses --query Parameter.Value --output text > EmailRandomizer.json
+
+                # write random value for email-adress prefix for account factory fixture
+                - account_factory_email_prefix=$timestamp
           artifacts:
             files:
               - EmailRandomizer.json
