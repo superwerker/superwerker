@@ -74,6 +74,24 @@ class MyTestCase(unittest.TestCase):
 
         self.assertCountEqual(expected_members, actual_members)
 
+    def test_guardduty_cannot_be_disabled_in_member_account(self):
+
+        # use log archive as sample member
+        log_archive_account = self.control_tower_exection_role_session(self.get_log_archive_account_id())
+        scp_test_session_guardduty = log_archive_account.client('guardduty')
+        detector_id = scp_test_session_guardduty.list_detectors()['DetectorIds'][0]
+
+        # assert that guardduty delegated admin forbids deleting the detector
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            scp_test_session_guardduty.delete_detector(DetectorId=detector_id)
+        self.assertEqual('An error occurred (BadRequestException) when calling the DeleteDetector operation: The request is rejected because member cannot disassociate from Organization administrator', str(exception.exception))
+
+        # assert that membership cannot be cancelled
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            scp_test_session_guardduty.disassociate_from_master_account(DetectorId=detector_id)
+        self.assertEqual('An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because member cannot disassociate from Organization administrator', str(exception.exception))
+
+
     @classmethod
     def control_tower_exection_role_session(cls, account_id):
         audit_account_creds = sts.assume_role(
