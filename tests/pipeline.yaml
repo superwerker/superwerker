@@ -197,6 +197,7 @@ Resources:
                     "SSOUserEmail": "#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
                     "ManagedOrganizationalUnit": "Custom"
                   }
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
             - ActionTypeId:
                 Category: Build
