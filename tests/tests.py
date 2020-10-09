@@ -1,3 +1,4 @@
+import os
 import unittest
 import boto3
 import json
@@ -22,6 +23,10 @@ class MyTestCase(unittest.TestCase):
     @classmethod
     def get_log_archive_account_id(cls):
         return ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
+
+    def get_enrolled_account_id(cls):
+        account_factory_account_id = os.environ['ACCOUNT_FACTORY_ACCOUNT_ID']
+        return account_factory_account_id
 
     @classmethod
     def cleanUpGuardDuty(cls):
@@ -49,7 +54,8 @@ class MyTestCase(unittest.TestCase):
     def delete_guardduty_detector(cls, detector_id):
         guardduty.delete_detector(DetectorId=detector_id)
 
-    def test_guardduty_should_be_set_up_with_clean_state(self):
+    # TODO: split up into two tests (probably needs more advanced testing system)
+    def test_guardduty_enabled_with_delegated_admin_in_core_and_enrolled_accounts(self):
         # check if audit account has become the master
         audit_account = self.control_tower_exection_role_session(account_id=self.get_audit_account_id())
 
@@ -63,6 +69,7 @@ class MyTestCase(unittest.TestCase):
         expected_members = [
             self.get_log_archive_account_id(),
             self.master_account_id,
+            self.get_enrolled_account_id()
         ]
 
         self.assertCountEqual(expected_members, actual_members)
@@ -80,7 +87,8 @@ class MyTestCase(unittest.TestCase):
         )
         return audit_account
 
-    def test_security_hub_is_enabled_in_audit_and_has_members(self):
+    # TODO: split up into two tests (probably needs more advanced testing system)
+    def test_securityhub_enabled_with_delegated_admin_in_core_and_enrolled_accounts(self):
         audit_account = self.control_tower_exection_role_session(self.get_audit_account_id())
         security_hub_audit = audit_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
@@ -88,6 +96,7 @@ class MyTestCase(unittest.TestCase):
 
         expected_members = [
             self.get_log_archive_account_id(),
+            self.get_enrolled_account_id()
         ]
 
         self.assertCountEqual(expected_members, actual_members)
