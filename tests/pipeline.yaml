@@ -191,7 +191,7 @@ Resources:
                 ParameterOverrides: !Sub |
                   {
                     "AccountName": "sw-#{randomizer.account_factory_email_prefix}",
-                    "AccountEmail": "#root+{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
+                    "AccountEmail": "root+#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
                     "SSOUserFirstName": "Arno",
                     "SSOUserLastName": "Nym",
                     "SSOUserEmail": "root+#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
