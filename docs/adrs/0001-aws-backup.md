@@ -1,10 +1,6 @@
 
 # Backups with AWS Backup
 
-## Status
-
-proposed
-
 ### TODO
 
  - [ ] Spike solution
