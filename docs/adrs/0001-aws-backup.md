@@ -11,7 +11,7 @@
 
 A well-architected AWS setup includes backups for non-transient resources like RDS/Aurora, DynamoDB, EFS etc. so superwerker should protect users by enabling backups automatically.
 Since superwerker prefers the usage of native AWS services, AWS Backup is used.
-AWS Backup does not currently support backing up all resources in an AWS account. Either ARNs or Tags have to be speficied. A workaround has to be found.
+AWS Backup does not currently support backing up all resources in an AWS account. Either ARNs or Tags have to be specified. A workaround has to be found.
 
 So we need a way to tag all resources which should be backed up automatically. Tag policies come into mind. But Tag Policies do not enforce tags on untagged resources ([docs](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_tag-policies-enforcement.html)).
 
