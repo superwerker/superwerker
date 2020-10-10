@@ -5,13 +5,15 @@
 
  - [ ] Spike solution
  - [ ] Spike AWS Config vs. Tag Policies
- - [ ] Decide whether opt-out mechanism is 
+ - [ ] Decide whether to backup EC2 instances, document decision
 
 ## Context
 
 A well-architected AWS setup includes backups for non-transient resources like RDS/Aurora, DynamoDB, EFS etc. so superwerker should protect users by enabling backups automatically.
 Since superwerker prefers the usage of native AWS services, AWS Backup is used.
 AWS Backup does not currently support backing up all resources in an AWS account. Either ARNs or Tags have to be speficied. A workaround has to be found.
+
+So we need a way to tag all resources which should be backed up automatically. Tag policies come into mind. But Tag Policies do not enforce tags on untagged resources ([docs](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_tag-policies-enforcement.html)).
 
 ## Decision
 
@@ -20,10 +22,11 @@ AWS Backup does not currently support backing up all resources in an AWS account
 - The default Backup Vault is used
 - Snapshots are protected via Integrity Protection SCP, only AWS Backup role can delete Snapshots 
 - Enforce Tags, either
-  - Use AWS Config Rule `required-tags` to check if tags have been set on backup-eligible resources, set tags via AWS Confug Rules Remediation
+  - Use AWS Config Rule `required-tags` to check if tags have been set on backup-eligible resources, set tag to `daily` if tag is not `daily` or `none` via AWS Config Rules Remediation
   - or AWS Organizations Tag Policies and CW Events to tag resources without backup tag
-- Tag name is `superwerker:backup`, only valid value for now is `daily`
+- Tag name is `superwerker:backup`, only valid value for now is `daily` or `none`, default is `none`
 - No cross-region backup right now to keep it simple.
+- Opt-out is possible via `supwerker:backup` tag set to `none`
 
 ## Consequences
 
