@@ -1,70 +1,16 @@
 AWSTemplateFormatVersion: 2010-09-09
-Transform: AWS::Serverless-2016-10-31
-Description: Enables various best practises across accounts
 
 Parameters:
-  AuditBucketName:
+  OrgId:
     Type: String
-    Description: Audit Bucket name from the Log Archive Account
-
-  AWSLogsS3KeyPrefix:
-    Type: String
-    Description: Organization ID to use as the S3 Key prefix for storing the audit logs
+    Default: o-k2arggwiaf
 
 Resources:
 
   OrganizationConformancePackBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub awsconfigconforms-founopticum-${AWS::AccountId}
-
-  Stackset:
-    Type: Superluminar::CloudFormation::StackSet
-    Properties:
-      StackSetName: deploy-to-ous-sample
-      PermissionModel: SERVICE_MANAGED
-      AutoDeployment:
-        Enabled: true
-        RetainStacksOnAccountRemoval: false
-      StackInstancesGroup:
-        - Regions:
-            - !Ref AWS::Region
-          DeploymentTargets:
-            OrganizationalUnitIds:
-              - ou-ftbn-l0xkqvly
-      TemplateBody: |
-        Resources:
-          SecurityHub:
-            Type: AWS::SecurityHub::Hub
-
-#  Remediation:
-#    Type: Superluminar::CloudFormation::StackSet
-#    Properties:
-#      StackSetName: Remediation
-#      PermissionModel: SERVICE_MANAGED
-#      AutoDeployment:
-#        Enabled: true
-#        RetainStacksOnAccountRemoval: false
-#      StackInstancesGroup:
-#        - Regions:
-#            - !Ref AWS::Region
-#          DeploymentTargets:
-#            OrganizationalUnitIds:
-#              - r-ftbn
-#      TemplateBody: |
-#        Resources:
-#          EnableEc2EbsEncryptionByDefaultDocument:
-#            Type: AWS::SSM::Document
-#            Properties:
-#              DocumentType: Automation
-#              Content:
-#                schemaVersion: '0.3'
-#                mainSteps:
-#                  - name: CheckIfOrganizationAdminAccountIsAlReadyRegistered
-#                    action: aws:executeAwsApi
-#                    inputs:
-#                      Service: guardduty
-#                      Api: ListOrganizationAdminAccounts
+      BucketName: !Sub awsconfigconforms-superwerker-${AWS::AccountId}
 
   OrganizationConformancePackBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -82,7 +28,7 @@ Resources:
             Resource: !Sub ${OrganizationConformancePackBucket.Arn}/*
             Condition:
               StringEquals:
-                aws:PrincipalOrgID: o-k2arggwiaf
+                aws:PrincipalOrgID: !Ref OrgId
               ArnLike:
                 aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
           - Sid: AllowGetBucketAcl
@@ -92,33 +38,51 @@ Resources:
             Resource: !Sub ${OrganizationConformancePackBucket.Arn}
             Condition:
               StringEquals:
-                aws:PrincipalOrgID: o-k2arggwiaf
+                aws:PrincipalOrgID: !Ref OrgId
               ArnLike:
                 aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
 
-  OrganizationConformancePackFounopticum:
-    Type: AWS::Config::OrganizationConformancePack
-    Properties:
-      ExcludedAccounts:
-        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
-      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
-      OrganizationConformancePackName: founopticum
-      TemplateBody: |
-        Resources:
-          ConfigRule:
-            Type: AWS::Config::ConfigRule
-            Properties:
-              ConfigRuleName: ec2-ebs-encryption-by-default
-              Description: >-
-                A Config rule that checks that Amazon Elastic Block Store (EBS)
-                encryption is enabled by default. The rule is NON_COMPLIANT if the
-                encryption is not enabled.
-              Scope:
-                ComplianceResourceTypes: []
-              Source:
-                Owner: AWS
-                SourceIdentifier: EC2_EBS_ENCRYPTION_BY_DEFAULT
-              MaximumExecutionFrequency: TwentyFour_Hours
+#  SuperwerkerBackupTagsEnforcement:
+#    Type: AWS::Config::OrganizationConfigRule
+#    Properties:
+#      ExcludedAccounts:
+#        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
+#        - 340318396484
+#        - 633760945300
+#        - 231363458211
+#        - 980616047419
+#      OrganizationConfigRuleName: sw-backup
+#      OrganizationManagedRuleMetadata:
+#        RuleIdentifier: REQUIRED_TAGS
+#        InputParameters: '{"tag1Key": "superwerker:backup"}'
+#        ResourceTypesScope:
+#          - AWS::DynamoDB::Table
+
+#  SuperwerkerBackupTagsEnforcement:
+#    Type: AWS::Config::OrganizationConformancePack
+#    Properties:
+#      ExcludedAccounts:
+#        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
+#        - 340318396484
+#        - 633760945300
+#        - 231363458211
+#        - 980616047419
+#      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
+#      OrganizationConformancePackName: superwerker-backup
+#      TemplateBody: |
+#        Resources:
+#          ConfigRule:
+#            Type: AWS::Config::ConfigRule
+#            Properties:
+#              ConfigRuleName: sw-backup
+#              Scope:
+#                ComplianceResourceTypes:
+#                  - AWS::DynamoDB::Table
+#              InputParameters:
+#                tag1Key: superwerker:backup
+#              Source:
+#                Owner: AWS
+#                SourceIdentifier: REQUIRED_TAGS
 #
 #          EnableEc2EbsEncryptionByDefaultRemediation:
 #            Type: AWS::Config::RemediationConfiguration
