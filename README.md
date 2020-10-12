@@ -34,7 +34,7 @@ In the initial release, superwerker configures the following AWS services and fe
 - Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
 - Systems Manager OpsCenter/Items notification aggregation and incident response handling
 - Secure mailboxes and service catalogue aliases for all root accounts
-
+- A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
 
 ## Help & Feedback
 
