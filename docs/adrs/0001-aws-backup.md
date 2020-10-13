@@ -28,6 +28,14 @@ So we need a way to tag all resources which should be backed up automatically. T
 - No cross-region backup right now to keep it simple.
 - Opt-out is possible via `supwerker:backup` tag set to `none`
 
+### AWS Config Organizational Rules vs. Conformance Packs vs. StackSets
+
+There are several ways to deploy config rules org-wide.
+
+ - AWS Config Organizational Rules and Conformance Packs have no fault-tolerance. If one Sub-Account does not have a Config Recorder installed, the entire installation fails.
+ - Conformance packs need a S3 bucket, which makes the setup more complex
+ - Stay consistent with Control tower, since it is currently not using Organizational Config Rules or Conformance Pack
+
 ## Consequences
 
 - AWS Backup is set as the preferred backup solution
