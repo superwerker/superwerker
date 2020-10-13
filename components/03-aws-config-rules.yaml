@@ -13,7 +13,7 @@ Resources:
   OrganizationConformancePackBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub awsconfigconforms-superwerker-${AWS::AccountId}
+      BucketName: !Sub awsconfigconforms-${AWS::StackName}
 
   OrganizationConformancePackBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -45,7 +45,7 @@ Resources:
               ArnLike:
                 aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
 
-  Stackset:
+  SuperwerkerBackupTagsEnforcementResources:
     Type: AWS::CloudFormation::StackSet
     Properties:
       StackSetName: superwerker-backup
@@ -53,7 +53,7 @@ Resources:
       OperationPreferences:
         MaxConcurrentPercentage: 50
       Capabilities:
-        - CAPABILITY_IAM
+          - CAPABILITY_IAM
       AutoDeployment:
         Enabled: true
         RetainStacksOnAccountRemoval: false
@@ -65,9 +65,10 @@ Resources:
               - !Ref RootId
       TemplateBody: |
         Resources:
-          BasicRemediationConfigurationRole:
+          SuperwerkerBackupTagsEnforcementRemediationRole: # TODO: Integrity Protection
             Type: AWS::IAM::Role
             Properties:
+              RoleName: SuperwerkerBackupTagsEnforcementRemediationRole
               AssumeRolePolicyDocument:
                 Version: 2012-10-17
                 Statement:
@@ -76,50 +77,15 @@ Resources:
                       Service: ssm.amazonaws.com
                     Action: sts:AssumeRole
               Policies:
-                - PolicyName: SuperWerkerBackup
+                - PolicyName: AllowCallCrossAccountAutomation
                   PolicyDocument:
                     Statement:
                       - Effect: Allow
-                        Action:
-                          - iam:*
-                        Resource: '*'
-  EnableEc2EbsEncryptionByDefaultDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Automation
-      Name: superwerker-backup-enforce-tags
-      Content:
-        schemaVersion: '0.3'
-        assumeRole: !GetAtt RemediationConfigurationRole.Arn
-        mainSteps:
-          - name: CheckIfOrganizationAdminAccountIsAlReadyRegistered
-            action: aws:executeAwsApi
-            inputs:
-              Service: guardduty
-              Api: ListOrganizationAdminAccounts
-
-
-
-
-
-
-#  SuperwerkerBackupTagsEnforcement:
-#    Type: AWS::Config::OrganizationConfigRule
-#    Properties:
-#      ExcludedAccounts:
-#        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
-#        - 340318396484
-#        - 633760945300
-#        - 231363458211
-#        - 980616047419
-#      OrganizationConfigRuleName: sw-backup
-#      OrganizationManagedRuleMetadata:
-#        RuleIdentifier: REQUIRED_TAGS
-#        InputParameters: '{"tag1Key": "superwerker:backup"}'
-#        ResourceTypesScope:
-#          - AWS::DynamoDB::Table
+                        Action: sts:AssumeRole
+                        Resource: arn:aws:iam::*:role/AWSControlTowerExecution
 
   SuperwerkerBackupTagsEnforcement:
+    DependsOn: SuperwerkerBackupTagsEnforcementResources
     Type: AWS::Config::OrganizationConformancePack
     Properties:
       ExcludedAccounts:
@@ -129,32 +95,58 @@ Resources:
         - 231363458211
         - 980616047419
       DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
-      OrganizationConformancePackName: superwerker-backup
-      TemplateBody: |
+      OrganizationConformancePackName: !Ref AWS::StackName
+      TemplateBody: !Sub |
         Resources:
           ConfigRule:
             Type: AWS::Config::ConfigRule
             Properties:
-              ConfigRuleName: sw-backup
+              ConfigRuleName: sw-backup # TODO: nicer name
               Scope:
                 ComplianceResourceTypes:
                   - AWS::DynamoDB::Table
               InputParameters:
                 tag1Key: superwerker:backup
+                tag1Value: daily,none
               Source:
                 Owner: AWS
                 SourceIdentifier: REQUIRED_TAGS
 
-#          Remediation:
-#            Type: AWS::Config::RemediationConfiguration
-#            Properties:
-#              ConfigRuleName: !Ref ConfigRule
-#              TargetId: !Ref ConfigRule
-#              TargetType: SSM_DOCUMENT
-#              TargetVersion: "1"
+          Remediation:
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: sw-backup # FIXME: !REF
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/sw-backup-rem
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - ${SuperwerkerBackupTagsEnforcementRemediationRole.Arn}
 
-
-
+  SuperwerkerBackupTagsEnforcementRemediationRole: # TODO: Integrity Protection
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowCallCrossAccountAutomation
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
 
 
   #  EnableEc2EbsEncryptionByDefault:
