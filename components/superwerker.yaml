@@ -12,31 +12,31 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: false
+    Default: true
     Type: String
   IncludeGuardDuty:
     AllowedValues:
       - true
       - false
-    Default: false
+    Default: true
     Type: String
   IncludeSecurityHub:
     AllowedValues:
       - true
       - false
-    Default: false
+    Default: true
     Type: String
   IncludeServiceControlPolicies:
     AllowedValues:
       - true
       - false
-    Default: false
+    Default: true
     Type: String
   IncludeRootMail:
     AllowedValues:
       - true
       - false
-    Default: false
+    Default: true
     Type: String
   TemplateUrlPrefix:
     Type: String
