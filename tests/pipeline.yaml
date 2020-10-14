@@ -55,10 +55,10 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Cleanup
-              RunOrder: 1
+              RunOrder: 10
 
             - Name: RemoveAccountFactoryFixture
-              RunOrder: 1
+              RunOrder: 10
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -72,7 +72,7 @@ Resources:
                 StackName: superwerker-pipeline-account-factory-fixture
 
             - Name: RemoveWireRootMailDomain
-              RunOrder: 1
+              RunOrder: 10
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -86,7 +86,7 @@ Resources:
                 StackName: superwerker-pipeline-dns-wiring
 
             - Name: RemoveSuperwerkerStack
-              RunOrder: 4
+              RunOrder: 40
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -110,7 +110,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: DeployCfnTempatles
-              RunOrder: 4
+              RunOrder: 40
 
             - ActionTypeId:
                 Category: Build
@@ -125,10 +125,10 @@ Resources:
                 - Name: EmailRandomizer
               Name: EmailRandomizer
               Namespace: randomizer
-              RunOrder: 4
+              RunOrder: 40
 
             - Name: InstallSuperwerker
-              RunOrder: 7
+              RunOrder: 70
               Namespace: superwerker
               ActionTypeId:
                 Category: Deploy
@@ -154,7 +154,7 @@ Resources:
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
             - Name: WireRootMailDomain
-              RunOrder: 8
+              RunOrder: 80
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -174,7 +174,7 @@ Resources:
                   }
 
             - Name: AccountFactoryFixture
-              RunOrder: 9
+              RunOrder: 90
               Namespace: accountfactoryfixture
               ActionTypeId:
                 Category: Deploy
@@ -216,7 +216,7 @@ Resources:
               InputArtifacts:
                 - Name: SourceOutput
               Name: Test
-              RunOrder: 10
+              RunOrder: 100
 
       ArtifactStore:
         Type: S3
