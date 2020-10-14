@@ -90,20 +90,6 @@ Resources:
               Name: RemoveControlTowerDecommissionFallout
               RunOrder: 3
 
-            - Name: RemoveControlTowerStack
-              RunOrder: 4
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                ActionMode: DELETE_ONLY
-                RoleArn: !GetAtt CleanupBuildProjectRole.Arn
-                StackName: superwerker
-
       ArtifactStore:
         Type: S3
         Location: !Ref CleanupPipelineArtifactStore
