@@ -6,6 +6,7 @@
  - [ ] Spike solution
  - [ ] Spike AWS Config vs. Tag Policies
  - [ ] Decide whether to backup EC2 instances, document decision
+ - [ ] Decide whether enabling/disabling particular resource types ("Service Opt-in") by the user should be allowed 
 
 ## Context
 
