@@ -45,7 +45,7 @@ Resources:
               ArnLike:
                 aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
 
-  SuperwerkerBackupTagsEnforcementResources:
+  SuperwerkerBackupTagsEnforcementResources: # FIXME: name
     Type: AWS::CloudFormation::StackSet
     Properties:
       StackSetName: superwerker-backup
@@ -84,6 +84,22 @@ Resources:
                       - Effect: Allow
                         Action: dynamodb:TagResource
                         Resource: '*'
+
+          AWSBackupDefaultServiceRole: # TODO: Integrity Protection
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: AWSBackupDefaultServiceRole
+              Path: /service-role/
+              AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      Service: backup.amazonaws.com
+                    Action: sts:AssumeRole
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
 
   SuperwerkerBackupTagsEnforcement:
     DependsOn: SuperwerkerBackupTagsEnforcementResources
