@@ -131,20 +131,3 @@ Resources:
                     Values:
                       - "arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole"
 
-  SuperwerkerBackupTagsEnforcementRemediationRole: # TODO: Integrity Protection
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS: '*'
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: AllowCallCrossAccountAutomation
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action: sts:AssumeRole
-                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
