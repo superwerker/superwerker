@@ -190,17 +190,20 @@ class MyTestCase(unittest.TestCase):
         except ssm.exceptions.ParameterNotFound:
             return
 
-        audit_account = cls.control_tower_exection_role_session(audit_account_id)
-        security_hub_audit = audit_account.client('securityhub')
-        log_archive_account = cls.control_tower_exection_role_session(log_archive_account_id)
-        security_hub_log_archive = log_archive_account.client('securityhub')
-        members_result = security_hub_audit.list_members()['Members']
-        members = [member['AccountId'] for member in members_result]
-        if members:
-            security_hub_audit.disassociate_members(AccountIds=members)
-            security_hub_audit.delete_members(AccountIds=members)
         try:
-            security_hub_audit.disable_security_hub()
-            security_hub_log_archive.disable_security_hub()
+            audit_account = cls.control_tower_exection_role_session(audit_account_id)
+            security_hub_audit = audit_account.client('securityhub')
+            log_archive_account = cls.control_tower_exection_role_session(log_archive_account_id)
+            security_hub_log_archive = log_archive_account.client('securityhub')
+            members_result = security_hub_audit.list_members()['Members']
+            members = [member['AccountId'] for member in members_result]
+            if members:
+                security_hub_audit.disassociate_members(AccountIds=members)
+                security_hub_audit.delete_members(AccountIds=members)
+            try:
+                security_hub_audit.disable_security_hub()
+                security_hub_log_archive.disable_security_hub()
+            except:
+                pass
         except:
             pass
