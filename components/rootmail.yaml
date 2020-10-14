@@ -104,6 +104,7 @@ Resources:
 
           log({
             'event': event,
+            'level': 'debug',
           })
 
           verify = event.get('verify', 'true')
@@ -497,54 +498,91 @@ Resources:
         import hashlib
         import json
 
-        s3 = boto3.client("s3")
-        ssm = boto3.client("ssm")
+        s3 = boto3.client('s3')
+        ssm = boto3.client('ssm')
 
         def handler(event, context):
 
-            # TODO: logging, error handling, spam/dkim/spf/av handling
+            log({
+              'event': event,
+              'level': 'debug',
+            })
 
-            id = event["Records"][0]["ses"]["mail"]["messageId"]
-            key = "RootEmails/{key}".format(key=id)
+            for record in event['Records']:
 
-            response = s3.get_object(
-              Bucket="${DomainBucket}",
-              Key=key,
-            )
+              id = record['ses']['mail']['messageId']
+              key = 'RootEmails/{key}'.format(key=id)
+              receipt = record['ses']['receipt']
 
-            msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
+              log({
+                'id': id,
+                'level': 'debug',
+                'key': key,
+                'msg': 'processing mail',
+              })
 
-            title=msg["subject"]
-            title=title[:1020] + " ..." * (len(title) > 1020)
+              verdicts = {
+                'dkim': receipt['dkimVerdict']['status'],
+                'spam': receipt['spamVerdict']['status'],
+                'spf': receipt['spfVerdict']['status'],
+                'virus': receipt['virusVerdict']['status'],
+              }
 
-            description=msg.get_body("plain").get_content()
-            description=description[:1020] + " ..." * (len(description) > 1020)
+              for k, v in verdicts.items():
 
-            source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
-            source=source[:60] + ' ...' * (len(source) > 60)
+                if not v == 'PASS':
 
-            operational_data={
-              "/aws/dedup":{
-                "Value":json.dumps(
-                  {
-                    "dedupString":id,
-                  }
-                ),
-                "Type":"SearchableString",
-              },
-              "/aws/resources":{
-                "Value":json.dumps([
-                  {
-                    "arn":"arn:aws:s3:::${DomainBucket.Arn}/{key}".format(key=key),
-                  }
-                ]),
-                "Type":"SearchableString",
-              },
-            }
+                  log({
+                    'class': k,
+                    'id': id,
+                    'key': key,
+                    'level': 'warn',
+                    'msg': 'verdict failed - ops santa item skipped',
+                  })
 
-            ssm.create_ops_item(
-              Description=description,
-              OperationalData=operational_data,
-              Source=source,
-              Title=title,
-            )
+                  return
+
+              response = s3.get_object(
+                Bucket="${DomainBucket}",
+                Key=key,
+              )
+
+              msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
+
+              title=msg["subject"]
+              title=title[:1020] + " ..." * (len(title) > 1020)
+
+              description=msg.get_body("plain").get_content()
+              description=description[:1020] + " ..." * (len(description) > 1020)
+
+              source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
+              source=source[:60] + ' ...' * (len(source) > 60)
+
+              operational_data={
+                "/aws/dedup":{
+                  "Value":json.dumps(
+                    {
+                      "dedupString":id,
+                    }
+                  ),
+                  "Type":"SearchableString",
+                },
+                "/aws/resources":{
+                  "Value":json.dumps([
+                    {
+                      "arn":"arn:aws:s3:::${DomainBucket.Arn}/{key}".format(key=key),
+                    }
+                  ]),
+                  "Type":"SearchableString",
+                },
+              }
+
+              ssm.create_ops_item(
+                Description=description,
+                OperationalData=operational_data,
+                Source=source,
+                Title=title,
+              )
+
+        def log(msg):
+          print(json.dumps(msg), flush=True)
