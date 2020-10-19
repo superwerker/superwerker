@@ -39,7 +39,7 @@ In the initial release, superwerker configures the following AWS services and fe
 ## Help & Feedback
 
  - Join our [mailing list](https://groups.google.com/forum/#!forum/superwerker/join)
- - Chat with us on the [#superwerker](https://app.slack.com/client/T0DCZS0NA/C01BYE3S57X) channel in the AWS Community Slack ([invite link](https://aws-community-slack-invite.herokuapp.com/)).
+ - Chat with us on the [#superwerker](https://og-aws.slack.com/archives/C01CQ34TC93) channel in the OG-AWS Slack ([invite link](http://slackhatesthe.cloud/)).
 
 ## FAQ
 
