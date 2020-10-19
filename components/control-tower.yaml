@@ -125,12 +125,12 @@ Resources:
                 await page.click("#save-button > button");
                 await page.waitForNavigation({waitUntil: ['domcontentloaded']});
               });
-          } else {
-              await synthetics.executeStep('updateLandingZone', async function () {
-                await page.click("#save-button > button")
-                await page.waitForNavigation({waitUntil: ['domcontentloaded']});
-              });
-          }
+            } else {
+                await synthetics.executeStep('updateLandingZone', async function () {
+                  await page.click("#save-button > button")
+                  await page.waitForNavigation({waitUntil: ['domcontentloaded']});
+                });
+            }
 
           };
 
