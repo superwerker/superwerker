@@ -25,16 +25,35 @@ You can install the current `master` branch via CloudFormation in the following 
 
 In the initial release, superwerker configures the following AWS services and features in a fully automated way:
 
-- AWS Control Tower as the basis for a future-proof multi-account setup
+- AWS Control Tower and SSO as the basis for a future-proof multi-account setup
 - AWS GuardDuty for automatic detection of possible threats breaches
 - AWS Security Hub to ensure established security standards
+- AWS Backup for automated creation of backups
 - Budget alarms for cost control
-- AWS Backup for Automated creation of backups
 - Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
 - Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
 - Systems Manager OpsCenter/Items notification aggregation and incident response handling
 - Secure mailboxes and service catalogue aliases for all root accounts
+- Feature flippers to gradually opt into functionality
 - A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+
+### Say what again? (the non-technical what's included)
+
+AWS provides all the building blocks. superwerker adds the wiring and "how to" so you can start right ahead with a well-architected AWS foundation:
+
+- Manage multiple AWS accounts and perform access management
+- Sign in to your AWS accounts with your existing login provider (usually your email infrastructure provider, e.g. Office 365 or Google Workspace)
+- Security built-in:
+  - Protect superuser ("root") access to your AWS accounts
+  - Scanning for best practise violations and active threats against your infrastructure
+  - Backups enabled for all database and file systems
+- Billing best practices built-in:
+  - Automatic cost control and budget alarms
+  - Prevents your from using inappropriate AWS regions
+- Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
+- Notification centre: aggregates notifications from several services in a single place
+- Gradual roll-out: features can be enabled/disabled individually
+- Living quickstart dashboard with status overview (which features are active?) and actionable links to e.g. the notification center, or your security findings
 
 ## Help & Feedback
 
