@@ -388,7 +388,7 @@ Resources:
               commands:
                 - cd tests
                 - pip3 install -r requirements.txt
-                - python3 -munittest tests.py
+                - python3 -munittest rootemails.py tests.py
 
   TestRole:
     Type: AWS::IAM::Role
