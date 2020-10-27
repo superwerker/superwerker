@@ -16,7 +16,7 @@ Control Tower (CT) is the native service as the foundation for a secure multi-ac
  - Update Control Tower to the latest version when installing/updating superwerker to ensure a sane state. We'll live with the risk of unintended upstream changes for now.
  - Since CT uses AWS SSO, it is set as the default login and AWS account switching solution.
  - superwerker promotes using the Control Tower Account Factory for enrolling/vending new accounts
- - Enabling Custom Guardrails: we know they exist but defer the decision (i.e., wait for CT support and APIs)
+ - Enabling additional CT Guardrails: we know they exist but defer the decision (i.e., wait for CT support and APIs)
  - VPC creation: we know the created VPCs are quite useless and inconsistent (e.g., multi-region setups), but we wait until we build a network feature for this.
 
 ## Consequences
