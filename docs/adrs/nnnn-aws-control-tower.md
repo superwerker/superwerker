@@ -24,8 +24,8 @@ Control Tower (CT) is the native service as the foundation for a secure multi-ac
  - superwerker only supports regions supported by CT
  - CT implies additional costs (e.g., Config Rules), which is covered by our design decision to enable services which negligible costs
  - Using CWS Canaries provides an audit log of the Click Ops because of the screenshots
- - The CT LZ set up/update/repair has to be supervised since it fails sometimes and has to be restarted (TODO)
- - superwerker provides links to how-tos for wiring existing IdPs like GSuite, AzureAD, etc. (TODO)
+ - The CT LZ set up/update/repair has to be supervised since it fails sometimes and has to be restarted -> #61
+ - superwerker provides links to how-tos for wiring existing IdPs like Google Workspace, AzureAD, etc. -> #20
  
 ## TODO
 
