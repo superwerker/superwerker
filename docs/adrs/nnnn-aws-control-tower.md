@@ -3,8 +3,11 @@
 
 ## Context
 
-AWS proposes Multi-Account architectures as best practise (see e.g. Well-Architected) framework, so superwerker is following this best practise.
-CT is the native service as the foundation for a secure multi-account. Since superwerker prefers to use native services whenever possible, CT is used.
+AWS proposes multi-account architectures as best practice (see e.g. [Well-Architected Framework SEC1](https://wa.aws.amazon.com/wat.question.SEC_1.en.html)) , so superwerker is following this best practice.
+
+Implementing least privilege for humans (as opposed to e.g. lambda execution roles) is currently far too complex to be handled in a sensible fashion. Therefore giving humans relatively wide access (minus integrity protection via SCPs) but limit this wide access to clearly defined security boundaries (= one or more AWS accounts with specific content / workloads in them) is the only sensible way forward.
+
+Control Tower (CT) is the native service as the foundation for a secure multi-account. Since superwerker prefers to use native services whenever possible, CT is used.
 
 ## Decision
 
