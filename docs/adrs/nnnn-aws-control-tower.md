@@ -1,31 +1,28 @@
 
-# Control Tower (CT) as foundation for a secure multi-account setup
+# Control Tower (CT) as a foundation for a secure multi-account setup
 
 ## Context
 
-AWS proposes multi-account architectures as best practice (see e.g. [Well-Architected Framework SEC1](https://wa.aws.amazon.com/wat.question.SEC_1.en.html)) , so superwerker is following this best practice.
+AWS proposes multi-account architectures as best practice (see, e.g. [Well-Architected Framework SEC1](https://wa.aws.amazon.com/wat.question.SEC_1.en.html)), so superwerker is following this best practice.
 
-Implementing least privilege for humans (as opposed to e.g. lambda execution roles) is currently far too complex to be handled in a sensible fashion. Therefore giving humans relatively wide access (minus integrity protection via SCPs) but limit this wide access to clearly defined security boundaries (= one or more AWS accounts with specific content / workloads in them) is the only sensible way forward.
+Implementing least privilege for humans (as opposed to, e.g., lambda execution roles) is currently far too complex to be handled sensibly. Therefore giving humans relatively complete access (minus integrity protection via SCPs) but limit this broad access to clearly defined security boundaries (= one or more AWS accounts with specific content/workloads in them) is the only sensible way forward.
 
-Control Tower (CT) is the native service as the foundation for a secure multi-account. Since superwerker prefers to use native services whenever possible, CT is used.
+Control Tower (CT) is the native service as the foundation for a secure multi-account setup. Since superwerker prefers to use native services whenever possible, it uses CT.
 
 ## Decision
 
  - Since CT has no API yet, automate it via CloudWatch Synthetics (CWS) Canaries
- - In order to keep it simple superwerker can be installed into regions which Control Tower supports. No multi-region support for now.
- - Update Control Tower to latest version when installing/updating superwerker in order to ensure a sane state
+ - To keep it simple, superwerker can be installed into regions that Control Tower supports. Choosing a home region for Control Tower / AWS SSO has no impact on other resources' multi regionality.
+ - Update Control Tower to the latest version when installing/updating superwerker to ensure a sane state. We'll live with the risk of unintended upstream changes for now.
  - Since CT uses AWS SSO, it is set as the default Login and AWS Account switching solution.
-
-### Account Factory 
-
- - superwerker promotes using the CTAF for enrolling/vending new Accounts
+ - superwerker promotes using the Control Tower Account Factory for enrolling/vending new Accounts
 
 ## Consequences
 
  - superwerker only supports regions supported by CT
- - CT implies additional costs (e.g. Config Rules)
+ - CT implies additional costs (e.g., Config Rules), which is covered by our design decision to enable services which negligible costs
  - Using CWS Canaries provides an audit log of the Click Ops because of the screenshots
- - The CT LZ setup/update/repair has to be supervised since it fails sometimes and has to be restarted (TODO)
+ - The CT LZ set up/update/repair has to be supervised since it fails sometimes and has to be restarted (TODO)
  - superwerker provides links to how-tos for wiring existing IdPs like GSuite, AzureAD, etc. (TODO)\
  
 ## TODO
