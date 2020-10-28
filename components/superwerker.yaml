@@ -128,7 +128,6 @@ Resources:
             Properties = event["ResourceProperties"]
             LogicalResourceId = event["LogicalResourceId"]
             PhysicalResourceId = event.get("PhysicalResourceId")
-            RuleSetName = Properties["RuleSetName"]
 
             print('RequestType: {}'.format(RequestType))
             print('PhysicalResourceId: {}'.format(PhysicalResourceId))
