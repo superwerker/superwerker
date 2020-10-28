@@ -234,10 +234,10 @@ Resources:
   HostedZoneDKIMAndVerificationRecords:
     Type: AWS::CloudFormation::CustomResource
     Properties:
-      ServiceToken: !GetAtt HostedZoneDKIMAndVerificationRecordsCustomerResource.Arn
+      ServiceToken: !GetAtt HostedZoneDKIMAndVerificationRecordsCustomResource.Arn
       Domain: !Sub ${Subdomain}.${Domain}
 
-  HostedZoneDKIMAndVerificationRecordsCustomerResource:
+  HostedZoneDKIMAndVerificationRecordsCustomResource:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 200
