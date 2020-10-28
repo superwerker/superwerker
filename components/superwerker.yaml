@@ -4,8 +4,10 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   AuditAWSAccountEmail:
     Type: String
+    Default: ""
   LogArchiveAWSAccountEmail:
     Type: String
+    Default: ""
   Domain:
     Type: String
   IncludeControlTower:
@@ -53,6 +55,12 @@ Conditions:
   IncludeServiceControlPolicies: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeServiceControlPolicies, true ]
+  GenerateAuditAWSAccountEmail: !And
+    - !Condition IncludeRootMail
+    - !Equals [ !Ref AuditAWSAccountEmail, "" ]
+  GenerateLogArchiveEmail: !And
+    - !Condition IncludeRootMail
+    - !Equals [ !Ref LogArchiveAWSAccountEmail, "" ]
 
 Resources:
 
@@ -62,8 +70,83 @@ Resources:
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/control-tower.yaml
       Parameters:
-        AuditAWSAccountEmail: !Ref AuditAWSAccountEmail
-        LogArchiveAWSAccountEmail: !Ref LogArchiveAWSAccountEmail
+        AuditAWSAccountEmail: !If
+          - GenerateAuditAWSAccountEmail
+          - !GetAtt GeneratedAuditAWSAccountEmail.email
+          - !Ref AuditAWSAccountEmail
+        LogArchiveAWSAccountEmail: !If
+          - GenerateLogArchiveEmail
+          - !GetAtt GeneratedLogArchiveAWSAccountEmail.email
+          - !Ref LogArchiveAWSAccountEmail
+
+  GeneratedAuditAWSAccountEmail:
+    Condition: GenerateAuditAWSAccountEmail
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt GenerateLogAndOrAuditEmailCustomResource.Arn
+
+  GeneratedLogArchiveAWSAccountEmail:
+    Condition: GenerateLogArchiveEmail
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt GenerateLogAndOrAuditEmailCustomResource.Arn
+
+  GenerateLogAndOrAuditEmailCustomResource:
+    Condition: IncludeRootMail
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 200
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: lambda:Invoke
+              Resource: !GetAtt RootMail.Outputs.EmailGeneratorFunction
+      InlineCode: !Sub |
+        import boto3
+        import cfnresponse
+
+        lambda = boto3.client("lambda")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+            RuleSetName = Properties["RuleSetName"]
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            if RequestType == CREATE or RequestType == UPDATE:
+              data['email'] = lambda.invoke(
+                FunctionName='${RootMail.Outputs.EmailGeneratorFunction}'
+              )['Payload']['email']
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
   GuardDuty:
     Condition: IncludeGuardDuty

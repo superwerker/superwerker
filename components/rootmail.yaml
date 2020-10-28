@@ -107,78 +107,70 @@ Resources:
             'level': 'debug',
           })
 
-          verify = event.get('verify', 'true')
+          for n in itertools.count(start=1):
 
-          if verify == 'true':
+            res = ses.get_account_sending_enabled()
 
-            for n in itertools.count(start=1):
+            if res.get('Enabled'):
+              break
+            else:
+              backoff('sending not yet enabled', res, n)
 
-              res = ses.get_account_sending_enabled()
+          for n in itertools.count(start=1):
 
-              if res.get('Enabled'):
-                break
-              else:
-                backoff('sending not yet enabled', res, n)
+            res = ses.get_identity_verification_attributes(
+              Identities=[
+                domain,
+              ],
+            )
 
-            for n in itertools.count(start=1):
+            if res.get('VerificationAttributes', {}).get(domain, {}).get('VerificationStatus') == 'Success':
+              break
+            else:
+              backoff('verification not yet successful', res, n)
 
-              res = ses.get_identity_verification_attributes(
-                Identities=[
-                  domain,
-                ],
-              )
+          for n in itertools.count(start=1):
 
-              if res.get('VerificationAttributes', {}).get(domain, {}).get('VerificationStatus') == 'Success':
-                break
-              else:
-                backoff('verification not yet successful', res, n)
+            res = ses.get_identity_dkim_attributes(
+              Identities=[
+                domain,
+              ],
+            )
 
-            for n in itertools.count(start=1):
+            if res.get('DkimAttributes', {}).get(domain, {}).get('DkimVerificationStatus') == 'Success':
+              break
+            else:
+              backoff('DKIM verification not yet successful', res, n)
 
-              res = ses.get_identity_dkim_attributes(
-                Identities=[
-                  domain,
-                ],
-              )
+          for n in itertools.count(start=1):
 
-              if res.get('DkimAttributes', {}).get(domain, {}).get('DkimVerificationStatus') == 'Success':
-                break
-              else:
-                backoff('DKIM verification not yet successful', res, n)
+            res = ses.get_identity_notification_attributes(
+              Identities=[
+                domain,
+              ],
+            )
 
-            for n in itertools.count(start=1):
+            if res.get('NotificationAttributes', {}).get(domain, {}).get('ForwardingEnabled') == True:
+              break
+            else:
+              backoff('forwarding not yet enabled', res, n)
 
-              res = ses.get_identity_notification_attributes(
-                Identities=[
-                  domain,
-                ],
-              )
+          max = 64 - len(domain) - 1 - 5
 
-              if res.get('NotificationAttributes', {}).get(domain, {}).get('ForwardingEnabled') == True:
-                break
-              else:
-                backoff('forwarding not yet enabled', res, n)
+          alias = str(uuid.uuid4())
+          alias = alias[:max] * (len(alias) > max)
 
-          email = event.get('default')
+          if len(alias) < 36:
 
-          if not email:
+            log({
+              'domain': domain,
+              'msg': 'UUID local part was reduced in length because your domain is too long for Control Tower (64 characters in total) - this increases the chance of collisions',
+              'level': 'warn',
+              'length': len(alias),
+              'max': 36,
+            })
 
-            max = 64 - len(domain) - 1 - 5
-
-            alias = str(uuid.uuid4())
-            alias = alias[:max] * (len(alias) > max)
-
-            if len(alias) < 36:
-
-              log({
-                'domain': domain,
-                'msg': 'UUID local part was reduced in length because your domain is too long for Control Tower (64 characters in total) - this increases the chance of collisions',
-                'level': 'warn',
-                'length': len(alias),
-                'max': 36,
-              })
-
-            email = 'root+{alias}@{domain}'.format(alias = alias, domain = domain)
+          email = 'root+{alias}@{domain}'.format(alias = alias, domain = domain)
 
           return {
             'email': email,
