@@ -99,11 +99,8 @@ Resources:
       Handler: index.handler
       Runtime: python3.7
       Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action: lambda:Invoke
-              Resource: !GetAtt RootMail.Outputs.EmailGeneratorFunction
+        - LambdaInvokePolicy:
+            FunctionName: !GetAtt RootMail.Outputs.EmailGeneratorFunction
       InlineCode: !Sub |
         import boto3
         import cfnresponse
