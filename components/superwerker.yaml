@@ -104,6 +104,7 @@ Resources:
       InlineCode: !Sub |
         import boto3
         import cfnresponse
+        import json
 
         lambda_client = boto3.client("lambda")
 
@@ -138,9 +139,12 @@ Resources:
             data = {}
 
             if RequestType == CREATE or RequestType == UPDATE:
-              data['email'] = lambda_client.invoke(
+              lambda_response = lambda_client.invoke(
                 FunctionName='${RootMail.Outputs.EmailGeneratorFunction}'
-              )['Payload']['email']
+              )
+
+              response_json = json.loads(lambda_response['Payload'].read().decode('utf-8'))
+              data['email'] = response_json['email']
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
