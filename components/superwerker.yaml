@@ -105,7 +105,7 @@ Resources:
         import boto3
         import cfnresponse
 
-        lambda = boto3.client("lambda")
+        lambda_client = boto3.client("lambda")
 
         CREATE = 'Create'
         DELETE = 'Delete'
@@ -139,7 +139,7 @@ Resources:
             data = {}
 
             if RequestType == CREATE or RequestType == UPDATE:
-              data['email'] = lambda.invoke(
+              data['email'] = lambda_client.invoke(
                 FunctionName='${RootMail.Outputs.EmailGeneratorFunction}'
               )['Payload']['email']
 
