@@ -455,7 +455,7 @@ Resources:
         Recipients:
           - !Sub root@${Subdomain}.${Domain}
         ScanEnabled: true
-        TlsPolicy: "Require"
+        TlsPolicy: Require
       RuleSetName: !Ref SESReceiptRuleSet
 
   OpsSantaFunctionSESPermissions:
