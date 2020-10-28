@@ -391,7 +391,7 @@ Resources:
               Action: # TODO: least privilege
                 - ses:*
               Resource: "*"
-      InlineCode: |
+      InlineCode: | # TODO: adopt function to new ADR for inline python lambdas
         import boto3
         import cfnresponse
 
