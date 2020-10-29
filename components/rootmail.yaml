@@ -118,6 +118,13 @@ Resources:
       HostedZoneConfig:
         Comment: Created by superwerker
 
+  HostedZoneSSMParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:  /superwerker/domain_name_servers
+      Value: !Join [',', !GetAtt HostedZone.NameServers]
+      Type: StringList
+
   HostedZoneDelegationHealthCheckRecord:
     Type: AWS::Route53::RecordSet
     Properties:
