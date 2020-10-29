@@ -12,6 +12,7 @@ Parameters:
     Type: String
   Subdomain:
     Type: String
+    Default: aws
   IncludeBudget:
     AllowedValues:
       - true
@@ -177,6 +178,16 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/guardduty.yaml
+
+  Readme:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/readme.yaml
+      Parameters:
+        SuperwerkerDomain: !If
+          - IncludeRootMail
+          - !Sub '${Subdomain}.${Domain}'
+          - ''
 
   RootMail:
     Condition: IncludeRootMail

@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  SuperwerkerDomain:
+    Type: String
+
+Resources:
+
+  DashboardGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        EmailHealth:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              detail-type:
+                - CloudWatch Alarm State Change
+              source:
+                - aws.cloudwatch
+              detail:
+                alarmName:
+                  - superwerker-RootmailReady
+                state:
+                  value:
+                    - OK
+      Handler: index.handler
+      Policies:
+        - SSMParameterReadPolicy:
+            ParameterName: 'superwerker/*'
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: cloudwatch:PutDashboard
+              Resource: !Sub arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/superwerker-README
+      Environment:
+        Variables:
+          SUPERWERKER_DOMAIN: !Ref SuperwerkerDomain
+      InlineCode: |
+        import boto3
+        import json
+        import os
+        from datetime import datetime
+
+        cw = boto3.client("cloudwatch")
+        ssm = boto3.client("ssm")
+
+        def handler(event, context):
+
+          superwerker_config = {}
+          for ssm_parameter in ssm.get_parameters(
+            Names=[
+              '/superwerker/domain_name_servers'
+            ]
+          )['Parameters']:
+            superwerker_config[ssm_parameter['Name']] = ssm_parameter['Value']
+
+          if '/superwerker/domain_name_servers' in superwerker_config:
+            dns_delegation_text = """
+          ### ❌ Setup DNS Delegation to your chosen domain `{domain}`
+
+          Please create the following NS records for `{domain}`:
+          - `{ns[0]}`
+          - `{ns[1]}`
+          - `{ns[2]}`
+          - `{ns[3]}`
+          """.format(
+            domain=os.environ['SUPERWERKER_DOMAIN'],
+            ns=superwerker_config['/superwerker/domain_name_servers'].split(','),
+          )
+          else:
+            dns_delegation_text = '### DNS Setup pending'
+
+          markdown = """
+
+          # Welcome to superwerker
+
+          ## Setup
+
+          {dns_delegation}
+
+          """.format(
+            dns_delegation=dns_delegation_text
+          )
+
+          body = {
+            "widgets": [
+              {
+                "type": "text",
+                "x": 0,
+                "y": 0,
+                "width": 24,
+                "height": 20,
+                "properties": {
+                  "markdown": markdown,
+                }
+              },
+              {
+                "type": "alarm",
+                "x": 0,
+                "y": 10,
+                "width": 24,
+                "height": 2,
+                "properties": {
+                  "title": "DNS Zone delegation for root emails ready",
+                  "alarms": [
+                    "arn:aws:cloudwatch:eu-west-1:970186278685:alarm:custom-RootmailReadyAlert-X4FRISK7ZN3T"
+                  ]
+                }
+              }
+            ]
+          }
+
+          cw.put_dashboard(
+            DashboardName='superwerker-README',
+            DashboardBody=json.dumps(body),
+          )
+
+        def log(msg):
+          print(json.dumps(msg), flush=True)
+
+      Runtime: python3.7
+      Timeout: 60
