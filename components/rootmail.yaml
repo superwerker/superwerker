@@ -74,111 +74,32 @@ Resources:
 
   EmailGeneratorFunction:
     Type: AWS::Serverless::Function
-    Properties:
+    Properties: # TODO: use environment variables instead of variables in !Sub
       Handler: index.handler
       InlineCode: !Sub |
-        import boto3
-        import itertools
         import json
-        import time
         import uuid
 
         domain = "${Subdomain}.${Domain}"
-        ses = boto3.client("ses")
-
-        def backoff(msg, res, n):
-
-          wait = pow(2, n)
-
-          log({
-            'level': 'info',
-            'msg': msg,
-            'res': res,
-            'round': n,
-            'waiting_in_seconds': wait,
-          })
-
-          time.sleep(n)
 
         def handler(event, context):
 
-          log({
-            'event': event,
-            'level': 'debug',
-          })
+          max = 64 - len(domain) - 1 - 5
 
-          verify = event.get('verify', 'true')
+          alias = str(uuid.uuid4())
+          alias = alias[:max] * (len(alias) > max)
 
-          if verify == 'true':
+          if len(alias) < 36:
 
-            for n in itertools.count(start=1):
+            log({
+              'domain': domain,
+              'msg': 'UUID local part was reduced in length because your domain is too long for Control Tower (64 characters in total) - this increases the chance of collisions',
+              'level': 'warn',
+              'length': len(alias),
+              'max': 36,
+            })
 
-              res = ses.get_account_sending_enabled()
-
-              if res.get('Enabled'):
-                break
-              else:
-                backoff('sending not yet enabled', res, n)
-
-            for n in itertools.count(start=1):
-
-              res = ses.get_identity_verification_attributes(
-                Identities=[
-                  domain,
-                ],
-              )
-
-              if res.get('VerificationAttributes', {}).get(domain, {}).get('VerificationStatus') == 'Success':
-                break
-              else:
-                backoff('verification not yet successful', res, n)
-
-            for n in itertools.count(start=1):
-
-              res = ses.get_identity_dkim_attributes(
-                Identities=[
-                  domain,
-                ],
-              )
-
-              if res.get('DkimAttributes', {}).get(domain, {}).get('DkimVerificationStatus') == 'Success':
-                break
-              else:
-                backoff('DKIM verification not yet successful', res, n)
-
-            for n in itertools.count(start=1):
-
-              res = ses.get_identity_notification_attributes(
-                Identities=[
-                  domain,
-                ],
-              )
-
-              if res.get('NotificationAttributes', {}).get(domain, {}).get('ForwardingEnabled') == True:
-                break
-              else:
-                backoff('forwarding not yet enabled', res, n)
-
-          email = event.get('default')
-
-          if not email:
-
-            max = 64 - len(domain) - 1 - 5
-
-            alias = str(uuid.uuid4())
-            alias = alias[:max] * (len(alias) > max)
-
-            if len(alias) < 36:
-
-              log({
-                'domain': domain,
-                'msg': 'UUID local part was reduced in length because your domain is too long for Control Tower (64 characters in total) - this increases the chance of collisions',
-                'level': 'warn',
-                'length': len(alias),
-                'max': 36,
-              })
-
-            email = 'root+{alias}@{domain}'.format(alias = alias, domain = domain)
+          email = 'root+{alias}@{domain}'.format(alias = alias, domain = domain)
 
           return {
             'email': email,
@@ -188,13 +109,6 @@ Resources:
           print(json.dumps(msg), flush=True)
 
       Runtime: python3.7
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action: # TODO: least privilege
-                - ses:*
-              Resource: "*"
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
   HostedZone:
@@ -203,23 +117,6 @@ Resources:
       Name: !Sub ${Subdomain}.${Domain}
       HostedZoneConfig:
         Comment: Created by superwerker
-
-  HostedZoneDelegationHealthCheck:
-    DependsOn: HostedZoneDelegationHealthCheckRecord
-    Type: AWS::Route53::HealthCheck
-    Properties:
-      HealthCheckConfig:
-        FailureThreshold: 3
-        FullyQualifiedDomainName: !Sub ${Subdomain}.${Domain}
-        RequestInterval: 30
-        Regions:
-          - ap-northeast-1
-          - eu-west-1
-          - us-east-1
-        Type: HTTP
-      HealthCheckTags:
-        - Key: Name
-          Value: RootEmailsHostedZoneDelegationHealthCheck
 
   HostedZoneDelegationHealthCheckRecord:
     Type: AWS::Route53::RecordSet
@@ -242,10 +139,10 @@ Resources:
   HostedZoneDKIMAndVerificationRecords:
     Type: AWS::CloudFormation::CustomResource
     Properties:
-      ServiceToken: !GetAtt HostedZoneDKIMAndVerificationRecordsCustomerResource.Arn
+      ServiceToken: !GetAtt HostedZoneDKIMAndVerificationRecordsCustomResource.Arn
       Domain: !Sub ${Subdomain}.${Domain}
 
-  HostedZoneDKIMAndVerificationRecordsCustomerResource:
+  HostedZoneDKIMAndVerificationRecordsCustomResource:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 200
@@ -375,6 +272,171 @@ Resources:
       TTL: 60
       Type: TXT
 
+  RootmailReady:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+      Handler: index.handler
+      InlineCode: !Sub |
+        import boto3
+        import itertools
+        import json
+        import time
+
+        domain = "${Subdomain}.${Domain}"
+        ses = boto3.client("ses")
+
+        def backoff(msg, res, n):
+
+          wait = pow(2, n)
+
+          log({
+            'level': 'info',
+            'msg': msg,
+            'res': res,
+            'round': n,
+            'waiting_in_seconds': wait,
+          })
+
+          time.sleep(n)
+
+        def handler(event, context):
+
+          log({
+            'event': event,
+            'level': 'debug',
+          })
+
+          for n in itertools.count(start=1):
+
+            res = ses.get_account_sending_enabled()
+
+            if res.get('Enabled'):
+              break
+            else:
+              backoff('sending not yet enabled', res, n)
+
+          for n in itertools.count(start=1):
+
+            res = ses.get_identity_verification_attributes(
+              Identities=[
+                domain,
+              ],
+            )
+
+            if res.get('VerificationAttributes', {}).get(domain, {}).get('VerificationStatus') == 'Success':
+              break
+            else:
+              backoff('verification not yet successful', res, n)
+
+          for n in itertools.count(start=1):
+
+            res = ses.get_identity_dkim_attributes(
+              Identities=[
+                domain,
+              ],
+            )
+
+            if res.get('DkimAttributes', {}).get(domain, {}).get('DkimVerificationStatus') == 'Success':
+              break
+            else:
+              backoff('DKIM verification not yet successful', res, n)
+
+          for n in itertools.count(start=1):
+
+            res = ses.get_identity_notification_attributes(
+              Identities=[
+                domain,
+              ],
+            )
+
+            if res.get('NotificationAttributes', {}).get(domain, {}).get('ForwardingEnabled') == True:
+              break
+            else:
+              backoff('forwarding not yet enabled', res, n)
+
+        def log(msg):
+          print(json.dumps(msg), flush=True)
+
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: # TODO: least privilege
+                - ses:*
+              Resource: '*'
+      Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
+
+  RootmailReadyAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref RootmailReady
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 180
+      Statistic: Sum
+      Threshold: '1'
+
+  RootmailReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  RootmailReadyHandleWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref RootmailReadyHandle
+      Timeout: 28800 # 8 hours time to wire DNS
+
+  RootmailReadyTrigger:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        EmailHealth:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              detail-type:
+                - CloudWatch Alarm State Change
+              source:
+                - aws.cloudwatch
+              detail:
+                alarmName:
+                  - !Ref RootmailReadyAlert
+                state:
+                  value:
+                    - OK
+      Handler: index.handler
+      Environment:
+        Variables:
+          SIGNAL_URL: !Ref RootmailReadyHandle
+      InlineCode: |-
+        import json
+        import os
+        import urllib3
+        import uuid
+
+        def handler(event, context):
+
+          encoded_body = json.dumps({
+              "Status": "SUCCESS",
+              "Reason": "Rootmail Setup completed",
+              "UniqueId": str(uuid.uuid4()),
+              "Data": "Rootmail Setup completed"
+          })
+
+          http = urllib3.PoolManager()
+          http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
+      Runtime: python3.7
+      Timeout: 10
+
   SESReceiptRuleSet:
     Type: AWS::SES::ReceiptRuleSet
     Properties:
@@ -399,7 +461,7 @@ Resources:
               Action: # TODO: least privilege
                 - ses:*
               Resource: "*"
-      InlineCode: |
+      InlineCode: | # TODO: adopt function to new ADR for inline python lambdas
         import boto3
         import cfnresponse
 
@@ -463,7 +525,7 @@ Resources:
         Recipients:
           - !Sub root@${Subdomain}.${Domain}
         ScanEnabled: true
-        TlsPolicy: "Require"
+        TlsPolicy: Require
       RuleSetName: !Ref SESReceiptRuleSet
 
   OpsSantaFunctionSESPermissions:
