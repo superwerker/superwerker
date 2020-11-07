@@ -213,6 +213,7 @@ Resources:
       Environment:
         Variables:
           SIGNAL_URL: !Ref ControlTowerReadyHandle
+          CT_BUG_WORKSROUND_CANARY: !Ref ControlTowerBugWorkAroundCanary
       InlineCode: |-
         import boto3
         import json
@@ -256,6 +257,12 @@ Resources:
               ]
           )
 
+          # workaround for CT bug: trigger the `GetLandingZone` event once by reloading the dashboard
+          # otherwise enrolling new accounts via tge CT Account Factory would fail with
+          # "AWS Control Tower cannot create accounts until your landing zone is set up completely."
+          cws = boto3.client('synthetics')
+          cws.start_canary(Name=os.environ['CT_BUG_WORKSROUND_CANARY'])
+
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -267,3 +274,78 @@ Resources:
             - Action: events:PutEvents
               Effect: Allow
               Resource: '*'
+            - Action:
+                - synthetics:StartCanary
+              Effect: Allow
+              Resource:
+                - !Sub arn:${AWS::Partition}:synthetics:${AWS::Region}:${AWS::AccountId}:canary:${ControlTowerBugWorkAroundCanary}
+
+  ControlTowerBugWorkAroundCanary:
+    Type: AWS::Synthetics::Canary
+    Properties:
+      Name: superwerker-ct-bug-wa
+      ArtifactS3Location: !Sub s3://${SetupControlTowerArtifactLocation}
+      ExecutionRoleArn: !GetAtt SetupControlTowerCanaryRole.Arn
+      RuntimeVersion: syn-1.0
+      StartCanaryAfterCreation: false
+      RunConfig:
+        TimeoutInSeconds: 300
+      Schedule:
+        Expression: rate(0 minute) # manual start
+      Code:
+        Handler: pageLoadBlueprint.handler
+        Script: !Sub |
+          var synthetics = require('Synthetics');
+          const log = require('SyntheticsLogger');
+
+          const httpGet = url => {
+            const https = require('https');
+            return new Promise((resolve, reject) => {
+              https.get(url, res => {
+                res.setEncoding('utf8');
+                let body = '';
+                res.on('data', chunk => body += chunk);
+                res.on('end', () => resolve(body));
+              }).on('error', reject);
+            });
+          };
+
+          const flowBuilderBlueprint = async function () {
+            let page = await synthetics.getPage();
+
+            await synthetics.executeStep('consoleLogin', async function () {
+              const AWS = require("aws-sdk");
+
+              const federationEndpoint = 'https://signin.aws.amazon.com/federation';
+              const issuer = 'superwerker';
+              const destination = 'https://console.aws.amazon.com/';
+
+              let credentials = await AWS.config.credentialProvider.resolve((err, cred) => { return cred; }).resolvePromise()
+
+              const session = {
+                sessionId: credentials.accessKeyId,
+                sessionKey: credentials.secretAccessKey,
+                sessionToken: credentials.sessionToken
+              };
+
+              const encodedSession = encodeURIComponent(JSON.stringify(session));
+              const signinTokenUrl = `${!federationEndpoint}?Action=getSigninToken&SessionDuration=3600&Session=${!encodedSession}`;
+
+              const signinResponse = await httpGet(signinTokenUrl);
+
+              let consoleLoginUrl = `${!federationEndpoint}?Action=login&Issuer=${!issuer}&Destination=${!destination}&SigninToken=${!
+                JSON.parse(signinResponse).SigninToken
+              }`;
+
+              await page.goto(consoleLoginUrl, {waitUntil: ['load', 'networkidle0']});
+
+            });
+
+            await synthetics.executeStep('controltowerdashboard', async function () {
+              await page.goto("https://eu-west-1.console.aws.amazon.com/controltower/home/dashboard?region=eu-west-1", {waitUntil: ['load', 'networkidle0']});
+            });
+          };
+
+          exports.handler = async () => {
+            return await flowBuilderBlueprint();
+          };
