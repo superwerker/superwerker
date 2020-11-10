@@ -42,8 +42,14 @@ Parameters:
     Type: String
   TemplateUrlPrefix:
     Type: String
-
+  IncludeCostsUsageReport:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Type: String
 Conditions:
+  IncludeCostsUsageReport: !Equals [ !Ref IncludeCostsUsageReport, true ]
   IncludeControlTower: !Equals [ !Ref IncludeControlTower, true ]
   IncludeGuardDuty: !And
     - !Condition IncludeControlTower
@@ -174,6 +180,12 @@ Resources:
     DependsOn: ControlTower
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
+
+  CostsUsageReport:
+    Condition: IncludeCostsUsageReport
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/costs/cost-usage-report.yaml
 
 Outputs:
 
