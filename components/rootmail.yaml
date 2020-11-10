@@ -553,15 +553,20 @@ Resources:
               Action:
                 - ssm:CreateOpsItem
               Resource: "*"
+            - Action: events:PutEvents
+              Effect: Allow
+              Resource: '*'
       InlineCode: !Sub |
         import boto3
         import email
         from email import policy
         import hashlib
         import json
+        import re
 
         s3 = boto3.client('s3')
         ssm = boto3.client('ssm')
+        events = boto3.client('events')
 
         def handler(event, context):
 
@@ -612,6 +617,30 @@ Resources:
               msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
 
               title=msg["subject"]
+
+              if title == 'Amazon Web Services Password Assistance':
+                description=msg.get_body('html').get_content()
+                pw_reset_link = re.search(r'(https://signin.aws.amazon.com/resetpassword(.*?))(?=<br>)', description).group()
+
+                events.put_events(
+                    Entries=[
+                        {
+                            'DetailType': 'superwerker-event',
+                            'Detail': json.dumps(
+                                {
+                                    'eventName': 'RootMailPwResetLink',
+                                    'pwResetLink': pw_reset_link,
+                                }
+                            ),
+                            'Source': 'superwerker'
+                        }
+                    ]
+                )
+                return # no ops item for now
+
+              else:
+                description=msg.get_body('plain').get_content()
+
               title=title[:1020] + " ..." * (len(title) > 1020)
 
               description=msg.get_body("plain").get_content()
