@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: setup cost usage report
+Resources:
+  CostBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: superwerker-cost-usage-report
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            ExpirationInDays: 1095
+
+  CostBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref CostBucket
+      PolicyDocument:
+        Statement:
+          -
+            Action:
+              - 's3:GetBucketAcl'
+              - 's3:GetBucketPolicy'
+            Effect: Allow
+            Resource:
+              'Fn::Join':
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: CostBucket
+            Principal:
+              Service: 'billingreports.amazonaws.com'
+          -
+            Action:
+             - 's3:PutObject'
+            Effect: Allow
+            Resource:
+              'Fn::Join':
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: CostBucket
+                  - '/*'
+            Principal:
+              Service: 'billingreports.amazonaws.com'
