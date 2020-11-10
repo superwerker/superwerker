@@ -1,5 +1,8 @@
 var synthetics = require('Synthetics');
 const log = require('SyntheticsLogger');
+var querystring = require('querystring');
+
+synthetics.setLogLevel(0);
 
 const CAPTCHA_KEY = process.env.CAPTCHA_KEY;
 
@@ -26,19 +29,33 @@ const httpPostJson = (url, postData) => {
         }
     };
 
-    console.log(postData)
+    postData = querystring.stringify(postData);
 
     return new Promise((resolve, reject) => {
-        var req = https.request(url, options, res => {
+        log.info("Making request with options: " + JSON.stringify(options));
+        let req = https.request(url, options);
+        req.on('response', (res) => {
+            log.info(`Status Code: ${res.statusCode}`)
+            log.info(`Response Headers: ${JSON.stringify(res.headers)}`)
+            //If the response status code is not a 2xx success code
+            if (res.statusCode < 200 || res.statusCode > 299) {
+                reject("Failed: " + options.path);
+            }
+
             res.setEncoding('utf8');
             let body = '';
-            res.on('data', chunk => body += chunk);
+            res.on('data', chunk => {
+                body += chunk;
+            });
             res.on('end', () => resolve(body));
-        }).on('error', reject);
-        req.write(postData);
-        console.log(req)
-        req.end();
+        });
 
+        req.on('error', (error) => {
+            reject(error);
+        });
+
+        req.write(postData);
+        req.end();
     });
 };
 
