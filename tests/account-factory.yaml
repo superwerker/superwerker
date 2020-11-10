@@ -707,7 +707,7 @@ Resources:
             const flowBuilderBlueprint = async function () {
                 let page = await synthetics.getPage();
 
-                let email = 'root+1602246046@aws.db182a4d-4ac9-43fc-b4b1-4ba89275b063.de';
+                let email = '${AccountEmail}';
 
                 await synthetics.executeStep('consoleLogin', async function () {
 
@@ -767,6 +767,7 @@ Resources:
 
 
           - 2CaptchaKey: '{{resolve:secretsmanager:/superwerker/tests/2captcha_api_key:SecretString}}'
+            AccountEmail: !Ref AccountEmail
 
   AccountDeletionCanariesRole:
     Type: AWS::IAM::Role
