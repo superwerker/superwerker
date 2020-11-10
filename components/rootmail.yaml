@@ -553,9 +553,9 @@ Resources:
               Action:
                 - ssm:CreateOpsItem
               Resource: "*"
-            - Action: events:PutEvents
+            - Action: ssm:PutParameter
               Effect: Allow
-              Resource: '*'
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
       InlineCode: !Sub |
         import boto3
         import email
@@ -566,7 +566,6 @@ Resources:
 
         s3 = boto3.client('s3')
         ssm = boto3.client('ssm')
-        events = boto3.client('events')
 
         def handler(event, context):
 
@@ -618,23 +617,17 @@ Resources:
 
               title=msg["subject"]
 
+              source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
+
               if title == 'Amazon Web Services Password Assistance':
                 description=msg.get_body('html').get_content()
                 pw_reset_link = re.search(r'(https://signin.aws.amazon.com/resetpassword(.*?))(?=<br>)', description).group()
-
-                events.put_events(
-                    Entries=[
-                        {
-                            'DetailType': 'superwerker-event',
-                            'Detail': json.dumps(
-                                {
-                                    'eventName': 'RootMailPwResetLink',
-                                    'pwResetLink': pw_reset_link,
-                                }
-                            ),
-                            'Source': 'superwerker'
-                        }
-                    ]
+                rootmail_identifier = '/superwerker/rootmail/pw_reset_link/{}'.format(source.split('@')[0].split('root+')[1])
+                ssm.put_parameter(
+                    Name=rootmail_identifier,
+                    Value=pw_reset_link,
+                    Overwrite=True,
+                    Type='String',
                 )
                 return # no ops item for now
 
@@ -646,7 +639,6 @@ Resources:
               description=msg.get_body("plain").get_content()
               description=description[:1020] + " ..." * (len(description) > 1020)
 
-              source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
               source=source[:60] + ' ...' * (len(source) > 60)
 
               operational_data={
