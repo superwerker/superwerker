@@ -39,6 +39,54 @@ Resources:
             Principal:
               Service: billingreports.amazonaws.com
 
+  CreateCostReport:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 200
+      Runtime: nodejs12.x
+      Handler: index.handler
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - cur:*ReportDefinition
+              Resource: "*"
+      InlineCode: |
+        /*
+        Event object example:
+        {
+          "bucket": "cost-usage-report-costbucket-1vyruwrebnlip",
+          "s3Region": "us-east-1",
+          "reportName": "MyReport"
+        }
+        */
+        let AWS = require('aws-sdk');
+        let cur = new AWS.CUR({apiVersion: '2017-01-06'});
+
+        exports.handler = async (event, context) => {
+            const account = JSON.stringify(context.invokedFunctionArn).split(':')[4];
+            const params = {
+                ReportDefinition: {
+                    AdditionalArtifacts: ["ATHENA"],
+                    AdditionalSchemaElements: ["RESOURCES"],
+                    Compression: "Parquet",
+                    Format: "Parquet",
+                    ReportName: event.reportName,
+                    S3Bucket: event.bucket,
+                    S3Prefix: account,
+                    S3Region: event.s3Region,
+                    TimeUnit: "DAILY"
+                }
+            };
+            try {
+                const result = await cur.putReportDefinition(params).promise();
+                return { success: result };
+            } catch(error) {
+                return {error: error };
+            }
+        };
+
 Outputs:
   CostsReportBucket:
     Value: !Ref CostBucket
