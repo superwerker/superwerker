@@ -42,9 +42,13 @@ Resources:
   CreateCostReport:
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 200
-      Runtime: nodejs12.x
+      Timeout: 300
+      Runtime: python3.7
       Handler: index.handler
+      Environment:
+        Variables:
+          bucket: !Ref CostBucket
+          reportName: "daily-costs-usage-report"
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -53,39 +57,33 @@ Resources:
                 - cur:*ReportDefinition
               Resource: "*"
       InlineCode: |
-        /*
-        Event object example:
-        {
-          "bucket": "cost-usage-report-costbucket-1vyruwrebnlip",
-          "s3Region": "us-east-1",
-          "reportName": "MyReport"
-        }
-        */
-        let AWS = require('aws-sdk');
-        let cur = new AWS.CUR({apiVersion: '2017-01-06'});
+        import json
+        import boto3
+        import os
 
-        exports.handler = async (event, context) => {
-            const account = JSON.stringify(context.invokedFunctionArn).split(':')[4];
-            const params = {
-                ReportDefinition: {
-                    AdditionalArtifacts: ["ATHENA"],
-                    AdditionalSchemaElements: ["RESOURCES"],
-                    Compression: "Parquet",
-                    Format: "Parquet",
-                    ReportName: event.reportName,
-                    S3Bucket: event.bucket,
-                    S3Prefix: account,
-                    S3Region: event.s3Region,
-                    TimeUnit: "DAILY"
+        def handler(event, context):
+            SES_REGION = os.environ.get('SES_REGION')
+            s3 = boto3.client('s3')
+            client = boto3.client('cur')
+
+            response = client.put_report_definition(
+                ReportDefinition={
+                    'ReportName': os.environ.get('reportName'),
+                    'TimeUnit': 'DAILY',
+                    'Format': 'Parquet',
+                    'Compression': 'Parquet',
+                    'AdditionalSchemaElements': ['RESOURCES'],
+                    'S3Bucket': os.environ.get('bucket'),
+                    'S3Prefix': 'string',
+                    'S3Region': client.meta.region_name,
+                    'AdditionalArtifacts': ['ATHENA'],
                 }
-            };
-            try {
-                const result = await cur.putReportDefinition(params).promise();
-                return { success: result };
-            } catch(error) {
-                return {error: error };
+            )
+
+            return {
+                'statusCode': 200,
+                'bo': json.dumps(response)
             }
-        };
 
 Outputs:
   CostsReportBucket:
