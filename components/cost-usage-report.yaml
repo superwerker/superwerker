@@ -171,10 +171,6 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - s3:GetObject
-              Resource: "arn:aws:s3:::*/*"
-            - Effect: Allow
-              Action:
                 - cloudformation:DescribeStacks
                 - lambda:InvokeFunction
               Resource: "*"
@@ -202,7 +198,6 @@ Resources:
             return ''
 
         def handler(event, context):
-            print('call lambda')
             client = boto3.client('lambda')
 
             arn = get_lamda_arn()
