@@ -130,12 +130,13 @@ Resources:
         import json
         import boto3
         import os
+        import uuid
 
         def handler(event, context):
           client = boto3.client('cloudformation')
-          stackname = 'superwerker-setup-athena-'+ os.environ['reportName']
+          stackname = 'superwerker-setup-athena-' + os.environ['reportName'] + '-' + uuid.uuid4().hex
           account = context.invoked_function_arn.split(":")[4]
-          template_url = 'https://%s.s3.amazonaws.com/%s/%s/crawler-cfn.yml' % (os.environ['bucket'], account, os.environ['reportName'])
+          template_url = 'https://%s.s3.amazonaws.com/%s' % (os.environ['bucket'], event['fileName'])
 
           capabilities = ['CAPABILITY_IAM', 'CAPABILITY_AUTO_EXPAND']
 
@@ -201,11 +202,14 @@ Resources:
             client = boto3.client('lambda')
 
             arn = get_lamda_arn()
+            payLoad = {
+                "fileName": event['Records'][0]['s3']['object']['key']
+            }
 
             response = client.invoke(
                 FunctionName = arn,
                 InvocationType = 'RequestResponse',
-                Payload = json.dumps('')
+                Payload = json.dumps(payLoad)
             )
 
 Outputs:
