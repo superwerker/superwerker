@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: setup cost usage report
+
+Parameters:
+  ReportName:
+    Type: String
+    Default: "daily-costs-usage-report"
+
+
 Resources:
   CostBucket:
     Type: AWS::S3::Bucket
@@ -48,7 +55,7 @@ Resources:
       Environment:
         Variables:
           bucket: !Ref CostBucket
-          reportName: "daily-costs-usage-report"
+          reportName: !Ref ReportName
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -62,9 +69,8 @@ Resources:
         import os
 
         def handler(event, context):
-            SES_REGION = os.environ.get('SES_REGION')
-            s3 = boto3.client('s3')
             client = boto3.client('cur')
+            account = context.invoked_function_arn.split(":")[4]
 
             response = client.put_report_definition(
                 ReportDefinition={
@@ -74,7 +80,7 @@ Resources:
                     'Compression': 'Parquet',
                     'AdditionalSchemaElements': ['RESOURCES'],
                     'S3Bucket': os.environ.get('bucket'),
-                    'S3Prefix': 'string',
+                    'S3Prefix': account,
                     'S3Region': client.meta.region_name,
                     'AdditionalArtifacts': ['ATHENA'],
                 }
@@ -82,10 +88,134 @@ Resources:
 
             return {
                 'statusCode': 200,
-                'bo': json.dumps(response)
+                'result': json.dumps(response)
             }
+
+  SetupAthena:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      Runtime: python3.7
+      Handler: index.handler
+      Environment:
+        Variables:
+          bucket: !Ref CostBucket
+          reportName: !Ref ReportName
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: "arn:aws:s3:::*/*"
+            - Effect: Allow
+              Action:
+                - cloudformation:CreateStack
+                - glue:CreateTable
+                - glue:CreateDatabase
+                - glue:CreateCrawler
+                - iam:GetRole
+                - iam:CreateRole
+                - iam:AttachRolePolicy
+                - iam:PutRolePolicy
+                - iam:PassRole
+                - lambda:CreateFunction
+                - lambda:PutFunctionConcurrency
+                - lambda:GetFunctionConfiguration
+                - lambda:AddPermission
+                - lambda:InvokeFunction
+              Resource: "*"
+      InlineCode: |
+        import json
+        import boto3
+        import os
+
+        def handler(event, context):
+          client = boto3.client('cloudformation')
+          stackname = 'superwerker-setup-athena-'+ os.environ['reportName']
+          account = context.invoked_function_arn.split(":")[4]
+          template_url = 'https://%s.s3.amazonaws.com/%s/%s/crawler-cfn.yml' % (os.environ['bucket'], account, os.environ['reportName'])
+
+          capabilities = ['CAPABILITY_IAM', 'CAPABILITY_AUTO_EXPAND']
+
+          stackdata = client.create_stack(
+                  StackName=stackname,
+                  DisableRollback=True,
+                  TemplateURL=template_url,
+                  Capabilities=capabilities)
+
+  ConsumeS3Notification:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 300
+      Runtime: python3.7
+      Handler: index.handler
+      Environment:
+        Variables:
+          stackName: !Ref AWS::StackName
+      Events:
+        BucketCreateEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref CostBucket
+            Events:
+              - 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: crawler-cfn.yml
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: "arn:aws:s3:::*/*"
+            - Effect: Allow
+              Action:
+                - cloudformation:DescribeStacks
+                - lambda:InvokeFunction
+              Resource: "*"
+      InlineCode: |
+        import json
+        import boto3
+        import os
+
+        def log(msg):
+            print(json.dumps(msg), flush=True)
+
+        def get_lamda_arn():
+            cf_client = boto3.client('cloudformation')
+            response = cf_client.describe_stacks(StackName=os.environ['stackName'])
+            for stack in response["Stacks"]:
+                for output in stack["Outputs"]:
+                    keyName = output["OutputKey"]
+                    if keyName == "SetupAthenaARN":
+                        return output["OutputValue"]
+
+            log({
+              'msg': 'Could not find SetupAthena ARN',
+              'level': 'warn',
+            })
+            return ''
+
+        def handler(event, context):
+            print('call lambda')
+            client = boto3.client('lambda')
+
+            arn = get_lamda_arn()
+
+            response = client.invoke(
+                FunctionName = arn,
+                InvocationType = 'RequestResponse',
+                Payload = json.dumps('')
+            )
 
 Outputs:
   CostsReportBucket:
     Value: !Ref CostBucket
     Description: Costs and usage reports bucket
+  SetupAthenaARN:
+    Value: !GetAtt SetupAthena.Arn
+    Description: SetupAthena Arn
