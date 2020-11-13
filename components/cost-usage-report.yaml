@@ -67,6 +67,7 @@ Resources:
         import json
         import boto3
         import os
+        import uuid
 
         def handler(event, context):
             client = boto3.client('cur')
@@ -74,7 +75,7 @@ Resources:
 
             response = client.put_report_definition(
                 ReportDefinition={
-                    'ReportName': os.environ.get('reportName'),
+                    'ReportName': os.environ.get('reportName') + '-' + uuid.uuid4().hex,
                     'TimeUnit': 'DAILY',
                     'Format': 'Parquet',
                     'Compression': 'Parquet',
