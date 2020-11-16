@@ -1,7 +1,8 @@
 var synthetics = require('Synthetics');
-const log = require('SyntheticsLogger');
+const LOG = require('SyntheticsLogger');
 const AWS = require('aws-sdk');
 
+const CONNECT_SSM_PARAMETER = '/superwerker/tests/connect'
 
 const CAPTCHA_KEY = process.env['CAPTCHA_KEY'];
 
@@ -63,7 +64,7 @@ const flowBuilderBlueprint = async function () {
 
     await synthetics.executeStep('pwReset', async function () {
         const AWS = require('aws-sdk');
-        var ssm = new AWS.SSM();
+        const ssm = new AWS.SSM();
         var params = {
             Name: '/superwerker/rootmail/pw_reset_link/1604778386'
         };
@@ -112,7 +113,7 @@ const solveCaptcha2captcha = async (page, url) => {
     while (!captcharesult.startsWith("OK") && i < 20) {
         await new Promise(resolve => { setTimeout(resolve, 5000); });
 
-        var captcharesult = await httpGet('https://2captcha.com/res.php?key=' + CAPTCHA_KEY + '&action=get&id=' + captcharef).then(res => {
+        captcharesult = await httpGet('https://2captcha.com/res.php?key=' + CAPTCHA_KEY + '&action=get&id=' + captcharef).then(res => {
             return res;
         });
 
@@ -201,8 +202,10 @@ async function pwResetAndDelete(page, url, email) {
 
         await page.select('#countryCode', usvalue);
 
+        const ssm = new AWS.SSM({region: 'us-east-1'});
+
         let connectssmparameter = await ssm.getParameter({
-            Name: process.env.CONNECT_SSM_PARAMETER
+            Name: CONNECT_SSM_PARAMETER
         }).promise();
 
         let variables = JSON.parse(connectssmparameter['Parameter']['Value']);
@@ -256,7 +259,7 @@ async function pwResetAndDelete(page, url, email) {
         variables['CODE'] = phonecodetext;
 
         await ssm.putParameter({
-            Name: process.env.CONNECT_SSM_PARAMETER,
+            Name: CONNECT_SSM_PARAMETER,
             Type: "String",
             Value: JSON.stringify(variables),
             Overwrite: true
@@ -284,11 +287,8 @@ async function pwResetAndDelete(page, url, email) {
 
         await page.waitFor(3000);
 
-        await debugScreenshot(page);
-
         let accountstatuspage = await page.content();
 
-        LOG.debug(accountstatuspage);
 
         let issuspended = accountstatuspage.includes("\"accountStatus\":\"Suspended\"");
 
@@ -300,8 +300,6 @@ async function pwResetAndDelete(page, url, email) {
 
             await page.waitFor(8000);
 
-            await debugScreenshot(page);
-
             let closeaccountcbs = await page.$$('.close-account-checkbox > input');
             await closeaccountcbs.forEach(async (cb) => {
                 await cb.click();
@@ -309,28 +307,16 @@ async function pwResetAndDelete(page, url, email) {
 
             await page.waitFor(1000);
 
-            await debugScreenshot(page);
-
             await page.click('.btn-danger'); // close account button
 
             await page.waitFor(1000);
 
-            await debugScreenshot(page);
-
             await page.click('.modal-footer > button.btn-danger'); // confirm close account button
 
             await page.waitFor(5000);
-
-            await retryWrapper(organizations, 'tagResource', {
-                ResourceId: account.Id,
-                Tags: [{
-                    Key: "AccountDeletionTime",
-                    Value: (new Date()).toISOString()
-                }]
-            });
         }
 
-        await removeAccountFromOrg(account);
+        //await removeAccountFromOrg(account);
     } else {
         LOG.warn("Unsure of location, send help! - " + page.mainFrame().url());
     }
