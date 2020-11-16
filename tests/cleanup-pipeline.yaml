@@ -352,20 +352,6 @@ Resources:
   DecommissionLandingZoneArtifactLocation:
     Type: AWS::S3::Bucket
 
-  DecommissionLandingZoneArtifactLocationPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref DecommissionLandingZoneArtifactLocation
-      PolicyDocument:
-        Statement:
-          - Effect: Allow
-            Action: '*'
-            Resource:
-              - !GetAtt DecommissionLandingZoneArtifactLocation.Arn
-              - !Sub ${DecommissionLandingZoneArtifactLocation.Arn}/*
-            Principal:
-              AWS: !GetAtt DecommissionLandingZoneCanaryRole.Arn
-
   DecommissionLandingZoneCanaryRole:
     Type: AWS::IAM::Role
     Properties:
@@ -377,16 +363,4 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AdministratorAccess # fixme: least privilege
-      Policies:
-        - PolicyName: AllowS3List
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:ListAllMyBuckets
-                  - s3:GetBucketLocation
-                  - cloudwatch:PutMetricData
-                Resource: '*'
+        - arn:aws:iam::aws:policy/AdministratorAccess
