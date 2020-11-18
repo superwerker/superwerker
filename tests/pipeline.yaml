@@ -430,6 +430,8 @@ Resources:
             Value: !Ref RootMailDomain
           - Name: SUPERWERKER_CW_SYN_ARTIFACTS_BUCKET
             Value: !Sub superwerker-cwsyn-artifacts-${AWS::AccountId}
+          - Name: SUPERWERKER_CW_SYN_ACCOUNT_DEL_ARTIFACTS_BUCKET
+            Value: !Sub superwerker-cwsyn-accountdel-${AWS::AccountId}
       ServiceRole: !GetAtt CleanupBuildProjectRole.Arn
       Artifacts:
         Type: CODEPIPELINE
