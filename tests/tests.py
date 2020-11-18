@@ -31,7 +31,12 @@ class MyTestCase(unittest.TestCase):
     @classmethod
     def cleanUpGuardDuty(cls):
 
-        delegated_administators = organizations.list_delegated_administrators(ServicePrincipal='guardduty.amazonaws.com')['DelegatedAdministrators']
+        try:
+            delegated_administators = organizations.list_delegated_administrators(ServicePrincipal='guardduty.amazonaws.com')['DelegatedAdministrators']
+        except:
+            # this can happen with a fresh account
+            return
+
         if len(delegated_administators) > 0:
             organizations.deregister_delegated_administrator(
                 AccountId=delegated_administators[0]['Id'],
