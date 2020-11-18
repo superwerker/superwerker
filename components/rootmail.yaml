@@ -563,6 +563,7 @@ Resources:
         import hashlib
         import json
         import re
+        import datetime
 
         s3 = boto3.client('s3')
         ssm = boto3.client('ssm')
@@ -628,6 +629,16 @@ Resources:
                     Value=pw_reset_link,
                     Overwrite=True,
                     Type='String',
+                    Tier='Advanced',
+                    Policies=json.dumps([
+                      {
+                        "Type":"Expiration",
+                        "Version":"1.0",
+                        "Attributes":{
+                          "Timestamp": (datetime.datetime.now() + datetime.timedelta(minutes = 10)).strftime('%Y-%m-%dT%H:%M:%SZ') # expire in 10 minutes
+                        }
+                      }
+                    ])
                 )
                 return # no ops item for now
 
