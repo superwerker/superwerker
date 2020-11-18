@@ -53,7 +53,7 @@ Resources:
       Name: superwerker-s-connect
       ArtifactS3Location: !Sub s3://${SetupAmazonConnectCanaryArtifactLocation}
       ExecutionRoleArn: !GetAtt SetupAmazonConnectCanaryCanaryRole.Arn
-      RuntimeVersion: syn-1.0
+      RuntimeVersion: syn-nodejs-2.1
       StartCanaryAfterCreation: true
       RunConfig:
         TimeoutInSeconds: 840
@@ -586,7 +586,6 @@ Resources:
                   Type: 'CONTACT_FLOW',
                   Name: 'myFlow',
               }).promise()
-
           }
 
   SetupAmazonConnectCanaryArtifactLocation:
