@@ -58,7 +58,7 @@ Resources:
               RunOrder: 10
 
             - Name: RemoveAccountFactoryFixture
-              RunOrder: 10
+              RunOrder: 15
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
