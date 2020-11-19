@@ -299,7 +299,7 @@ Resources:
   DeploymentBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub superwerker-deployment-${BranchName}
+      BucketName: !Sub superwerker-deployment-${AWS::AccountId}
 
   DeploymentBucketPolicy:
     Type: AWS::S3::BucketPolicy
