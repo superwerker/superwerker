@@ -127,7 +127,7 @@ Resources:
     DependsOn: Account
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 200
+      Timeout: 350
       Handler: index.handler
       Runtime: python3.7
       Role: !GetAtt AccountDeletionCanariesRole.Arn
@@ -138,6 +138,7 @@ Resources:
         import boto3
         import cfnresponse
         import os
+        import time
 
         cws = boto3.client('synthetics')
 
@@ -173,6 +174,8 @@ Resources:
 
             if RequestType == DELETE:
               cws.start_canary(Name=os.environ['ACCOUNT_DELETE_CANARY'])
+              time.sleep(300) # give canary 5 minutes time to finish (very hackish)
+              # TODO: make it event-driven
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
