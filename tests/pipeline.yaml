@@ -72,7 +72,7 @@ Resources:
                 StackName: superwerker-pipeline-account-factory-fixture
 
             - Name: RemoveWireRootMailDomain
-              RunOrder: 10
+              RunOrder: 20
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -86,7 +86,7 @@ Resources:
                 StackName: superwerker-pipeline-dns-wiring
 
             - Name: RemoveAccountFactoryWiring
-              RunOrder: 10
+              RunOrder: 20
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
