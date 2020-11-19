@@ -137,6 +137,7 @@ Resources:
       InlineCode: |
         import boto3
         import cfnresponse
+        import os
 
         cws = boto3.client('synthetics')
 
