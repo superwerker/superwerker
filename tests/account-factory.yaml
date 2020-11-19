@@ -98,6 +98,7 @@ Resources:
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
   Account:
+    DependsOn: AccountDeleteTrigger
     Type: AWS::ServiceCatalog::CloudFormationProvisionedProduct
     Properties:
       ProductName: AWS Control Tower Account Factory
@@ -118,13 +119,11 @@ Resources:
           Value: !Ref AccountName
 
   AccountDeleteTrigger:
-    DependsOn: Account
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt AccountDeleteTriggerCustomResource.Arn
 
   AccountDeleteTriggerCustomResource:
-    DependsOn: Account
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 350
@@ -179,6 +178,68 @@ Resources:
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
+  # solve the chicken-egg: the account deletion puppeteer/CWS canary needs to be started after
+  # terminating the CT account factory SC provisioned product, but the canary depends on the SC provisioned product
+  # because the SC provisioned product returns the account id
+  # so inject the account id via SSM parameter into the CWS canary before it runs
+  # thus the provisioned product CFN resource can be deleted before the canary CFN resource
+  AccountDeleteSetAccountIdInCanary:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt AccountDeleteSetAccountIdInCanaryCustomResource.Arn
+      AccountId: !GetAtt Account.Outputs.AccountId
+
+  AccountDeleteSetAccountIdInCanaryCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 350
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt AccountDeletionCanariesRole.Arn
+      InlineCode: |
+        import boto3
+        import cfnresponse
+        import os
+        import time
+
+        ssm = boto3.client('ssm')
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            if RequestType == CREATE:
+                ssm.put_parameter(
+                    Name='/superwerker/tests/account_factory_fixture_accountId',
+                    Value=Properties['AccountId'],
+                    Overwrite=True,
+                    Type='String',
+                )
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
   AccountDeleteCanary:
     Type: AWS::Synthetics::Canary
     Properties:
@@ -200,6 +261,8 @@ Resources:
             var synthetics = require('Synthetics');
             const LOG = require('SyntheticsLogger');
             const AWS = require('aws-sdk');
+            const ssm = new AWS.SSM();
+
             const organizations = new AWS.Organizations({region: 'us-east-1'});
 
             const CONNECT_SSM_PARAMETER = '/superwerker/tests/connect'
@@ -207,10 +270,16 @@ Resources:
             const CAPTCHA_KEY = '${2CaptchaKey}';
 
             const ACCOUNT_EMAIL = '${AccountEmail}';
-            const ACCOUNT_ID = '${AccountId}'
 
             const flowBuilderBlueprint = async function () {
                 let page = await synthetics.getPage();
+
+                // retrieve acocunt id to delete by ssm parameter. could actually done with an Organizations lookup
+                parameter = await ssm.getParameter({
+                    Name: '/superwerker/tests/account_factory_fixture_accountId'
+                }).promise();
+
+                const ACCOUNT_ID = parameter['Parameter']['Value'];
 
                 await synthetics.executeStep('pwResetEmailRequest', async function () {
 
@@ -262,8 +331,6 @@ Resources:
                 });
 
                 await synthetics.executeStep('pwReset', async function () {
-                    const AWS = require('aws-sdk');
-                    const ssm = new AWS.SSM();
                     var params = {
                         Name: '/superwerker/rootmail/pw_reset_link/' + ACCOUNT_EMAIL.split('@')[0].split('+')[1]
                     };
@@ -282,7 +349,7 @@ Resources:
 
                     pw_reset_url = parameter['Parameter']['Value']
 
-                    await pwResetAndDelete(page, pw_reset_url, ACCOUNT_EMAIL);
+                    await pwResetAndDelete(page, pw_reset_url, ACCOUNT_ID, ACCOUNT_EMAIL);
 
                 });
             };
@@ -322,7 +389,7 @@ Resources:
                 return captcharesult.split("|").pop();
             }
 
-            async function pwResetAndDelete(page, url, email) {
+            async function pwResetAndDelete(page, url, accountId, email) {
 
                 var secretsmanager = new AWS.SecretsManager();
                 let secretsmanagerresponse = await secretsmanager.getSecretValue({
@@ -515,15 +582,15 @@ Resources:
                         await page.waitFor(5000);
                     }
 
-                    await removeAccountFromOrg();
+                    await removeAccountFromOrg(accountId);
                 } else {
                     LOG.warn("Unsure of location, send help! - " + page.mainFrame().url());
                 }
             }
 
-            async function removeAccountFromOrg(account) {
+            async function removeAccountFromOrg(accountId) {
                 await retryWrapper(organizations, 'removeAccountFromOrganization', {
-                    AccountId: ACCOUNT_ID
+                    AccountId: accountId
                 });
 
                 LOG.info("Removed account from Org");
@@ -697,7 +764,6 @@ Resources:
 
           - 2CaptchaKey: '{{resolve:secretsmanager:/superwerker/tests/2captcha_api_key:SecretString}}'
             AccountEmail: !Ref AccountEmail
-            AccountId: !GetAtt Account.Outputs.AccountId
 
   AccountDeletionCanariesRole:
     Type: AWS::IAM::Role
