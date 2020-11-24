@@ -167,26 +167,6 @@ Resources:
 
                 Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
 
-            - Name: WireRootMailDomain
-              RunOrder: 80
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: REPLACE_ON_FAILURE
-                StackName: superwerker-pipeline-dns-wiring
-                TemplatePath: SourceOutput::tests/pipeline-dns-wiring.yaml
-                ParameterOverrides: !Sub |
-                  {
-                    "RootMailDomain": "${RootMailDomain}",
-                    "RootMailDelegationTarget": "#{superwerker.RootMailDelegationTarget}"
-                  }
-
             - Name: AccountFactoryWiring
               RunOrder: 80
               ActionTypeId:
@@ -450,3 +430,46 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  # wire root domain once the nameserver delegation targets are set
+  # this has to done asynchronously since the superwerker setup waits for it
+  # so it cannot be done as part of the pipeline
+  RootMailDnsWiring:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        EmailHealth:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              detail-type:
+                - Parameter Store Change
+              source:
+                - aws.ssm
+              detail:
+                name:
+                  - /superwerker/domain_name_servers
+                operation:
+                  - Create
+      Policies:
+        - AdministratorAccess
+      Handler: index.handler
+      InlineCode: !Sub |
+        import boto3
+
+        cfn = boto3.client('cloudformation')
+
+        def handler(event, context):
+          cfn.create_stack(
+              StackName='superwerker-pipeline-dns-wiring',
+              TemplateURL='https://${DeploymentBucket.DomainName}/tests/pipeline-dns-wiring.yaml',
+              Parameters=[
+                  {
+                      'ParameterKey': 'RootMailDomain',
+                      'ParameterValue': '${RootMailDomain}',
+                  },
+              ],
+          )
+
+      Runtime: python3.7
+      Timeout: 60

@@ -5,7 +5,8 @@ Parameters:
     Type: String
 
   RootMailDelegationTarget:
-    Type: CommaDelimitedList
+    Type: AWS::SSM::Parameter::Value<CommaDelimitedList>
+    Default: /superwerker/domain_name_servers
 
 Resources:
 
