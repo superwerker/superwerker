@@ -559,6 +559,7 @@ Resources:
         from email import policy
         import hashlib
         import json
+        import re
 
         s3 = boto3.client('s3')
         ssm = boto3.client('ssm')
@@ -610,11 +611,13 @@ Resources:
               )
 
               msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
-
               title=msg["subject"]
               title=title[:1020] + " ..." * (len(title) > 1020)
-
-              description=msg.get_body("plain").get_content()
+              description=msg.get_body(preferencelist=('plain', 'html'))
+              description=description.get_content()
+              if '<img' in description:
+                clean=re.compile(r'<img.*?/>')
+                description=re.sub(clean,'',description)
               description=description[:1020] + " ..." * (len(description) > 1020)
 
               source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
