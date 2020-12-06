@@ -72,11 +72,10 @@ Resources:
           const os = require('os');
 
           const CONNECT_SSM_PARAMETER = '/superwerker/tests/connect'
-          const ACCOUNTID = '215867065708'
           const AWS_CONNECT_REGION = 'us-east-1'
           AWS.config.update({region: AWS_CONNECT_REGION});
 
-          const domain = 'superwerker-tests'
+          const domain = 'superwerker-tests-${AWS::AccountId}'
 
           const httpGet = url => {
               const https = require('https');
@@ -519,7 +518,7 @@ Resources:
               {
                 "Identifier": "ad3b6726-dfed-40fe-b4c7-95a9751fc4a7",
                 "Parameters": {
-                  "LambdaFunctionARN": "arn:aws:lambda:us-east-1:${!ACCOUNTID}:function:AccountAutomator",
+                  "LambdaFunctionARN": "arn:aws:lambda:us-east-1:${AWS::AccountId}:function:AccountAutomator",
                   "InvocationTimeLimitSeconds": "8"
                 },
                 "Transitions": {
