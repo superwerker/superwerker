@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  SpendInUSD:
+    Default: 100
+    Type: String
+
+Resources:
+
+  BudgetLama:
+    Type: AWS::Serverless::Function
+    Properties:
+      Environment:
+        Variables:
+          StackName: !Sub ${AWS::StackName}
+      Events:
+        Schedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 0 L * ? *)
+      Handler: index.handler
+      InlineCode: |
+        from dateutil.relativedelta import *
+        import boto3
+        import datetime
+        import json
+        import os
+
+        def handler(event, context):
+
+          ce = boto3.client('ce')
+
+          end = datetime.date.today().replace(day=1)
+          start = end + relativedelta(months=-3)
+
+          start = start.strftime("%Y-%m-%d")
+          end = end.strftime("%Y-%m-%d")
+
+          response = ce.get_cost_and_usage(
+              Granularity='MONTHLY',
+              Metrics=[
+                  'UnblendedCost',
+              ],
+              TimePeriod={
+                  'Start': start,
+                  'End': end,
+              },
+          )
+
+          avg = 0
+
+          for result in response['ResultsByTime']:
+              total = result['Total']
+              cost = total['UnblendedCost']
+              avg = avg + float(cost['Amount'])
+
+          avg = (avg/3)*1.2
+          budget = str(int(avg*1.2)) # add 20% and warn at 80% forcast
+
+          stack_name = os.environ['StackName']
+
+          log({
+              'average': avg,
+              'budget': budget,
+              'end': end,
+              'event': event,
+              'level': 'debug',
+              'stack': stack_name,
+              'start': start,
+          })
+
+          cf = boto3.client('cloudformation')
+
+          cf.update_stack(
+            Capabilities=[
+              'CAPABILITY_IAM',
+            ],
+            Parameters=[
+              {
+                'ParameterKey': 'SpendInUSD',
+                'ParameterValue': budget,
+              }
+            ],
+            StackName=stack_name,
+            UsePreviousTemplate=True,
+          )
+
+        def log(msg):
+          print(json.dumps(msg), flush=True)
+
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - ce:GetCostAndUsage
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - budgets:ModifyBudget
+              Resource: !Sub arn:aws:budgets::${AWS::AccountId}:budget/${BudgetReport}
+            - Effect: Allow
+              Action:
+                - cloudformation:UpdateStack
+              Resource: !Sub ${AWS::StackId}
+      Timeout: 10
+
+  BudgetReport: # TODO: add notifications via SNS and handle those in OpsSanta
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetLimit:
+          Amount: !Ref SpendInUSD
+          Unit: USD
+        BudgetType: COST
+        CostTypes:
+          IncludeCredit: false
+          IncludeRefund: false
+        TimeUnit: MONTHLY
