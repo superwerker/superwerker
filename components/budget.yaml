@@ -8,6 +8,24 @@ Parameters:
 
 Resources:
 
+  BudgetAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:opsitem:3#CATEGORY=Cost # severity 3 (~medium) should suffice
+      AlarmDescription: Superwerker default budget forecast exceed previous three months
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: TopicName
+          Value: !GetAtt BudgetNotification.TopicName
+      EvaluationPeriods: 1
+      MetricName: NumberOfMessagesPublished
+      Namespace: AWS/SNS
+      Period: 300 # publishing window of SNS metrics to CW
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: missing # currently CW does not auto close ops items where it's alert transitions back to OK - but still transition back after one (1) initial SNS notification from budgets to "Ok" would communicate wrong semantics;
+
   BudgetLama:
     Type: AWS::Serverless::Function
     Properties:
@@ -107,7 +125,23 @@ Resources:
               Resource: !Sub ${AWS::StackId}
       Timeout: 10
 
-  BudgetReport: # TODO: add notifications via SNS and handle those in OpsSanta
+  BudgetNotification:
+    Type: AWS::SNS::Topic
+
+  BudgetNotificationPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          Action: SNS:Publish
+          Effect: Allow
+          Principal:
+            Service: budgets.amazonaws.com
+          Resource: !Ref BudgetNotification
+      Topics:
+        - !Ref BudgetNotification
+
+  BudgetReport:
     Type: AWS::Budgets::Budget
     Properties:
       Budget:
@@ -119,3 +153,11 @@ Resources:
           IncludeCredit: false
           IncludeRefund: false
         TimeUnit: MONTHLY
+      NotificationsWithSubscribers:
+        - Notification:
+            ComparisonOperator: GREATER_THAN
+            NotificationType: FORECASTED
+            Threshold: 80
+          Subscribers:
+            - SubscriptionType: SNS
+              Address: !Ref BudgetNotification
