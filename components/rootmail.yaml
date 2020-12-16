@@ -87,7 +87,7 @@ Resources:
           max = 64 - len(domain) - 1 - 5
 
           alias = str(uuid.uuid4())
-          alias = alias[:max] * (len(alias) > max)
+          alias = alias[:max]
 
           if len(alias) < 36:
 
