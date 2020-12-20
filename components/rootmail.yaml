@@ -31,24 +31,19 @@ Outputs:
 
 Resources:
 
-  DomainBucket:
+  EmailBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub ${Subdomain}.${Domain}
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-      WebsiteConfiguration:
-        RedirectAllRequestsTo:
-          HostName: "example.com"
-          Protocol: "https"
 
-  DomainBucketPolicy:
+  EmailBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref DomainBucket
+      Bucket: !Ref EmailBucket
       PolicyDocument: !Sub |
         {
           "Version": "2012-10-17",
@@ -65,7 +60,7 @@ Resources:
                 "Service": "ses.amazonaws.com"
               },
               "Resource": [
-                "arn:${AWS::Partition}:s3:::${DomainBucket}/RootEmails/*"
+                "arn:${AWS::Partition}:s3:::${EmailBucket}/RootEmails/*"
               ],
               "Sid": "EnableSESReceive"
             }
@@ -523,7 +518,7 @@ Resources:
       Rule:
         Actions:
           - S3Action:
-              BucketName: !Ref DomainBucket
+              BucketName: !Ref EmailBucket
               ObjectKeyPrefix: "RootEmails"
           - LambdaAction:
               FunctionArn: !Sub ${OpsSantaFunction.Arn}
@@ -555,7 +550,7 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:GetObject
-              Resource: !Sub ${DomainBucket.Arn}/RootEmails/*
+              Resource: !Sub ${EmailBucket.Arn}/RootEmails/*
             - Effect: Allow
               Action:
                 - ssm:CreateOpsItem
@@ -612,7 +607,7 @@ Resources:
                   return
 
               response = s3.get_object(
-                Bucket="${DomainBucket}",
+                Bucket="${EmailBucket}",
                 Key=key,
               )
 
@@ -639,7 +634,7 @@ Resources:
                 "/aws/resources":{
                   "Value":json.dumps([
                     {
-                      "arn":"arn:aws:s3:::${DomainBucket.Arn}/{key}".format(key=key),
+                      "arn":"arn:aws:s3:::${EmailBucket.Arn}/{key}".format(key=key),
                     }
                   ]),
                   "Type":"SearchableString",

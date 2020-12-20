@@ -11,6 +11,8 @@ Parameters:
   BranchName:
     Type: String
     Default: master
+  OrganizationsVendingMachineEndpoint:
+    Type: String
   GithubTokenSecretsManagerPath:
     Type: String
     Default: /superwerker/github-token
@@ -31,7 +33,7 @@ Resources:
               ActionTypeId:
                 Category: Source
                 Owner: ThirdParty
-                Version: 1
+                Version: '1'
                 Provider: GitHub
               OutputArtifacts:
                 - Name: SourceOutput
@@ -44,75 +46,6 @@ Resources:
 
         - Name: DeployAndTestSuperwerker
           Actions:
-
-            - ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CleanupBuildProject
-              InputArtifacts:
-                - Name: SourceOutput
-              Name: Cleanup
-              RunOrder: 10
-
-            - Name: RemoveAccountFactoryFixture
-              RunOrder: 10
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: DELETE_ONLY
-                StackName: superwerker-pipeline-account-factory-fixture
-
-            - Name: RemoveWireRootMailDomain
-              RunOrder: 10
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: DELETE_ONLY
-                StackName: superwerker-pipeline-dns-wiring
-
-            - Name: RemoveAccountFactoryWiring
-              RunOrder: 10
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: DELETE_ONLY
-                StackName: superwerker-pipeline-account-factory-wiring
-
-            - Name: RemoveSuperwerkerStack
-              RunOrder: 40
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                ActionMode: DELETE_ONLY
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                StackName: superwerker
-
             - ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -132,105 +65,11 @@ Resources:
                 Provider: CodeBuild
                 Version: "1"
               Configuration:
-                ProjectName: !Ref EmailRandomizer
+                ProjectName: !Ref BuildAndTestProject
               InputArtifacts:
                 - Name: SourceOutput
-              OutputArtifacts:
-                - Name: EmailRandomizer
-              Name: EmailRandomizer
-              Namespace: randomizer
-              RunOrder: 40
-
-            - Name: InstallSuperwerker
-              RunOrder: 70
-              Namespace: superwerker
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-                - Name: EmailRandomizer
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: REPLACE_ON_FAILURE
-                StackName: superwerker
-                TemplatePath: SourceOutput::components/superwerker.yaml
-                ParameterOverrides: !Sub |
-                  {
-                    "LogArchiveAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "LogArchiveAWSAccountEmail"]},
-                    "AuditAWSAccountEmail": {"Fn::GetParam":["EmailRandomizer", "EmailRandomizer.json", "AuditAWSAccountEmail"]},
-                    "Domain": "${RootMailDomain}",
-                    "TemplateUrlPrefix": "https://${DeploymentBucket.DomainName}"
-                  }
-
-                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
-
-            - Name: AccountFactoryWiring
-              RunOrder: 80
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: REPLACE_ON_FAILURE
-                StackName: superwerker-pipeline-account-factory-wiring
-                TemplatePath: SourceOutput::tests/account-factory-wiring.yaml
-                ParameterOverrides: !Sub |
-                  {
-                    "PipelineCloudformationRoleArn": "${CloudFormationRole.Arn}"
-                  }
-                Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
-
-            - Name: AccountFactoryFixture
-              RunOrder: 90
-              Namespace: accountfactoryfixture
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: '1'
-              InputArtifacts:
-                - Name: SourceOutput
-              Configuration:
-                RoleArn: !GetAtt CloudFormationRole.Arn
-                ActionMode: REPLACE_ON_FAILURE
-                StackName: superwerker-pipeline-account-factory-fixture
-                TemplatePath: SourceOutput::tests/account-factory.yaml
-                ParameterOverrides: !Sub |
-                  {
-                    "AccountName": "sw-#{randomizer.account_factory_email_prefix}",
-                    "AccountEmail": "root+#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
-                    "SSOUserFirstName": "Arno",
-                    "SSOUserLastName": "Nym",
-                    "SSOUserEmail": "root+#{randomizer.account_factory_email_prefix}@aws.${RootMailDomain}",
-                    "ManagedOrganizationalUnit": "Custom"
-                  }
-                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
-
-            - ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref Test
-                EnvironmentVariables: |
-                  [
-                    {
-                      "name": "ACCOUNT_FACTORY_ACCOUNT_ID",
-                      "value": "#{accountfactoryfixture.AccountId}"
-                    }
-                  ]
-              InputArtifacts:
-                - Name: SourceOutput
-              Name: Test
-              RunOrder: 100
+              Name: BuildAndTest
+              RunOrder: 50
 
       ArtifactStore:
         Type: S3
@@ -296,109 +135,7 @@ Resources:
               - s3:GetObjectVersion
             Resource: !Sub ${DeploymentBucket.Arn}/*
 
-  EmailRandomizer:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
-        Type: LINUX_CONTAINER
-      ServiceRole: !GetAtt EmailRandomizerRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          env:
-            shell: bash
-            exported-variables:
-              - account_factory_email_prefix
-          phases:
-            build:
-              commands:
-                - timestamp=$(date +%s)
-                # write random email adresses in case it's not in the parameter store
-                - "aws ssm get-parameter --name /superwerker_bootstrap/email_adresses || (printf '{\"LogArchiveAWSAccountEmail\": \"%s\", \"AuditAWSAccountEmail\": \"%s\"}' $(printf 'superwerker-aws-test+%s@superluminar.io' log-archive$timestamp) $(printf 'superwerker-aws-test+%s@superluminar.io' audit$timestamp) > /tmp/EmailRandomizerTemp.json &&  aws ssm put-parameter --name /superwerker_bootstrap/email_adresses --type String --value file:///tmp/EmailRandomizerTemp.json --no-overwrite)"
-                # get the parameter value and write the artifact each time for the next pipeline step (CloudFormation)
-                - aws ssm get-parameter --name /superwerker_bootstrap/email_adresses --query Parameter.Value --output text > EmailRandomizer.json
-
-                # write random value for email-adress prefix for account factory fixture
-                - account_factory_email_prefix=$timestamp
-          artifacts:
-            files:
-              - EmailRandomizer.json
-            name: EmailRandomizer
-
-  EmailRandomizerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          Effect: Allow
-          Principal:
-            Service:
-              - codebuild.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
-
-  Test:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
-        Type: LINUX_CONTAINER
-      ServiceRole: !GetAtt TestRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: !Sub |
-          version: 0.2
-          env:
-            shell: bash
-          phases:
-            install:
-              runtime-versions:
-                python: 3.x
-            build:
-              commands:
-                - cd tests
-                - pip3 install -r requirements.txt
-                - python3 -munittest rootemails.py tests.py
-
-  TestRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          Effect: Allow
-          Principal:
-            Service:
-              - codebuild.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
-
-  CloudFormationRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          Effect: Allow
-          Principal:
-            Service:
-              - cloudformation.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
-
-  CleanupBuildProject:
+  BuildAndTestProject:
     Type: AWS::CodeBuild::Project
     Properties:
       Environment:
@@ -408,16 +145,47 @@ Resources:
         EnvironmentVariables:
           - Name: ROOT_MAIL_DOMAIN
             Value: !Ref RootMailDomain
-          - Name: SUPERWERKER_CW_SYN_ARTIFACTS_BUCKET
-            Value: !Sub superwerker-cwsyn-artifacts-${AWS::AccountId}
-      ServiceRole: !GetAtt CleanupBuildProjectRole.Arn
+          - Name: ORGANIZATIONS_VENDING_MACHINE_ENDPOINT
+            Value: !Ref OrganizationsVendingMachineEndpoint
+          - Name: TEMPLATE_URL_PREFIX
+            Value: !Sub https://${DeploymentBucket.DomainName}
+
+      ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
         Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: tests/buildspec-pipeline-cleanup.yml
+        BuildSpec: |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            build:
+              commands:
+                # vend fresh account/org
+                - ovm_result=$(curl -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
+                - aws_account_id=$(echo $ovm_result | jq -r .account_id)
+                - aws_cross_account_role_arn=$(echo $ovm_result | jq -r .cross_account_role)
+                - echo AccountId ${aws_account_id} - Cross Account Role ${aws_cross_account_role_arn}
 
-  CleanupBuildProjectRole:
+                # setup AWS CLI to talk to vended account
+                - aws configure --profile test_account set role_arn $aws_cross_account_role_arn
+                - aws configure --profile test_account set credential_source EcsContainer
+                - |
+                  set -m # enable job control
+                  aws --profile test_account cloudformation deploy --stack-name superwerker --template-file components/superwerker.yaml --parameter-overrides Domain=${ROOT_MAIL_DOMAIN} TemplateUrlPrefix=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset & \
+                  while ! domain_name_servers=$(aws --profile test_account ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done; \
+                  aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} --no-fail-on-empty-changeset; \
+                  fg # wait for superwerker stack to finish
+
+                - aws --profile test_account cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+                - aws --profile test_account cloudformation deploy --stack-name superwerker-pipeline-account-factory-fixture --template-file tests/account-factory.yaml --parameter-overrides AccountName=sw-${aws_account_id} AccountEmail=root+${aws_account_id}@aws.${ROOT_MAIL_DOMAIN} SSOUserFirstName=Isolde SSOUserLastName=Mawidder-Baden SSOUserEmail=root+${aws_account_id}@aws.${ROOT_MAIL_DOMAIN} ManagedOrganizationalUnit=Custom --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+
+                - cd tests
+                - pip3 install -r requirements.txt
+                - AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootemails.py tests.py
+
+  BuildAndTestProjectRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -430,46 +198,3 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
-
-  # wire root domain once the nameserver delegation targets are set
-  # this has to done asynchronously since the superwerker setup waits for it
-  # so it cannot be done as part of the pipeline
-  RootMailDnsWiring:
-    Type: AWS::Serverless::Function
-    Properties:
-      Events:
-        EmailHealth:
-          Type: CloudWatchEvent
-          Properties:
-            Pattern:
-              detail-type:
-                - Parameter Store Change
-              source:
-                - aws.ssm
-              detail:
-                name:
-                  - /superwerker/domain_name_servers
-                operation:
-                  - Create
-      Policies:
-        - AdministratorAccess
-      Handler: index.handler
-      InlineCode: !Sub |
-        import boto3
-
-        cfn = boto3.client('cloudformation')
-
-        def handler(event, context):
-          cfn.create_stack(
-              StackName='superwerker-pipeline-dns-wiring',
-              TemplateURL='https://${DeploymentBucket.DomainName}/tests/pipeline-dns-wiring.yaml',
-              Parameters=[
-                  {
-                      'ParameterKey': 'RootMailDomain',
-                      'ParameterValue': '${RootMailDomain}',
-                  },
-              ],
-          )
-
-      Runtime: python3.7
-      Timeout: 60
