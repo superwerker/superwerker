@@ -138,6 +138,7 @@ Resources:
   BuildAndTestProject:
     Type: AWS::CodeBuild::Project
     Properties:
+      TimeoutInMinutes: 180
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
