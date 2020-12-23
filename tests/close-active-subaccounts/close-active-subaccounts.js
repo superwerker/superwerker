@@ -19,7 +19,7 @@ const handler = async function () {
         }
         console.log(account);
 
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({args: ['--no-sandbox']});
         const page = await browser.newPage();
 
         const pw_reset_url = await requestPwResetLink(page, account.Email)
