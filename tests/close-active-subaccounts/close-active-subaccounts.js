@@ -319,4 +319,10 @@ const solveCaptcha2captcha = async (page, url) => {
     return captcharesult.split("|").pop();
 }
 
-handler();
+(async () => {
+    try {
+        await handler();
+    } catch (e) {
+        process.exit(1);
+    }
+})();
