@@ -150,6 +150,9 @@ Resources:
             Value: !Ref OrganizationsVendingMachineEndpoint
           - Name: TEMPLATE_URL_PREFIX
             Value: !Sub https://${DeploymentBucket.DomainName}
+          - Name: CAPTCHA_API_KEY
+            Value: /superwerker/tests/2captcha_api_key
+            Type: SECRETS_MANAGER
 
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
@@ -186,6 +189,14 @@ Resources:
                 - cd tests
                 - pip3 install -r requirements.txt
                 - AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootemails.py tests.py
+
+              finally:
+                # close sub-accounts so that the OVM can close the main / management account later
+                - cd $CODEBUILD_SRC_DIR/tests/close-active-subaccounts
+                - npm i
+                # Node + ECS Container Creds + Assume Role doesn't seem to work, so work around by setting credentials
+                - eval $(aws sts assume-role --role-arn $aws_cross_account_role_arn --role-session-name test | jq -r '.Credentials | "export JS_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport JS_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport JS_AWS_SESSION_TOKEN=\(.SessionToken)\n"')
+                - AWS_ACCESS_KEY_ID=$JS_AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$JS_AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN=$JS_AWS_SESSION_TOKEN CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
 
   BuildAndTestProjectRole:
     Type: AWS::IAM::Role
