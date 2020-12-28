@@ -36,6 +36,12 @@ Parameters:
       - false
     Default: true
     Type: String
+  IncludeBackup:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Type: String
   IncludeServiceControlPolicies:
     AllowedValues:
       - true
@@ -61,6 +67,9 @@ Conditions:
   IncludeSecurityHub: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeSecurityHub, true ]
+  IncludeBackup: !And
+    - !Condition IncludeControlTower
+    - !Equals [ !Ref IncludeBackup, true ]
   IncludeServiceControlPolicies: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeServiceControlPolicies, true ]
@@ -183,6 +192,12 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/security-hub.yaml
+
+  Backup:
+    Condition: IncludeBackup
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/backup.yaml
 
   ServiceControlPolicies:
     Condition: IncludeServiceControlPolicies

@@ -1,19 +1,76 @@
 AWSTemplateFormatVersion: 2010-09-09
-
-Parameters:
-  OrgId:
-    Type: String
-    Default: o-k2arggwiaf
-  RootId:
-    Type: String
-    Default: r-2odh
+Transform: AWS::Serverless-2016-10-31
 
 Resources:
+
+  OrganizationsLookup:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt OrganizationsLookupCustomResource.Arn
+
+  OrganizationsLookupCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - organizations:ListRoots
+                - organizations:DescribeOrganization
+              Resource: '*'
+      InlineCode: |
+        import boto3
+        import cfnresponse
+
+        org = boto3.client("organizations")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            organization = org.describe_organization()['Organization']
+            data['OrgId'] = organization['Id']
+
+            roots = org.list_roots()['Roots']
+            data['RootId'] = roots[0]['Id']
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
 
   OrganizationConformancePackBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub awsconfigconforms-${AWS::StackName}
+      BucketName: !Sub awsconfigconforms-${AWS::AccountId}
 
   OrganizationConformancePackBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -31,7 +88,7 @@ Resources:
             Resource: !Sub ${OrganizationConformancePackBucket.Arn}/*
             Condition:
               StringEquals:
-                aws:PrincipalOrgID: !Ref OrgId
+                aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
                 aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
           - Sid: AllowGetBucketAcl
@@ -41,11 +98,11 @@ Resources:
             Resource: !Sub ${OrganizationConformancePackBucket.Arn}
             Condition:
               StringEquals:
-                aws:PrincipalOrgID: !Ref OrgId
+                aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
                 aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
 
-  SuperwerkerBackupTagsEnforcementResources: # FIXME: name
+  BackupResources:
     Type: AWS::CloudFormation::StackSet
     Properties:
       StackSetName: superwerker-backup
@@ -63,7 +120,7 @@ Resources:
             - !Ref AWS::Region
           DeploymentTargets:
             OrganizationalUnitIds:
-              - !Ref RootId
+              - !GetAtt OrganizationsLookup.RootId
       TemplateBody: |
         Resources:
           SuperwerkerBackupTagsEnforcementRemediationRole: # TODO: Integrity Protection
@@ -101,49 +158,68 @@ Resources:
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
 
-  SuperwerkerBackupTagsEnforcement:
-    DependsOn: SuperwerkerBackupTagsEnforcementResources
-    Type: AWS::Config::OrganizationConformancePack
+#  SuperwerkerBackupTagsEnforcement:
+#    DependsOn: SuperwerkerBackupResources
+#    Type: AWS::Config::OrganizationConformancePack
+#    Properties:
+#      ExcludedAccounts:
+#        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
+#      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
+#      OrganizationConformancePackName: !Ref AWS::StackName
+#      TemplateBody: !Sub |
+#        Resources:
+#          ConfigRule:
+#            Type: AWS::Config::ConfigRule
+#            Properties:
+#              ConfigRuleName: superwerker-enforce-backup
+#              Scope:
+#                ComplianceResourceTypes:
+#                  - AWS::DynamoDB::Table
+#              InputParameters:
+#                tag1Key: superwerker:backup
+#                tag1Value: daily,none
+#              Source:
+#                Owner: AWS
+#                SourceIdentifier: REQUIRED_TAGS
+#
+#          Remediation:
+#            Type: AWS::Config::RemediationConfiguration
+#            Properties:
+#              ConfigRuleName: sw-backup # FIXME: !REF
+#              Automatic: true
+#              MaximumAutomaticAttempts: 10
+#              RetryAttemptSeconds: 60
+#              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+#              TargetType: SSM_DOCUMENT
+#              Parameters:
+#                ResourceValue:
+#                  ResourceValue:
+#                    Value: "RESOURCE_ID"
+#                AutomationAssumeRole:
+#                  StaticValue:
+#                    Values:
+#                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole
+
+  BackupTagRemediation:
+    Type: AWS::SSM::Document
     Properties:
-      ExcludedAccounts:
-        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
-        - 340318396484
-        - 633760945300
-        - 231363458211
-        - 980616047419
-      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
-      OrganizationConformancePackName: !Ref AWS::StackName
-      TemplateBody: !Sub |
-        Resources:
-          ConfigRule:
-            Type: AWS::Config::ConfigRule
-            Properties:
-              ConfigRuleName: sw-backup # TODO: nicer name
-              Scope:
-                ComplianceResourceTypes:
-                  - AWS::DynamoDB::Table
-              InputParameters:
-                tag1Key: superwerker:backup
-                tag1Value: daily,none
-              Source:
-                Owner: AWS
-                SourceIdentifier: REQUIRED_TAGS
-
-          Remediation:
-            Type: AWS::Config::RemediationConfiguration
-            Properties:
-              ConfigRuleName: sw-backup # FIXME: !REF
-              Automatic: true
-              MaximumAutomaticAttempts: 10
-              RetryAttemptSeconds: 60
-              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/sw-backup-rem
-              TargetType: SSM_DOCUMENT
-              Parameters:
-                ResourceValue:
-                  ResourceValue:
-                    Value: "RESOURCE_ID"
-                AutomationAssumeRole:
-                  StaticValue:
-                    Values:
-                      - "arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole"
-
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          ResourceValue:
+            type: String
+          AutomationAssumeRole:
+            type: String
+            default: ''
+        mainSteps:
+          - name: tagresource
+            action: 'aws:executeAwsApi'
+            inputs:
+              Service: dynamodb
+              Api: TagResource
+              Tags:
+                - Key: 'superwerker:backup'
+                  Value: daily
+              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
