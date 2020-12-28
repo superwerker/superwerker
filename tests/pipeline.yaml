@@ -37,6 +37,7 @@ Resources:
                 Provider: GitHub
               OutputArtifacts:
                 - Name: SourceOutput
+              Namespace: source
               Configuration:
                 Owner: !Ref GitHubOwner
                 Repo: !Ref RepositoryName
@@ -47,16 +48,22 @@ Resources:
         - Name: DeployAndTestSuperwerker
           Actions:
             - ActionTypeId:
-                Category: Deploy
+                Category: Build
                 Owner: AWS
-                Provider: S3
+                Provider: CodeBuild
                 Version: "1"
               Configuration:
-                BucketName: !Ref DeploymentBucket
-                Extract: true
+                ProjectName: !Ref DeployProject
+                EnvironmentVariables: |
+                  [
+                    {
+                      "name": "BRANCH_NAME",
+                      "value": "#{source.BranchName}"
+                    }
+                  ]
               InputArtifacts:
                 - Name: SourceOutput
-              Name: DeployCfnTempatles
+              Name: Deploy
               RunOrder: 40
 
             - ActionTypeId:
@@ -66,6 +73,13 @@ Resources:
                 Version: "1"
               Configuration:
                 ProjectName: !Ref BuildAndTestProject
+                EnvironmentVariables: !Sub |
+                  [
+                    {
+                      "name": "TEMPLATE_URL_PREFIX",
+                      "value": "https://${DeploymentBucket.DomainName}/#{source.BranchName}"
+                    }
+                  ]
               InputArtifacts:
                 - Name: SourceOutput
               Name: BuildAndTest
@@ -118,7 +132,7 @@ Resources:
   DeploymentBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub superwerker-deployment-${BranchName}
+      BucketName: superwerker-deployment
 
   DeploymentBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -148,8 +162,6 @@ Resources:
             Value: !Ref RootMailDomain
           - Name: ORGANIZATIONS_VENDING_MACHINE_ENDPOINT
             Value: !Ref OrganizationsVendingMachineEndpoint
-          - Name: TEMPLATE_URL_PREFIX
-            Value: !Sub https://${DeploymentBucket.DomainName}
           - Name: CAPTCHA_API_KEY
             Value: /superwerker/tests/2captcha_api_key
             Type: SECRETS_MANAGER
@@ -211,3 +223,28 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+  DeployProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      TimeoutInMinutes: 180
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: DEPLOYMENT_BUCKET
+            Value: !Ref DeploymentBucket
+      ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          env:
+            shell: bash
+          phases:
+            build:
+              commands:
+                - aws s3 sync components s3://${DEPLOYMENT_BUCKET}/${BRANCH_NAME}/components
