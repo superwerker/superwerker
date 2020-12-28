@@ -76,7 +76,16 @@ Resources:
               Service: guardduty
               Api: EnableOrganizationAdminAccount
               AdminAccountId: '{{ AuditAccountId }}'
-            nextStep: EnableGuardDutyInMaster
+          - name: WaitForEnableOrganizationAdminAccount
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: organizations
+              Api: ListDelegatedAdministrators
+              ServicePrincipal: guardduty.amazonaws.com
+              PropertySelector: $.DelegatedAdministrators[0].Status
+              DesiredValues:
+                - ACTIVE
           - name: EnableGuardDutyInMaster
             action: aws:executeAwsApi
             inputs:
