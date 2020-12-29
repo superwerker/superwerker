@@ -76,14 +76,26 @@ Resources:
               Service: guardduty
               Api: EnableOrganizationAdminAccount
               AdminAccountId: '{{ AuditAccountId }}'
-            nextStep: EnableGuardDutyInMaster
+          - name: WaitForEnableOrganizationAdminAccount
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: organizations
+              Api: ListDelegatedAdministrators
+              ServicePrincipal: guardduty.amazonaws.com
+              PropertySelector: $.DelegatedAdministrators[0].Status
+              DesiredValues:
+                - ACTIVE
           - name: EnableGuardDutyInMaster
             action: aws:executeAwsApi
             inputs:
               Service: guardduty
               Api: CreateDetector
               Enable: true
-            nextStep: EnableGuardDutyExistingAccounts
+          - name: SleepEnableGuardDutyExistingAccounts # GuardDuty Org Admin needs to settle first, give it some time
+            action: aws:sleep
+            inputs:
+              Duration: PT120S
           - name: EnableGuardDutyExistingAccounts
             action: aws:executeAwsApi
             inputs:
@@ -104,7 +116,6 @@ Resources:
             outputs:
               - Name: AutomationExecutionId
                 Selector: $.AutomationExecutionId
-            nextStep: WaitForEnableGuardDutyExistingAccounts
           - name: WaitForEnableGuardDutyExistingAccounts
             timeoutSeconds: 60
             action: aws:waitForAwsResourceProperty
