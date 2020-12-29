@@ -212,6 +212,7 @@ Resources:
 
                 # remove stacks
                 - aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${aws_account_id}
+                - aws --profile test_account cloudformation delete-stack --stack-name superwerker
 
   BuildAndTestProjectRole:
     Type: AWS::IAM::Role
