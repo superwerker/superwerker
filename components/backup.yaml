@@ -158,47 +158,47 @@ Resources:
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
 
-#  SuperwerkerBackupTagsEnforcement:
-#    DependsOn: SuperwerkerBackupResources
-#    Type: AWS::Config::OrganizationConformancePack
-#    Properties:
-#      ExcludedAccounts:
-#        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
-#      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
-#      OrganizationConformancePackName: !Ref AWS::StackName
-#      TemplateBody: !Sub |
-#        Resources:
-#          ConfigRule:
-#            Type: AWS::Config::ConfigRule
-#            Properties:
-#              ConfigRuleName: superwerker-enforce-backup
-#              Scope:
-#                ComplianceResourceTypes:
-#                  - AWS::DynamoDB::Table
-#              InputParameters:
-#                tag1Key: superwerker:backup
-#                tag1Value: daily,none
-#              Source:
-#                Owner: AWS
-#                SourceIdentifier: REQUIRED_TAGS
-#
-#          Remediation:
-#            Type: AWS::Config::RemediationConfiguration
-#            Properties:
-#              ConfigRuleName: sw-backup # FIXME: !REF
-#              Automatic: true
-#              MaximumAutomaticAttempts: 10
-#              RetryAttemptSeconds: 60
-#              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
-#              TargetType: SSM_DOCUMENT
-#              Parameters:
-#                ResourceValue:
-#                  ResourceValue:
-#                    Value: "RESOURCE_ID"
-#                AutomationAssumeRole:
-#                  StaticValue:
-#                    Values:
-#                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole
+  BackupTagsEnforcement:
+    DependsOn: BackupResources
+    Type: AWS::Config::OrganizationConformancePack
+    Properties:
+      ExcludedAccounts:
+        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
+      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
+      OrganizationConformancePackName: superwerker-backup-enforce
+      TemplateBody: !Sub |
+        Resources:
+          ConfigRule:
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::DynamoDB::Table
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          Remediation:
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce # FIXME: !REF
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole
 
   BackupTagRemediation:
     Type: AWS::SSM::Document
@@ -223,3 +223,202 @@ Resources:
                 - Key: 'superwerker:backup'
                   Value: daily
               ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+
+  BackupTagRemediationPublic:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt BackupTagRemediationPublicCustomResource.Arn
+
+  BackupTagRemediationPublicCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          DOCUMENT_NAME: !Ref BackupTagRemediation
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: ssm:ModifyDocumentPermission
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+      InlineCode: |
+        import boto3
+        import cfnresponse
+        import os
+
+        ssm = boto3.client("ssm")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+
+        @exception_handling
+        def handler(event, context):
+            PhysicalResourceId = event.get("PhysicalResourceId")
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            ssm.modify_document_permission(
+              Name=os.environ['DOCUMENT_NAME'],
+              PermissionType='Share',
+              AccountIdsToAdd=['All']
+            )
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
+  EnableCloudFormationStacksetsOrgAccess:
+    Type: AWS::Synthetics::Canary
+    Properties:
+      Name: superwerker-cfn-org
+      ArtifactS3Location: !Sub s3://${EnableCloudFormationStacksetsOrgAccessArtifacts}
+      ExecutionRoleArn: !GetAtt EnableCloudFormationStacksetsOrgAccessRole.Arn
+      RuntimeVersion: syn-nodejs-2.2
+      StartCanaryAfterCreation: true
+      RunConfig:
+        TimeoutInSeconds: 300
+      Schedule:
+        Expression: rate(0 minute) # manual start
+      Code:
+        Handler: pageLoadBlueprint.handler
+        Script: |
+          var synthetics = require('Synthetics');
+          const log = require('SyntheticsLogger');
+
+          const httpGet = url => {
+            const https = require('https');
+            return new Promise((resolve, reject) => {
+              https.get(url, res => {
+                res.setEncoding('utf8');
+                let body = '';
+                res.on('data', chunk => body += chunk);
+                res.on('end', () => resolve(body));
+              }).on('error', reject);
+            });
+          };
+
+          const flowBuilderBlueprint = async function () {
+            let page = await synthetics.getPage();
+
+            await synthetics.executeStep('consoleLogin', async function () {
+              const AWS = require("aws-sdk");
+
+              const federationEndpoint = 'https://signin.aws.amazon.com/federation';
+              const issuer = 'superwerker';
+              const destination = 'https://console.aws.amazon.com/';
+
+              let credentials = await AWS.config.credentialProvider.resolve((err, cred) => { return cred; }).resolvePromise()
+
+              const session = {
+                sessionId: credentials.accessKeyId,
+                sessionKey: credentials.secretAccessKey,
+                sessionToken: credentials.sessionToken
+              };
+
+              const encodedSession = encodeURIComponent(JSON.stringify(session));
+              const signinTokenUrl = `${federationEndpoint}?Action=getSigninToken&SessionDuration=3600&Session=${encodedSession}`;
+
+              const signinResponse = await httpGet(signinTokenUrl);
+
+              let consoleLoginUrl = `${federationEndpoint}?Action=login&Issuer=${issuer}&Destination=${destination}&SigninToken=${
+                JSON.parse(signinResponse).SigninToken
+              }`;
+
+              await page.goto(consoleLoginUrl, {waitUntil: ['load', 'networkidle0']});
+
+            });
+
+            await synthetics.executeStep('stacksets', async function () {
+              await page.goto("https://eu-west-1.console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacksets", {waitUntil: ['load', 'networkidle0']});
+              await page.waitFor(10000);
+              await page.click("#console-app > div > awsui-app-layout > div > main > div > div.awsui-app-layout__content--scrollable > div:nth-child(2) > span > div > awsui-alert > div > div.awsui-alert-body > div > div > span > div > div > div.col-s-3 > awsui-button > button");
+              await page.waitFor(20000);
+            });
+          };
+
+          exports.handler = async () => {
+            return await flowBuilderBlueprint();
+          };
+
+  EnableCloudFormationStacksetsOrgAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  EnableCloudFormationStacksetsOrgAccessArtifacts:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Status: Enabled
+
+  EnableCloudFormationStacksetsOrgAccessReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  EnableCloudFormationStacksetsOrgAccessReadyWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref EnableCloudFormationStacksetsOrgAccessReadyHandle
+      Timeout: '600'
+
+  CfnStackSetsReady:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        Enable:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - aws.cloudformation
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventName:
+                  - EnableOrganizationsAccess
+                eventSource:
+                  - cloudformation.amazonaws.com
+      Handler: index.handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          SIGNAL_URL: !Ref EnableCloudFormationStacksetsOrgAccessReadyHandle
+      InlineCode: |-
+        import json
+        import urllib3
+        import os
+
+        def handler(event, context):
+          encoded_body = json.dumps({
+              "Status": "SUCCESS",
+              "Reason": "CloudFormation Managed StackSets Organizations ready",
+              "UniqueId": "doesthisreallyhavetobeunique",
+              "Data": "CloudFormation Managed StackSets Organizations ready"
+          })
+          http = urllib3.PoolManager()
+          http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
