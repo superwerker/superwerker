@@ -83,7 +83,8 @@ class MyTestCase(unittest.TestCase):
         audit_account = self.control_tower_exection_role_session(self.get_audit_account_id())
         security_hub_audit = audit_account.client('securityhub')
         members_result = security_hub_audit.list_members()['Members']
-        actual_members = [member['AccountId'] for member in members_result if member['MemberStatus'] == 'Associated']
+        actual_members = [member['AccountId'] for member in members_result if member['MemberStatus'] == 'Enabled']
+
 
         expected_members = [
             self.get_log_archive_account_id(),
