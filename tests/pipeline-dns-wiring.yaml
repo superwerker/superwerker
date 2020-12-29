@@ -3,6 +3,8 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   RootMailDomain:
     Type: String
+  RootMailSubdomain:
+    Type: String
 
   RootMailDelegationTarget:
     Type: CommaDelimitedList
@@ -13,7 +15,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: !Sub ${RootMailDomain}.
-      Name: !Sub aws.${RootMailDomain}
+      Name: !Sub ${RootMailSubdomain}.${RootMailDomain}
       ResourceRecords: !Ref RootMailDelegationTarget
       TTL: 60
       Type: NS
