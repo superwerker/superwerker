@@ -120,7 +120,7 @@ class MyTestCase(unittest.TestCase):
                     {
                         "Effect": "Allow",
                         "Principal": {
-                            "AWS": f'arn:aws:iam::{self.get_log_archive_account_id()}:root'
+                            "AWS": f'arn:aws:iam::{self.master_account_id}:root'
                         },
                         "Action": "sts:AssumeRole"
                     }
@@ -131,9 +131,11 @@ class MyTestCase(unittest.TestCase):
             PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
         )
 
+        # give IAM some time to settle
+        import time
+        time.sleep(10)
 
-        log_archive_account_sts = log_archive_account.client('sts')
-        scp_test_role_creds = log_archive_account_sts.assume_role(
+        scp_test_role_creds = sts.assume_role(
             RoleArn=f'arn:aws:iam::{self.get_log_archive_account_id()}:role/SuperWerkerScpTestRole',
             RoleSessionName='SuperWerkerScpTest'
         )['Credentials']
