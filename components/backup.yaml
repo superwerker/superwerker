@@ -104,6 +104,7 @@ Resources:
 
   BackupResources:
     Type: AWS::CloudFormation::StackSet
+    DependsOn: EnableCloudFormationStacksetsOrgAccessReadyWaitCondition
     Properties:
       StackSetName: superwerker-backup
       PermissionModel: SERVICE_MANAGED
