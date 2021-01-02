@@ -67,16 +67,15 @@ class MyTestCase(unittest.TestCase):
 
     @classmethod
     def control_tower_exection_role_session(cls, account_id):
-        audit_account_creds = sts.assume_role(
+        account_creds = sts.assume_role(
             RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
             RoleSessionName='superwerkertest'
         )['Credentials']
-        audit_account = boto3.session.Session(
-            aws_access_key_id=audit_account_creds['AccessKeyId'],
-            aws_secret_access_key=audit_account_creds['SecretAccessKey'],
-            aws_session_token=audit_account_creds['SessionToken']
+        return boto3.session.Session(
+            aws_access_key_id=account_creds['AccessKeyId'],
+            aws_secret_access_key=account_creds['SecretAccessKey'],
+            aws_session_token=account_creds['SessionToken']
         )
-        return audit_account
 
     # TODO: split up into two tests (probably needs more advanced testing system)
     def test_securityhub_enabled_with_delegated_admin_in_core_and_enrolled_accounts(self):
