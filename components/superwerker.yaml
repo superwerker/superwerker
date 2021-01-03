@@ -205,6 +205,9 @@ Resources:
     DependsOn: ControlTower
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
+      Parameters:
+        IncludeSecurityHub: !Ref IncludeSecurityHub
+        IncludeBackup: !Ref IncludeBackup
 
 Outputs:
 
