@@ -32,6 +32,21 @@ Resources:
                     ],
                     "Effect": "Deny",
                     "Sid": "SWProtectSecurityHub"
+                },
+                {
+                    "Condition": {
+                        "ArnNotLike": {
+                            "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+                        }
+                    },
+                    "Action": [
+                        "iam:*"
+                    ],
+                    "Resource": [
+                        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole"
+                    ],
+                    "Effect": "Deny",
+                    "Sid": "SWProtectBackup"
                 }
             ]
         }
