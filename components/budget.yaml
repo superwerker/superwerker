@@ -4,6 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   BudgetLimitInUSD:
     Default: 100
+    Description: Initial value. Will be overwritten by the scheduled lambda function.
     Type: String
 
 Resources:
