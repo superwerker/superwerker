@@ -31,7 +31,7 @@ aws sts get-caller-identity --profile test_account_${aws_account_id} --no-cli-pa
 # setup superwerker in vended account
 aws --profile test_account_${aws_account_id} cloudformation deploy --stack-name superwerker --template-file components/superwerker.yaml --parameter-overrides Domain=${ROOT_MAIL_DOMAIN} Subdomain=${aws_account_id} TemplateUrlPrefix=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset &
 while ! domain_name_servers=$(aws --profile test_account_${aws_account_id} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
-aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
+aws --profile ${SOURCE_PROFILE} cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
 sleep 3600 # give superwerker stack time to finish (Control Tower needs ~1h)
 aws --profile test_account_${aws_account_id} cloudformation wait stack-create-complete --stack-name superwerker
 
