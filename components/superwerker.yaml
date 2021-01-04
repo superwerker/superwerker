@@ -12,6 +12,12 @@ Parameters:
     Type: String
   Subdomain:
     Type: String
+  IncludeBudget:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Type: String
   IncludeControlTower:
     AllowedValues:
       - true
@@ -46,6 +52,7 @@ Parameters:
     Type: String
 
 Conditions:
+  IncludeBudget: !Equals [ !Ref IncludeBudget, true ]
   IncludeControlTower: !Equals [ !Ref IncludeControlTower, true ]
   IncludeGuardDuty: !And
     - !Condition IncludeControlTower
@@ -65,6 +72,12 @@ Conditions:
     - !Equals [ !Ref LogArchiveAWSAccountEmail, "" ]
 
 Resources:
+
+  Budget:
+    Condition: IncludeBudget
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/budget.yaml
 
   ControlTower:
     Condition: IncludeControlTower
