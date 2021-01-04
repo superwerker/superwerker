@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  SpendInUSD:
+  BudgetLimitInUSD:
     Default: 100
     Type: String
 
@@ -26,7 +26,7 @@ Resources:
       Threshold: 0
       TreatMissingData: missing # currently CW does not auto close ops items where it's alert transitions back to OK - but still transition back after one (1) initial SNS notification from budgets to "Ok" would communicate wrong semantics;
 
-  BudgetLama:
+  BudgetLambda:
     Type: AWS::Serverless::Function
     Properties:
       Environment:
@@ -73,8 +73,8 @@ Resources:
               cost = total['UnblendedCost']
               avg = avg + float(cost['Amount'])
 
-          avg = (avg/3)*1.2
-          budget = str(int(avg*1.2)) # add 20% and warn at 80% forcast
+          avg = (avg/3)
+          budget = str(int(avg))
 
           stack_name = os.environ['StackName']
 
@@ -96,7 +96,7 @@ Resources:
             ],
             Parameters=[
               {
-                'ParameterKey': 'SpendInUSD',
+                'ParameterKey': 'BudgetLimitInUSD',
                 'ParameterValue': budget,
               }
             ],
@@ -146,7 +146,7 @@ Resources:
     Properties:
       Budget:
         BudgetLimit:
-          Amount: !Ref SpendInUSD
+          Amount: !Ref BudgetLimitInUSD
           Unit: USD
         BudgetType: COST
         CostTypes:
@@ -157,7 +157,7 @@ Resources:
         - Notification:
             ComparisonOperator: GREATER_THAN
             NotificationType: FORECASTED
-            Threshold: 80
+            Threshold: 100
           Subscribers:
             - SubscriptionType: SNS
               Address: !Ref BudgetNotification
