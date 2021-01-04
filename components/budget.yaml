@@ -72,10 +72,11 @@ Resources:
           for result in response['ResultsByTime']:
               total = result['Total']
               cost = total['UnblendedCost']
-              avg = avg + float(cost['Amount'])
+              amount = int(float(cost['Amount']))
+              avg = avg + amount
 
-          avg = (avg/3)
-          budget = str(int(avg))
+          avg = int(avg/3)
+          budget = str(avg)
 
           stack_name = os.environ['StackName']
 
