@@ -11,7 +11,7 @@ ssm = boto3.client('ssm', region_name='eu-west-1')
 class RootemailsTestCase(unittest.TestCase):
 
     @classmethod
-    def send_email(cls, id, body):
+    def send_email(cls, id, body_text=None, body_html=None):
 
         res = ses.list_identities(
             IdentityType='Domain',
@@ -19,6 +19,13 @@ class RootemailsTestCase(unittest.TestCase):
         )
 
         domain = res['Identities'][0]
+
+        body = {}
+
+        if body_text:
+            body['Text'] = { 'Data': body_text }
+        if body_html:
+            body['Html'] = { 'Data': body_html }
 
         res = ses.send_email(
             Source="test@{domain}".format(domain=domain),
@@ -31,17 +38,13 @@ class RootemailsTestCase(unittest.TestCase):
                 'Subject': {
                     'Data': id,
                 },
-                'Body': {
-                    'Text': {
-                        'Data': body,
-                    },
-                },
+                'Body': body,
             },
         )
 
         return res
 
-    def test_root_email(self):
+    def test_root_email_body_text(self):
 
         id = uuid.uuid4().hex
         self.send_email(id, 'This is a mail body')
@@ -77,6 +80,90 @@ class RootemailsTestCase(unittest.TestCase):
         )
 
         self.assertEqual('This is a mail body', res['OpsItem']['Description'].rstrip())
+
+        ssm.update_ops_item(
+            OpsItemId=id,
+            Status='Resolved',
+        )
+
+    def test_root_email_body_text_and_html(self):
+
+        id = uuid.uuid4().hex
+        self.send_email(id, 'This is another mail body', "<h1>This should be ignored</h1>")
+
+        time.sleep(10)
+
+        res = ssm.describe_ops_items(
+            OpsItemFilters=[
+                {
+                    'Key': 'Title',
+                    'Values': [
+                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
+
+                    ],
+                    'Operator': 'Contains',
+                },
+                {
+                    'Key': 'Status',
+                    'Values': [
+                        'Open',
+                    ],
+                    'Operator': 'Equal',
+                },
+            ],
+        )
+
+        self.assertEqual(1, len(res.get('OpsItemSummaries', [])))
+
+        id = res['OpsItemSummaries'][0]['OpsItemId']
+
+        res = ssm.get_ops_item(
+            OpsItemId=id,
+        )
+
+        self.assertEqual('This is another mail body', res['OpsItem']['Description'].rstrip())
+
+        ssm.update_ops_item(
+            OpsItemId=id,
+            Status='Resolved',
+        )
+
+    def test_root_email_body_html(self):
+
+        id = uuid.uuid4().hex
+        self.send_email(id, None, "<script>alert('Hi!')</script><h1>Hello</h1>")
+
+        time.sleep(10)
+
+        res = ssm.describe_ops_items(
+            OpsItemFilters=[
+                {
+                    'Key': 'Title',
+                    'Values': [
+                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
+
+                    ],
+                    'Operator': 'Contains',
+                },
+                {
+                    'Key': 'Status',
+                    'Values': [
+                        'Open',
+                    ],
+                    'Operator': 'Equal',
+                },
+            ],
+        )
+
+        self.assertEqual(1, len(res.get('OpsItemSummaries', [])))
+
+        id = res['OpsItemSummaries'][0]['OpsItemId']
+
+        res = ssm.get_ops_item(
+            OpsItemId=id,
+        )
+
+        self.assertEqual("<script>alert('Hi!')</script><h1>Hello</h1>", res['OpsItem']['Description'].rstrip())
 
         ssm.update_ops_item(
             OpsItemId=id,
