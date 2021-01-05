@@ -96,6 +96,35 @@ Resources:
             action: aws:sleep
             inputs:
               Duration: PT120S
+          - name: EnableGuardDutyS3DataProtectionForOrganization
+            action: aws:executeAwsApi
+            inputs:
+              Service: ssm
+              Api: StartAutomationExecution
+              DocumentName: !Ref EnableGuardDutyS3DataProtectionForOrganization
+              TargetLocations:
+                - ExecutionRoleName: AWSControlTowerExecution
+                  Accounts:
+                    - '{{ AuditAccountId }}'
+                  Regions:
+                    - !Ref AWS::Region
+            outputs:
+              - Name: AutomationExecutionId
+                Selector: $.AutomationExecutionId
+
+          - name: WaitForEnableGuardDutyS3DataProtectionForOrganization
+            timeoutSeconds: 60
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: ssm
+              Api: DescribeAutomationExecutions
+              Filters:
+                - Key: ExecutionId
+                  Values:
+                    - '{{ EnableGuardDutyS3DataProtectionForOrganization.AutomationExecutionId }}'
+              PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
+              DesiredValues:
+                - Success
           - name: EnableGuardDutyExistingAccounts
             action: aws:executeAwsApi
             inputs:
@@ -161,7 +190,9 @@ Resources:
             Statement:
                 - Effect: Allow
                   Action: ssm:StartAutomationExecution
-                  Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyExistingAccounts}:*
+                  Resource:
+                    - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyExistingAccounts}:*
+                    - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableGuardDutyS3DataProtectionForOrganization}:*
         - PolicyName: AllowCallCrossAccountAutomation
           PolicyDocument:
             Statement:
@@ -237,3 +268,29 @@ Resources:
               Api: UpdateOrganizationConfiguration
               DetectorId: '{{ GetDetectorId.DetectorId }}'
               AutoEnable: true
+
+  EnableGuardDutyS3DataProtectionForOrganization:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        mainSteps:
+          - name: GetDetectorId
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: ListDetectors
+            outputs:
+              - Name: DetectorId
+                Selector: $.DetectorIds[0]
+          - name: EnableGuardDutyS3DataProtectionForOrganization
+            action: aws:executeAwsApi
+            inputs:
+              Service: guardduty
+              Api: UpdateOrganizationConfiguration
+              AutoEnable: true
+              DetectorId: '{{ GetDetectorId.DetectorId }}'
+              DataSources:
+                S3Logs:
+                  AutoEnable: true

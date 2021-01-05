@@ -64,6 +64,25 @@ class MyTestCase(unittest.TestCase):
             scp_test_session_guardduty.disassociate_from_master_account(DetectorId=detector_id)
         self.assertEqual('An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because member cannot disassociate from Organization administrator', str(exception.exception))
 
+    def test_guardduty_s3_protection_enabled_for_org_members(self):
+        audit_account = self.control_tower_exection_role_session(self.get_audit_account_id())
+        guardduty_audit = audit_account.client('guardduty')
+        detector_id = guardduty_audit.list_detectors()['DetectorIds'][0]
+        gd_org_config = guardduty_audit.describe_organization_configuration(DetectorId=detector_id)
+        self.assertTrue(gd_org_config['AutoEnable'])
+        self.assertTrue(gd_org_config['DataSources']['S3Logs']['AutoEnable'])
+
+    def test_guardduty_s3_protection_enabled_for_existing_accounts(self):
+        detector_management = guardduty.get_detector(DetectorId=(
+            guardduty.list_detectors()['DetectorIds'][0]))
+        self.assertEqual('ENABLED', detector_management['DataSources']['S3Logs']['Status'])
+
+        log_archive_account = self.control_tower_exection_role_session(self.get_log_archive_account_id())
+        guardduty_log_archive = log_archive_account.client('guardduty')
+        detector_log_archive = guardduty_log_archive.get_detector(DetectorId=(
+            guardduty_log_archive.list_detectors()['DetectorIds'][0]))
+
+        self.assertEqual('ENABLED', detector_log_archive['DataSources']['S3Logs']['Status'])
 
     @classmethod
     def control_tower_exection_role_session(cls, account_id):
