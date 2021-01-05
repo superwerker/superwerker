@@ -570,6 +570,11 @@ Resources:
         s3 = boto3.client('s3')
         ssm = boto3.client('ssm')
 
+        filtered_email_subjects = [
+          'Your AWS Account is Ready - Get Started Now',
+          'Welcome to Amazon Web Services',
+        ]
+
         def handler(event, context):
 
             log({
@@ -644,8 +649,15 @@ Resources:
                 )
                 return # no ops item for now
 
-              else:
-                description=msg.get_body(preferencelist=('plain', 'html')).get_content()
+              if title in filtered_email_subjects:
+                log({
+                  'level': 'info',
+                  'msg': 'filtered email',
+                  'title': title,
+                })
+                return
+
+              description=msg.get_body(preferencelist=('plain', 'html')).get_content()
 
               title=title[:1020] + " ..." * (len(title) > 1020)
 
