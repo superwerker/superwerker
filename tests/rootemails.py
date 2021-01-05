@@ -11,7 +11,7 @@ ssm = boto3.client('ssm', region_name='eu-west-1')
 class RootemailsTestCase(unittest.TestCase):
 
     @classmethod
-    def send_email(cls, id, body_text=None, body_html=None):
+    def send_email(cls, id, body_text=None, body_html=None, subject=None):
 
         res = ses.list_identities(
             IdentityType='Domain',
@@ -27,6 +27,9 @@ class RootemailsTestCase(unittest.TestCase):
         if body_html:
             body['Html'] = { 'Data': body_html }
 
+        if subject is None:
+            subject = id
+
         res = ses.send_email(
             Source="test@{domain}".format(domain=domain),
             Destination={
@@ -36,7 +39,7 @@ class RootemailsTestCase(unittest.TestCase):
             },
             Message={
                 'Subject': {
-                    'Data': id,
+                    'Data': subject,
                 },
                 'Body': body,
             },
@@ -216,6 +219,66 @@ class RootemailsTestCase(unittest.TestCase):
                     'Key': 'Title',
                     'Values': [
                         "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
+
+                    ],
+                    'Operator': 'Contains',
+                },
+                {
+                    'Key': 'Status',
+                    'Values': [
+                        'Open',
+                    ],
+                    'Operator': 'Equal',
+                },
+            ],
+        )
+
+        self.assertEqual(0, len(res.get('OpsItemSummaries', [])))
+
+    def test_welcome_mail_get_filtered(self):
+
+        id = uuid.uuid4().hex
+        subject = 'Welcome to Amazon Web Services'
+        self.send_email(id=id, subject=subject, body_text='some mail body')
+
+        time.sleep(10)
+
+        res = ssm.describe_ops_items(
+            OpsItemFilters=[
+                {
+                    'Key': 'Title',
+                    'Values': [
+                        "'{subject}'".format(subject=subject[:18]), # ops center filters don't like contains with longer targets
+
+                    ],
+                    'Operator': 'Contains',
+                },
+                {
+                    'Key': 'Status',
+                    'Values': [
+                        'Open',
+                    ],
+                    'Operator': 'Equal',
+                },
+            ],
+        )
+
+        self.assertEqual(0, len(res.get('OpsItemSummaries', [])))
+
+    def test_account_ready_mail_get_filtered(self):
+
+        id = uuid.uuid4().hex
+        subject = 'Your AWS Account is Ready - Get Started Now'
+        self.send_email(id=id, subject=subject, body_text='some mail body')
+
+        time.sleep(10)
+
+        res = ssm.describe_ops_items(
+            OpsItemFilters=[
+                {
+                    'Key': 'Title',
+                    'Values': [
+                        "'{subject}'".format(subject=subject[:18]), # ops center filters don't like contains with longer targets
 
                     ],
                     'Operator': 'Contains',
