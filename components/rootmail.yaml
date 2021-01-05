@@ -645,11 +645,10 @@ Resources:
                 return # no ops item for now
 
               else:
-                description=msg.get_body('plain').get_content()
+                description=msg.get_body(preferencelist=('plain', 'html')).get_content()
 
               title=title[:1020] + " ..." * (len(title) > 1020)
 
-              description=msg.get_body("plain").get_content()
               description=description[:1020] + " ..." * (len(description) > 1020)
 
               source=source[:60] + ' ...' * (len(source) > 60)
@@ -666,7 +665,7 @@ Resources:
                 "/aws/resources":{
                   "Value":json.dumps([
                     {
-                      "arn":"arn:aws:s3:::${EmailBucket.Arn}/{key}".format(key=key),
+                      "arn":"${EmailBucket.Arn}/{key}".format(key=key),
                     }
                   ]),
                   "Type":"SearchableString",
