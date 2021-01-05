@@ -4,6 +4,7 @@ import boto3
 import uuid
 import time
 import botocore
+from retrying import retry
 
 sts = boto3.client('sts')
 
@@ -35,12 +36,18 @@ class BackupTestCase(unittest.TestCase):
 
         table = self.create_random_table(ddb)
 
-        time.sleep(240)
-
-        actual_tags = ddb.list_tags_of_resource(ResourceArn=table['TableArn'])['Tags']
+        actual_tags = self.wait_for_table_tags_to_appear(ddb, table)
         expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
 
         self.assertCountEqual(expected_tags, actual_tags)
+
+    @retry(stop_max_delay=300000, wait_fixed=20000)
+    def wait_for_table_tags_to_appear(self, ddb, table):
+        actual_tags = ddb.list_tags_of_resource(ResourceArn=table['TableArn'])['Tags']
+        if len(actual_tags) == 0:
+            raise
+
+        return actual_tags
 
     def test_cannot_change_dynamodb_backup_tags(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
