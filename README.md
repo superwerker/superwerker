@@ -31,7 +31,7 @@ In the initial release, superwerker configures the following AWS services and fe
 - AWS Backup for automated creation of backups
 - Budget alarms for cost control
 - Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
-- Master Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
+- Management account Setup: VAT-ID/Tax inheritance, currency, IAM Access to Billing, PDF invoices by mail
 - Systems Manager OpsCenter/Items notification aggregation and incident response handling
 - Secure mailboxes and service catalogue aliases for all root accounts
 - Feature flippers to gradually opt into functionality
