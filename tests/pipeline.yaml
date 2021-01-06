@@ -10,7 +10,7 @@ Parameters:
     Default: superwerker
   BranchName:
     Type: String
-    Default: master
+    Default: main
   OrganizationsVendingMachineEndpoint:
     Type: String
   GithubTokenSecretsManagerPath:
