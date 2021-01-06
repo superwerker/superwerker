@@ -66,7 +66,7 @@ Resources:
             action: aws:branch
             inputs:
               Choices:
-                - NextStep: EnableGuardDutyInMaster
+                - NextStep: EnableGuardDutyInManagementAccount
                   Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}'
                   StringEquals: '{{ AuditAccountId }}'
               Default: EnableOrganizationAdminAccount
@@ -86,7 +86,7 @@ Resources:
               PropertySelector: $.DelegatedAdministrators[0].Status
               DesiredValues:
                 - ACTIVE
-          - name: EnableGuardDutyInMaster
+          - name: EnableGuardDutyInManagementAccount
             action: aws:executeAwsApi
             inputs:
               Service: guardduty
@@ -140,7 +140,7 @@ Resources:
               Parameters:
                 LogArchiveAWSAccountId:
                   - '{{ LogArchiveAccountId }}'
-                MasterAWSAccountId:
+                ManagementAWSAccountId:
                   - !Ref AWS::AccountId
             outputs:
               - Name: AutomationExecutionId
@@ -221,7 +221,7 @@ Resources:
         parameters:
           LogArchiveAWSAccountId:
             type: String
-          MasterAWSAccountId:
+          ManagementAWSAccountId:
             type: String
         mainSteps:
           - name: GetDetectorId
@@ -232,12 +232,12 @@ Resources:
             outputs:
               - Name: DetectorId
                 Selector: $.DetectorIds[0]
-          - name: MasterAWSAccount
+          - name: ManagementAWSAccount
             action: aws:executeAwsApi
             inputs:
               Service: organizations
               Api: DescribeAccount
-              AccountId: '{{ MasterAWSAccountId }}'
+              AccountId: '{{ ManagementAWSAccountId }}'
             outputs:
               - Name: EmailAddress
                 Selector: $.Account.Email
@@ -257,8 +257,8 @@ Resources:
               Api: CreateMembers
               DetectorId: '{{ GetDetectorId.DetectorId }}'
               AccountDetails:
-                - AccountId: '{{ MasterAWSAccountId }}'
-                  Email: '{{ MasterAWSAccount.EmailAddress }}'
+                - AccountId: '{{ ManagementAWSAccountId }}'
+                  Email: '{{ ManagementAWSAccount.EmailAddress }}'
                 - AccountId: '{{ LogArchiveAWSAccountId }}'
                   Email: '{{ LogArchiveAWSAccount.EmailAddress }}'
           - name: EnableGuardDutyExistingAccounts
