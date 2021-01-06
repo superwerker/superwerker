@@ -13,13 +13,13 @@ There is a [Long term roadmap and list of ideas](https://github.com/superwerker/
 
 ## Quick install
 
-You can install the current `master` branch via CloudFormation in the following AWS regions:
+You can install the current `main` branch via CloudFormation in the following AWS regions:
 
- - [🇪🇺 eu-west-1](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/master/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/master)
- - [🇺🇸 us-east-1](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/master/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/master)
- - [🇺🇸 us-east-2](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/master/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/master)
- - [🇺🇸 us-west-2](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/master/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/master)
- - [🇦🇺 ap-southeast-2](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/master/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/master)
+ - [🇪🇺 eu-west-1](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/main)
+ - [🇺🇸 us-east-1](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/main)
+ - [🇺🇸 us-east-2](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/main)
+ - [🇺🇸 us-west-2](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/main)
+ - [🇦🇺 ap-southeast-2](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/components/superwerker.yaml&param_TemplateUrlPrefix=https://superwerker-deployment.s3.amazonaws.com/main)
 
 ## What's included in the setup?
 
