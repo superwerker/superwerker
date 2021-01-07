@@ -99,7 +99,6 @@ Resources:
               RuntimeParameters:
                 MemberAWSAccountId:
                   - '{{ LogArchiveAccountId }}'
-#          - name: EnableSecurityHubMemberInOrgMasterAccount
 
   CreateLandingZoneEnableSecurityHubRole:
     Type: AWS::IAM::Role

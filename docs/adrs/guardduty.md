@@ -10,7 +10,7 @@ Since GuardDuty (GD) is a native AWS service to find possible security threats a
 
 - Use delegated administrator feature
 - Delegate Administrator into Control Tower `Audit` account, since Control Tower also delegates AWS Config Rules Compliance findings into the Audit Account
-- Enable GD for existing Control Tower core accounts (master, Audit, Log Archive) and all future member accounts
+- Enable GD for existing Control Tower core accounts (Management, Audit, Log Archive) and all future member accounts
 - Use Control Tower `Setup/UpdateLandingZone` Lifecycle events to start the setup of Delegated Administrator
 - Enable [S3 data protection](https://aws.amazon.com/blogs/aws/new-using-amazon-guardduty-to-protect-your-s3-buckets/) by default
 

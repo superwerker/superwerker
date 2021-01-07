@@ -13,7 +13,7 @@ sts = boto3.client('sts')
 
 class MyTestCase(unittest.TestCase):
 
-    master_account_id = sts.get_caller_identity()['Account']
+    management_account_id = sts.get_caller_identity()['Account']
 
     @classmethod
     def get_audit_account_id(cls):
@@ -29,7 +29,6 @@ class MyTestCase(unittest.TestCase):
 
     # TODO: split up into two tests (probably needs more advanced testing system)
     def test_guardduty_enabled_with_delegated_admin_in_core_and_enrolled_accounts(self):
-        # check if audit account has become the master
         audit_account = self.control_tower_exection_role_session(account_id=self.get_audit_account_id())
 
         guardduty_audit_account = audit_account.client('guardduty')
@@ -41,7 +40,7 @@ class MyTestCase(unittest.TestCase):
 
         expected_members = [
             self.get_log_archive_account_id(),
-            self.master_account_id,
+            self.management_account_id,
             self.get_enrolled_account_id()
         ]
 
@@ -138,7 +137,7 @@ class MyTestCase(unittest.TestCase):
                     {
                         "Effect": "Allow",
                         "Principal": {
-                            "AWS": f'arn:aws:iam::{self.master_account_id}:root'
+                            "AWS": f'arn:aws:iam::{self.management_account_id}:root'
                         },
                         "Action": "sts:AssumeRole"
                     }
