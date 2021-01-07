@@ -25,5 +25,5 @@ eval $(aws sts assume-role --profile $SOURCE_PROFILE --role-arn $aws_cross_accou
 AWS_ACCESS_KEY_ID=$JS_AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$JS_AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN=$JS_AWS_SESSION_TOKEN CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
 
 # remove stacks
-aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${AWS_ACCOUNT_ID}  --no-cli-pager
+aws cloudformation delete-stack --profile $SOURCE_PROFILE --stack-name superwerker-pipeline-dns-wiring-${AWS_ACCOUNT_ID}  --no-cli-pager
 aws --profile test_account_${AWS_ACCOUNT_ID} cloudformation delete-stack --stack-name superwerker  --no-cli-pager
