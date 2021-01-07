@@ -54,35 +54,31 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
-
+                        id,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(1, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(1, len(res['Entities']))
 
-        id = res['OpsItemSummaries'][0]['OpsItemId']
+        id = res['Entities'][0]['Id']
+        description = res['Entities'][0]['Data']['AWS:OpsItem']['Content'][0]['Description']
 
-        res = ssm.get_ops_item(
-            OpsItemId=id,
-        )
-
-        self.assertEqual('This is a mail body', res['OpsItem']['Description'].rstrip())
+        self.assertEqual('This is a mail body', description.rstrip())
 
         ssm.update_ops_item(
             OpsItemId=id,
@@ -96,35 +92,31 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
-
+                        id,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(1, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(1, len(res['Entities']))
 
-        id = res['OpsItemSummaries'][0]['OpsItemId']
+        id = res['Entities'][0]['Id']
+        description = res['Entities'][0]['Data']['AWS:OpsItem']['Content'][0]['Description']
 
-        res = ssm.get_ops_item(
-            OpsItemId=id,
-        )
-
-        self.assertEqual('This is another mail body', res['OpsItem']['Description'].rstrip())
+        self.assertEqual('This is another mail body', description.rstrip())
 
         ssm.update_ops_item(
             OpsItemId=id,
@@ -138,35 +130,31 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
-
+                        id,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(1, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(1, len(res['Entities']))
 
-        id = res['OpsItemSummaries'][0]['OpsItemId']
+        id = res['Entities'][0]['Id']
+        description = res['Entities'][0]['Data']['AWS:OpsItem']['Content'][0]['Description']
 
-        res = ssm.get_ops_item(
-            OpsItemId=id,
-        )
-
-        self.assertEqual("<script>alert('Hi!')</script><h1>Hello</h1>", res['OpsItem']['Description'].rstrip())
+        self.assertEqual("<script>alert('Hi!')</script><h1>Hello</h1>", description.rstrip())
 
         ssm.update_ops_item(
             OpsItemId=id,
@@ -182,27 +170,26 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
-
+                        id,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(0, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(0, len(res['Entities']))
 
     def test_root_email_virus(self):
 
@@ -213,27 +200,26 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{id}'".format(id=id[:18]), # ops center filters don't like contains with longer targets
-
+                        id,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(0, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(0, len(res['Entities']))
 
     def test_welcome_mail_get_filtered(self):
 
@@ -243,27 +229,26 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{subject}'".format(subject=subject[:18]), # ops center filters don't like contains with longer targets
-
+                        subject,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(0, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(0, len(res['Entities']))
 
     def test_account_ready_mail_get_filtered(self):
 
@@ -273,24 +258,23 @@ class RootemailsTestCase(unittest.TestCase):
 
         time.sleep(10)
 
-        res = ssm.describe_ops_items(
-            OpsItemFilters=[
+        res = ssm.get_ops_summary(
+            Filters=[
                 {
-                    'Key': 'Title',
+                    'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        "'{subject}'".format(subject=subject[:18]), # ops center filters don't like contains with longer targets
-
+                        subject,
                     ],
-                    'Operator': 'Contains',
+                    'Type': 'Equal',
                 },
                 {
-                    'Key': 'Status',
+                    'Key': 'AWS:OpsItem.Status',
                     'Values': [
                         'Open',
                     ],
-                    'Operator': 'Equal',
+                    'Type': 'Equal',
                 },
             ],
         )
 
-        self.assertEqual(0, len(res.get('OpsItemSummaries', [])))
+        self.assertEqual(0, len(res['Entities']))
