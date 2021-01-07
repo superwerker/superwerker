@@ -415,8 +415,8 @@ Resources:
   SESReceiveStack:
     Type: AWS::CloudFormation::StackSet
     Properties:
-      AdministrationRoleARN: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/service-role/AWSControlTowerStackSetRole
-      ExecutionRoleName: !Ref AWSControlTowerExecution
+      AdministrationRoleARN: !GetAtt StackSetAdministrationRole.Arn
+      ExecutionRoleName: !Ref StackSetExecutionRole
       PermissionModel: SELF_MANAGED
       Capabilities:
        - CAPABILITY_IAM
@@ -734,9 +734,7 @@ Resources:
                   def log(msg):
                     print(json.dumps(msg), flush=True)
 
-
-
-  AWSControlTowerExecution: # TODO: document in ADR why we are doing this
+  StackSetExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -748,7 +746,29 @@ Resources:
                 - !Ref AWS::AccountId
             Action:
               - sts:AssumeRole
+      Path: /
       ManagedPolicyArns:
         - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+
+  StackSetAdministrationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: /
-      RoleName: AWSControlTowerExecution
+      Policies:
+        - PolicyName: AssumeRole-AWSCloudFormationStackSetExecutionRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource:
+                  - !GetAtt StackSetExecutionRole.Arn
