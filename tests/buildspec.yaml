@@ -1,6 +1,14 @@
 version: 0.2
 env:
   shell: bash
+batch:
+  build-matrix:
+    dynamic:
+      env:
+        variables:
+          SUPERWERKER_REGION:
+            - eu-west-1
+
 phases:
   build:
     commands:
@@ -13,6 +21,8 @@ phases:
       # setup AWS CLI to talk to vended account
       - aws configure --profile test_account set role_arn $aws_cross_account_role_arn
       - aws configure --profile test_account set credential_source EcsContainer
+      - aws configure --profile test_account set region ${SUPERWERKER_REGION}
+      - aws configure --profile test_account set default.region ${SUPERWERKER_REGION}
 
       # setup superwerker in vended account
       - aws --profile test_account cloudformation deploy --stack-name superwerker --template-file components/superwerker.yaml --parameter-overrides Domain=${ROOT_MAIL_DOMAIN} Subdomain=${aws_account_id} TemplateUrlPrefix=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset &

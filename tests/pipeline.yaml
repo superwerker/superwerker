@@ -80,6 +80,7 @@ Resources:
                       "value": "https://${DeploymentBucket.DomainName}/#{source.BranchName}"
                     }
                   ]
+                BatchEnabled: true
               InputArtifacts:
                 - Name: SourceOutput
               Name: BuildAndTest
@@ -171,7 +172,7 @@ Resources:
         Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: tests/pipeline.yaml
+        BuildSpec: tests/buildspec.yaml
 
   BuildAndTestProjectRole:
     Type: AWS::IAM::Role
