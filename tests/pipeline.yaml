@@ -154,6 +154,8 @@ Resources:
     Type: AWS::CodeBuild::Project
     Properties:
       TimeoutInMinutes: 180
+      BuildBatchConfig:
+        ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
