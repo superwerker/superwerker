@@ -141,7 +141,7 @@ Resources:
                 LogArchiveAWSAccountId:
                   - '{{ LogArchiveAccountId }}'
                 ManagementAWSAccountId:
-                  - !Ref AWS::AccountId
+                  - !Sub "${AWS::AccountId}"
             outputs:
               - Name: AutomationExecutionId
                 Selector: $.AutomationExecutionId

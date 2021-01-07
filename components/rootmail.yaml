@@ -423,7 +423,7 @@ Resources:
       StackInstancesGroup:
         - DeploymentTargets:
             Accounts:
-              - !Ref AWS::AccountId
+              - !Sub "${AWS::AccountId}"
           Regions:
             - eu-west-1 # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
       StackSetName: !Sub ${AWS::StackName}-ReceiveStack
@@ -559,7 +559,7 @@ Resources:
               Action: lambda:InvokeFunction
               FunctionName: !Ref OpsSantaFunction
               Principal: ses.amazonaws.com
-              SourceAccount: ${AWS::AccountId}
+              SourceAccount: "${AWS::AccountId}"
 
           OpsSantaFunctionRole:
             Type: AWS::IAM::Role
@@ -743,7 +743,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - !Ref AWS::AccountId
+                - !Sub "${AWS::AccountId}"
             Action:
               - sts:AssumeRole
       Path: /
