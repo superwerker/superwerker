@@ -4,9 +4,8 @@ import boto3
 import uuid
 import time
 
-# TODO: adopt this to work in other regions as well
 ses = boto3.client('ses', region_name='eu-west-1')
-ssm = boto3.client('ssm', region_name='eu-west-1')
+ssm = boto3.client('ssm')
 
 class RootemailsTestCase(unittest.TestCase):
 

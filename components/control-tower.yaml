@@ -97,7 +97,7 @@ Resources:
             });
 
             await synthetics.executeStep('gotoCT', async function () {
-              await page.goto("https://eu-west-1.console.aws.amazon.com/controltower/home?region=eu-west-1", {waitUntil: ['load', 'networkidle0']});
+              await page.goto("https://${AWS::Region}.console.aws.amazon.com/controltower/home?region=${AWS::Region}", {waitUntil: ['load', 'networkidle0']});
             });
 
             let landingZoneState;
@@ -109,7 +109,7 @@ Resources:
                 await page.waitFor(10000); // waitForNavigation does not work here, so use sleep()
               } else {
                 landingZoneState = 'existing';
-                await page.goto('https://eu-west-1.console.aws.amazon.com/controltower/home/update?region=eu-west-1', {waitUntil: ['load', 'networkidle0']});
+                await page.goto('https://${AWS::Region}.console.aws.amazon.com/controltower/home/update?region=${AWS::Region}', {waitUntil: ['load', 'networkidle0']});
               }
             });
 
@@ -342,7 +342,7 @@ Resources:
             });
 
             await synthetics.executeStep('controltowerdashboard', async function () {
-              await page.goto("https://eu-west-1.console.aws.amazon.com/controltower/home/dashboard?region=eu-west-1", {waitUntil: ['load', 'networkidle0']});
+              await page.goto("https://${AWS::Region}.console.aws.amazon.com/controltower/home/dashboard?region=${AWS::Region}", {waitUntil: ['load', 'networkidle0']});
             });
           };
 
