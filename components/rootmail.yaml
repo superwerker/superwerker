@@ -1,6 +1,3 @@
-#!scripts/run
-# aws cloudformation --region eu-central-1 deploy --template-file $TEMPLATE --stack-name superwerker-RootMail-30OR8GXX7CVJ --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --parameter-overrides Domain=a4662202-595c-46a8-87be-22c29f9d33ad.net Subdomain=153147943679
-
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 
