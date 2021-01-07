@@ -21,7 +21,7 @@ aws sts get-caller-identity --profile test_account_${AWS_ACCOUNT_ID} --no-cli-pa
 cd tests/close-active-subaccounts
 npm i
 # Node + ECS Container Creds + Assume Role doesn't seem to work, so work around by setting credentials
-eval $(aws sts assume-role --role-arn $aws_cross_account_role_arn --role-session-name test | jq -r '.Credentials | "export JS_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport JS_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport JS_AWS_SESSION_TOKEN=\(.SessionToken)\n"')
+eval $(aws sts assume-role --profile $SOURCE_PROFILE --role-arn $aws_cross_account_role_arn --role-session-name test | jq -r '.Credentials | "export JS_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport JS_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport JS_AWS_SESSION_TOKEN=\(.SessionToken)\n"')
 AWS_ACCESS_KEY_ID=$JS_AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$JS_AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN=$JS_AWS_SESSION_TOKEN CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
 
 # remove stacks
