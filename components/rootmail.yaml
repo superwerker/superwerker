@@ -8,18 +8,6 @@ Parameters:
     Default: aws
     Type: String
 
-Mappings:
-  RegionMap: # https://docs.aws.amazon.com/general/latest/gr/s3.html#s3_website_region_endpoints
-    us-east-1:
-      Endpoint: s3-website-us-east-1.amazonaws.com
-      HostedZoneID: Z3AQBSTGFYJSTF
-    eu-central-1:
-      Endpoint: s3-website.eu-central-1.amazonaws.com
-      HostedZoneID: Z21DNDUVLTQW6Q
-    eu-west-1:
-      Endpoint: s3-website-eu-west-1.amazonaws.com
-      HostedZoneID: Z1BKCTXD74EZPE
-
 Outputs:
 
   DelegationTarget:
@@ -120,24 +108,6 @@ Resources:
       Value: !Join [',', !GetAtt HostedZone.NameServers]
       Type: StringList
 
-  HostedZoneDelegationHealthCheckRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      AliasTarget:
-        DNSName: !Sub
-          - ${Endpoint}
-          - Endpoint: !FindInMap
-            - RegionMap
-            - !Ref "AWS::Region"
-            - Endpoint
-        HostedZoneId: !FindInMap
-          - RegionMap
-          - !Ref "AWS::Region"
-          - HostedZoneID
-      HostedZoneId: !Ref HostedZone
-      Name: !Sub ${Subdomain}.${Domain}
-      Type: A
-
   HostedZoneDKIMAndVerificationRecords:
     Type: AWS::CloudFormation::CustomResource
     Properties:
@@ -161,7 +131,7 @@ Resources:
         import boto3
         import cfnresponse
 
-        ses = boto3.client("ses")
+        ses = boto3.client("ses", region_name="eu-west-1") # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
 
         CREATE = 'Create'
         DELETE = 'Delete'
@@ -260,7 +230,7 @@ Resources:
       HostedZoneId: !Ref HostedZone
       Name: !Sub ${Subdomain}.${Domain}.
       ResourceRecords:
-        - !Sub 10 inbound-smtp.${AWS::Region}.amazonaws.com
+        - !Sub 10 inbound-smtp.eu-west-1.amazonaws.com # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
       TTL: 60
       Type: MX
 
@@ -290,7 +260,7 @@ Resources:
         import time
 
         domain = "${Subdomain}.${Domain}"
-        ses = boto3.client("ses")
+        ses = boto3.client("ses", region_name="eu-west-1") # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
 
         def backoff(msg, res, n):
 
@@ -439,257 +409,363 @@ Resources:
       Runtime: python3.7
       Timeout: 10
 
-  SESReceiptRuleSet:
-    Type: AWS::SES::ReceiptRuleSet
+  SESReceiveStack:
+    Type: AWS::CloudFormation::StackSet
     Properties:
-      RuleSetName: RootEmails
+      AdministrationRoleARN: !GetAtt StackSetAdministrationRole.Arn
+      ExecutionRoleName: !Ref StackSetExecutionRole
+      PermissionModel: SELF_MANAGED
+      Capabilities:
+       - CAPABILITY_IAM
+      StackInstancesGroup:
+        - DeploymentTargets:
+            Accounts:
+              - !Sub "${AWS::AccountId}"
+          Regions:
+            - eu-west-1 # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
+      StackSetName: !Sub ${AWS::StackName}-ReceiveStack
+      TemplateBody: !Sub |
+        Resources:
+          SESReceiptRuleSetActivation:
+            Type: AWS::CloudFormation::CustomResource
+            Properties:
+              ServiceToken: !GetAtt SESReceiptRuleSetActivationCustomResource.Arn
 
-  SESReceiptRuleSetActivation:
-    Type: AWS::CloudFormation::CustomResource
-    Properties:
-      ServiceToken: !GetAtt SESReceiptRuleSetActivationCustomResource.Arn
-      RuleSetName: !Ref SESReceiptRuleSet
+          SESReceiptRuleSetActivationCustomResourceRole:
+            Type: AWS::IAM::Role
+            Properties:
+              AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      Service: lambda.amazonaws.com
+                    Action: sts:AssumeRole
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+              Policies:
+                - PolicyName: AllowSesAccess
+                  PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                      - Effect: Allow
+                        Action: # TODO: least privilege
+                          - ses:*
+                        Resource: "*"
 
-  SESReceiptRuleSetActivationCustomResource:
-    Type: AWS::Serverless::Function
-    Properties:
-      Timeout: 200
-      Handler: index.handler
-      Runtime: python3.7
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action: # TODO: least privilege
-                - ses:*
-              Resource: "*"
-      InlineCode: | # TODO: adopt function to new ADR for inline python lambdas
-        import boto3
-        import cfnresponse
+          SESReceiptRuleSetActivationCustomResource:
+            Type: AWS::Lambda::Function
+            Properties:
+              Timeout: 200
+              Handler: index.handler
+              Runtime: python3.7
+              Role: !GetAtt SESReceiptRuleSetActivationCustomResourceRole.Arn
+              Code:
+                ZipFile: !Sub | # TODO: adopt function to new ADR for inline python lambdas
+                  import boto3
+                  import cfnresponse
 
-        ses = boto3.client("ses")
+                  ses = boto3.client("ses")
 
-        CREATE = 'Create'
-        DELETE = 'Delete'
-        UPDATE = 'Update'
+                  CREATE = 'Create'
+                  DELETE = 'Delete'
+                  UPDATE = 'Update'
 
-        def exception_handling(function):
-            def catch(event, context):
-                try:
-                    function(event, context)
-                except Exception as e:
-                    print(e)
-                    print(event)
-                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+                  def exception_handling(function):
+                      def catch(event, context):
+                          try:
+                              function(event, context)
+                          except Exception as e:
+                              print(e)
+                              print(event)
+                              cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
-            return catch
+                      return catch
 
-        @exception_handling
-        def handler(event, context):
-            RequestType = event["RequestType"]
-            Properties = event["ResourceProperties"]
-            LogicalResourceId = event["LogicalResourceId"]
-            PhysicalResourceId = event.get("PhysicalResourceId")
-            RuleSetName = Properties["RuleSetName"]
+                  @exception_handling
+                  def handler(event, context):
+                      RequestType = event["RequestType"]
+                      Properties = event["ResourceProperties"]
+                      LogicalResourceId = event["LogicalResourceId"]
+                      PhysicalResourceId = event.get("PhysicalResourceId")
 
-            print('RequestType: {}'.format(RequestType))
-            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
-            print('LogicalResourceId: {}'.format(LogicalResourceId))
+                      print('RequestType: {}'.format(RequestType))
+                      print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+                      print('LogicalResourceId: {}'.format(LogicalResourceId))
 
-            id = PhysicalResourceId
+                      id = PhysicalResourceId
+                      rule_set_name = 'RootEmails'
+                      rule_name = 'Receive'
 
-            if RequestType == CREATE or RequestType == UPDATE:
+                      if RequestType == CREATE or RequestType == UPDATE:
+                          ses.create_receipt_rule_set(
+                            RuleSetName=rule_set_name
+                          )
 
-                print('Activating SES ReceiptRuleSet: {}'.format(LogicalResourceId))
+                          ses.create_receipt_rule(
+                            RuleSetName=rule_set_name,
+                            Rule          = {
+                              'Name'      : rule_name,
+                              'Enabled'   : True,
+                              'TlsPolicy' : 'Require',
+                              'ScanEnabled': True,
+                              'Recipients': [
+                                'root@${Subdomain}.${Domain}',
+                              ],
+                              'Actions': [
+                                {
+                                  'S3Action'         : {
+                                    'BucketName'     : '${EmailBucket}',
+                                    'ObjectKeyPrefix': 'RootEmails'
+                                  },
+                                },
+                                {
+                                  'LambdaAction': {
+                                    'FunctionArn': '${!OpsSantaFunction.Arn}'
+                                  }
+                                }
+                              ],
+                            }
+                          )
 
-                ses.set_active_receipt_rule_set(
-                  RuleSetName=RuleSetName,
-                )
-            elif RequestType == DELETE:
-                print('Deactivating SES ReceiptRuleSet: {}'.format(LogicalResourceId))
+                          print('Activating SES ReceiptRuleSet: {}'.format(LogicalResourceId))
 
-                ses.set_active_receipt_rule_set()
+                          ses.set_active_receipt_rule_set(
+                            RuleSetName=rule_set_name,
+                          )
+                      elif RequestType == DELETE:
+                          print('Deactivating SES ReceiptRuleSet: {}'.format(LogicalResourceId))
 
-            cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, id)
+                          ses.set_active_receipt_rule_set()
 
-  SESReceiptRule: # TODO: enable encryption
-    Type: AWS::SES::ReceiptRule
-    Properties:
-      Rule:
-        Actions:
-          - S3Action:
-              BucketName: !Ref EmailBucket
-              ObjectKeyPrefix: "RootEmails"
-          - LambdaAction:
-              FunctionArn: !Sub ${OpsSantaFunction.Arn}
-        Enabled: true
-        Name: Receive
-        Recipients:
-          - !Sub root@${Subdomain}.${Domain}
-        ScanEnabled: true
-        TlsPolicy: Require
-      RuleSetName: !Ref SESReceiptRuleSet
+                          ses.delete_receipt_rule(
+                            RuleName=rule_name,
+                            RuleSetName=rule_set_name,
+                          )
 
-  OpsSantaFunctionSESPermissions:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !Ref OpsSantaFunction
-      Principal: ses.amazonaws.com
-      SourceAccount: !Sub ${AWS::AccountId}
+                          ses.delete_receipt_rule_set(
+                            RuleSetName=rule_set_name
+                          )
 
-  OpsSantaFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Timeout: 60
-      Handler: index.handler
-      Runtime: python3.7
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - s3:GetObject
-              Resource: !Sub ${EmailBucket.Arn}/RootEmails/*
-            - Effect: Allow
-              Action:
-                - ssm:CreateOpsItem
-              Resource: "*"
-            - Action: ssm:PutParameter
-              Effect: Allow
-              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
-      InlineCode: !Sub |
-        import boto3
-        import email
-        from email import policy
-        import hashlib
-        import json
-        import re
-        import datetime
 
-        s3 = boto3.client('s3')
-        ssm = boto3.client('ssm')
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, id)
 
-        filtered_email_subjects = [
-          'Your AWS Account is Ready - Get Started Now',
-          'Welcome to Amazon Web Services',
-        ]
+          OpsSantaFunctionSESPermissions:
+            Type: AWS::Lambda::Permission
+            Properties:
+              Action: lambda:InvokeFunction
+              FunctionName: !Ref OpsSantaFunction
+              Principal: ses.amazonaws.com
+              SourceAccount: "${AWS::AccountId}"
 
-        def handler(event, context):
+          OpsSantaFunctionRole:
+            Type: AWS::IAM::Role
+            Properties:
+              AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      Service: lambda.amazonaws.com
+                    Action: sts:AssumeRole
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+              Policies:
+                - PolicyName: OpsSantaFunctionRolePolicy
+                  PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                    - Effect: Allow
+                      Action:
+                        - s3:GetObject
+                      Resource: ${EmailBucket.Arn}/RootEmails/*
+                    - Effect: Allow
+                      Action:
+                        - ssm:CreateOpsItem
+                      Resource: "*"
+                    - Action: ssm:PutParameter
+                      Effect: Allow
+                      Resource: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker/*
 
-            log({
-              'event': event,
-              'level': 'debug',
-            })
+          OpsSantaFunction:
+            Type: AWS::Lambda::Function
+            Properties:
+              Timeout: 60
+              Handler: index.handler
+              Runtime: python3.7
+              Role: !GetAtt OpsSantaFunctionRole.Arn
+              Code:
+                ZipFile: !Sub |
+                  import boto3
+                  import email
+                  from email import policy
+                  import hashlib
+                  import json
+                  import re
+                  import datetime
 
-            for record in event['Records']:
+                  s3 = boto3.client('s3')
+                  ssm = boto3.client('ssm', region_name='${AWS::Region}')
 
-              id = record['ses']['mail']['messageId']
-              key = 'RootEmails/{key}'.format(key=id)
-              receipt = record['ses']['receipt']
+                  filtered_email_subjects = [
+                    'Your AWS Account is Ready - Get Started Now',
+                    'Welcome to Amazon Web Services',
+                  ]
 
-              log({
-                'id': id,
-                'level': 'debug',
-                'key': key,
-                'msg': 'processing mail',
-              })
+                  def handler(event, context):
 
-              verdicts = {
-                'dkim': receipt['dkimVerdict']['status'],
-                'spam': receipt['spamVerdict']['status'],
-                'spf': receipt['spfVerdict']['status'],
-                'virus': receipt['virusVerdict']['status'],
-              }
+                      log({
+                        'event': event,
+                        'level': 'debug',
+                      })
 
-              for k, v in verdicts.items():
+                      for record in event['Records']:
 
-                if not v == 'PASS':
+                        id = record['ses']['mail']['messageId']
+                        key = 'RootEmails/{key}'.format(key=id)
+                        receipt = record['ses']['receipt']
 
-                  log({
-                    'class': k,
-                    'id': id,
-                    'key': key,
-                    'level': 'warn',
-                    'msg': 'verdict failed - ops santa item skipped',
-                  })
+                        log({
+                          'id': id,
+                          'level': 'debug',
+                          'key': key,
+                          'msg': 'processing mail',
+                        })
 
-                  return
-
-              response = s3.get_object(
-                Bucket="${EmailBucket}",
-                Key=key,
-              )
-
-              msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
-
-              title=msg["subject"]
-
-              source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
-
-              if title == 'Amazon Web Services Password Assistance':
-                description=msg.get_body('html').get_content()
-                pw_reset_link = re.search(r'(https://signin.aws.amazon.com/resetpassword(.*?))(?=<br>)', description).group()
-                rootmail_identifier = '/superwerker/rootmail/pw_reset_link/{}'.format(source.split('@')[0].split('root+')[1])
-                ssm.put_parameter(
-                    Name=rootmail_identifier,
-                    Value=pw_reset_link,
-                    Overwrite=True,
-                    Type='String',
-                    Tier='Advanced',
-                    Policies=json.dumps([
-                      {
-                        "Type":"Expiration",
-                        "Version":"1.0",
-                        "Attributes":{
-                          "Timestamp": (datetime.datetime.now() + datetime.timedelta(minutes = 10)).strftime('%Y-%m-%dT%H:%M:%SZ') # expire in 10 minutes
+                        verdicts = {
+                          'dkim': receipt['dkimVerdict']['status'],
+                          'spam': receipt['spamVerdict']['status'],
+                          'spf': receipt['spfVerdict']['status'],
+                          'virus': receipt['virusVerdict']['status'],
                         }
-                      }
-                    ])
-                )
-                return # no ops item for now
 
-              if title in filtered_email_subjects:
-                log({
-                  'level': 'info',
-                  'msg': 'filtered email',
-                  'title': title,
-                })
-                return
+                        for k, v in verdicts.items():
 
-              description=msg.get_body(preferencelist=('plain', 'html')).get_content()
+                          if not v == 'PASS':
 
-              title=title[:1020] + " ..." * (len(title) > 1020)
+                            log({
+                              'class': k,
+                              'id': id,
+                              'key': key,
+                              'level': 'warn',
+                              'msg': 'verdict failed - ops santa item skipped',
+                            })
 
-              description=description[:1020] + " ..." * (len(description) > 1020)
+                            return
 
-              source=source[:60] + ' ...' * (len(source) > 60)
+                        response = s3.get_object(
+                          Bucket="${EmailBucket}",
+                          Key=key,
+                        )
 
-              operational_data={
-                "/aws/dedup":{
-                  "Value":json.dumps(
-                    {
-                      "dedupString":id,
-                    }
-                  ),
-                  "Type":"SearchableString",
-                },
-                "/aws/resources":{
-                  "Value":json.dumps([
-                    {
-                      "arn":"${EmailBucket.Arn}/{key}".format(key=key),
-                    }
-                  ]),
-                  "Type":"SearchableString",
-                },
-              }
+                        msg = email.message_from_bytes(response["Body"].read(), policy=policy.default)
 
-              ssm.create_ops_item(
-                Description=description,
-                OperationalData=operational_data,
-                Source=source,
-                Title=title,
-              )
+                        title=msg["subject"]
 
-        def log(msg):
-          print(json.dumps(msg), flush=True)
+                        source=recipient=event["Records"][0]["ses"]["mail"]["destination"][0]
+
+                        if title == 'Amazon Web Services Password Assistance':
+                          description=msg.get_body('html').get_content()
+                          pw_reset_link = re.search(r'(https://signin.aws.amazon.com/resetpassword(.*?))(?=<br>)', description).group()
+                          rootmail_identifier = '/superwerker/rootmail/pw_reset_link/{}'.format(source.split('@')[0].split('root+')[1])
+                          ssm.put_parameter(
+                              Name=rootmail_identifier,
+                              Value=pw_reset_link,
+                              Overwrite=True,
+                              Type='String',
+                              Tier='Advanced',
+                              Policies=json.dumps([
+                                {
+                                  "Type":"Expiration",
+                                  "Version":"1.0",
+                                  "Attributes":{
+                                    "Timestamp": (datetime.datetime.now() + datetime.timedelta(minutes = 10)).strftime('%Y-%m-%dT%H:%M:%SZ') # expire in 10 minutes
+                                  }
+                                }
+                              ])
+                          )
+                          return # no ops item for now
+
+                        if title in filtered_email_subjects:
+                          log({
+                            'level': 'info',
+                            'msg': 'filtered email',
+                            'title': title,
+                          })
+                          return
+
+                        description=msg.get_body(preferencelist=('plain', 'html')).get_content()
+
+                        title=title[:1020] + " ..." * (len(title) > 1020)
+
+                        description=description[:1020] + " ..." * (len(description) > 1020)
+
+                        source=source[:60] + ' ...' * (len(source) > 60)
+
+                        operational_data={
+                          "/aws/dedup":{
+                            "Value":json.dumps(
+                              {
+                                "dedupString":id,
+                              }
+                            ),
+                            "Type":"SearchableString",
+                          },
+                          "/aws/resources":{
+                            "Value":json.dumps([
+                              {
+                                "arn":"${EmailBucket.Arn}/{key}".format(key=key),
+                              }
+                            ]),
+                            "Type":"SearchableString",
+                          },
+                        }
+
+                        ssm.create_ops_item(
+                          Description=description,
+                          OperationalData=operational_data,
+                          Source=source,
+                          Title=title,
+                        )
+
+                  def log(msg):
+                    print(json.dumps(msg), flush=True)
+
+  StackSetExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "${AWS::AccountId}"
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+
+  StackSetAdministrationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: AssumeRole-AWSCloudFormationStackSetExecutionRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource:
+                  - !GetAtt StackSetExecutionRole.Arn
