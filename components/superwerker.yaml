@@ -196,6 +196,7 @@ Resources:
   Backup:
     Condition: IncludeBackup
     Type: AWS::CloudFormation::Stack
+    DependsOn: ControlTower
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/backup.yaml
 
