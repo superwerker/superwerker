@@ -82,7 +82,8 @@ Resources:
                         "iam:UpdateRoleDescription"
                     ],
                     "Resource": [
-                        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole"
+                        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+                        "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
                     ],
                     "Effect": "Deny",
                     "Sid": "SWProtectBackup"

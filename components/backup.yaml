@@ -124,7 +124,7 @@ Resources:
               - !GetAtt OrganizationsLookup.RootId
       TemplateBody: |
         Resources:
-          SuperwerkerBackupTagsEnforcementRemediationRole: # TODO: Integrity Protection
+          SuperwerkerBackupTagsEnforcementRemediationRole:
             Type: AWS::IAM::Role
             Properties:
               RoleName: SuperwerkerBackupTagsEnforcementRemediationRole
