@@ -74,7 +74,6 @@ class BackupTestCase(unittest.TestCase):
     def test_cannot_delete_backup_service_role(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         iam = enrolled_account.client('iam')
-        # assert that SCP forbids disabling of security hub
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             iam.delete_role(RoleName='AWSBackupDefaultServiceRole')
 
@@ -83,7 +82,6 @@ class BackupTestCase(unittest.TestCase):
     def test_cannot_delete_backup_remediation_role(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         iam = enrolled_account.client('iam')
-        # assert that SCP forbids disabling of security hub
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             iam.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
 
