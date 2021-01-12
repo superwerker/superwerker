@@ -141,7 +141,6 @@ Resources:
   SetupControlTowerArtifactLocation:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub superwerker-cwsyn-artifacts-${AWS::AccountId}
       LifecycleConfiguration:
         Rules:
           - ExpirationInDays: 1
