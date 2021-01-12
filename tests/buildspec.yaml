@@ -26,19 +26,19 @@ phases:
       - aws configure --profile test_account set default.region ${SUPERWERKER_REGION}
 
       # setup superwerker in vended account
-      - aws --profile test_account cloudformation deploy --stack-name superwerker --template-file components/superwerker.yaml --parameter-overrides Domain=${ROOT_MAIL_DOMAIN} Subdomain=${aws_account_id} TemplateUrlPrefix=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset &
-      - while ! domain_name_servers=$(aws --profile test_account ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
+      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker --template-file components/superwerker.yaml --parameter-overrides Domain=${ROOT_MAIL_DOMAIN} Subdomain=${aws_account_id} TemplateUrlPrefix=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-fail-on-empty-changeset &
+      - while ! domain_name_servers=$(aws --profile test_account --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
       - aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
       - sleep 3600 # give superwerker stack time to finish (Control Tower needs ~1h)
-      - aws --profile test_account cloudformation wait stack-create-complete --stack-name superwerker
+      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
 
-      - aws --profile test_account cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
-      - aws --profile test_account cloudformation deploy --stack-name superwerker-pipeline-account-factory-fixture --template-file tests/account-factory.yaml --parameter-overrides AccountName=sw-${aws_account_id} AccountEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} SSOUserFirstName=Isolde SSOUserLastName=Mawidder-Baden SSOUserEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} ManagedOrganizationalUnit=Custom --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-fixture --template-file tests/account-factory.yaml --parameter-overrides AccountName=sw-${aws_account_id} AccountEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} SSOUserFirstName=Isolde SSOUserLastName=Mawidder-Baden SSOUserEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} ManagedOrganizationalUnit=Custom --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
 
       - sleep 300 # give superwerker components some time to settle, e.g. SecurityHub member adding takes some minutes after account factory fixture has been rolled out
       - cd tests
       - pip3 install -r requirements.txt
-      - AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootemails.py tests.py
+      - AWS_REGION=${SUPERWERKER_REGION} AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootemails.py tests.py
 
     finally:
       # close sub-accounts so that the OVM can close the main / management account later
@@ -50,4 +50,4 @@ phases:
 
       # remove stacks
       - aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${aws_account_id}
-      - aws --profile test_account cloudformation delete-stack --stack-name superwerker
+      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation delete-stack --stack-name superwerker
