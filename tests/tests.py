@@ -167,10 +167,10 @@ class MyTestCase(unittest.TestCase):
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_security_hub.disable_security_hub()
 
-        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:{scp_test_session_security_hub.region_name}:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
+        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:{scp_test_session.region_name}:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
 
         # assert that SCP forbids leaving
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_security_hub.disassociate_from_master_account()
 
-        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:{scp_test_session_security_hub.region_name}:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
+        self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:{scp_test_session.region_name}:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
