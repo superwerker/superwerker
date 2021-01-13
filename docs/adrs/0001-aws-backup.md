@@ -22,6 +22,7 @@ Since superwerker prefers the usage of native AWS services, AWS Backup is used.
     - We don't use AWS Config organizational rules because they don't support rolling out the remediation, so have to roll it out via CloudFormation StackSets anyway.
     - So we use CloudFormation StackSets as unified way for rolling out everything.
 - No support for cross-region / cross-account backups (though we know the AWS features exist) currently to keep it simple.
+- Since EFS is currently [not supported by AWS Config](https://docs.aws.amazon.com/config/latest/developerguide/resource-config-reference.html), it's currently not automatically tagged and thus not automatically backed up
 
 ## Consequences
 
