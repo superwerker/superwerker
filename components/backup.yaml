@@ -104,10 +104,10 @@ Resources:
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
 
-          ConfigRule: # TODO: integrity protection
+          ConfigRuleDynamoDBTable: # TODO: integrity protection
             Type: AWS::Config::ConfigRule
             Properties:
-              ConfigRuleName: superwerker-backup-enforce
+              ConfigRuleName: superwerker-backup-enforce-dynamodb-table
               Scope:
                 ComplianceResourceTypes:
                   - AWS::DynamoDB::Table
@@ -118,10 +118,10 @@ Resources:
                 Owner: AWS
                 SourceIdentifier: REQUIRED_TAGS
 
-          ConfigRemediation: # TODO: integrity protection
+          ConfigRemediationDynamoDBTable: # TODO: integrity protection
             Type: AWS::Config::RemediationConfiguration
             Properties:
-              ConfigRuleName: !Ref ConfigRule
+              ConfigRuleName: !Ref ConfigRuleDynamoDBTable
               Automatic: true
               MaximumAutomaticAttempts: 10
               RetryAttemptSeconds: 60
@@ -135,6 +135,10 @@ Resources:
                   StaticValue:
                     Values:
                       - !GetAtt ConfigRemediationRole.Arn
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::DynamoDB::Table
 
           ConfigRemediationRole:
             Type: AWS::IAM::Role
@@ -168,8 +172,17 @@ Resources:
           AutomationAssumeRole:
             type: String
             default: ''
+          ResourceType:
+            type: String
         mainSteps:
-          - name: tagresource
+          - name: synthArn
+            action: aws:branch
+            inputs:
+              Choices:
+                - NextStep: tagDynamoDbTable
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::DynamoDB::Table
+          - name: tagDynamoDbTable
             action: 'aws:executeAwsApi'
             inputs:
               Service: dynamodb
