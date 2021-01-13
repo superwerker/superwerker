@@ -88,6 +88,30 @@ class BackupTestCase(unittest.TestCase):
 
         self.assertCountEqual(expected_tags, actual_tags)
 
+    def test_cannot_change_ebs_backup_tags(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ec2 = enrolled_account.client('ec2')
+        volume_id = self.create_random_ebs(ec2)
+
+        time.sleep(10)
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            ec2.create_tags(
+                Resources=[volume_id],
+                Tags=[{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}]
+            )
+        self.assertEqual('An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.', str(exception.exception))
+
+    def test_can_change_ebs_backup_tags_to_none(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ec2 = enrolled_account.client('ec2')
+        volume_id = self.create_random_ebs(ec2)
+
+        time.sleep(10)
+        ec2.create_tags(
+            Resources=[volume_id],
+            Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
+        )
+
     @retry(stop_max_delay=300000, wait_fixed=20000)
     def wait_for_ebs_tags_to_appear(self, ec2, volume_id):
         actual_tags = ec2.describe_volumes(VolumeIds=[volume_id])['Volumes'][0]['Tags']
