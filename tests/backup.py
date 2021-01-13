@@ -76,6 +76,27 @@ class BackupTestCase(unittest.TestCase):
             Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
         )
 
+    def test_untagged_ebs_gets_tagged_for_aws_backup_by_default(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+
+        ec2 = enrolled_account.client('ec2')
+
+        volume_id = self.create_random_ebs(ec2)
+
+        actual_tags = self.wait_for_ebs_tags_to_appear(ec2, volume_id)
+        expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
+
+        self.assertCountEqual(expected_tags, actual_tags)
+
+    @retry(stop_max_delay=300000, wait_fixed=20000)
+    def wait_for_ebs_tags_to_appear(self, ec2, volume_id):
+        actual_tags = ec2.describe_volumes(VolumeIds=[volume_id])['Volumes'][0]['Tags']
+
+        if len(actual_tags) == 0:
+                raise
+
+        return actual_tags
+
     def test_cannot_delete_backup_service_role(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         iam = enrolled_account.client('iam')
@@ -114,3 +135,11 @@ class BackupTestCase(unittest.TestCase):
         )
         table = ddb.describe_table(TableName=table_name)['Table']
         return table
+
+    @staticmethod
+    def create_random_ebs(ec2):
+        result = ec2.create_volume(
+            AvailabilityZone=ec2.describe_availability_zones()['AvailabilityZones'][0]['ZoneName'],
+            Size=1
+        )
+        return result['VolumeId']

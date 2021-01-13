@@ -140,6 +140,42 @@ Resources:
                     Values:
                       - AWS::DynamoDB::Table
 
+          ConfigRuleEbsVolume: # TODO: integrity protection
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-ebs-volume
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::EC2::Volume
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediationEbsVolume: # TODO: integrity protection
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: !Ref ConfigRuleEbsVolume
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - !GetAtt ConfigRemediationRole.Arn
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::EC2::Volume
+
           ConfigRemediationRole:
             Type: AWS::IAM::Role
             Properties:
@@ -156,7 +192,9 @@ Resources:
                   PolicyDocument:
                     Statement:
                       - Effect: Allow
-                        Action: dynamodb:TagResource
+                        Action:
+                          - dynamodb:TagResource
+                          - ec2:CreateTags
                         Resource: '*'
 
   BackupTagRemediation:
@@ -182,6 +220,9 @@ Resources:
                 - NextStep: tagDynamoDbTable
                   Variable: '{{ ResourceType }}'
                   StringEquals: AWS::DynamoDB::Table
+                - NextStep: tagEbsVolume
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::EC2::Volume
           - name: tagDynamoDbTable
             action: 'aws:executeAwsApi'
             inputs:
@@ -191,6 +232,16 @@ Resources:
                 - Key: 'superwerker:backup'
                   Value: daily
               ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+          - name: tagEbsVolume
+            action: 'aws:executeAwsApi'
+            inputs:
+              Service: ec2
+              Api: CreateTags
+              Tags:
+                - Key: 'superwerker:backup'
+                  Value: daily
+              Resources:
+                - '{{ ResourceValue }}'
 
   BackupTagRemediationPublic:
     Type: AWS::CloudFormation::CustomResource
