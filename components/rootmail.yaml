@@ -740,7 +740,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-                - !GetAtt StackSetAdministrationRole.Arn
+                - !Sub "${AWS::AccountId}"
             Action:
               - sts:AssumeRole
       Path: /
