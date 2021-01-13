@@ -66,42 +66,6 @@ Resources:
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
-
-  OrganizationConformancePackBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Sub awsconfigconforms-${AWS::AccountId}
-
-  OrganizationConformancePackBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref OrganizationConformancePackBucket
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: AllowGetPutObject
-            Effect: Allow
-            Principal: "*"
-            Action:
-              - s3:GetObject
-              - s3:PutObject
-            Resource: !Sub ${OrganizationConformancePackBucket.Arn}/*
-            Condition:
-              StringEquals:
-                aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
-              ArnLike:
-                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
-          - Sid: AllowGetBucketAcl
-            Effect: Allow
-            Principal: "*"
-            Action: s3:GetBucketAcl
-            Resource: !Sub ${OrganizationConformancePackBucket.Arn}
-            Condition:
-              StringEquals:
-                aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
-              ArnLike:
-                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
-
   BackupResources:
     Type: AWS::CloudFormation::StackSet
     DependsOn: EnableCloudFormationStacksetsOrgAccessReadyWaitCondition
@@ -122,9 +86,57 @@ Resources:
           DeploymentTargets:
             OrganizationalUnitIds:
               - !GetAtt OrganizationsLookup.RootId
-      TemplateBody: |
+      TemplateBody: !Sub |
         Resources:
-          SuperwerkerBackupTagsEnforcementRemediationRole:
+          AWSBackupDefaultServiceRole:
+            Type: AWS::IAM::Role
+            Properties:
+              RoleName: AWSBackupDefaultServiceRole
+              Path: /service-role/
+              AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                  - Effect: Allow
+                    Principal:
+                      Service: backup.amazonaws.com
+                    Action: sts:AssumeRole
+              ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
+          ConfigRule: # TODO: integrity protection
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::DynamoDB::Table
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediation: # TODO: integrity protection
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: !Ref ConfigRule
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - !GetAtt ConfigRemediationRole.Arn
+
+          ConfigRemediationRole:
             Type: AWS::IAM::Role
             Properties:
               RoleName: SuperwerkerBackupTagsEnforcementRemediationRole
@@ -142,64 +154,6 @@ Resources:
                       - Effect: Allow
                         Action: dynamodb:TagResource
                         Resource: '*'
-
-          AWSBackupDefaultServiceRole:
-            Type: AWS::IAM::Role
-            Properties:
-              RoleName: AWSBackupDefaultServiceRole
-              Path: /service-role/
-              AssumeRolePolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                  - Effect: Allow
-                    Principal:
-                      Service: backup.amazonaws.com
-                    Action: sts:AssumeRole
-              ManagedPolicyArns:
-                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
-                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
-
-  BackupTagsEnforcement:
-    DependsOn: BackupResources
-    Type: AWS::Config::OrganizationConformancePack
-    Properties:
-      ExcludedAccounts:
-        - !Ref AWS::AccountId # exclude master account since it has no config recorder set up
-      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
-      OrganizationConformancePackName: superwerker-backup-enforce
-      TemplateBody: !Sub |
-        Resources:
-          ConfigRule:
-            Type: AWS::Config::ConfigRule
-            Properties:
-              ConfigRuleName: superwerker-backup-enforce
-              Scope:
-                ComplianceResourceTypes:
-                  - AWS::DynamoDB::Table
-              InputParameters:
-                tag1Key: superwerker:backup
-                tag1Value: daily,none
-              Source:
-                Owner: AWS
-                SourceIdentifier: REQUIRED_TAGS
-
-          Remediation:
-            Type: AWS::Config::RemediationConfiguration
-            Properties:
-              ConfigRuleName: superwerker-backup-enforce # FIXME: !REF
-              Automatic: true
-              MaximumAutomaticAttempts: 10
-              RetryAttemptSeconds: 60
-              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
-              TargetType: SSM_DOCUMENT
-              Parameters:
-                ResourceValue:
-                  ResourceValue:
-                    Value: "RESOURCE_ID"
-                AutomationAssumeRole:
-                  StaticValue:
-                    Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole
 
   BackupTagRemediation:
     Type: AWS::SSM::Document
