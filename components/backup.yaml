@@ -471,8 +471,7 @@ Resources:
                     },
                     "enforced_for": {
                         "@@assign": [
-                            "dynamodb:table",
-                            "elasticfilesystem:file-system"
+                            "dynamodb:table"
                         ]
                     }
                 }
