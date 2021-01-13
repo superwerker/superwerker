@@ -5,6 +5,7 @@ import uuid
 import time
 import botocore
 from retrying import retry
+import warnings
 
 sts = boto3.client('sts')
 
@@ -12,6 +13,10 @@ sts = boto3.client('sts')
 class BackupTestCase(unittest.TestCase):
 
     maxDiff = None
+
+    # https://github.com/boto/boto3/issues/454
+    def setUp(self):
+        warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
     def get_enrolled_account_id(cls):
         account_factory_account_id = os.environ['ACCOUNT_FACTORY_ACCOUNT_ID']
