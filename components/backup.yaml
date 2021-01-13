@@ -195,7 +195,7 @@ Resources:
           Statement:
             - Effect: Allow
               Action: ssm:ModifyDocumentPermission
-              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/*
       InlineCode: |
         import boto3
         import cfnresponse
@@ -223,11 +223,13 @@ Resources:
         @exception_handling
         def handler(event, context):
             RequestType = event["RequestType"]
+            print('RequestType: {}'.format(RequestType))
+
             PhysicalResourceId = event.get("PhysicalResourceId")
             Properties = event["ResourceProperties"]
             DocumentName = Properties["DocumentName"]
 
-            id = PhysicalResourceId
+            id = "{}-{}".format(PhysicalResourceId, DocumentName)
 
             data = {}
 
@@ -236,6 +238,12 @@ Resources:
                   Name=DocumentName,
                   PermissionType='Share',
                   AccountIdsToAdd=['All']
+                )
+            elif RequestType == DELETE:
+                ssm.modify_document_permission(
+                  Name=DocumentName,
+                  PermissionType='Share',
+                  AccountIdsToRemove=['All']
                 )
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
