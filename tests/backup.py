@@ -18,6 +18,14 @@ class BackupTestCase(unittest.TestCase):
     def setUp(self):
         warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ec2 = enrolled_account.client('ec2')
+        try:
+            ec2.create_default_vpc()
+        except:
+            # presumably already exists
+            pass
+
     def get_enrolled_account_id(cls):
         account_factory_account_id = os.environ['ACCOUNT_FACTORY_ACCOUNT_ID']
         return account_factory_account_id
@@ -121,6 +129,26 @@ class BackupTestCase(unittest.TestCase):
 
         return actual_tags
 
+    def test_untagged_rds_instance_gets_tagged_for_aws_backup_by_default(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+
+        rds = enrolled_account.client('rds')
+
+        rds_instance_id = self.create_random_rds_instance(rds)
+
+        actual_tags = self.wait_for_rds_instance_tags_to_appear(rds, rds_instance_id)
+        expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
+        self.assertCountEqual(expected_tags, actual_tags)
+
+    @retry(stop_max_delay=300000, wait_fixed=20000)
+    def wait_for_rds_instance_tags_to_appear(self, rds, rds_instance_id):
+        actual_tags = rds.describe_db_instances(DBInstanceIdentifier=rds_instance_id)['DBInstances'][0]['TagList']
+
+        if len(actual_tags) == 0:
+            raise
+
+        return actual_tags
+
     def test_cannot_delete_backup_service_role(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         iam = enrolled_account.client('iam')
@@ -167,3 +195,17 @@ class BackupTestCase(unittest.TestCase):
             Size=1
         )
         return result['VolumeId']
+
+    @staticmethod
+    def create_random_rds_instance(rds):
+        db_instance_identifier = 'db-{}'.format(uuid.uuid4().hex)
+
+        rds.create_db_instance(
+            DBInstanceIdentifier=db_instance_identifier,
+            DBInstanceClass='db.t2.micro',
+            Engine='mysql',
+            MasterUsername='arnonym',
+            MasterUserPassword=db_instance_identifier,
+            AllocatedStorage=20,
+        )
+        return db_instance_identifier

@@ -176,6 +176,42 @@ Resources:
                     Values:
                       - AWS::EC2::Volume
 
+          ConfigRuleRdsDbInstance: # TODO: integrity protection
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-rds-instance
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::RDS::DBInstance
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediationRdsDbInstance: # TODO: integrity protection
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: !Ref ConfigRuleRdsDbInstance
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - !GetAtt ConfigRemediationRole.Arn
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::RDS::DBInstance
+
           ConfigRemediationRole:
             Type: AWS::IAM::Role
             Properties:
@@ -195,6 +231,8 @@ Resources:
                         Action:
                           - dynamodb:TagResource
                           - ec2:CreateTags
+                          - rds:AddTagsToResource
+                          - rds:DescribeDBInstances
                         Resource: '*'
 
   BackupTagRemediation:
@@ -223,6 +261,9 @@ Resources:
                 - NextStep: tagEbsVolume
                   Variable: '{{ ResourceType }}'
                   StringEquals: AWS::EC2::Volume
+                - NextStep: getRdsDBInstanceArnByDbInstanceResourceIdentifier
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::RDS::DBInstance
           - name: tagDynamoDbTable
             action: 'aws:executeAwsApi'
             inputs:
@@ -232,6 +273,7 @@ Resources:
                 - Key: 'superwerker:backup'
                   Value: daily
               ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+            isEnd: true
           - name: tagEbsVolume
             action: 'aws:executeAwsApi'
             inputs:
@@ -242,6 +284,29 @@ Resources:
                   Value: daily
               Resources:
                 - '{{ ResourceValue }}'
+            isEnd: true
+          - name: getRdsDBInstanceArnByDbInstanceResourceIdentifier
+            action: aws:executeAwsApi
+            inputs:
+              Service: rds
+              Api: DescribeDBInstances
+              Filters:
+                - Name: dbi-resource-id
+                  Values:
+                    - '{{ ResourceValue }}'
+            outputs:
+              - Name: DBInstanceArn
+                Selector: $.DBInstances[0].DBInstanceArn
+          - name: tagRdsInstance
+            action: 'aws:executeAwsApi'
+            inputs:
+              Service: rds
+              Api: AddTagsToResource
+              Tags:
+                - Key: 'superwerker:backup'
+                  Value: daily
+              ResourceName: '{{ getRdsDBInstanceArnByDbInstanceResourceIdentifier.DBInstanceArn }}'
+            isEnd: true
 
   BackupTagRemediationPublic:
     Type: AWS::CloudFormation::CustomResource
