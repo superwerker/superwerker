@@ -212,6 +212,42 @@ Resources:
                     Values:
                       - AWS::RDS::DBInstance
 
+          ConfigRuleRdsDbCluster: # TODO: integrity protection
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-rds-cluster
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::RDS::DBCluster
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediationRdsDbCluster: # TODO: integrity protection
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: !Ref ConfigRuleRdsDbCluster
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - !GetAtt ConfigRemediationRole.Arn
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::RDS::DBCluster
+
           ConfigRemediationRole:
             Type: AWS::IAM::Role
             Properties:
@@ -264,6 +300,9 @@ Resources:
                 - NextStep: getRdsDBInstanceArnByDbInstanceResourceIdentifier
                   Variable: '{{ ResourceType }}'
                   StringEquals: AWS::RDS::DBInstance
+                - NextStep: tagRdsCluster
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::RDS::DBCluster
           - name: tagDynamoDbTable
             action: 'aws:executeAwsApi'
             inputs:
@@ -297,6 +336,16 @@ Resources:
             outputs:
               - Name: DBInstanceArn
                 Selector: $.DBInstances[0].DBInstanceArn
+          - name: tagRdsInstance
+            action: 'aws:executeAwsApi'
+            inputs:
+              Service: rds
+              Api: AddTagsToResource
+              Tags:
+                - Key: 'superwerker:backup'
+                  Value: daily
+              ResourceName: '{{ getRdsDBInstanceArnByDbInstanceResourceIdentifier.DBInstanceArn }}'
+            isEnd: true
           - name: tagRdsInstance
             action: 'aws:executeAwsApi'
             inputs:
