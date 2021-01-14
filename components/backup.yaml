@@ -588,11 +588,6 @@ Resources:
             return root()['Id']
 
 
-        def tag_policy_enabled():
-            enabled_policies = root()['PolicyTypes']
-            return {"Type": TAG_POLICY, "Status": "ENABLED"} in enabled_policies
-
-
         def exception_handling(function):
             def catch(event, context):
                 try:
