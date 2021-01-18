@@ -387,6 +387,8 @@ Resources:
       StartCanaryAfterCreation: true
       RunConfig:
         TimeoutInSeconds: 300
+        EnvironmentVariables:
+          REGION: !Ref AWS::Region
       Schedule:
         Expression: rate(0 minute) # manual start
       Code:
@@ -439,7 +441,7 @@ Resources:
             });
 
             await synthetics.executeStep('stacksets', async function () {
-              await page.goto("https://eu-west-1.console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacksets", {waitUntil: ['load', 'networkidle0']});
+              await page.goto(`https://${process.env.REGION}.console.aws.amazon.com/cloudformation/home?region=${process.env.REGION}#/stacksets`, {waitUntil: ['load', 'networkidle0']});
               await page.waitFor(10000);
               await page.click("#console-app > div > awsui-app-layout > div > main > div > div.awsui-app-layout__content--scrollable > div:nth-child(2) > span > div > awsui-alert > div > div.awsui-alert-body > div > div > span > div > div > div.col-s-3 > awsui-button > button");
               await page.waitFor(20000);
