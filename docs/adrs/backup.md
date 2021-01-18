@@ -23,7 +23,7 @@ Since superwerker prefers the usage of native AWS services, AWS Backup is used.
     - So we use CloudFormation StackSets as unified way for rolling out everything.
 - No support for cross-region / cross-account backups (though we know the AWS features exist) currently to keep it simple.
 - Since EFS is currently [not supported by AWS Config](https://docs.aws.amazon.com/config/latest/developerguide/resource-config-reference.html), it's currently not automatically tagged and thus not automatically backed up
-- Since AWS Config Rule with compliance resource type `AWS::RDS::DBCluster` and source identifier `REQUIRED_TAGS` does not work, automated backups of RDS Cluster are currently not automatically tagged and thus not automatically backed up
+- Since AWS Config Rule with compliance resource type `AWS::RDS::DBCluster` and source identifier `REQUIRED_TAGS` [are currently not supported](https://docs.aws.amazon.com/config/latest/developerguide/required-tags.html), RDS Clusters are currently not automatically tagged and thus not automatically backed up.
 
 ## Consequences
 
