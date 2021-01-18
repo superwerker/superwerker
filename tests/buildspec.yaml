@@ -14,7 +14,8 @@ phases:
   build:
     commands:
       # vend fresh account/org
-      - ovm_result=$(curl -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
+      - curl --version
+      - ovm_result=$(curl --fail --retry 10 -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
       - aws_account_id=$(echo $ovm_result | jq -r .account_id)
       - aws_cross_account_role_arn=$(echo $ovm_result | jq -r .cross_account_role)
       - echo AccountId ${aws_account_id} - Cross Account Role ${aws_cross_account_role_arn}

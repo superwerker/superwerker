@@ -16,7 +16,7 @@ aws_account_id=${AWS_ACCOUNT_ID:-""}
 
 if [ "$aws_account_id" == "" ]; then
   echo ORGANIZATIONS_VENDING_MACHINE_ENDPOINT: $ORGANIZATIONS_VENDING_MACHINE_ENDPOINT
-  ovm_result=$(curl -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
+  ovm_result=$(curl --fail --retry 10 -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
   aws_account_id=$(echo $ovm_result | jq -r .account_id)
   aws_cross_account_role_arn=$(echo $ovm_result | jq -r .cross_account_role)
 else
