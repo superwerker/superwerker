@@ -66,14 +66,63 @@ AWS provides all the building blocks. superwerker adds the wiring and "how to" s
 
 ## FAQ
 
-More FAQ are currently in the makings.
+### Should I use superwerker?
+superwerker is ideal for quickly getting started with the AWS Cloud with preconceived decisions based on years of experience. Start-ups and small to medium-sized companies, where time-to-market and financial aspects play an especially important role, can benefit in particular.
 
-### Who is this for?
+As a rule of thumb: if you have no dedicated AWS team or cloud centre of excellence in-house, you should use superwerker.
 
-superwerker frees its users from the heavy lifting burden of setting up and maintaining a well-architected AWS baseline.
+But also large companies can use superwerker as a basis. Since superwerker is open source, it can also be tailored to individual needs.
 
- - Development/Ops teams in startups and SMEs who want a quick start in AWS with all the best practises set up at once.
- - AWS integrators, APN Partners, and freelancers who want to focus on solving customer problems
+### What does superwerker cost?
+superwerker itself is free and open source under an MIT licence. Costs may be incurred by the AWS services you set up. Smaller set-ups and test set-ups cost less than $10/month.
+
+You can find more information about the costs on the detailed pricing pages for the services used, e.g. Control Tower, Security Hub, GuardDuty, AWS Backup
+
+### How do I install superwerker?
+superwerker uses the proven infrastructure-as-code service AWS CloudFormation for installation.
+Here installation can be launched with a click.
+
+### Can I activate and deactivate the features of superwerker individually?
+superwerker features can be activated individually. This enables a gradual roll-out and also facilitates installation into an existing AWS set-up.
+
+### How do I receive updates?
+We plan to roll-out releases via GitHub releases.  The update is then deployed via the current CloudFormation template.
+
+### Can I use superwerker for existing AWS set-ups?
+superwerker is primarily designed for new AWS set-ups and can be used if AWS Control Tower is available in the respective region or was previously installed. superwerker will then try to set up services including Security Hub and GuardDuty. Depending on whether you already have them, you may need to clear the set-up accordingly beforehand.
+
+### Which regions is superwerker available in?
+Since superwerker uses AWS Control Tower as a basis, it is available in all regions where Control Tower is supported.
+
+### What is the difference compared to Control Tower/Landing Zone?
+AWS Control Tower and Landing Zone also use AWS fundamentally, but leave a lot of free scope. Building on AWS Control Tower, superwerker provides further guide rails and facilitates a quick-start with AWS even further.
+
+### What is the difference compared to AWS Proton, AWS Amplify or AWS Copilot, for example?
+AWS Proton, Amplify, and Copilot are tools for developing workloads. superwerker provides a secure AWS foundation in which these tools can be used.
+
+### How can I expand superwerker?
+superwerker deliberately offers few parameters for adjustment. It has been designed to coexist with solutions like AWS Control Tower (+ Customizations) or with CloudFormation StackSets. These can be used to customise the AWS set-up.
+
+### If I no longer want to use superwerker, will my AWS set-up stop working?
+superwerker uses AWS CloudFormation for installation and updates. If the CloudFormation stack is deleted, the superwerker components will also be deleted. This can negatively affect the running AWS set-up.
+
+### How does superwerker differ from the Well-Architected Framework?
+It’s complementary. You can consider superwerker a “well set-up”. At the same time, the underlying design decisions take into account the pillars of WAF. superwerker pushes the workloads into the Well-Architected direction using certain guardrails.
+
+### Do you have access to our AWS account?
+No, superwerker runs exclusively in your AWS account and does not communicate with the internet.
+
+### Is there a roadmap?
+Yes, a roadmap is available on GitHub and you can submit and vote on proposals. To do so, you can open a new GitHub issue or one-up existing feature requests.
+
+### What happens if AWS offers features of superwerker itself?
+superwerker always aims to build on AWS services and features. If a superwerker feature becomes obsolete because AWS releases it as a service or feature itself, we will adapt superwerker.
+
+### Can using superwerker break existing workloads?
+Some of the infrastructure that superwerker sets up carries out changes to existing set-ups, for example Control Tower and Service Control Policies, which restrict services and regions. For this reason, we cannot rule out the possibility of impacting existing workloads. We will be happy to help you when evaluating this issue.
+
+### Can superwerker also handle network/VPC and workloads?
+superwerker is initially specialised in a basic AWS set-up. An extension to best practices in the network and workload area is planned. Please send us feedback/feature requests in our GitHub repository.
 
 ## Design decisions
 
