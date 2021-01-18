@@ -662,52 +662,6 @@ Resources:
                     o.list_policies_for_target(TargetId=root_id(), Filter='TAG_POLICY')['Policies'] if
                     p['Id'] == policy_id]
 
-  BackupEnableAurora:
-    Type: AWS::CloudFormation::CustomResource
-    Properties:
-      ServiceToken: !GetAtt BackupEnableAuroraFunction.Arn
-
-  BackupEnableAuroraFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Timeout: 200
-      Handler: index.enable_aurora_backups
-      Runtime: python3.7
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - backup:UpdateRegionSettings
-              Resource: "*"
-      InlineCode: |
-        import boto3
-        import cfnresponse
-
-        backup = boto3.client("backup")
-
-        def exception_handling(function):
-            def catch(event, context):
-                try:
-                    function(event, context)
-                except Exception as e:
-                    print(e)
-                    print(event)
-                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
-
-            return catch
-
-
-        @exception_handling
-        def enable_aurora_backups(event, context):
-            backup.update_region_settings(
-              ResourceTypeOptInPreference={
-                'Aurora': True
-              }
-            )
-
-            cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, 'BackupEnableAurora')
-
   TagPolicyEnable:
     Type: AWS::CloudFormation::CustomResource
     Properties:
