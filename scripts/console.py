@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# based on https://gist.github.com/ottokruse/1c0f79d51cdaf82a3885f9b532df1ce5
+
 from urllib import parse, request
 import boto3
 import json
