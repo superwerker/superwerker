@@ -76,6 +76,34 @@ Parameters:
   TemplateUrlPrefix:
     Type: String
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Account Configuration
+      Parameters:
+      - AuditAWSAccountEmail
+      - LogArchiveAWSAccountEmail
+    - Label:
+        default: Features
+      Parameters:
+      - IncludeBudget
+      - IncludeControlTower
+      - IncludeGuardDuty
+      - IncludeSecurityHub
+      - IncludeBackup
+      - IncludeServiceControlPolicies
+      - IncludeRootMail
+    - Label:
+        default: Domain Configuration
+      Parameters:
+      - Domain
+      - Subdomain
+    - Label:
+        default: Advanced Configuration
+      Parameters:
+      - TemplateUrlPrefix
+
 Conditions:
   IncludeBudget: !Equals [ !Ref IncludeBudget, true ]
   IncludeControlTower: !Equals [ !Ref IncludeControlTower, true ]
