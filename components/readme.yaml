@@ -22,9 +22,7 @@ Resources:
               detail:
                 alarmName:
                   - superwerker-RootmailReady
-                state:
-                  value:
-                    - OK
+
       Handler: index.handler
       Policies:
         - SSMParameterReadPolicy:
@@ -34,6 +32,9 @@ Resources:
             - Effect: Allow
               Action: cloudwatch:PutDashboard
               Resource: !Sub arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/superwerker-README
+            - Effect: Allow
+              Action: cloudwatch:DescribeAlarms
+              Resource: '*'
       Environment:
         Variables:
           SUPERWERKER_DOMAIN: !Ref SuperwerkerDomain
@@ -56,21 +57,36 @@ Resources:
           )['Parameters']:
             superwerker_config[ssm_parameter['Name']] = ssm_parameter['Value']
 
-          if '/superwerker/domain_name_servers' in superwerker_config:
-            dns_delegation_text = """
-          ### ❌ Setup DNS Delegation to your chosen domain `{domain}`
 
-          Please create the following NS records for `{domain}`:
-          - `{ns[0]}`
-          - `{ns[1]}`
-          - `{ns[2]}`
-          - `{ns[3]}`
-          """.format(
-            domain=os.environ['SUPERWERKER_DOMAIN'],
-            ns=superwerker_config['/superwerker/domain_name_servers'].split(','),
-          )
+          rootmail_ready_alarm_state = cw.describe_alarms(
+            AlarmNames=[
+                'superwerker-RootmailReady',
+            ]
+          )['MetricAlarms'][0]['StateValue']
+          print(rootmail_ready_alarm_state)
+
+          if rootmail_ready_alarm_state == 'OK':
+            dns_delegation_text = """
+        ### ✅ Setup DNS Delegation to your chosen domain `{domain}`
+        """.format(
+          domain=os.environ['SUPERWERKER_DOMAIN'],
+        )
           else:
-            dns_delegation_text = '### DNS Setup pending'
+            if '/superwerker/domain_name_servers' in superwerker_config:
+              dns_delegation_text = """
+        ### ❌ Setup DNS Delegation to your chosen domain `{domain}`
+
+        Please create the following NS records for `{domain}`:
+        - `{ns[0]}`
+        - `{ns[1]}`
+        - `{ns[2]}`
+        - `{ns[3]}`
+        """.format(
+          domain=os.environ['SUPERWERKER_DOMAIN'],
+          ns=superwerker_config['/superwerker/domain_name_servers'].split(','),
+        )
+            else:
+              dns_delegation_text = '### DNS Setup pending'
 
           markdown = """
 
@@ -119,6 +135,7 @@ Resources:
 
         def log(msg):
           print(json.dumps(msg), flush=True)
+
 
       Runtime: python3.7
       Timeout: 60
