@@ -93,7 +93,7 @@ Resources:
 
           {dns_delegation}
 
-          Updated at {current_time}
+          Updated at {current_time} (use browser reload to refresh)
 
           """.format(
             dns_delegation=dns_delegation_text,
