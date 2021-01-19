@@ -5,56 +5,67 @@ Parameters:
   AuditAWSAccountEmail:
     Type: String
     Default: ""
+    Description: Mail Address used to create an AWS Account for Audit purposes. (Leave empty to skip)
   LogArchiveAWSAccountEmail:
     Type: String
     Default: ""
+    Description: Mail Address used to create an AWS Account for Log Archive purposes. (Leave empty to skip)
   Domain:
     Type: String
+    Description: Domain used for Rootmail feature
   Subdomain:
     Type: String
     Default: aws
+    Description: Sub domain used for Rootmail feature
   IncludeBudget:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable Budget Alarm for monthly AWS spendings
   IncludeControlTower:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable AWS Control Tower
   IncludeGuardDuty:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable Amazon GuardDuty
   IncludeSecurityHub:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable AWS Security Hub
   IncludeBackup:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable Automated Backups
   IncludeServiceControlPolicies:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable Service Control Policies in AWS Organizations
   IncludeRootMail:
     AllowedValues:
       - true
       - false
     Default: true
     Type: String
+    Description: Enable automated AWS Account root mail handling
   TemplateUrlPrefix:
     Type: String
 
