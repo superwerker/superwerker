@@ -63,7 +63,6 @@ Resources:
                 'superwerker-RootmailReady',
             ]
           )['MetricAlarms'][0]['StateValue']
-          print(rootmail_ready_alarm_state)
 
           if rootmail_ready_alarm_state == 'OK':
             dns_delegation_text = """
