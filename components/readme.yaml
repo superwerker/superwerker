@@ -93,8 +93,11 @@ Resources:
 
           {dns_delegation}
 
+          Updated at {current_time}
+
           """.format(
-            dns_delegation=dns_delegation_text
+            dns_delegation=dns_delegation_text,
+            current_time=datetime.now(),
           )
 
           body = {
