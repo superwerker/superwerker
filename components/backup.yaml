@@ -379,6 +379,11 @@ Resources:
 
   EnableCloudFormationStacksetsOrgAccess:
     Type: AWS::Synthetics::Canary
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - E1029
     Properties:
       Name: superwerker-cfn-org
       ArtifactS3Location: !Sub s3://${EnableCloudFormationStacksetsOrgAccessArtifacts}
