@@ -5,9 +5,11 @@ Parameters:
   AuditAWSAccountEmail:
     Type: String
     Default: ""
+    Description: Mail Address used to create an AWS Account for Audit purposes
   LogArchiveAWSAccountEmail:
     Type: String
     Default: ""
+    Description: Mail Address used to create an AWS Account for Log Archive purposes
   Domain:
     Type: String
   Subdomain:
