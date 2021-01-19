@@ -26,51 +26,51 @@ Parameters:
     Description: Sub domain used for Rootmail feature
   IncludeBudget:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable Budget Alarm for monthly AWS spendings
   IncludeControlTower:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable AWS Control Tower
   IncludeGuardDuty:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable Amazon GuardDuty
   IncludeSecurityHub:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable AWS Security Hub
   IncludeBackup:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable Automated Backups
   IncludeServiceControlPolicies:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable Service Control Policies in AWS Organizations
   IncludeRootMail:
     AllowedValues:
-      - true
-      - false
-    Default: true
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
     Type: String
     Description: Enable automated AWS Account root mail handling
   TemplateUrlPrefix:
