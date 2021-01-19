@@ -123,21 +123,21 @@ Metadata:
         default: Enable automated AWS Account root mail handling
 
 Conditions:
-  IncludeBudget: !Equals [ !Ref IncludeBudget, true ]
-  IncludeControlTower: !Equals [ !Ref IncludeControlTower, true ]
+  IncludeBudget: !Equals [ !Ref IncludeBudget, 'Yes' ]
+  IncludeControlTower: !Equals [ !Ref IncludeControlTower, 'Yes' ]
   IncludeGuardDuty: !And
     - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeGuardDuty, true ]
-  IncludeRootMail: !Equals [ !Ref IncludeRootMail, true ]
+    - !Equals [ !Ref IncludeGuardDuty, 'Yes' ]
+  IncludeRootMail: !Equals [ !Ref IncludeRootMail, 'Yes' ]
   IncludeSecurityHub: !And
     - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeSecurityHub, true ]
+    - !Equals [ !Ref IncludeSecurityHub, 'Yes' ]
   IncludeBackup: !And
     - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeBackup, true ]
+    - !Equals [ !Ref IncludeBackup, 'Yes' ]
   IncludeServiceControlPolicies: !And
     - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeServiceControlPolicies, true ]
+    - !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
   GenerateAuditAWSAccountEmail: !And
     - !Condition IncludeRootMail
     - !Equals [ !Ref AuditAWSAccountEmail, "" ]
