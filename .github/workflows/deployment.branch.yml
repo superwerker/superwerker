@@ -1,12 +1,12 @@
 
-name: Release
+name: Branch Deployments
 
 on:
   push:
-    branches: ['*', '!main']
+    branches: ['*']
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
