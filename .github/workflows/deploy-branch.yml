@@ -11,9 +11,18 @@ jobs:
 
     steps:
 
-
     - name: Checkout
       uses: actions/checkout@v2
 
     - name: Branch name
       run: echo running on branch ${GITHUB_REF##*/}
+
+    - uses: shallwefootball/s3-upload-action@master
+      name: Upload S3
+      id: S3
+      with:
+        aws_key_id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+        aws_bucket: ${{ secrets.AWS_BUCKET_NAME}}
+        source_dir: components/
+        destination_dir: ${{ github.ref }}/
