@@ -4,16 +4,41 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  IncludeSecurityHub:
+    AllowedValues:
+      - true
+      - false
+    Type: String
+  IncludeBackup:
+    AllowedValues:
+      - true
+      - false
+    Type: String
+
+Conditions:
+  IncludeSecurityHub: !Equals [ !Ref IncludeSecurityHub, true ]
+  IncludeBackup: !Equals [ !Ref IncludeBackup, true ]
+
 Resources:
 
   ServiceControlPolicy:
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt SCPCustomResource.Arn
-      Policy: |
-        {
-            "Version": "2012-10-17",
-            "Statement": [
+      Policy: !Sub
+        - |
+          {
+              "Version": "2012-10-17",
+              "Statement": [
+                  ${Statements}
+              ]
+          }
+        - Statements: !Join
+          - ','
+          - - !If
+              - IncludeSecurityHub
+              - |
                 {
                     "Condition": {
                         "ArnNotLike": {
@@ -33,8 +58,37 @@ Resources:
                     "Effect": "Deny",
                     "Sid": "SWProtectSecurityHub"
                 }
-            ]
-        }
+              - AWS::NoValue
+            - !If
+              - IncludeBackup
+              - |
+                {
+                    "Condition": {
+                        "ArnNotLike": {
+                            "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+                        }
+                    },
+                    "Action": [
+                        "iam:AttachRolePolicy",
+                        "iam:CreateRole",
+                        "iam:DeleteRole",
+                        "iam:DeleteRolePermissionsBoundary",
+                        "iam:DeleteRolePolicy",
+                        "iam:DetachRolePolicy",
+                        "iam:PutRolePermissionsBoundary",
+                        "iam:PutRolePolicy",
+                        "iam:UpdateAssumeRolePolicy",
+                        "iam:UpdateRole",
+                        "iam:UpdateRoleDescription"
+                    ],
+                    "Resource": [
+                        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+                        "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
+                    ],
+                    "Effect": "Deny",
+                    "Sid": "SWProtectBackup"
+                }
+              - AWS::NoValue
       Attach: true
 
 
