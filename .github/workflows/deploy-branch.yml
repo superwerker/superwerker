@@ -30,4 +30,4 @@ jobs:
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
         aws_bucket: ${{ secrets.AWS_BUCKET_NAME}}
         source_dir: components/
-        destination_dir: ${{ steps.extract_branch.outputs.branch }}/
+        destination_dir: ${{ steps.extract_branch.outputs.branch }}/components/
