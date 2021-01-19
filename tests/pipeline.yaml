@@ -214,3 +214,39 @@ Resources:
             build:
               commands:
                 - aws s3 sync components s3://${DEPLOYMENT_BUCKET}/${BRANCH_NAME}/components
+
+  DeploymentBucketUser:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+        - PolicyName: !Sub 'publish'
+          PolicyDocument:
+            Statement:
+            - Sid: VisualEditor0
+              Effect: Allow
+              Action: s3:ListObjects
+              Resource: "*"
+            - Sid: VisualEditor1
+              Effect: Allow
+              Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:PutObjectAcl
+              Resource: !Sub ${DeploymentBucket.Arn}/*
+            - Sid: VisualEditor2
+              Effect: Allow
+              Action: s3:ListBucket
+              Resource: !Sub ${DeploymentBucket.Arn}
+
+  DeploymentBucketUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref DeploymentBucketUser
+
+Outputs:
+  DeploymentBucket:
+    Value: !Ref DeploymentBucket
+  DeploymentBucketUserAccessKey:
+    Value: !Ref DeploymentBucketUserAccessKey
+  DeploymentBucketUserSecretAccessKey:
+    Value: !GetAtt DeploymentBucketUserAccessKey.SecretAccessKey
