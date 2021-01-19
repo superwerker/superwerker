@@ -523,6 +523,7 @@ Resources:
   # Proudly found elsewhere and partially copied from:
   # https://github.com/theserverlessway/aws-baseline
   TagPolicy:
+    DependsOn: TagPolicyEnable
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt TagPolicyCustomResource.Arn
@@ -754,6 +755,7 @@ Resources:
                     p['Id'] == policy_id]
 
   BackupPolicy:
+    DependsOn: BackupPolicyEnable
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt BackupPolicyCustomResource.Arn
