@@ -30,49 +30,42 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Budget Alarm for monthly AWS spendings
   IncludeControlTower:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable AWS Control Tower
   IncludeGuardDuty:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Amazon GuardDuty
   IncludeSecurityHub:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable AWS Security Hub
   IncludeBackup:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Automated Backups
   IncludeServiceControlPolicies:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Service Control Policies in AWS Organizations
   IncludeRootMail:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable automated AWS Account root mail handling
   TemplateUrlPrefix:
     Type: String
 
@@ -103,6 +96,31 @@ Metadata:
         default: Advanced Configuration
       Parameters:
       - TemplateUrlPrefix
+    ParameterLabels:
+      AuditAWSAccountEmail:
+        default: Audit Account Mail Address
+      LogArchiveAWSAccountEmail:
+        default: Log Archive Account Mail Address
+      Domain:
+        default: Domain for automated DNS configuration
+      Subdomain:
+        default: Subdomain for automated DNS configuration
+      TemplateUrlPrefix:
+        default: Prefix for CloudFormation Templates
+      IncludeBudget:
+        default: Enable Budget Alarm for monthly AWS spendings 
+      IncludeControlTower:
+        default: Enable AWS Control Tower
+      IncludeGuardDuty:
+        default: Enable Amazon GuardDuty
+      IncludeSecurityHub:
+        default: Enable AWS Security Hub
+      IncludeBackup:
+        default: Enable Automated Backups
+      IncludeServiceControlPolicies:
+        default: Enable Service Control Policies in AWS Organizations
+      IncludeRootMail:
+        default: Enable automated AWS Account root mail handling
 
 Conditions:
   IncludeBudget: !Equals [ !Ref IncludeBudget, true ]
