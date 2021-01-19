@@ -45,7 +45,7 @@ Resources:
       RunConfig:
         TimeoutInSeconds: 600
       Schedule:
-        DurationInSeconds: 3600
+        DurationInSeconds: "3600"
         Expression: rate(0 minute)
       Code:
         Handler: pageLoadBlueprint.handler
@@ -168,7 +168,7 @@ Resources:
     Type: AWS::CloudFormation::WaitCondition
     Properties:
       Handle: !Ref ControlTowerReadyHandle
-      Timeout: 7200
+      Timeout: "7200"
 
   SuperwerkerBootstrapFunction:
     Type: AWS::Serverless::Function

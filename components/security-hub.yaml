@@ -43,7 +43,7 @@ Resources:
           InputTransformer:
             InputPathsMap:
               AwsAccountId: $.detail.serviceEventDetails.createManagedAccountStatus.account.accountId
-            InputTemplate: !Sub |
+            InputTemplate: |
               {
                 "MemberAWSAccountId": [<AwsAccountId>]
               }

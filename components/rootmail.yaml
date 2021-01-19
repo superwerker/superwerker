@@ -230,7 +230,7 @@ Resources:
       HostedZoneId: !Ref HostedZone
       Name: !Sub ${Subdomain}.${Domain}.
       ResourceRecords:
-        - !Sub 10 inbound-smtp.eu-west-1.amazonaws.com # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
+        - 10 inbound-smtp.eu-west-1.amazonaws.com # this is fixed to eu-west-1 until SES supports receive more globally (see #23)
       TTL: 60
       Type: MX
 
@@ -356,7 +356,7 @@ Resources:
       Namespace: AWS/Lambda
       Period: 180
       Statistic: Sum
-      Threshold: '1'
+      Threshold: 1
 
   RootmailReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
@@ -365,7 +365,7 @@ Resources:
     Type: AWS::CloudFormation::WaitCondition
     Properties:
       Handle: !Ref RootmailReadyHandle
-      Timeout: 28800 # 8 hours time to wire DNS
+      Timeout: "28800" # 8 hours time to wire DNS
 
   RootmailReadyTrigger:
     Type: AWS::Serverless::Function
