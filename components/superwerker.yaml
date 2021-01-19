@@ -8,14 +8,14 @@ Parameters:
     Default: ""
     Description: Mail Address used to create an AWS Account for Audit purposes. (Leave empty to skip)
     MaxLength: 64
-    AllowedPattern: ^[_A-Za-z0-9-\+\.]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$
+    AllowedPattern: (^$|^[_A-Za-z0-9-\+\.]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$)
     ConstraintDescription: Account Email can contain only ASCII characters. This must be in the format of mail@example.com
   LogArchiveAWSAccountEmail:
     Type: String
     Default: ""
     Description: Mail Address used to create an AWS Account for Log Archive purposes. (Leave empty to skip)
     MaxLength: 64
-    AllowedPattern: ^[_A-Za-z0-9-\+\.]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$
+    AllowedPattern: (^$|^[_A-Za-z0-9-\+\.]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$)
     ConstraintDescription: Account Email can contain only ASCII characters. This must be in the format of mail@example.com
   Domain:
     Type: String
