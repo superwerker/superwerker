@@ -12,9 +12,11 @@ Parameters:
     Description: Mail Address used to create an AWS Account for Log Archive purposes. (Leave empty to skip)
   Domain:
     Type: String
+    Description: Domain used for Rootmail feature
   Subdomain:
     Type: String
     Default: aws
+    Description: Sub domain used for Rootmail feature
   IncludeBudget:
     AllowedValues:
       - true
