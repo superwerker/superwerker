@@ -31,7 +31,7 @@ Resources:
           Statement:
             - Effect: Allow
               Action: cloudwatch:PutDashboard
-              Resource: !Sub arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/superwerker-README
+              Resource: !Sub arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/superwerker
             - Effect: Allow
               Action: cloudwatch:DescribeAlarms
               Resource: '*'
@@ -116,7 +116,7 @@ Resources:
           }
 
           cw.put_dashboard(
-            DashboardName='superwerker-README',
+            DashboardName='superwerker',
             DashboardBody=json.dumps(body),
           )
 

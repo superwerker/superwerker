@@ -179,10 +179,10 @@ Resources:
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/guardduty.yaml
 
-  Readme:
+  LivingDocumentation:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/readme.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/components/living-documentation.yaml
       Parameters:
         SuperwerkerDomain: !If
           - IncludeRootMail
