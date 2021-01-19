@@ -1,0 +1,16 @@
+name: Lint CloudFormation Templates
+
+on: [push]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: cfn-lint
+      uses: scottbrenner/cfn-lint-action@master
+      with:
+        args: "components/*.yaml"
