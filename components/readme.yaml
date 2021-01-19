@@ -111,19 +111,6 @@ Resources:
                 "properties": {
                   "markdown": markdown,
                 }
-              },
-              {
-                "type": "alarm",
-                "x": 0,
-                "y": 10,
-                "width": 24,
-                "height": 2,
-                "properties": {
-                  "title": "DNS Zone delegation for root emails ready",
-                  "alarms": [
-                    "arn:aws:cloudwatch:eu-west-1:970186278685:alarm:custom-RootmailReadyAlert-X4FRISK7ZN3T"
-                  ]
-                }
               }
             ]
           }
