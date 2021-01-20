@@ -282,8 +282,14 @@ Resources:
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
       Parameters:
-        IncludeSecurityHub: !Ref IncludeSecurityHub
-        IncludeBackup: !Ref IncludeBackup
+        IncludeSecurityHub: !If
+          - IncludeSecurityHub
+          - true
+          - false
+        IncludeBackup: !If
+          - IncludeBackup
+          - true
+          - false
 
 Outputs:
 
