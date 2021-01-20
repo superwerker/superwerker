@@ -10,4 +10,4 @@ template_url_prefix=https://superwerker-deployment.s3.amazonaws.com/${git_branch
 
 aws --profile ${SOURCE_PROFILE} s3 sync ../templates s3://superwerker-deployment/${git_branch}/templates
 
-aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file ../templates/superwerker.yaml --parameter-overrides TemplateUrlPrefix=${template_url_prefix} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file ../templates/superwerker.template.yaml --parameter-overrides TemplateUrlPrefix=${template_url_prefix} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
