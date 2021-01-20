@@ -379,6 +379,7 @@ Resources:
 
   EnableCloudFormationStacksetsOrgAccess:
     Type: AWS::Synthetics::Canary
+    DependsOn: CfnStackSetsReady
     Metadata:
       cfn-lint:
         config:
