@@ -108,7 +108,7 @@ Metadata:
       TemplateUrlPrefix:
         default: Prefix for CloudFormation Templates
       IncludeBudget:
-        default: Enable Budget Alarm for monthly AWS spendings 
+        default: Enable Budget Alarm for monthly AWS spendings
       IncludeControlTower:
         default: Enable AWS Control Tower
       IncludeGuardDuty:
@@ -151,13 +151,13 @@ Resources:
     Condition: IncludeBudget
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/budget.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/budget.yaml
 
   ControlTower:
     Condition: IncludeControlTower
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/control-tower.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/control-tower.yaml
       Parameters:
         AuditAWSAccountEmail: !If
           - GenerateAuditAWSAccountEmail
@@ -241,12 +241,12 @@ Resources:
     Condition: IncludeGuardDuty
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/guardduty.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/guardduty.yaml
 
   LivingDocumentation:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/living-documentation.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/living-documentation.yaml
       Parameters:
         SuperwerkerDomain: !If
           - IncludeRootMail
@@ -257,7 +257,7 @@ Resources:
     Condition: IncludeRootMail
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/rootmail.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/rootmail.yaml
       Parameters:
         Domain: !Ref Domain
         Subdomain: !Ref Subdomain
@@ -266,21 +266,21 @@ Resources:
     Condition: IncludeSecurityHub
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/security-hub.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/security-hub.yaml
 
   Backup:
     Condition: IncludeBackup
     Type: AWS::CloudFormation::Stack
     DependsOn: ControlTower
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/backup.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/backup.yaml
 
   ServiceControlPolicies:
     Condition: IncludeServiceControlPolicies
     Type: AWS::CloudFormation::Stack
     DependsOn: ControlTower
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/components/service-control-policies.yaml
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/service-control-policies.yaml
       Parameters:
         IncludeSecurityHub: !If
           - IncludeSecurityHub

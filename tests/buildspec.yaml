@@ -25,7 +25,7 @@ phases:
       - aws configure --profile test_account set credential_source EcsContainer
 
       # setup superwerker in vended account
-      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-body file://components/superwerker.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=TemplateUrlPrefix,ParameterValue=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
+      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-body file://templates/superwerker.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=TemplateUrlPrefix,ParameterValue=${TEMPLATE_URL_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
       - sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
       - while ! domain_name_servers=$(aws --profile test_account --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
       - aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset

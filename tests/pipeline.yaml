@@ -213,7 +213,7 @@ Resources:
           phases:
             build:
               commands:
-                - aws s3 sync components s3://${DEPLOYMENT_BUCKET}/${BRANCH_NAME}/components
+                - aws s3 sync templates s3://${DEPLOYMENT_BUCKET}/${BRANCH_NAME}/templates
 
   DeploymentBucketUser:
     Type: AWS::IAM::User
