@@ -790,7 +790,7 @@ Resources:
                         "tags": {
                             "backup-daily": {
                                 "iam_role_arn": {
-                                    "@@assign": "arn:aws:iam::$account:role/AWSBackupDefaultServiceRole"
+                                    "@@assign": "arn:aws:iam::$account:role/service-role/AWSBackupDefaultServiceRole"
                                 },
                                 "tag_key": {
                                     "@@assign": "superwerker:backup"
