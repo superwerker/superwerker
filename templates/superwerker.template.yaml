@@ -19,11 +19,11 @@ Parameters:
     ConstraintDescription: Account Email can contain only ASCII characters. This must be in the format of mail@example.com
   Domain:
     Type: String
-    Description: Domain used for Rootmail feature
+    Description: Domain used for RootMail feature
   Subdomain:
     Type: String
     Default: aws
-    Description: Sub domain used for Rootmail feature
+    Description: Sub domain used for RootMail feature
   IncludeBudget:
     AllowedValues:
       - 'Yes'
