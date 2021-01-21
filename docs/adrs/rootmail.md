@@ -1,4 +1,4 @@
-# Rootemail (_RML_)
+# Rootmail (_RML_)
 
 ## Context
 
