@@ -47,7 +47,7 @@ Resources:
                 "Service": "ses.amazonaws.com"
               },
               "Resource": [
-                "arn:${AWS::Partition}:s3:::${EmailBucket}/RootMails/*"
+                "arn:${AWS::Partition}:s3:::${EmailBucket}/RootMail/*"
               ],
               "Sid": "EnableSESReceive"
             }
@@ -494,7 +494,7 @@ Resources:
                       print('LogicalResourceId: {}'.format(LogicalResourceId))
 
                       id = PhysicalResourceId
-                      rule_set_name = 'RootMails'
+                      rule_set_name = 'RootMail'
                       rule_name = 'Receive'
 
                       if RequestType == CREATE or RequestType == UPDATE:
@@ -516,7 +516,7 @@ Resources:
                                 {
                                   'S3Action'         : {
                                     'BucketName'     : '${EmailBucket}',
-                                    'ObjectKeyPrefix': 'RootMails'
+                                    'ObjectKeyPrefix': 'RootMail'
                                   },
                                 },
                                 {
@@ -578,7 +578,7 @@ Resources:
                     - Effect: Allow
                       Action:
                         - s3:GetObject
-                      Resource: ${EmailBucket.Arn}/RootMails/*
+                      Resource: ${EmailBucket.Arn}/RootMail/*
                     - Effect: Allow
                       Action:
                         - ssm:CreateOpsItem
@@ -622,7 +622,7 @@ Resources:
                       for record in event['Records']:
 
                         id = record['ses']['mail']['messageId']
-                        key = 'RootMails/{key}'.format(key=id)
+                        key = 'RootMail/{key}'.format(key=id)
                         receipt = record['ses']['receipt']
 
                         log({
