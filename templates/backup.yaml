@@ -66,6 +66,41 @@ Resources:
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
+  OrganizationConformancePackBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub awsconfigconforms-${AWS::AccountId}
+
+  OrganizationConformancePackBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref OrganizationConformancePackBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowGetPutObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub ${OrganizationConformancePackBucket.Arn}/*
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
+              ArnLike:
+                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+          - Sid: AllowGetBucketAcl
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetBucketAcl
+            Resource: !Sub ${OrganizationConformancePackBucket.Arn}
+            Condition:
+              StringEquals:
+                aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
+              ArnLike:
+                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+
   BackupResources:
     Type: AWS::CloudFormation::StackSet
     DependsOn: EnableCloudFormationStacksetsOrgAccessReadyWaitCondition
@@ -86,7 +121,7 @@ Resources:
           DeploymentTargets:
             OrganizationalUnitIds:
               - !GetAtt OrganizationsLookup.RootId
-      TemplateBody: !Sub |
+      TemplateBody: |
         Resources:
           AWSBackupDefaultServiceRole:
             Type: AWS::IAM::Role
@@ -103,114 +138,6 @@ Resources:
               ManagedPolicyArns:
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
                 - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
-
-          ConfigRuleDynamoDBTable: # TODO: integrity protection
-            Type: AWS::Config::ConfigRule
-            Properties:
-              ConfigRuleName: superwerker-backup-enforce-dynamodb-table
-              Scope:
-                ComplianceResourceTypes:
-                  - AWS::DynamoDB::Table
-              InputParameters:
-                tag1Key: superwerker:backup
-                tag1Value: daily,none
-              Source:
-                Owner: AWS
-                SourceIdentifier: REQUIRED_TAGS
-
-          ConfigRemediationDynamoDBTable: # TODO: integrity protection
-            Type: AWS::Config::RemediationConfiguration
-            Properties:
-              ConfigRuleName: !Ref ConfigRuleDynamoDBTable
-              Automatic: true
-              MaximumAutomaticAttempts: 10
-              RetryAttemptSeconds: 60
-              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
-              TargetType: SSM_DOCUMENT
-              Parameters:
-                ResourceValue:
-                  ResourceValue:
-                    Value: "RESOURCE_ID"
-                AutomationAssumeRole:
-                  StaticValue:
-                    Values:
-                      - !GetAtt ConfigRemediationRole.Arn
-                ResourceType:
-                  StaticValue:
-                    Values:
-                      - AWS::DynamoDB::Table
-
-          ConfigRuleEbsVolume: # TODO: integrity protection
-            Type: AWS::Config::ConfigRule
-            Properties:
-              ConfigRuleName: superwerker-backup-enforce-ebs-volume
-              Scope:
-                ComplianceResourceTypes:
-                  - AWS::EC2::Volume
-              InputParameters:
-                tag1Key: superwerker:backup
-                tag1Value: daily,none
-              Source:
-                Owner: AWS
-                SourceIdentifier: REQUIRED_TAGS
-
-          ConfigRemediationEbsVolume: # TODO: integrity protection
-            Type: AWS::Config::RemediationConfiguration
-            Properties:
-              ConfigRuleName: !Ref ConfigRuleEbsVolume
-              Automatic: true
-              MaximumAutomaticAttempts: 10
-              RetryAttemptSeconds: 60
-              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
-              TargetType: SSM_DOCUMENT
-              Parameters:
-                ResourceValue:
-                  ResourceValue:
-                    Value: "RESOURCE_ID"
-                AutomationAssumeRole:
-                  StaticValue:
-                    Values:
-                      - !GetAtt ConfigRemediationRole.Arn
-                ResourceType:
-                  StaticValue:
-                    Values:
-                      - AWS::EC2::Volume
-
-          ConfigRuleRdsDbInstance: # TODO: integrity protection
-            Type: AWS::Config::ConfigRule
-            Properties:
-              ConfigRuleName: superwerker-backup-enforce-rds-instance
-              Scope:
-                ComplianceResourceTypes:
-                  - AWS::RDS::DBInstance
-              InputParameters:
-                tag1Key: superwerker:backup
-                tag1Value: daily,none
-              Source:
-                Owner: AWS
-                SourceIdentifier: REQUIRED_TAGS
-
-          ConfigRemediationRdsDbInstance: # TODO: integrity protection
-            Type: AWS::Config::RemediationConfiguration
-            Properties:
-              ConfigRuleName: !Ref ConfigRuleRdsDbInstance
-              Automatic: true
-              MaximumAutomaticAttempts: 10
-              RetryAttemptSeconds: 60
-              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
-              TargetType: SSM_DOCUMENT
-              Parameters:
-                ResourceValue:
-                  ResourceValue:
-                    Value: "RESOURCE_ID"
-                AutomationAssumeRole:
-                  StaticValue:
-                    Values:
-                      - !GetAtt ConfigRemediationRole.Arn
-                ResourceType:
-                  StaticValue:
-                    Values:
-                      - AWS::RDS::DBInstance
 
           ConfigRemediationRole:
             Type: AWS::IAM::Role
@@ -234,6 +161,127 @@ Resources:
                           - rds:AddTagsToResource
                           - rds:DescribeDBInstances
                         Resource: '*'
+
+  BackupTagsEnforcement:
+    DependsOn: BackupResources
+    Type: AWS::Config::OrganizationConformancePack
+    Properties:
+      ExcludedAccounts:
+        - !Ref AWS::AccountId # exclude management account since it has no config recorder set up
+      DeliveryS3Bucket: !Ref OrganizationConformancePackBucket
+      OrganizationConformancePackName: superwerker-backup-enforce
+      TemplateBody: !Sub |
+        Resources:
+          ConfigRuleDynamoDBTable:
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-dynamodb-table
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::DynamoDB::Table
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediationDynamoDBTable:
+            DependsOn: ConfigRuleDynamoDBTable
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-dynamodb-table
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::DynamoDB::Table
+
+          ConfigRuleEbsVolume:
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-ebs-volume
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::EC2::Volume
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediationEbsVolume:
+            DependsOn: ConfigRuleEbsVolume
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-ebs-volume
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::EC2::Volume
+
+          ConfigRuleRdsDbInstance:
+            Type: AWS::Config::ConfigRule
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-rds-instance
+              Scope:
+                ComplianceResourceTypes:
+                  - AWS::RDS::DBInstance
+              InputParameters:
+                tag1Key: superwerker:backup
+                tag1Value: daily,none
+              Source:
+                Owner: AWS
+                SourceIdentifier: REQUIRED_TAGS
+
+          ConfigRemediationRdsDbInstance:
+            DependsOn: ConfigRuleRdsDbInstance
+            Type: AWS::Config::RemediationConfiguration
+            Properties:
+              ConfigRuleName: superwerker-backup-enforce-rds-instance
+              Automatic: true
+              MaximumAutomaticAttempts: 10
+              RetryAttemptSeconds: 60
+              TargetId: arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${BackupTagRemediation}
+              TargetType: SSM_DOCUMENT
+              Parameters:
+                ResourceValue:
+                  ResourceValue:
+                    Value: "RESOURCE_ID"
+                AutomationAssumeRole:
+                  StaticValue:
+                    Values:
+                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                ResourceType:
+                  StaticValue:
+                    Values:
+                      - AWS::RDS::DBInstance
 
   BackupTagRemediation:
     Type: AWS::SSM::Document
