@@ -58,7 +58,7 @@ Resources:
                     "Effect": "Deny",
                     "Sid": "SWProtectSecurityHub"
                 }
-              - AWS::NoValue
+              - !Ref AWS::NoValue
             - !If
               - IncludeBackup
               - |
@@ -88,7 +88,7 @@ Resources:
                     "Effect": "Deny",
                     "Sid": "SWProtectBackup"
                 }
-              - AWS::NoValue
+              - !Ref AWS::NoValue
       Attach: true
 
 
