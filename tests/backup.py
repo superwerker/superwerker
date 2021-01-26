@@ -54,7 +54,7 @@ class BackupTestCase(unittest.TestCase):
 
         self.assertCountEqual(expected_tags, actual_tags)
 
-    @retry(stop_max_delay=300000, wait_fixed=20000)
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
     def wait_for_table_tags_to_appear(self, ddb, table):
         actual_tags = ddb.list_tags_of_resource(ResourceArn=table['TableArn'])['Tags']
         if len(actual_tags) == 0:
@@ -120,7 +120,7 @@ class BackupTestCase(unittest.TestCase):
             Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
         )
 
-    @retry(stop_max_delay=300000, wait_fixed=20000)
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
     def wait_for_ebs_tags_to_appear(self, ec2, volume_id):
         actual_tags = ec2.describe_volumes(VolumeIds=[volume_id])['Volumes'][0]['Tags']
 
@@ -140,7 +140,7 @@ class BackupTestCase(unittest.TestCase):
         expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
         self.assertCountEqual(expected_tags, actual_tags)
 
-    @retry(stop_max_delay=300000, wait_fixed=20000)
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
     def wait_for_rds_instance_tags_to_appear(self, rds, rds_instance_id):
         actual_tags = rds.describe_db_instances(DBInstanceIdentifier=rds_instance_id)['DBInstances'][0]['TagList']
 
