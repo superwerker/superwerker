@@ -2,6 +2,8 @@
 
 > The superwerker open source solution automates the setup of an AWS Cloud environment with prescriptive best practices. It enables startups and SMBs to focus on their core business - by saving setup and maintenance time and money.
 
+![superwerker](/docs/images/splash.jpg)
+
 **superwerker** is brought to you by AWS Advanced Partners [kreuzwerker](https://kreuzwerker.de/) and [superluminar](https://superluminar.io/).
 
 ## Project state / Roadmap
