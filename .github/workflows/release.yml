@@ -24,15 +24,15 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Version the templates
-      run: scripts/versioning.sh ${{ steps.semantic.outputs.release-version }}
+      run: scripts/versioning.sh ${{ steps.semantic.outputs.new_release_version }}
 
     - uses: shallwefootball/s3-upload-action@master
       name: Upload S3
       id: S3
-      if: steps.semantic.outputs.new-release-published == 'true'
+      if: steps.semantic.outputs.new_release_published == 'true'
       with:
         aws_key_id: ${{ secrets.AWS_ACCESS_KEY }}
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
         aws_bucket: ${{ secrets.AWS_BUCKET_NAME}}
         source_dir: templates/
-        destination_dir: ${{ steps.semantic.outputs.release-version }}/templates/
+        destination_dir: ${{ steps.semantic.outputs.new_release_version }}/templates/
