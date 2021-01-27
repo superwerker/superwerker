@@ -6,9 +6,7 @@
 
 ## Project state / Roadmap
 
-This project is currently under heavy development. We are working towards [1.0 milestone](https://github.com/superwerker/superwerker/milestone/1).
-
-There is a [Long term roadmap and list of ideas](https://github.com/superwerker/superwerker/projects/1) as well. Feel free to comment and add ideas.
+This project is currently under heavy development. We are currently completing the [1.0 milestone](https://github.com/superwerker/superwerker/milestone/1) and working towards [1.1](https://github.com/superwerker/superwerker/milestone/2).
 
 ## Quick install
 
@@ -125,10 +123,6 @@ It’s complementary. You can consider superwerker a “well set-up”. At the s
 ### Do you have access to our AWS account?
 
 No, superwerker runs exclusively in your AWS account and does not communicate with the internet.
-
-### Is there a roadmap?
-
-Yes, a roadmap is available on GitHub and you can submit and vote on proposals. To do so, you can open a new GitHub issue or one-up existing feature requests.
 
 ### What happens if AWS offers features of superwerker itself?
 
