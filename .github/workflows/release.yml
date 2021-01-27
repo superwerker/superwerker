@@ -29,7 +29,7 @@ jobs:
     - uses: shallwefootball/s3-upload-action@master
       name: Upload S3
       id: S3
-      if: ${{ steps.semantic.outputs.new-release-published }}
+      if: steps.semantic.outputs.new-release-published == 'true'
       with:
         aws_key_id: ${{ secrets.AWS_ACCESS_KEY }}
         aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
