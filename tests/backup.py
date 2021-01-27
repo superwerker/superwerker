@@ -142,13 +142,7 @@ class BackupTestCase(unittest.TestCase):
 
     @retry(stop_max_delay=1800000, wait_fixed=20000)
     def wait_for_rds_instance_tags_to_appear(self, rds, rds_instance_id):
-        resp = rds.describe_db_instances(DBInstanceIdentifier=rds_instance_id)
-
-        print(resp)
-
-        instances = resp['DBInstances']
-        instance = instances[0]
-        actual_tags = instance['TagList']
+        actual_tags = rds.describe_db_instances(DBInstanceIdentifier=rds_instance_id)['DBInstances'][0]['TagList']
 
         if len(actual_tags) == 0:
             raise
