@@ -68,6 +68,7 @@ Parameters:
     Type: String
   TemplateUrlPrefix:
     Type: String
+    Default: https://superwerker-deployment.s3.amazonaws.com/0.0.0-DEVELOPMENT
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
