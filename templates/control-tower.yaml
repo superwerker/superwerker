@@ -348,3 +348,6 @@ Resources:
           exports.handler = async () => {
             return await flowBuilderBlueprint();
           };
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT

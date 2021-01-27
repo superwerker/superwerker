@@ -68,8 +68,10 @@ Parameters:
     Type: String
   TemplateUrlPrefix:
     Type: String
+    Default: https://superwerker-deployment.s3.amazonaws.com/0.0.0-DEVELOPMENT
 
 Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
   QuickStartDocumentation:
     EntrypointName: "Launch superwerker - the open-source solution to automate the setup of an AWS Cloud environment with prescriptive best practices"
     Order: "1"

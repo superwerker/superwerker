@@ -421,3 +421,6 @@ Resources:
               Service: securityhub
               Api: EnableSecurityHub
             isEnd: true
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT

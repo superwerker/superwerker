@@ -377,3 +377,6 @@ Resources:
             return [p['Id'] for p in
                     o.list_policies_for_target(TargetId=root_id(), Filter='SERVICE_CONTROL_POLICY')['Policies'] if
                     p['Id'] == policy_id]
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
