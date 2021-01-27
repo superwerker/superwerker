@@ -126,3 +126,6 @@ Resources:
 
       Runtime: python3.7
       Timeout: 60
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT

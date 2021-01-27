@@ -294,3 +294,6 @@ Resources:
               DataSources:
                 S3Logs:
                   AutoEnable: true
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT

@@ -22,6 +22,11 @@ jobs:
       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       id: extract_branch
 
+    - name: Version the templates
+      shell: bash
+      run: scripts/versioning.sh ${{ steps.extract_branch.outputs.branch }}
+      id: version_templates
+
     - uses: shallwefootball/s3-upload-action@master
       name: Upload S3
       id: S3

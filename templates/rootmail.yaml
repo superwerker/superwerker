@@ -769,3 +769,6 @@ Resources:
                   - sts:AssumeRole
                 Resource:
                   - !GetAtt StackSetExecutionRole.Arn
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
