@@ -3,20 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: Automated Best Practices for AWS Cloud setups - https://superwerker.cloud
 
 Parameters:
-  AuditAWSAccountEmail:
-    Type: String
-    Default: ""
-    Description: Mail Address used to create an AWS Account for Audit purposes. (Leave empty to skip)
-    MaxLength: 64
-    AllowedPattern: (^$|^[_A-Za-z0-9-\+\.]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$)
-    ConstraintDescription: Account Email can contain only ASCII characters. This must be in the format of mail@example.com
-  LogArchiveAWSAccountEmail:
-    Type: String
-    Default: ""
-    Description: Mail Address used to create an AWS Account for Log Archive purposes. (Leave empty to skip)
-    MaxLength: 64
-    AllowedPattern: (^$|^[_A-Za-z0-9-\+\.]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$)
-    ConstraintDescription: Account Email can contain only ASCII characters. This must be in the format of mail@example.com
   Domain:
     Type: String
     Description: Domain used for RootMail feature
@@ -60,12 +46,6 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Type: String
-  IncludeRootMail:
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-    Default: 'Yes'
-    Type: String
   TemplateUrlPrefix:
     Type: String
     Default: https://superwerker-deployment.s3.amazonaws.com/0.0.0-DEVELOPMENT
@@ -78,11 +58,6 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label:
-        default: Account Configuration
-      Parameters:
-      - AuditAWSAccountEmail
-      - LogArchiveAWSAccountEmail
-    - Label:
         default: Features
       Parameters:
       - IncludeBudget
@@ -91,7 +66,6 @@ Metadata:
       - IncludeSecurityHub
       - IncludeBackup
       - IncludeServiceControlPolicies
-      - IncludeRootMail
     - Label:
         default: Domain Configuration
       Parameters:
@@ -102,10 +76,6 @@ Metadata:
       Parameters:
       - TemplateUrlPrefix
     ParameterLabels:
-      AuditAWSAccountEmail:
-        default: Audit Account Mail Address
-      LogArchiveAWSAccountEmail:
-        default: Log Archive Account Mail Address
       Domain:
         default: Domain for automated DNS configuration
       Subdomain:
@@ -124,8 +94,6 @@ Metadata:
         default: Enable Automated Backups
       IncludeServiceControlPolicies:
         default: Enable Service Control Policies in AWS Organizations
-      IncludeRootMail:
-        default: Enable automated AWS Account root mail handling
 
 Conditions:
   IncludeBudget: !Equals [ !Ref IncludeBudget, 'Yes' ]
@@ -133,7 +101,6 @@ Conditions:
   IncludeGuardDuty: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeGuardDuty, 'Yes' ]
-  IncludeRootMail: !Equals [ !Ref IncludeRootMail, 'Yes' ]
   IncludeSecurityHub: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeSecurityHub, 'Yes' ]
@@ -143,12 +110,6 @@ Conditions:
   IncludeServiceControlPolicies: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
-  GenerateAuditAWSAccountEmail: !And
-    - !Condition IncludeRootMail
-    - !Equals [ !Ref AuditAWSAccountEmail, "" ]
-  GenerateLogArchiveEmail: !And
-    - !Condition IncludeRootMail
-    - !Equals [ !Ref LogArchiveAWSAccountEmail, "" ]
 
 Resources:
 
@@ -164,29 +125,20 @@ Resources:
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/templates/control-tower.yaml
       Parameters:
-        AuditAWSAccountEmail: !If
-          - GenerateAuditAWSAccountEmail
-          - !GetAtt GeneratedAuditAWSAccountEmail.email
-          - !Ref AuditAWSAccountEmail
-        LogArchiveAWSAccountEmail: !If
-          - GenerateLogArchiveEmail
-          - !GetAtt GeneratedLogArchiveAWSAccountEmail.email
-          - !Ref LogArchiveAWSAccountEmail
+        AuditAWSAccountEmail: !GetAtt GeneratedAuditAWSAccountEmail.email
+        LogArchiveAWSAccountEmail: !GetAtt GeneratedLogArchiveAWSAccountEmail.email
 
   GeneratedAuditAWSAccountEmail:
-    Condition: GenerateAuditAWSAccountEmail
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt GenerateLogAndOrAuditEmailCustomResource.Arn
 
   GeneratedLogArchiveAWSAccountEmail:
-    Condition: GenerateLogArchiveEmail
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt GenerateLogAndOrAuditEmailCustomResource.Arn
 
   GenerateLogAndOrAuditEmailCustomResource:
-    Condition: IncludeRootMail
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 200
@@ -253,13 +205,9 @@ Resources:
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/templates/living-documentation.yaml
       Parameters:
-        SuperwerkerDomain: !If
-          - IncludeRootMail
-          - !Sub '${Subdomain}.${Domain}'
-          - ''
+        SuperwerkerDomain: !Sub '${Subdomain}.${Domain}'
 
   RootMail:
-    Condition: IncludeRootMail
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/templates/rootmail.yaml
@@ -299,6 +247,5 @@ Resources:
 Outputs:
 
   RootMailDelegationTarget:
-    Condition: IncludeRootMail
     Description: Nameservers for the hosted zone delegation
     Value: !GetAtt RootMail.Outputs.DelegationTarget
