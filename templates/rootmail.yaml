@@ -47,7 +47,7 @@ Resources:
                 "Service": "ses.amazonaws.com"
               },
               "Resource": [
-                "arn:${AWS::Partition}:s3:::${EmailBucket}/RootEmails/*"
+                "arn:${AWS::Partition}:s3:::${EmailBucket}/RootMail/*"
               ],
               "Sid": "EnableSESReceive"
             }
@@ -243,7 +243,7 @@ Resources:
       TTL: 60
       Type: TXT
 
-  RootmailReady:
+  RootMailReady:
     Type: AWS::Serverless::Function
     Properties:
       Events:
@@ -343,14 +343,14 @@ Resources:
               Resource: '*'
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
-  RootmailReadyAlert:
+  RootMailReadyAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: superwerker-RootmailReady
+      AlarmName: superwerker-RootMailReady
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref RootmailReady
+          Value: !Ref RootMailReady
       EvaluationPeriods: 1
       MetricName: Errors
       Namespace: AWS/Lambda
@@ -358,16 +358,16 @@ Resources:
       Statistic: Sum
       Threshold: 1
 
-  RootmailReadyHandle:
+  RootMailReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
 
-  RootmailReadyHandleWaitCondition:
+  RootMailReadyHandleWaitCondition:
     Type: AWS::CloudFormation::WaitCondition
     Properties:
-      Handle: !Ref RootmailReadyHandle
+      Handle: !Ref RootMailReadyHandle
       Timeout: "28800" # 8 hours time to wire DNS
 
-  RootmailReadyTrigger:
+  RootMailReadyTrigger:
     Type: AWS::Serverless::Function
     Properties:
       Events:
@@ -381,14 +381,14 @@ Resources:
                 - aws.cloudwatch
               detail:
                 alarmName:
-                  - !Ref RootmailReadyAlert
+                  - !Ref RootMailReadyAlert
                 state:
                   value:
                     - OK
       Handler: index.handler
       Environment:
         Variables:
-          SIGNAL_URL: !Ref RootmailReadyHandle
+          SIGNAL_URL: !Ref RootMailReadyHandle
       InlineCode: |-
         import json
         import os
@@ -399,9 +399,9 @@ Resources:
 
           encoded_body = json.dumps({
               "Status": "SUCCESS",
-              "Reason": "Rootmail Setup completed",
+              "Reason": "RootMail Setup completed",
               "UniqueId": str(uuid.uuid4()),
-              "Data": "Rootmail Setup completed"
+              "Data": "RootMail Setup completed"
           })
 
           http = urllib3.PoolManager()
@@ -494,7 +494,7 @@ Resources:
                       print('LogicalResourceId: {}'.format(LogicalResourceId))
 
                       id = PhysicalResourceId
-                      rule_set_name = 'RootEmails'
+                      rule_set_name = 'RootMail'
                       rule_name = 'Receive'
 
                       if RequestType == CREATE or RequestType == UPDATE:
@@ -516,7 +516,7 @@ Resources:
                                 {
                                   'S3Action'         : {
                                     'BucketName'     : '${EmailBucket}',
-                                    'ObjectKeyPrefix': 'RootEmails'
+                                    'ObjectKeyPrefix': 'RootMail'
                                   },
                                 },
                                 {
@@ -578,7 +578,7 @@ Resources:
                     - Effect: Allow
                       Action:
                         - s3:GetObject
-                      Resource: ${EmailBucket.Arn}/RootEmails/*
+                      Resource: ${EmailBucket.Arn}/RootMail/*
                     - Effect: Allow
                       Action:
                         - ssm:CreateOpsItem
@@ -622,7 +622,7 @@ Resources:
                       for record in event['Records']:
 
                         id = record['ses']['mail']['messageId']
-                        key = 'RootEmails/{key}'.format(key=id)
+                        key = 'RootMail/{key}'.format(key=id)
                         receipt = record['ses']['receipt']
 
                         log({

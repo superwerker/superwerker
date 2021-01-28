@@ -21,7 +21,7 @@ Resources:
                 - aws.cloudwatch
               detail:
                 alarmName:
-                  - superwerker-RootmailReady
+                  - superwerker-RootMailReady
 
       Handler: index.handler
       Policies:
@@ -60,7 +60,7 @@ Resources:
 
           rootmail_ready_alarm_state = cw.describe_alarms(
             AlarmNames=[
-                'superwerker-RootmailReady',
+                'superwerker-RootMailReady',
             ]
           )['MetricAlarms'][0]['StateValue']
 

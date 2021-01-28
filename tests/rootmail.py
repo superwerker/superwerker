@@ -7,7 +7,7 @@ import time
 ses = boto3.client('ses', region_name='eu-west-1')
 ssm = boto3.client('ssm')
 
-class RootemailsTestCase(unittest.TestCase):
+class RootMailTestCase(unittest.TestCase):
 
     @classmethod
     def send_email(cls, id, body_text=None, body_html=None, subject=None):
