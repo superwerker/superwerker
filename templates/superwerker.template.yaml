@@ -310,6 +310,11 @@ Resources:
           - true
           - false
 
+  Notifications:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/notifications.yaml
+
 Outputs:
 
   RootMailDelegationTarget:
