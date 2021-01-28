@@ -39,7 +39,7 @@ Resources:
           print("received event")
           print(event)
 
-          print(event['requestParameters']['title'])
-          print(event['requestParameters']['description'])
+          print(event['detail']['requestParameters']['title'])
+          print(event['detail']['requestParameters']['description'])
 
-          print("https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(event['responseElements']['opsItemId']))
+          print("https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(event['detail']['responseElements']['opsItemId']))
