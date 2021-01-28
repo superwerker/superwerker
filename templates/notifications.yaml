@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+
+  NotificationOpsItemCreated:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        Enable:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - aws.ssm
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventName:
+                  - CreateOpsItem
+                eventSource:
+                  - ssm.amazonaws.com
+      Handler: index.handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref NotificationTopic
+      InlineCode: !Sub |-
+        import json
+        import urllib3
+        import boto3
+        import os
+
+        client = boto3.client('organizations')
+
+        def handler(event, context):
+          print("received event")
+          print(event)
+
+          print(event['requestParameters']['title'])
+          print(event['requestParameters']['description'])
+
+          print("https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(event['responseElements']['opsItemId']))
