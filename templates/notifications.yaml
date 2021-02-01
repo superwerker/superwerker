@@ -3,7 +3,12 @@ Transform: AWS::Serverless-2016-10-31
 
 Parameters:
   NotificationsMail:
-    Type: string
+    Type: String
+
+Outputs:
+  NotificationTopic:
+    Description: Notification topic ARN for ops center creation events
+    Value: !Ref NotificationTopic
 
 Resources:
   NotificationTopic:
@@ -39,18 +44,32 @@ Resources:
         Variables:
           TOPIC_ARN: !Ref NotificationTopic
       InlineCode: !Sub |-
-        import json
-        import urllib3
         import boto3
+        import json
         import os
 
-        client = boto3.client('organizations')
+        client = boto3.client('sns')
 
         def handler(event, context):
-          print("received event")
-          print(event)
 
-          print(event['detail']['requestParameters']['title'])
-          print(event['detail']['requestParameters']['description'])
+          title = event['detail']['requestParameters']['title']
+          desc = event['detail']['requestParameters']['description']
+          url = "https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(event['detail']['responseElements']['opsItemId'])
 
-          print("https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(event['detail']['responseElements']['opsItemId']))
+          log({
+            'desc': desc,
+            'event': event,
+            'level': 'info',
+            'msg': 'Publishing new ops item event from CloudTrail to SNS',
+            'title': title,
+            'url': url,
+          })
+
+          client.publish(
+            Message=desc,
+            Subject=title,
+            TopicArn=os.environ['TOPIC_ARN'],
+          )
+
+        def log(msg):
+          print(json.dumps(msg), flush=True)
