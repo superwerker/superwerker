@@ -60,6 +60,9 @@ Parameters:
     Type: String
     Default: aws
     Description: Sub domain used for RootMail feature
+  NotificationsMail:
+    Type: String
+    Description: Mail Address to send notifications to
   IncludeBudget:
     AllowedValues:
       - 'Yes'
@@ -125,8 +128,6 @@ Parameters:
       include numbers, lowercase letters, uppercase letters, hyphens (-), dots
       (.) and forward slash (/) and it should end with a forward slash (/).
     Type: String
-
-
 
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
@@ -314,6 +315,8 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${TemplateUrlPrefix}/templates/notifications.yaml
+      Parameters:
+        NotificationsMail: !Ref NotificationsMail
 
 Outputs:
 
