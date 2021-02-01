@@ -32,6 +32,9 @@ Resources:
                   - ssm.amazonaws.com
       Handler: index.handler
       Runtime: python3.7
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotificationTopic.TopicName
       Environment:
         Variables:
           TOPIC_ARN: !Ref NotificationTopic
