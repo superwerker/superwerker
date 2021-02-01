@@ -1,9 +1,17 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  NotificationsMail:
+    Type: string
+
 Resources:
   NotificationTopic:
     Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Endpoint: !Ref NotificationsMail
+        Protocol: email
 
   NotificationOpsItemCreated:
     Type: AWS::Serverless::Function
