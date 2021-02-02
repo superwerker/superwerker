@@ -1,2 +1,5 @@
+.taskcat/*
+docs/index.html
 .DS_Store
 __pycache__
+tmp
