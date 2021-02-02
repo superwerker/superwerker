@@ -1,0 +1,12 @@
+// Include details about any licenses and how to sign up. Provide links as appropriate. If no licenses are required, clarify that. The following paragraphs provide examples of details you can provide. Remove italics, and rephrase as appropriate.
+
+_<Example 1>No licenses are required to deploy this Quick Start. All AWS service resources consumed during the launch of the Quick Start incur AWS service usage costs._
+
+_<Example 2>Some configurations of the {partner-product-short-name} Quick Start involve the use of third-party software. You are responsible for obtaining a license directly from the software vendor._
+
+_<Example 3>This Quick Start requires a license for {partner-product-short-name}. To use the Quick Start in your production environment, sign up for a license at <link>. When you launch the Quick Start, place the license key in an S3 bucket and specify its location._
+
+_If you don’t have a license, the Quick Start deploys with a trial license. The trial license gives you <n> days of free usage in a non-production environment. After this time, you can upgrade to a production license by following the instructions at <link>._
+
+// Or, if the deployment uses an AMI, update this paragraph. If it doesn’t, remove the paragraph.
+_<AMI information>The Quick Start requires a subscription to the Amazon Machine Image (AMI) for {partner-product-short-name}, which is available from https://aws.amazon.com/marketplace/[AWS Marketplace^]. Additional pricing, terms, and conditions may apply. For instructions, see link:#step-2.-subscribe-to-the-software-ami[step 2] in the deployment section._

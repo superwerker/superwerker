@@ -1,0 +1,24 @@
+name: main-documentation
+
+on:
+  push:
+    branches:
+    - develop
+jobs:
+  lint:
+    runs-on: ubuntu-18.04
+    name: lint CFN templates
+    steps:
+    - name: Checkout (develop)
+      uses: actions/checkout@v2
+      with:
+        path: checked_out_repo
+    - name: Checkout (custom rules)
+      uses: actions/checkout@v2
+      with:
+        path: team_custom_rules 
+    - name: Run local actions
+      id: cfnlint_custom
+      uses: ./docs/boilerplate/.actions/cfnlint-action
+      with:
+        program: "./docs/boilerplate/.utils/cfnlint_custom.sh"

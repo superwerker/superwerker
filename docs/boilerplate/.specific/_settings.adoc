@@ -1,0 +1,27 @@
+// Change the following attributes.
+:quickstart-project-name: quickstart-documentation-base
+:partner-product-name: Example Product Name
+// For the following attribute, if you have no short name, enter the same name as partner-product-name.
+:partner-product-short-name: Example Product Name
+// If there's no partner, comment partner-company-name and partner-contributors.
+:partner-company-name: Example Company Name, Ltd.
+:doc-month: Month of launch or significant update (spelled out)
+:doc-year: Year
+// For the following two "contributor" attributes, if the partner agrees to include names in the byline, 
+// enter names for both partner-contributors and quickstart-contributors. 
+// If partner doesn't want to include names, delete all placeholder names and keep only  
+// "{partner-company-name}" and "AWS Quick Start team." 
+// Use the comma before "and" only when three or more names.
+:partner-contributors: Shuai Ye, Michael McConnell, and John Smith, {partner-company-name}
+:quickstart-contributors: Toni Jones, AWS Quick Start team
+// For deployment_time, use minutes if deployment takes an hour or less, 
+// for example, 30 minutes or 60 minutes. 
+// Use hours for deployment times greater than 60 minutes (rounded to a quarter hour),
+// for example, 1.25 hours, 2 hours, 2.5 hours.
+:deployment_time: 15 minutes / 60 minutes / 1.5 hours
+:default_deployment_region: us-east-1
+:parameters_as_appendix:
+// Uncomment the following two attributes if you are using an AWS Marketplace listing.
+// Additional content will be generated automatically based on these attributes.
+// :marketplace_subscription:
+// :marketplace_listing_url: https://example.com/

@@ -1,0 +1,41 @@
+[.text-center]
+[discrete]
+== Quick Start Reference Deployment
+
+// Do not change the URL below. The aws-quickstart-graphic.png icon needs to come from the aws-quickstart S3 bucket.
+[.text-center]
+image::https://aws-quickstart.s3.amazonaws.com/{quickstart-project-name}/docs/boilerplate/.images/aws-quickstart-graphic.png[QS,80,80]
+
+ifndef::production_build[]
+[.text-center]
+[discrete]
+=== DRAFT DOCUMENT / UNOFFICIAL GUIDANCE
+_**This portion of the deployment guide is located at `docs/{specificdir}/__settings_.adoc`**_
+[.preview_mode]
+|===
+a|
+endif::production_build[]
+[.text-center]
+*{doc-month} {doc-year}* +
+ifdef::partner-contributors[]
+_{partner-contributors}_ +
+endif::partner-contributors[]
+_{quickstart-contributors}_
+[.text-left]
+
+ifndef::production_build[]
+|===
+endif::production_build[]
+
+TIP: Visit our https://github.com/aws-quickstart/{quickstart-project-name}[GitHub repository^] for source files and to post feedback,
+report bugs, or submit feature ideas for this Quick Start.
+
+ifdef::partner-company-name[]
+[.text-left]
+This Quick Start was created by {partner-company-name} in collaboration with Amazon Web Services (AWS). http://aws.amazon.com/quickstart/[Quick Starts^] are automated reference deployments that use AWS CloudFormation templates to deploy key technologies on AWS, following AWS best practices.
+endif::[]
+
+ifndef::partner-company-name[]
+[.text-left]
+This Quick Start was created by Amazon Web Services (AWS). http://aws.amazon.com/quickstart/[Quick Starts^] are automated reference deployments that use AWS CloudFormation templates to deploy key technologies on AWS, following AWS best practices.
+endif::[]

@@ -1,0 +1,3 @@
+*       @aws-quickstart/sa
+/.specific/* @aws-quickstart/tw @aws-quickstart/sa
+*.adoc @aws-quickstart/tw @aws-quickstart/sa

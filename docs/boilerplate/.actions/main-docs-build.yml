@@ -1,0 +1,38 @@
+name: main-documentation
+
+on:
+  push:
+    branches:
+    - master
+    - main
+jobs:
+  build-adocs:
+    runs-on: ubuntu-18.04
+    name: asciidoc builder
+    steps:
+    - name: Checkout (main)
+      uses: actions/checkout@v2
+    - name: Get new doc updates
+      run: |
+           wget https://raw.githubusercontent.com/aws-quickstart/quickstart-documentation-base-common/main/.utils/configure_git_env.sh
+           chmod +x configure_git_env.sh
+           ./configure_git_env.sh
+    - name: Setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Generate dynamic content.
+      run: ./docs/boilerplate/.utils/generate_dynamic_content.sh
+    - name: Run local actions
+      id: adoc
+      uses: ./docs/boilerplate/.actions/asciidoctor-action
+      with:
+        program: "./docs/boilerplate/.utils/build_docs.sh"
+    - name: Stage and Push changes to gh-pages branch.
+      run: ./docs/boilerplate/.utils/commit_and_push_to_ghpages.sh
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    - name: Configure gh-pages source and trigger build if necessary.
+      run: ./docs/boilerplate/.utils/config_and_trigger_gh-pages.sh
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

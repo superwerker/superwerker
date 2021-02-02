@@ -1,0 +1,44 @@
+
+ifndef::production_build[]
+_**This portion of the deployment guide is located at `docs/{specificdir}/deploy_steps.adoc`**_
+++++
+<div class="preview_mode">
+++++
+endif::production_build[]
+include::../{specificdir}/deploy_steps.adoc[]
+ifndef::production_build[]
+++++
+</div>
+++++
+endif::production_build[]
+
+ifndef::custom_number_of_deploy_steps[]
+ifndef::parameters_as_appendix[]
+In the following tables, parameters are listed by category and described separately for the deployment options. When you finish reviewing and customizing the parameters, choose *Next*.
+endif::parameters_as_appendix[]
+
+ifndef::no_parameters[]
+ifndef::parameters_as_appendix[]
+
+NOTE: Unless you are customizing the Quick Start templates for your own deployment projects, keep the default settings for the parameters *Quick Start S3 bucket name*, *Quick Start S3 bucket Region*, and *Quick Start S3 key prefix*. Changing these settings automatically updates code references to point to a new Quick Start location. For more information, see the https://aws-quickstart.github.io/option1.html[AWS Quick Start Contributor’s Guide^].
+
+// Parameter tables linked in here
+include::../{generateddir}/parameters/index.adoc[]
+endif::parameters_as_appendix[]
+endif::no_parameters[]
+
+[start=5]
+. On the *Configure stack options* page, you can https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-resource-tags.html[specify tags^] (key-value pairs) for resources in your stack and https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html[set advanced options^]. When you’re finished, choose *Next*.
+. On the *Review* page, review and confirm the template settings. Under *Capabilities*, select the two check boxes to acknowledge that the template creates IAM resources and might require the ability to automatically expand macros.
+. Choose *Create stack* to deploy the stack.
+ifndef::partner-product-short-name[. Monitor the status of the stack. When the status is *CREATE_COMPLETE*, the {partner-product-name} deployment is ready.]
+ifdef::partner-product-short-name[. Monitor the status of the stack. When the status is *CREATE_COMPLETE*, the {partner-product-short-name} deployment is ready.]
+. Use the values displayed in the *Outputs* tab for the stack, as shown in <<cfn_outputs>>, to view the created resources.
+
+:xrefstyle: short
+[#cfn_outputs]
+ifndef::partner-product-short-name[.{partner-product-name} outputs after successful deployment]
+ifdef::partner-product-short-name[.{partner-product-short-name} outputs after successful deployment]
+[link=images/cfn_outputs.png]
+image::../images/cfn_outputs.png[cfn_outputs,width=100%,height=100%]
+endif::custom_number_of_deploy_steps[]

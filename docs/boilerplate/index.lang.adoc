@@ -1,0 +1,25 @@
+:imagesdir: images
+:includedir: boilerplate
+:specificdir: partner_editable
+:generateddir: generated
+:langdir: docs-lang-code
+:icons: font
+:toc2: left
+:toc-title: 
+:toclevels: 2
+:stylesheet: ../../{includedir}/.css/quickstart.css
+:project_cfn:
+:template_services_ec2:
+include::{specificdir}/_settings.adoc[]
+
+// the next two lines are needed for quickstarts that are not built with a partner, if removed, footer text is mangled for those quickstarts. They must be below _settings.adoc
+ifdef::partner-company-name[:partner-company-footer: {sp}and {partner-company-name}]
+ifndef::partner-company-name[:partner-company-footer:]
+
+// the next 3 lines must remain below partner-company-footer definitions
+:nofooter:
+:docinfodir: boilerplate
+:docinfo:
+
+:title: {partner-product-name} on the AWS Cloud
+ifdef::project_cfn[include::_layout_cfn.adoc[]]

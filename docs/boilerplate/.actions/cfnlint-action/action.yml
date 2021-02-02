@@ -1,0 +1,19 @@
+name: 'Customized cfn-lint action for AWS Quick Start org use'
+author: 'Andrew Glenn'
+
+branding:
+  icon: 'file-text'
+  color: 'green'
+
+inputs:
+  program:
+    description: "cfnlint"
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.program }}
+outputs:
+  time:
+    description: 'Action Completed'
