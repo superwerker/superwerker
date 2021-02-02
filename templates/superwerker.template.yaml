@@ -69,7 +69,6 @@ Parameters:
       include numbers, lowercase letters, uppercase letters, hyphens (-), dots
       (.) and forward slash (/) and it should end with a forward slash (/).
     Type: String
-    Default: https://superwerker-deployment.s3.amazonaws.com/0.0.0-DEVELOPMENT
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
