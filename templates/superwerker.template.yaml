@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: Automated Best Practices for AWS Cloud setups - https://superwerker.cloud
+Description: Automated Best Practices for AWS Cloud setups - https://superwerker.cloud (qs-1rhrhoi4t)
 
 Parameters:
   Domain:
@@ -46,9 +46,29 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Type: String
-  TemplateUrlPrefix:
+  QSS3BucketName:
+    AllowedPattern: '^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$'
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name can
+      include numbers, lowercase letters, uppercase letters, and hyphens (-). It
+      cannot start or end with a hyphen (-).
     Type: String
-    Default: https://superwerker-deployment.s3.amazonaws.com/0.0.0-DEVELOPMENT
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is hosted. When using your own bucket, you must specify this value.
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: '^([0-9a-zA-Z-.]+/)*$'
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), dots (.) and forward slash (/). The prefix should
+      end with a forward slash (/).
+    Default: quickstart-superwerker/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix can
+      include numbers, lowercase letters, uppercase letters, hyphens (-), dots
+      (.) and forward slash (/) and it should end with a forward slash (/).
+    Type: String
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
@@ -72,16 +92,22 @@ Metadata:
       - Domain
       - Subdomain
     - Label:
-        default: Advanced Configuration
+        default: AWS Quick Start configuration
       Parameters:
-      - TemplateUrlPrefix
+      - QSS3BucketName
+      - QSS3KeyPrefix
+      - QSS3BucketRegion
     ParameterLabels:
       Domain:
         default: Domain for automated DNS configuration
       Subdomain:
         default: Subdomain for automated DNS configuration
-      TemplateUrlPrefix:
-        default: Prefix for CloudFormation Templates
+      QSS3BucketName:
+        default: Quick Start S3 Bucket Name
+      QSS3BucketRegion:
+        default: Quick Start S3 Bucket Region
+      QSS3KeyPrefix:
+        default: Quick Start S3 Key Prefix
       IncludeBudget:
         default: Enable Budget Alarm for monthly AWS spendings
       IncludeControlTower:
@@ -96,6 +122,7 @@ Metadata:
         default: Enable Service Control Policies in AWS Organizations
 
 Conditions:
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
   IncludeBudget: !Equals [ !Ref IncludeBudget, 'Yes' ]
   IncludeControlTower: !Equals [ !Ref IncludeControlTower, 'Yes' ]
   IncludeGuardDuty: !And
@@ -117,13 +144,21 @@ Resources:
     Condition: IncludeBudget
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/budget.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/budget.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
 
   ControlTower:
     Condition: IncludeControlTower
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/control-tower.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/control-tower.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         AuditAWSAccountEmail: !GetAtt GeneratedAuditAWSAccountEmail.email
         LogArchiveAWSAccountEmail: !GetAtt GeneratedLogArchiveAWSAccountEmail.email
@@ -198,19 +233,31 @@ Resources:
     Condition: IncludeGuardDuty
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/guardduty.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/guardduty.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
 
   LivingDocumentation:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/living-documentation.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/living-documentation.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         SuperwerkerDomain: !Sub '${Subdomain}.${Domain}'
 
   RootMail:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/rootmail.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/rootmail.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         Domain: !Ref Domain
         Subdomain: !Ref Subdomain
@@ -219,21 +266,33 @@ Resources:
     Condition: IncludeSecurityHub
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/security-hub.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/security-hub.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
 
   Backup:
     Condition: IncludeBackup
     Type: AWS::CloudFormation::Stack
     DependsOn: ControlTower
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/backup.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/backup.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
 
   ServiceControlPolicies:
     Condition: IncludeServiceControlPolicies
     Type: AWS::CloudFormation::Stack
     DependsOn: ControlTower
     Properties:
-      TemplateURL: !Sub ${TemplateUrlPrefix}/templates/service-control-policies.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/service-control-policies.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         IncludeSecurityHub: !If
           - IncludeSecurityHub
