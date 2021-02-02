@@ -1,5 +1,0 @@
-requests
-cfn-lint >= 0.39.0
-pathlib
-datetime
-ruamel.yaml
