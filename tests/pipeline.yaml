@@ -85,7 +85,7 @@ Resources:
                     },
                     {
                       "name": "TEMPLATE_PREFIX",
-                      "value": "#{source.BranchName}"
+                      "value": "#{source.BranchName}/"
                     }
                   ]
                 BatchEnabled: true
