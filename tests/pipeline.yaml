@@ -76,8 +76,16 @@ Resources:
                 EnvironmentVariables: !Sub |
                   [
                     {
-                      "name": "TEMPLATE_URL_PREFIX",
-                      "value": "https://${DeploymentBucket.DomainName}/#{source.BranchName}"
+                      "name": "TEMPLATE_BUCKET_NAME",
+                      "value": "${DeploymentBucket}"
+                    },
+                    {
+                      "name": "TEMPLATE_REGION",
+                      "value": "eu-west-1"
+                    },
+                    {
+                      "name": "TEMPLATE_PREFIX",
+                      "value": "#{source.BranchName}"
                     }
                   ]
                 BatchEnabled: true
