@@ -1,0 +1,16 @@
+project:
+  name: quickstart-superwerker
+  owner: quickstart@amazon.com
+  package_lambda: false
+  regions:
+    - eu-west-1
+    - eu-central-1
+    - eu-north-1
+    - eu-west-2
+    - ca-central-1
+    - us-east-1
+    - us-east-2
+    - us-west-2
+    - ap-southeast-1
+    - ap-southeast-2
+  s3_bucket: ''
