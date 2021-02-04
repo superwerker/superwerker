@@ -11,7 +11,7 @@ git clone git@github.com:superwerker/quickstart-superwerker.git .
 git checkout develop
 git pull origin develop
 
-BRANCH_NAME=update-$(date +'%Y-%m-%dT%H-%M-%S')
+BRANCH_NAME=update-$(date +'%Y-%m-%dT%H:%M:%S')
 
 git checkout -b $BRANCH_NAME
 
