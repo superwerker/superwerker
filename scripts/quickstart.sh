@@ -19,6 +19,8 @@ rsync -avr \
     --exclude='.git' \
     --exclude='.github' \
     --exclude='.releaserc' \
+    --exclude='docs/index.html' \
+    --exclude='docs/boilerplate' \
     --exclude='package.json' \
     --exclude='pull_request_template.md' \
     --exclude="scripts" \
