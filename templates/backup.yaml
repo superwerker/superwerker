@@ -427,7 +427,7 @@ Resources:
 
   EnableCloudFormationStacksetsOrgAccess:
     Type: AWS::Synthetics::Canary
-    DependsOn: CfnStackSetsReady
+    DependsOn: CfnStackSetsReadyEnablePermission # make sure the Lambda which handles the wait condition is entirely ready before enabling Cloudformation Org access. This includes Lambda event+permission have to be ready.
     Metadata:
       cfn-lint:
         config:
