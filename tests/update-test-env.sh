@@ -15,4 +15,4 @@ template_prefix=${git_branch}/
 
 aws --profile ${SOURCE_PROFILE} s3 sync ../templates s3://superwerker-deployment/${git_branch}/templates
 
-aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file ../templates/superwerker.template.yaml --parameter-overrides ParameterKey=QSS3BucketName,ParameterValue=${template_bucket_name} ParameterKey=QSS3BucketRegion,ParameterValue=${template_region} ParameterKey=QSS3KeyPrefix,ParameterValue=${template_prefix} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file ../templates/superwerker.template.yaml --parameter-overrides QSS3BucketName=${template_bucket_name} QSS3BucketRegion=${template_region} QSS3KeyPrefix=${template_prefix} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
