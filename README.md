@@ -25,6 +25,10 @@ You can install the current `main` branch via CloudFormation in the following AW
 | [🇸🇬 ap-southeast-1](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-1#dashboards:name=superwerker) |
 | [🇦🇺 ap-southeast-2](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-2#dashboards:name=superwerker) |
 
+### Installation video
+
+[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
+
 ## What's included in the setup?
 
 In the initial release, superwerker configures the following AWS services and features in a fully automated way:
