@@ -138,7 +138,13 @@ async function accountDelete(page, email, password) {
     });
 
 
-    await page.waitForTimeout(10000);
+    // remove cookie banner if present
+    try {
+        page.waitForSelector('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
+        await page.click('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
+        await page.waitForTimeout(1000);
+    } catch (e) {
+    }
 
     await page.click('#billing-console-root > div > div > div > div.content--2j5zk.span10--28Agl > div > div > div > div > div > div.ng-scope > div > div > div > div.animation-content.animation-fade > div:nth-child(13) > div > div > label:nth-child(1) > input');
     await page.waitForTimeout(1000);
@@ -323,6 +329,7 @@ const solveCaptcha2captcha = async (page, url) => {
     try {
         await handler();
     } catch (e) {
+        console.log('got exception in outer scope', e)
         process.exit(1);
     }
 })();
