@@ -94,6 +94,13 @@ Resources:
 
               await page.goto(consoleLoginUrl, {waitUntil: ['load', 'networkidle0']});
 
+              // remove cookie banner if present
+              try {
+                page.waitForSelector('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
+                await page.click('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
+                await page.waitFor(1000);
+              } catch (e) {
+              }
             });
 
             await synthetics.executeStep('gotoCT', async function () {
