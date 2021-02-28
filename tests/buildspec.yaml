@@ -32,7 +32,7 @@ phases:
       - sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
       - while ! domain_name_servers=$(aws --profile test_account --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
       - aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
-      - sleep 3600 # give superwerker stack time to finish (Control Tower needs ~1h)
+      - sleep 1800 # give superwerker stack time to finish (Control Tower needs ~30min)
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
 
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset

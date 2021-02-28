@@ -36,7 +36,7 @@ aws sts get-caller-identity --profile test_account_${aws_account_id} --region ${
 aws --profile test_account_${aws_account_id} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file templates/superwerker.template.yaml --parameter-overrides Domain=${ROOT_MAIL_DOMAIN} Subdomain=${aws_account_id} QSS3BucketName=${TEMPLATE_BUCKET_NAME} QSS3BucketRegion=${TEMPLATE_REGION} QSS3KeyPrefix=${TEMPLATE_PREFIX} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset &
 while ! domain_name_servers=$(aws --profile test_account_${aws_account_id} --region ${superwerker_region} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
 aws --profile ${SOURCE_PROFILE} cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
-sleep 3600 # give superwerker stack time to finish (Control Tower needs ~1h)
+sleep 1800 # give superwerker stack time to finish (Control Tower needs ~30min)
 aws --profile test_account_${aws_account_id} --region ${superwerker_region} cloudformation wait stack-create-complete --stack-name superwerker
 
 aws --profile test_account_${aws_account_id} --region ${superwerker_region} cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
