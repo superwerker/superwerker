@@ -161,6 +161,9 @@ class MyTestCase(unittest.TestCase):
             aws_secret_access_key=scp_test_role_creds['SecretAccessKey'],
             aws_session_token=scp_test_role_creds['SessionToken']
         )
+        scp_test_session_sts = scp_test_session.client('sts')
+        print(scp_test_session_sts.get_caller_identity())
+
         scp_test_session_security_hub = scp_test_session.client('securityhub')
 
         # assert that SCP forbids disabling of security hub
