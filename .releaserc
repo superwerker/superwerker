@@ -5,7 +5,7 @@
       "@semantic-release/release-notes-generator",
       {
         "writerOpts": {
-          "mainTemplate": "{{> header}}\n\n- [View template](https://superwerker-deployment.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml)\n- [Quick install](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml)\n\n{{#each commitGroups}}\n{{#each commits}}\n{{> commit root=@root}}\n{{/each}}\n{{/each}}\n\n{{> footer}}\n"
+          "mainTemplate": "{{> header}}\n\n- [View template](https://superwerker-deployment.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml)\n- [Quick install](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix={{version}}/)\n\n{{#each commitGroups}}\n{{#each commits}}\n{{> commit root=@root}}\n{{/each}}\n{{/each}}\n\n{{> footer}}\n"
         }
       }
     ],
