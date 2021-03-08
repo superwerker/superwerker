@@ -93,10 +93,10 @@ Resources:
         Please create the following NS records for your domain:
 
         ```
-        `{ns[0]}`
-        `{ns[1]}`
-        `{ns[2]}`
-        `{ns[3]}`
+        {ns[0]}
+        {ns[1]}
+        {ns[2]}
+        {ns[3]}
         ```
         """.format(
           domain=os.environ['SUPERWERKER_DOMAIN'],
