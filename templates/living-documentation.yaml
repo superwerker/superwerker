@@ -68,15 +68,6 @@ Resources:
             dns_delegation_text = """
         #### 🏠 {domain}
         #### ✅ DNS configuration is set up correctly. 
-        
-        &nbsp;
-
-        ### Next Steps 
-
-        * [Managing Users and Access Through AWS Single Sign-On](https://docs.aws.amazon.com/controltower/latest/userguide/sso.html)
-        * [Monitoring Events with CloudTrail](https://docs.aws.amazon.com/controltower/latest/userguide/cloudtrail.html)
-        * [Guardrails in AWS Control Tower](https://docs.aws.amazon.com/controltower/latest/userguide/guardrails.html)
-
         """.format(
           domain=os.environ['SUPERWERKER_DOMAIN'],
         )
