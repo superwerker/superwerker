@@ -9,25 +9,10 @@ sqs = boto3.client('sqs')
 sns = boto3.client('sns')
 ssm = boto3.client('ssm')
 
+
 class NotificationsTestCase(unittest.TestCase):
-
-    def test_receive_ops_item_notification(self):
-
-        account = boto3.client('sts').get_caller_identity().get('Account')
-        region = boto3.session.Session().region_name
-
-        stack_name = 'notifactions'
-
-        print('fetching SNS notification topic name from stack "{}"'.format(stack_name))
-
-        res = cf.describe_stacks(
-            StackName=stack_name,
-        )
-
-        topic_arn = res['Stacks'][0]['Outputs'][0]['OutputValue']
-
-        queue_name = uuid.uuid4().hex
-
+    @staticmethod
+    def create_queue_for_sns_subscription(queue_name):
         queue_policy = {
             'Version': '2012-10-17',
             'Statement': [
@@ -51,9 +36,26 @@ class NotificationsTestCase(unittest.TestCase):
             QueueName=queue_name,
         )
 
-        queue_url = res['QueueUrl']
+        return res['QueueUrl']
 
+    @staticmethod
+    def retrieve_sns_topic_arn_from_stack():
+        stack_name = 'superwerker-Notifications-11CMJT238WB5B'
+
+        print('fetching SNS notification topic name from stack "{}"'.format(stack_name))
+
+        res = cf.describe_stacks(
+            StackName=stack_name,
+        )
+
+        return res['Stacks'][0]['Outputs'][0]['OutputValue']
+
+    @staticmethod
+    def add_sqs_subscription_to_topic(topic_arn, queue_name):
         print('subscribing to temp queue "{}"'.format(queue_name))
+
+        account = boto3.client('sts').get_caller_identity().get('Account')
+        region = boto3.session.Session().region_name
 
         res = sns.subscribe(
             TopicArn=topic_arn,
@@ -65,25 +67,50 @@ class NotificationsTestCase(unittest.TestCase):
             )
         )
 
-        subscription_arn = res['SubscriptionArn']
+        return res['SubscriptionArn']
 
-        # now for the test ...
-
-        id = uuid.uuid4().hex
-
+    @staticmethod
+    def creat_ops_item(id):
         print('creating ops item with test id "{}"'.format(id))
 
         res = ssm.create_ops_item(
-          Description='Desc "{}"'.format(id),
-          Source='test',
-          Title='Title "{}"'.format(id),
+            Description='Desc "{}"'.format(id),
+            Source='test',
+            Title='Title "{}"'.format(id),
         )
 
-        ops_item_id = res['OpsItemId']
+        return res['OpsItemId']
+
+    @staticmethod
+    def cleanup(subscription_arn, queue_url):
+        print('unsubscribing from temp queue via "{}"'.format(subscription_arn))
+
+        sns.unsubscribe(
+            SubscriptionArn=subscription_arn,
+        )
+
+        print('deleting temp queue "{}"'.format(queue_url))
+
+        sqs.delete_queue(
+            QueueUrl=queue_url,
+        )
+
+    def test_receive_ops_item_notification(self):
+        queue_name = uuid.uuid4().hex
+
+        topic_arn = self.retrieve_sns_topic_arn_from_stack()
+        queue_url = self.create_queue_for_sns_subscription(queue_name)
+
+        subscription_arn = self.add_sqs_subscription_to_topic(
+            topic_arn,
+            queue_name,
+        )
+
+        id = uuid.uuid4().hex
+        ops_item_id = self.creat_ops_item(id)
 
         # TODO: add timeout
         for n in itertools.count(start=1):
-
             print('waiting for messages (iteration {})'.format(n))
 
             res = sqs.receive_message(
@@ -92,7 +119,8 @@ class NotificationsTestCase(unittest.TestCase):
             )
 
             if n > (15*60/10):
-                self.fail('waited for too many iterations ({}) and am tired of it'.format(n))
+                self.fail(
+                    'waited for too many iterations ({}) and am tired of it'.format(n))
 
             if res.get('Messages', None) != None:
 
@@ -112,16 +140,4 @@ class NotificationsTestCase(unittest.TestCase):
             Status='Resolved',
         )
 
-        print('unsubscribing from temp queue via "{}"'.format(subscription_arn))
-
-        sns.unsubscribe(
-            SubscriptionArn=subscription_arn,
-        )
-
-        print('deleting temp queue "{}"'.format(queue_url))
-
-        sqs.delete_queue(
-            QueueUrl=queue_url,
-        )
-
-        print("done")
+        self.cleanup(subscription_arn, queue_url)
