@@ -63,6 +63,7 @@ Parameters:
   NotificationsMail:
     Type: String
     Description: Mail Address to send notifications to
+    Default: ""
   IncludeBudget:
     AllowedValues:
       - 'Yes'
@@ -131,6 +132,7 @@ Parameters:
 
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
+  IncludeNotifications: !Not [!Equals [ !Ref NotificationsMail, '' ]]
   IncludeBudget: !Equals [ !Ref IncludeBudget, 'Yes' ]
   IncludeControlTower: !Equals [ !Ref IncludeControlTower, 'Yes' ]
   IncludeGuardDuty: !And
@@ -312,6 +314,7 @@ Resources:
           - false
 
   Notifications:
+    Condition: IncludeNotifications
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL:
