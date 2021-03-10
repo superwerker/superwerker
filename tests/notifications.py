@@ -40,12 +40,19 @@ class NotificationsTestCase(unittest.TestCase):
 
     @staticmethod
     def retrieve_sns_topic_arn_from_stack():
-        stack_name = 'superwerker-Notifications-11CMJT238WB5B'
+        stack_prefix = 'superwerker-Notifications'
+        stack_list = cf.list_stacks(
+            StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        )
 
-        print('fetching SNS notification topic name from stack "{}"'.format(stack_name))
+        stack = [stack for stack in stack_list['StackSummaries']
+                 if stack['StackName'].startswith(stack_prefix)].pop()
+
+        print('fetching SNS notification topic name from stack "{}"'.format(
+            stack['StackName']))
 
         res = cf.describe_stacks(
-            StackName=stack_name,
+            StackName=stack['StackId'],
         )
 
         return res['Stacks'][0]['Outputs'][0]['OutputValue']
