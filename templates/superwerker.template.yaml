@@ -316,6 +316,7 @@ Resources:
   Notifications:
     Condition: IncludeNotifications
     Type: AWS::CloudFormation::Stack
+    DependsOn: RootMail
     Properties:
       TemplateURL:
         Fn::Sub:
