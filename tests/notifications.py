@@ -74,9 +74,9 @@ class NotificationsTestCase(unittest.TestCase):
         print('creating ops item with test id "{}"'.format(id))
 
         res = ssm.create_ops_item(
-            Description='Desc "{}"'.format(id),
+            Description='Description-{}'.format(id),
             Source='test',
-            Title='Title "{}"'.format(id),
+            Title="Title-{}".format(id),
         )
 
         return res['OpsItemId']
@@ -126,10 +126,14 @@ class NotificationsTestCase(unittest.TestCase):
 
                 msgs = res['Messages']
                 body = json.loads(msgs[0]['Body'])
+                link = "https://{}.console.aws.amazon.com/systems-manager/opsitems/{}".format(
+                    boto3.session.Session().region_name, ops_item_id)
 
                 self.assertEqual(1, len(msgs))
-                self.assertEqual('Title "{}"'.format(id), body['Subject'])
-                self.assertEqual('Desc "{}"'.format(id), body['Message'])
+                self.assertEqual(
+                    "New OpsItem: Title-{}".format(id), body['Subject'])
+                self.assertEqual(
+                    "Description-{}\n\n{}".format(id, link), body['Message'])
 
                 break
 
