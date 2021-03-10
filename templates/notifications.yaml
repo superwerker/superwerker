@@ -66,9 +66,12 @@ Resources:
             'url': url,
           })
 
+          message_title = "New OpsItem: {}".format(title)
+          message_body = "{}\n\n{}".format(desc, url)
+
           client.publish(
-            Message=desc,
-            Subject=title,
+            Message=message_body,
+            Subject=message_title,
             TopicArn=os.environ['TOPIC_ARN'],
           )
 
