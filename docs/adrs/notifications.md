@@ -2,7 +2,7 @@
 
 ## Context
 
-superwerker creates an OpsItem in Systems Mamager OpsCenter for emails received by the RootMail featured. Without notifications for new OpsItems, users need to manually check the OpsCenter for new items.
+superwerker creates an OpsItem in Systems Manager OpsCenter for emails received by the RootMail featured. Without notifications for new OpsItems, users need to manually check the OpsCenter for new items.
 
 ## Decision
 
