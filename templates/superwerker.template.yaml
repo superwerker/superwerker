@@ -70,6 +70,7 @@ Parameters:
     Type: String
     Description: Mail address used for notifications
     Default: ""
+    AllowedPattern: "(^$|^.*@.*\\..*$)"
   IncludeBudget:
     AllowedValues:
       - 'Yes'
