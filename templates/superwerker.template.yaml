@@ -23,6 +23,10 @@ Metadata:
       - Domain
       - Subdomain
     - Label:
+        default: Notifications
+      Parameters:
+      - NotificationsMail
+    - Label:
         default: AWS Quick Start configuration
       Parameters:
       - QSS3BucketName
@@ -33,6 +37,8 @@ Metadata:
         default: Domain for automated DNS configuration
       Subdomain:
         default: Subdomain for automated DNS configuration
+      NotificationsMail:
+        default: Mail address used for notifications
       QSS3BucketName:
         default: Quick Start S3 Bucket Name
       QSS3BucketRegion:
@@ -62,7 +68,7 @@ Parameters:
     Description: Sub domain used for RootMail feature
   NotificationsMail:
     Type: String
-    Description: Mail Address to send notifications to
+    Description: Mail address used for notifications
     Default: ""
   IncludeBudget:
     AllowedValues:
