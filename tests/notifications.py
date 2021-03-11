@@ -3,6 +3,7 @@ import json
 import unittest
 import uuid
 import itertools
+from retrying import retry
 
 cf = boto3.client('cloudformation')
 sqs = boto3.client('sqs')
@@ -102,6 +103,19 @@ class NotificationsTestCase(unittest.TestCase):
             QueueUrl=queue_url,
         )
 
+    @staticmethod
+    @retry(stop_max_delay=30000, wait_fixed=5000)
+    def wait_for_message(queue_url):
+        res = sqs.receive_message(
+            QueueUrl=queue_url,
+            WaitTimeSeconds=5,
+        )
+
+        if res.get('Messages', None) == None:
+            raise
+
+        return res['Messages']
+
     def test_receive_ops_item_notification(self):
         queue_name = uuid.uuid4().hex
 
@@ -116,33 +130,16 @@ class NotificationsTestCase(unittest.TestCase):
         id = uuid.uuid4().hex
         ops_item_id = self.creat_ops_item(id)
 
-        # TODO: add timeout
-        for n in itertools.count(start=1):
-            print('waiting for messages (iteration {})'.format(n))
+        msgs = self.wait_for_message(queue_url)
+        body = json.loads(msgs[0]['Body'])
+        link = "https://{}.console.aws.amazon.com/systems-manager/opsitems/{}".format(
+            boto3.session.Session().region_name, ops_item_id)
 
-            res = sqs.receive_message(
-                QueueUrl=queue_url,
-                WaitTimeSeconds=10,
-            )
-
-            if n > (15*60/10):
-                self.fail(
-                    'waited for too many iterations ({}) and am tired of it'.format(n))
-
-            if res.get('Messages', None) != None:
-
-                msgs = res['Messages']
-                body = json.loads(msgs[0]['Body'])
-                link = "https://{}.console.aws.amazon.com/systems-manager/opsitems/{}".format(
-                    boto3.session.Session().region_name, ops_item_id)
-
-                self.assertEqual(1, len(msgs))
-                self.assertEqual(
-                    "New OpsItem: Title-{}".format(id), body['Subject'])
-                self.assertEqual(
-                    "Description-{}\n\n{}".format(id, link), body['Message'])
-
-                break
+        self.assertEqual(1, len(msgs))
+        self.assertEqual(
+            "New OpsItem: Title-{}".format(id), body['Subject'])
+        self.assertEqual(
+            "Description-{}\n\n{}".format(id, link), body['Message'])
 
         print('resolving ops item "{}"'.format(ops_item_id))
 
