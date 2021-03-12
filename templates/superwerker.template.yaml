@@ -4,7 +4,7 @@ Description: Automated Best Practices for AWS Cloud setups - https://superwerker
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
   QuickStartDocumentation:
-    EntrypointName: "Launch superwerker"
+    EntrypointName: "Parameters for launching Superwerker"
     Order: "1"
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -18,7 +18,7 @@ Metadata:
       - IncludeBackup
       - IncludeServiceControlPolicies
     - Label:
-        default: Domain Configuration
+        default: Domain configuration
       Parameters:
       - Domain
       - Subdomain
@@ -31,42 +31,41 @@ Metadata:
     ParameterLabels:
       Domain:
         default: Domain for automated DNS configuration
+      IncludeBudget:
+        default: Include AWS Budgets alarm
+      IncludeControlTower:
+        default: Include AWS Control Tower
+      IncludeGuardDuty:
+        default: Include Amazon GuardDuty
+      IncludeSecurityHub:
+        default: Include AWS Security Hub
+      IncludeBackup:
+        default: Include Automated Backups
+      IncludeServiceControlPolicies:
+        default: Include service control policies
+      QSS3BucketName:
+        default: Quick Start S3 bucket name
+      QSS3BucketRegion:
+        default: Quick Start S3 bucket Region
+      QSS3KeyPrefix:
+        default: Quick Start S3 key prefix
       Subdomain:
         default: Subdomain for automated DNS configuration
-      QSS3BucketName:
-        default: Quick Start S3 Bucket Name
-      QSS3BucketRegion:
-        default: Quick Start S3 Bucket Region
-      QSS3KeyPrefix:
-        default: Quick Start S3 Key Prefix
-      IncludeBudget:
-        default: Enable Budget Alarm for monthly AWS spendings
-      IncludeControlTower:
-        default: Enable AWS Control Tower
-      IncludeGuardDuty:
-        default: Enable Amazon GuardDuty
-      IncludeSecurityHub:
-        default: Enable AWS Security Hub
-      IncludeBackup:
-        default: Enable Automated Backups
-      IncludeServiceControlPolicies:
-        default: Enable Service Control Policies in AWS Organizations
-
 Parameters:
   Domain:
     Type: String
-    Description: Domain used for RootMail feature
+    Description: Domain used for root mail feature
   Subdomain:
     Type: String
     Default: aws
-    Description: Sub domain used for RootMail feature
+    Description: Subdomain used for root mail feature
   IncludeBudget:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Budget Alarm for monthly AWS spending
+    Description: Enable AWS Budgets alarm for monthly AWS spending
   IncludeControlTower:
     AllowedValues:
       - 'Yes'
@@ -94,39 +93,48 @@ Parameters:
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Automated Backups
+    Description: Enable automated backups
   IncludeServiceControlPolicies:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
     Type: String
-    Description: Enable Service Control Policies in AWS Organizations
+    Description: Enable service control policies in AWS organizations
   QSS3BucketName:
     AllowedPattern: '^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$'
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase letters, uppercase
-      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    ConstraintDescription: The Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a 
+      hyphen (-).
     Default: aws-quickstart
-    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name can
-      include numbers, lowercase letters, uppercase letters, and hyphens (-). It
-      cannot start or end with a hyphen (-).
+    Description: Name of the S3 bucket for your copy of the Quick Start assets. 
+      Keep the default name unless you are customizing the template. 
+      Changing the name updates code references to point to a new Quick 
+      Start location. This name can include numbers, lowercase letters, 
+      uppercase letters, and hyphens, but do not start or end with a hyphen (-). 
+      See https://aws-quickstart.github.io/option1.html.
     Type: String
   QSS3BucketRegion:
     Default: 'us-east-1'
-    Description: The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is hosted. When using your own bucket, you must specify this value.
+    Description: 'AWS Region where the Quick Start S3 bucket (QSS3BucketName) is 
+    hosted. Keep the default Region unless you are customizing the template. 
+    Changing this Region updates code references to point to a new Quick Start location. 
+    When using your own bucket, specify the Region. 
+    See https://aws-quickstart.github.io/option1.html.'
     Type: String
   QSS3KeyPrefix:
     AllowedPattern: '^([0-9a-zA-Z-.]+/)*$'
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters, uppercase
-      letters, hyphens (-), dots (.) and forward slash (/). The prefix should
-      end with a forward slash (/).
+    ConstraintDescription: The Quick Start S3 key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slashes (/).
     Default: quickstart-superwerker/
-    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix can
-      include numbers, lowercase letters, uppercase letters, hyphens (-), dots
-      (.) and forward slash (/) and it should end with a forward slash (/).
+    Description: S3 key prefix that is used to simulate a directory for your copy of the 
+      Quick Start assets. Keep the default prefix unless you are customizing 
+      the template. Changing this prefix updates code references to point to 
+      a new Quick Start location. This prefix can include numbers, lowercase 
+      letters, uppercase letters, hyphens (-), and forward slashes (/). 
+      See https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html 
+      and https://aws-quickstart.github.io/option1.html.
     Type: String
-
-
 
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
@@ -146,7 +154,6 @@ Conditions:
     - !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
 
 Resources:
-
   Budget:
     Condition: IncludeBudget
     Type: AWS::CloudFormation::Stack
@@ -311,7 +318,9 @@ Resources:
           - false
 
 Outputs:
-
   RootMailDelegationTarget:
-    Description: Nameservers for the hosted zone delegation
+    Description: Name servers for the hosted zone delegation
     Value: !GetAtt RootMail.Outputs.DelegationTarget
+  CloudWatchDashboard:
+    Description: See the CloudWatch superwerker dashboard for post-deployment steps
+    Value: https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker       
