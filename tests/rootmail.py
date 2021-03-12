@@ -4,11 +4,16 @@ import boto3
 import uuid
 import time
 from retrying import retry
+import warnings
 
 ses = boto3.client('ses', region_name='eu-west-1')
 ssm = boto3.client('ssm')
 
 class RootMailTestCase(unittest.TestCase):
+
+    # https://github.com/boto/boto3/issues/454
+    def setUp(self):
+        warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
     @classmethod
     def send_email(cls, id, body_text=None, body_html=None, subject=None):
