@@ -2,10 +2,10 @@
 
 ==== Prepare your AWS account
 
-You need to be signed in as an administrator (IAM User or Role with `AdministratorAccess` policy attached, or the AWS root user) into an AWS Account. This account must not be a member of an AWS Organization.
+Sign in to an AWS account as an administrator using the AWS root user or an AWS Identity and Access Management (IAM) user or role with the _AdministratorAccess_ policy attached. This account must not be a member of an AWS organization.
 
 ==== Prepare for the deployment
 
-The superwerker quickstart works best with a dedicated DNS subdomain, so it can handle email inboxes of created AWS sub-accounts securely.
+The {partner-product-short-name} Quick Start works best with a dedicated DNS subdomain to securely handle email inboxes of AWS sub-accounts.
 
-You will be asked to provide a domain (e.g. `mycompany.com`) and subdomain (e.g. `aws`) for a DNS zone which superwerker creates. You can choose those freely. The installation will provide you with `NS` entries for this newly created DNS zone. You have to create an `NS` entry within your DNS provider so that the DNS zone is delegated (these records will be made available at a later point in the so called "living documentation"). The superwerker installation will wait until the delegation is properly configured.
+When entering values in to the CloudFormation template, you must provide both a domain (example: mycompany.com) and subdomain (example: aws) names for a DNS zone created by {partner-product-short-name}. The installation provides Name Server (NS) entries for the newly created DNS zone. You must create an NS entry within your DNS provider to delegate the DNS zone (these records are available later in the CloudWatch dashboard). The {partner-product-short-name} installation waits until the delegation is properly configured.

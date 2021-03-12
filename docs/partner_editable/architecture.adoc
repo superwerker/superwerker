@@ -5,18 +5,23 @@ AWS Cloud.
 :xrefstyle: short
 [#architecture1]
 .Quick Start architecture for {partner-product-short-name} on AWS
-image::../images/architecture_diagram.svg[Architecture,width=100%,height=100%]
+image::../images/superwerker-architecture-diagram.png[Architecture,width=100%,height=100%]
 
-As shown in <<architecture1>>, the Quick Start configures the following AWS services and features in a fully automated way:
+As shown in <<architecture1>>, the Quick Start automates the configuration of the following AWS services and features:
 
-- AWS Control Tower and AWS Single Sign-On as the basis for a future-proof multi-account setup
-- Amazon GuardDuty for automatic detection of possible threats breaches
-- AWS Security Hub to ensure established security standards
-- AWS Backup for automated creation of backups
-- Budget alarm for cost control
-- Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
-- AWS Systems Manager OpsCenter/Items notification aggregation and incident response handling
-- Secure mailboxes and service catalogue aliases for all root accounts
-- A CloudWatch dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+* AWS Control Tower for setting up and governing a secure, multi-account AWS environment. 
+* AWS Single Sign-On (AWS SSO) for managing access to multiple AWS accounts and business applications with a single login. 
+* Amazon GuardDuty for monitoring and protecting your AWS accounts, workloads, and data against malicious activity, threats, and breaches.
+* AWS Security Hub for aggregating, organizing, and prioritizing your security alerts and findings from AWS services. 
+* AWS Backup for centrally managing and automating backups across AWS services.
+* AWS Budgets for configuring cost threshold alarms. 
+* Preventative guardrails with service control policies that protect the infrastructure from intentional or unintentional mistakes, such as using restricted AWS Regions, deleting backup copies, and deactivating security features.
+* AWS Systems Manager, including its OpsCenter resource for viewing, investigating, and resolving operational issues.
+* Amazon Simple Email Service (Amazon SES) for providing secure mailboxes and IT service catalog aliases for all root accounts.
+* Amazon CloudWatch dashboard with information and links to resources, such as how to set up your AWS account, how to set up SSO with existing identity providers, and how to access GuardDuty and Security Hub dashboards.
+* Feature flippers for gradually enabling functionality as needed. 
 
-Feature flippers can be used to gradually opt into functionality.
+The following image provides additional details about the AWS architecture that is deployed using {partner-product-short-name}.
+[#architecture2]
+.Quick Start architecture for {partner-product-short-name} on AWS
+image::../images/partnerprovided_architecture-overview.png[Architecture,width=100%,height=100%]
