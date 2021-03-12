@@ -2,17 +2,6 @@
 // Briefly describe the software. Use consistent and clear branding. 
 // Include the benefits of using the software on AWS, and provide details on usage scenarios.
 
-The link:https://superwerker.cloud[superwerker] open source solution automates the setup of an AWS Cloud environment with prescriptive best practises. It enables startups and SMBs to focus on their core business - by saving setup and maintenance time and money.
+link:https://superwerker.cloud[{partner-product-short-name}] is a free, open-source solution that lets you quickly set up an AWS Cloud environment without the need for a consultant or extensive research on AWS services. {partner-product-short-name} is built by AWS Advanced Partners who have decades of experience setting up and automating Cloud environments using best practices that ensure maximized efficiency, agility, and low maintenance. For information about the AWS Partners, see link:https://kreuzwerker.de[Kreuzwerker GmbH] and link:https://superluminar.io[Superluminar GmbH].
 
-superwerker configures the following AWS services and features in a fully automated way:
-
-- AWS Control Tower and AWS Single Sign-On as the basis for a future-proof multi-account setup
-- Amazon GuardDuty for automatic detection of possible threats breaches
-- AWS Security Hub to ensure established security standards
-- AWS Backup for automated creation of backups
-- Budget alarms for cost control
-- Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
-- AWS Systems Manager OpsCenter/Items notification aggregation and incident response handling
-- Secure mailboxes and service catalogue aliases for all root accounts
-- Feature flippers to gradually opt into functionality
-- A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+All sizes of companies can benefit from using {partner-product-short-name}. Start-up companies and small-to-medium companies can especially benefit in cases where time-to-market and financial aspects are concerns. Regardless of company size, {partner-product-short-name} lets you focus on your core business without spending time on setting up and maintaining your AWS Cloud environment.

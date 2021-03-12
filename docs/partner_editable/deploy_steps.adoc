@@ -8,7 +8,7 @@
 ifdef::marketplace_subscription[]
 === Subscribe to the {partner-product-short-name} AMI
 
-This Quick Start requires a subscription to the AMI for {partner-product-short-name} in AWS Marketplace.
+This Quick Start requires a subscription to the Amazon Machine Image (AMI) for {partner-product-short-name} in AWS Marketplace.
 
 . Sign in to your AWS account.
 . Open the page for the {marketplace_listing_url}[{partner-product-short-name} AMI in AWS Marketplace^], and then choose *Continue to Subscribe*.
@@ -21,18 +21,18 @@ endif::marketplace_subscription[]
 
 === Launch the Quick Start
 // Adapt the following warning to your Quick Start.
-This Quick Start is intended to be installed into an empty, freshly created AWS account which is not a member of an AWS Organization.
+This Quick Start must be installed in to an empty, newly created AWS account that is not a member of an AWS organization.
 
 Each deployment takes about {deployment_time} to complete.
 
-TIP: As soon as step 7 has started, a living documentation will be deployed. Please go to link:https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker[the living documentation], and follow the instructions to finish the deployment.
+TIP: In the following steps, after you deploy the stack, refer to the documentation that is added to the link:https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker[CloudWatch {partner-product-short-name} dashboard^] to complete the deployment. 
 
-. Sign in to your AWS account, and choose one of the following options to launch the AWS CloudFormation template. For help with choosing an option, see link:#_deployment_options[Deployment options] earlier in this guide.
+. Sign in to your AWS account, and choose the following option to launch the AWS CloudFormation template. For more deployment details, see link:#_deployment_options[Deployment options] earlier in this guide.
 
-[cols="3,1"]
+[cols=2*]
 |===
-^|http://qs_launch_permalink[Deploy {partner-product-short-name}^]
-^|http://qs_template_permalink[View template^]
+^|https://fwd.aws/Ag3x4[Deploy {partner-product-short-name}^]
+^|https://fwd.aws/ye4Rk[View template^]
 
 |===
 

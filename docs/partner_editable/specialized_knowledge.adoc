@@ -3,4 +3,4 @@
 // Include links if helpful. 
 // You don't need to list AWS services or point to general info about AWS; the boilerplate already covers this.
 
-This Quick Start also assumes familiarity with configuring DNS.
+This Quick Start also assumes familiarity with configuring Domain Name System (DNS).

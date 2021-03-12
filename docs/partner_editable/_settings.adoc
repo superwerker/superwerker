@@ -1,11 +1,11 @@
 // Change the following attributes.
 :quickstart-project-name: quickstart-superwerker
-:partner-product-name: superwerker
+:partner-product-name: Superwerker
 // For the following attribute, if you have no short name, enter the same name as partner-product-name.
-:partner-product-short-name: superwerker
+:partner-product-short-name: Superwerker
 // If there's no partner, comment partner-company-name and partner-contributors.
-:partner-company-name: link:https://kreuzwerker.de[kreuzwerker GmbH] & link:https://superluminar.io[superluminar GmbH]
-:doc-month: January
+:partner-company-name: Kreuzwerker GmbH and Superluminar GmbH
+:doc-month: February
 :doc-year: 2021
 // For the following two "contributor" attributes, if the partner agrees to include names in the byline, 
 // enter names for both partner-contributors and quickstart-contributors. 
