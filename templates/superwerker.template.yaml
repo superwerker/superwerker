@@ -51,6 +51,8 @@ Metadata:
         default: Enable Automated Backups
       IncludeServiceControlPolicies:
         default: Enable Service Control Policies in AWS Organizations
+      IncludeCFCT:
+        default: Enable the Customizations for Control Tower Solution
 
 Parameters:
   Domain:
@@ -102,6 +104,14 @@ Parameters:
     Default: 'Yes'
     Type: String
     Description: Enable Service Control Policies in AWS Organizations
+  IncludeCFCT:
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'No'
+    Type: String
+    Description: Enable the Customizations for Control Tower Solution
+
   QSS3BucketName:
     AllowedPattern: '^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$'
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase letters, uppercase
@@ -144,6 +154,9 @@ Conditions:
   IncludeServiceControlPolicies: !And
     - !Condition IncludeControlTower
     - !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
+  IncludeCFCT: !And
+    - !Condition IncludeControlTower
+    - !Equals [ !Ref IncludeCFCT, 'Yes' ]
 
 Resources:
 
@@ -309,6 +322,20 @@ Resources:
           - IncludeBackup
           - true
           - false
+
+  CFTC:
+    Condition: IncludeCFCT
+    Type: AWS::CloudFormation::Stack
+    DependsOn: ControlTower
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/solutions-reference/customizations-for-aws-control-tower/latest/custom-control-tower-initiation.template
+      Parameters:
+        PipelineApprovalStage: 'No'
+        PipelineApprovalEmail: ''
+        CodePipelineSource: 'AWS CodeCommit'
+        CodeCommitRepositoryName: 'superwerker-custom-control-tower-configuration'
+        CodeCommitBranchName: 'main'
+        ExistingRepository: 'No'
 
 Outputs:
 
