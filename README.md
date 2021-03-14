@@ -43,6 +43,7 @@ In the initial release, superwerker configures the following AWS services and fe
 - Secure mailboxes and service catalogue aliases for all root accounts
 - Feature flippers to gradually opt into functionality
 - A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+- Integration of the [Customizations for Control Tower](https://aws.amazon.com/solutions/implementations/customizations-for-aws-control-tower/) Solution
 
 ### Say what again? (the non-technical what's included)
 
@@ -61,6 +62,7 @@ AWS provides all the building blocks. superwerker adds the wiring and "how to" s
 - Notification centre: aggregates notifications from several services in a single place
 - Gradual roll-out: features can be enabled/disabled individually
 - Living quickstart dashboard with status overview (which features are active?) and actionable links to e.g. the notification center, or your security findings
+- A solution to deploy additional software and/or configurations to managed accounts
 
 ## Help & Feedback
 
