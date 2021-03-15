@@ -38,7 +38,7 @@ Metadata:
       Subdomain:
         default: Subdomain for automated DNS configuration
       NotificationsMail:
-        default: Mail address used for notifications
+        default: Mail address used for important notification regarding your AWS account (leave empty for no notifications)
       QSS3BucketName:
         default: Quick Start S3 Bucket Name
       QSS3BucketRegion:
