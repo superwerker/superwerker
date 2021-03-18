@@ -1,7 +1,0 @@
-// Replace the content in <>
-// Briefly describe the software. Use consistent and clear branding. 
-// Include the benefits of using the software on AWS, and provide details on usage scenarios.
-
-link:https://superwerker.cloud[{partner-product-short-name}] is a free, open-source solution that lets you quickly set up an AWS Cloud environment without the need for a consultant or extensive research on AWS services. {partner-product-short-name} is built by AWS Advanced Partners who have decades of experience setting up and automating Cloud environments using best practices that ensure maximized efficiency, agility, and low maintenance. For information about the AWS Partners, see link:https://kreuzwerker.de[Kreuzwerker GmbH] and link:https://superluminar.io[Superluminar GmbH].
-
-All sizes of companies can benefit from using {partner-product-short-name}. Start-up companies and small-to-medium companies can especially benefit in cases where time-to-market and financial aspects are concerns. Regardless of company size, {partner-product-short-name} lets you focus on your core business without spending time on setting up and maintaining your AWS Cloud environment.
