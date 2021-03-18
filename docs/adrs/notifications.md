@@ -11,7 +11,7 @@ superwerker creates an OpsItem in Systems Manager OpsCenter for each email recei
 - Publish a message to an SNS topic for every new OpsItem.
  - Use SNS, since subscriptions and email verification work out-of-the-box with CloudFormation tooling.
  - Use native email subscriptions for SNS to notify a specified email address about new messages.
- - We decided against using SES because for email notifications since this would lead to several additional steps like verifying sender and recipient domains or email addresses.
+ - We decided against using SES for email notifications since this would lead to several additional steps like verifying sender and recipient domains or email addresses.
 - We decided against (re-)using the existing root email address of the management AWS account since we would need to keep this in sync with the SNS subscription (because the management account root email adress can be changed). And we wanted to keep the notification feature simple.
 - If no email address is provided, no SNS topic is created.
 
