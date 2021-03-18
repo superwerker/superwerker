@@ -1,3 +1,0 @@
-// Include details about any licenses and how to sign up. Provide links as appropriate. If no licenses are required, clarify that. The following paragraphs provide examples of details you can provide. Remove italics, and rephrase as appropriate.
-
-{partner-product-short-name} is a free, open-source solution that operates under an MIT license. For details, see https://github.com/superwerker/superwerker/blob/main/LICENSE.md[MIT License^] in the {partner-product-short-name} GitHub repository. 
