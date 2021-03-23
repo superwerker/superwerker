@@ -13,6 +13,10 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Events:
+        DailyGeneration:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
         EmailHealth:
           Type: CloudWatchEvent
           Properties:
