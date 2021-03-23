@@ -54,6 +54,7 @@ Resources:
       Environment:
         Variables:
           SUPERWERKER_DOMAIN: !Ref SuperwerkerDomain
+          SUPERWERKER_STACK_NAME: !Ref SuperwerkerStackName
       InlineCode: |
         import boto3
         import json
@@ -62,6 +63,17 @@ Resources:
 
         cw = boto3.client("cloudwatch")
         ssm = boto3.client("ssm")
+
+
+        def get_current_version():
+          response = cfn.get_template_summary(
+              StackName=os.getenv('SUPERWERKER_STACK_NAME')
+          )
+          
+          metadata = json.loads(response['Metadata'])
+          
+          return metadata['SuperwerkerVersion']
+
 
         def handler(event, context):
 
@@ -84,14 +96,17 @@ Resources:
             dns_delegation_text = """
         #### 🏠 {domain}
         #### ✅ DNS configuration is set up correctly. 
+        #### 🛠 Version: {version}
         """.format(
           domain=os.environ['SUPERWERKER_DOMAIN'],
+          version=get_current_version(),
         )
           else:
             if '/superwerker/domain_name_servers' in superwerker_config:
               dns_delegation_text = """
         #### 🏠 {domain}
         #### ❌ DNS configuration needed. 
+        #### 🛠 Version: {version}
 
         &nbsp;
 
@@ -108,6 +123,7 @@ Resources:
         """.format(
           domain=os.environ['SUPERWERKER_DOMAIN'],
           ns=superwerker_config['/superwerker/domain_name_servers'].split(','),
+          version=get_current_version(),
         )
             else:
               dns_delegation_text = '### DNS Setup pending'
