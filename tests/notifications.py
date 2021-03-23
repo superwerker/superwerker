@@ -39,15 +39,8 @@ class NotificationsTestCase(unittest.TestCase):
 
         return res['QueueUrl']
 
-    @staticmethod
-    def retrieve_sns_topic_arn_from_stack():
-        stack_prefix = 'superwerker-Notifications'
-        stack_list = cf.list_stacks(
-            StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE']
-        )
-
-        stack = [stack for stack in stack_list['StackSummaries']
-                 if stack['StackName'].startswith(stack_prefix)].pop()
+    def retrieve_sns_topic_arn_from_stack(self):
+        stack = self.wait_for_stack()
 
         print('fetching SNS notification topic name from stack "{}"'.format(
             stack['StackName']))
@@ -102,6 +95,19 @@ class NotificationsTestCase(unittest.TestCase):
         sqs.delete_queue(
             QueueUrl=queue_url,
         )
+
+    @staticmethod
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
+    def wait_for_stack():
+        stack_prefix = 'superwerker-Notifications'
+        stack_list = cf.list_stacks(
+            StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        )
+
+        stack = [stack for stack in stack_list['StackSummaries']
+                 if stack['StackName'].startswith(stack_prefix)].pop()
+
+        return stack
 
     @staticmethod
     @retry(stop_max_delay=30000, wait_fixed=5000)
