@@ -1,6 +1,0 @@
-// Edit this placeholder text to accurately describe your architecture.
-
-This Quick Start provides two deployment options:
-
-* Deploy {partner-product-short-name} at once: All features are enabled by default and will be installed.
-* Deploy {partner-product-short-name} iteratively with feature flippers: recommended if you only want to use certain features or you want to test the impact of particular features.

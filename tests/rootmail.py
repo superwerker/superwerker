@@ -3,11 +3,17 @@ import unittest
 import boto3
 import uuid
 import time
+from retrying import retry
+import warnings
 
 ses = boto3.client('ses', region_name='eu-west-1')
 ssm = boto3.client('ssm')
 
 class RootMailTestCase(unittest.TestCase):
+
+    # https://github.com/boto/boto3/issues/454
+    def setUp(self):
+        warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
     @classmethod
     def send_email(cls, id, body_text=None, body_html=None, subject=None):
@@ -46,19 +52,15 @@ class RootMailTestCase(unittest.TestCase):
 
         return res
 
-    def test_root_email_body_text(self):
-
-        id = uuid.uuid4().hex
-        self.send_email(id, 'This is a mail body')
-
-        time.sleep(10)
-
+    @classmethod
+    @retry(stop_max_delay=100000, wait_fixed=5000)
+    def get_ops_item_by_title(cls, title):
         res = ssm.get_ops_summary(
             Filters=[
                 {
                     'Key': 'AWS:OpsItem.Title',
                     'Values': [
-                        id,
+                        title,
                     ],
                     'Type': 'Equal',
                 },
@@ -71,6 +73,19 @@ class RootMailTestCase(unittest.TestCase):
                 },
             ],
         )
+
+        if len(res['Entities']) == 0:
+            raise  # mail has probably not arrived yet
+        return res
+
+    def test_root_email_body_text(self):
+
+        id = uuid.uuid4().hex
+        self.send_email(id, 'This is a mail body')
+
+        time.sleep(10)
+
+        res = self.get_ops_item_by_title(id)
 
         self.assertEqual(1, len(res['Entities']))
 
@@ -89,26 +104,7 @@ class RootMailTestCase(unittest.TestCase):
         id = uuid.uuid4().hex
         self.send_email(id, 'This is another mail body', "<h1>This should be ignored</h1>")
 
-        time.sleep(10)
-
-        res = ssm.get_ops_summary(
-            Filters=[
-                {
-                    'Key': 'AWS:OpsItem.Title',
-                    'Values': [
-                        id,
-                    ],
-                    'Type': 'Equal',
-                },
-                {
-                    'Key': 'AWS:OpsItem.Status',
-                    'Values': [
-                        'Open',
-                    ],
-                    'Type': 'Equal',
-                },
-            ],
-        )
+        res = self.get_ops_item_by_title(id)
 
         self.assertEqual(1, len(res['Entities']))
 
@@ -127,26 +123,7 @@ class RootMailTestCase(unittest.TestCase):
         id = uuid.uuid4().hex
         self.send_email(id, None, "<script>alert('Hi!')</script><h1>Hello</h1>")
 
-        time.sleep(10)
-
-        res = ssm.get_ops_summary(
-            Filters=[
-                {
-                    'Key': 'AWS:OpsItem.Title',
-                    'Values': [
-                        id,
-                    ],
-                    'Type': 'Equal',
-                },
-                {
-                    'Key': 'AWS:OpsItem.Status',
-                    'Values': [
-                        'Open',
-                    ],
-                    'Type': 'Equal',
-                },
-            ],
-        )
+        res = self.get_ops_item_by_title(id)
 
         self.assertEqual(1, len(res['Entities']))
 

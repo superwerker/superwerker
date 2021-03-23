@@ -66,20 +66,29 @@ Resources:
 
           if rootmail_ready_alarm_state == 'OK':
             dns_delegation_text = """
-        ## ✅ Setup DNS Delegation to your chosen domain `{domain}`
+        #### 🏠 {domain}
+        #### ✅ DNS configuration is set up correctly. 
         """.format(
           domain=os.environ['SUPERWERKER_DOMAIN'],
         )
           else:
             if '/superwerker/domain_name_servers' in superwerker_config:
               dns_delegation_text = """
-        ## ❌ Setup DNS Delegation to your chosen domain `{domain}`
+        #### 🏠 {domain}
+        #### ❌ DNS configuration needed. 
 
-        Please create the following NS records for `{domain}`:
-        - `{ns[0]}`
-        - `{ns[1]}`
-        - `{ns[2]}`
-        - `{ns[3]}`
+        &nbsp;
+
+        ### Next Steps 
+
+        Please create the following NS records for your domain:
+
+        ```
+        {ns[0]}
+        {ns[1]}
+        {ns[2]}
+        {ns[3]}
+        ```
         """.format(
           domain=os.environ['SUPERWERKER_DOMAIN'],
           ns=superwerker_config['/superwerker/domain_name_servers'].split(','),
@@ -88,13 +97,16 @@ Resources:
               dns_delegation_text = '### DNS Setup pending'
 
           markdown = """
+        # [superwerker](https://github.com/superwerker/superwerker)
+        &nbsp;
 
-          # Welcome to superwerker
+        {dns_delegation}
 
-          {dns_delegation}
+        &nbsp;
 
-          Updated at {current_time} (use browser reload to refresh)
-
+        ```
+        Updated at {current_time} (use browser reload to refresh)
+        ```
           """.format(
             dns_delegation=dns_delegation_text,
             current_time=datetime.now(),

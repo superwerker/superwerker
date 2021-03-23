@@ -1,7 +1,0 @@
-// Add steps as necessary for accessing the software, post-configuration, and testing. Don’t include full usage instructions for your software, but add links to your product documentation for that information.
-//Should any sections not be applicable, remove them
-
-== Other useful information
-
-{partner-product-name} is a living project. The development team documents their link:https://github.com/superwerker/superwerker/tree/main/docs/adrs[architectural decisions (ADR) in the Github repository]
-The ADRs and the link:https://github.com/superwerker/superwerker/issues[Github issues] also the best place to follow future development directions on a high level without looking at the actual source code.
