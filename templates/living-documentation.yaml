@@ -55,6 +55,7 @@ Resources:
         from datetime import datetime
 
         cw = boto3.client("cloudwatch")
+        cfn = boto3.client("cloudformation")
         ssm = boto3.client("ssm")
 
         def get_latest_version():
