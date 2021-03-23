@@ -23,6 +23,10 @@ Metadata:
       - Domain
       - Subdomain
     - Label:
+        default: Notifications
+      Parameters:
+      - NotificationsMail
+    - Label:
         default: AWS Quick Start configuration
       Parameters:
       - QSS3BucketName
@@ -31,6 +35,10 @@ Metadata:
     ParameterLabels:
       Domain:
         default: Domain for automated DNS configuration
+      Subdomain:
+        default: Sub domain for automated DNS configuration
+      NotificationsMail:
+        default: Mail address used for important notification regarding your AWS account (leave empty for no notifications)
       IncludeBudget:
         default: Include AWS Budgets alarm
       IncludeControlTower:
@@ -49,8 +57,6 @@ Metadata:
         default: Quick Start S3 bucket Region
       QSS3KeyPrefix:
         default: Quick Start S3 key prefix
-      Subdomain:
-        default: Subdomain for automated DNS configuration
 Parameters:
   Domain:
     Type: String
@@ -59,6 +65,11 @@ Parameters:
     Type: String
     Default: aws
     Description: Subdomain used for root mail feature
+  NotificationsMail:
+    Type: String
+    Description: Mail address used for notifications
+    Default: ""
+    AllowedPattern: "(^$|^.*@.*\\..*$)"
   IncludeBudget:
     AllowedValues:
       - 'Yes'
@@ -138,6 +149,7 @@ Parameters:
 
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
+  IncludeNotifications: !Not [!Equals [ !Ref NotificationsMail, '' ]]
   IncludeBudget: !Equals [ !Ref IncludeBudget, 'Yes' ]
   IncludeControlTower: !Equals [ !Ref IncludeControlTower, 'Yes' ]
   IncludeGuardDuty: !And
@@ -316,6 +328,19 @@ Resources:
           - IncludeBackup
           - true
           - false
+
+  Notifications:
+    Condition: IncludeNotifications
+    Type: AWS::CloudFormation::Stack
+    DependsOn: RootMail
+    Properties:
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/notifications.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        NotificationsMail: !Ref NotificationsMail
 
 Outputs:
   RootMailDelegationTarget:

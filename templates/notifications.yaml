@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  NotificationsMail:
+    Type: String
+
+Outputs:
+  NotificationTopic:
+    Description: Notification topic ARN for ops center creation events
+    Value: !Ref NotificationTopic
+
+Resources:
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Endpoint: !Ref NotificationsMail
+        Protocol: email
+
+  NotificationOpsItemCreated:
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        Enable:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - aws.ssm
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventName:
+                  - CreateOpsItem
+                eventSource:
+                  - ssm.amazonaws.com
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt NotificationTopic.TopicName
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref NotificationTopic
+      InlineCode: !Sub |-
+        import boto3
+        import json
+        import os
+
+        client = boto3.client('sns')
+
+        def handler(event, context):
+          id = event['detail']['responseElements']['opsItemId']
+          desc = event['detail']['requestParameters']['description']
+          title = event['detail']['requestParameters']['title']
+
+          url = "https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(id)
+
+          log({
+            'desc': desc,
+            'event': event,
+            'level': 'info',
+            'msg': 'Publishing new ops item event from CloudTrail to SNS',
+            'title': title,
+            'url': url,
+          })
+
+          message_title = "New OpsItem: {}".format(title)
+          message_body = "{}\n\n{}".format(desc, url)
+
+          client.publish(
+            Message=message_body,
+            Subject=message_title,
+            TopicArn=os.environ['TOPIC_ARN'],
+          )
+
+        def log(msg):
+          print(json.dumps(msg), flush=True)
