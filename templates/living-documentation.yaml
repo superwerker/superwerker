@@ -40,7 +40,7 @@ Resources:
               Resource: '*'
             - Effect: Allow
               Action: cloudformation:GetTemplateSummary
-              Resource: !Sub arn:{AWS::Partition}:cloudformation:{AWS::Region}:{AWS::AccountId}:stack/{SuperwerkerStackName}/*
+              Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${SuperwerkerStackName}/*
       Environment:
         Variables:
           SUPERWERKER_DOMAIN: !Ref SuperwerkerDomain
