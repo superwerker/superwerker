@@ -13,6 +13,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
+      Runtime: python3.7
+      Timeout: 60
       Environment:
         Variables:
           SUPERWERKER_STACK_NAME: !Ref SuperwerkerStackName
@@ -35,8 +37,9 @@ Resources:
               detail:
                 alarmName:
                   - superwerker-RootMailReady
-
       Handler: index.handler
+      Runtime: python3.7
+      Timeout: 60
       Policies:
         - SSMParameterReadPolicy:
             ParameterName: 'superwerker/*'
@@ -147,10 +150,6 @@ Resources:
 
         def log(msg):
           print(json.dumps(msg), flush=True)
-
-
-      Runtime: python3.7
-      Timeout: 60
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
