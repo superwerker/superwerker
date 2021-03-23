@@ -4,8 +4,21 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   SuperwerkerDomain:
     Type: String
+  SuperwerkerStackName:
+    Type: String
+    Description: Name of the parent superwerker CloudFormation stack
 
 Resources:
+  DashboardVersionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Environment:
+        Variables:
+          SUPERWERKER_STACK_NAME: !Ref SuperwerkerStackName
+      InlineCode: |
+        def handler(event, context):
+          return "Done"
 
   DashboardGeneratorFunction:
     Type: AWS::Serverless::Function

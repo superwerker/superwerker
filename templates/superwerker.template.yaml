@@ -275,6 +275,7 @@ Resources:
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         SuperwerkerDomain: !Sub '${Subdomain}.${Domain}'
+        SuperwerkerStackName: !Ref AWS::StackName
 
   RootMail:
     Type: AWS::CloudFormation::Stack
