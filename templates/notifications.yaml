@@ -77,3 +77,6 @@ Resources:
 
         def log(msg):
           print(json.dumps(msg), flush=True)
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
