@@ -268,9 +268,14 @@ Resources:
   LivingDocumentation:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: ./living-documentation.yaml
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/living-documentation.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         SuperwerkerDomain: !Sub '${Subdomain}.${Domain}'
+        AssetsS3Bucket: !Sub superwerker-deployment-${AWS::Region}
 
   RootMail:
     Type: AWS::CloudFormation::Stack
