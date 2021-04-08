@@ -138,6 +138,42 @@ Resources:
           -  ServerSideEncryptionByDefault:
                SSEAlgorithm: AES256
 
+  CodePipelineSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+        Version: 2012-10-17
+
+  CodePipelineSchedulerRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - codepipeline:StartPipelineExecution
+            Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${SuperwerkerBootstrapPipeline}
+        Version: 2012-10-17
+      PolicyName: !Sub ${SuperwerkerBootstrapPipeline}-scheduler-role-policy
+      Roles:
+        - !Ref CodePipelineSchedulerRole
+
+  CodePipelineScheduler:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(1 day)
+      State: ENABLED
+      RoleArn: !GetAtt CodePipelineSchedulerRole.Arn
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${SuperwerkerBootstrapPipeline}
+          Id: pipeline-scheduler
+          RoleArn: !GetAtt CodePipelineSchedulerRole.Arn
+
   DeploymentBucket:
     Type: AWS::S3::Bucket
     Properties:
