@@ -6,7 +6,9 @@
 
 ## Project state / Roadmap
 
-This project is currently under heavy development. We are currently completing the [1.0 milestone](https://github.com/superwerker/superwerker/milestone/1) and working towards [1.1](https://github.com/superwerker/superwerker/milestone/2).
+We are currently completing the [1.1 milestone](https://github.com/superwerker/superwerker/milestone/1).
+
+Currently, there is no public mid/long-term roadmap available.
 
 ## Quick install
 
