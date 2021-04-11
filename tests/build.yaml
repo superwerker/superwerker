@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  OrganizationsVendingMachineEndpoint:
+    Type: String
+  RootMailDomain:
+    Type: String
+  DeploymentBucket:
+    Type: String
+    Default: superwerker-deployment
+
+Resources:
+
+  BuildAndTestProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      TimeoutInMinutes: 180
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: ROOT_MAIL_DOMAIN
+            Value: !Ref RootMailDomain
+          - Name: ORGANIZATIONS_VENDING_MACHINE_ENDPOINT
+            Value: !Ref OrganizationsVendingMachineEndpoint
+          - Name: CAPTCHA_API_KEY
+            Value: /superwerker/tests/2captcha_api_key
+            Type: SECRETS_MANAGER
+          - Name: TEMPLATE_BUCKET_NAME
+            Value: !Ref DeploymentBucket
+          - Name: TEMPLATE_REGION
+            Value: !Ref AWS::Region
+
+      ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        Type: GITHUB
+        Location: https://github.com/superwerker/superwerker.git
+        BuildSpec: tests/buildspec.yaml
+
+  BuildAndTestProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
