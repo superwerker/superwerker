@@ -8,22 +8,13 @@
 
 superwerker is stable and used in production by several customers. The roadmap is currently organized in [Github milestones](https://github.com/superwerker/superwerker/milestones).
 
-## Quick install
+## Installation
 
-You can install the current `main` branch via CloudFormation in the following AWS regions:
+There are two ways to install superwerker:
+- Via [Github releases](https://github.com/superwerker/superwerker/releases) (the latest stable release - recommended)
+- Via [AWS QuickStart](https://aws.amazon.com/quickstart/architecture/superwerker/) (currently slower release frequency)
 
-| Installation  | Next steps  |
-|---|---|
-| [🇪🇺 eu-west-1](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=eu-west-1#dashboards:name=superwerker) |
-| [🇪🇺 eu-central-1](https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=eu-central-1#dashboards:name=superwerker) |
-| [🇪🇺 eu-north-1](https://console.aws.amazon.com/cloudformation/home?region=eu-north-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=eu-north-1#dashboards:name=superwerker) |
-| [🇬🇧 eu-west-2](https://console.aws.amazon.com/cloudformation/home?region=eu-west-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=eu-west-2dashboards:name=superwerker) |
-| [🇨🇦 ca-central-1](https://console.aws.amazon.com/cloudformation/home?region=ca-central-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=ca-central-1#dashboards:name=superwerker) |
-| [🇺🇸 us-east-1](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=superwerker) |
-| [🇺🇸 us-east-2](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=us-east-2#dashboards:name=superwerker) |
-| [🇺🇸 us-west-2](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=us-west-2#dashboards:name=superwerker) |
-| [🇸🇬 ap-southeast-1](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-1#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-1#dashboards:name=superwerker) |
-| [🇦🇺 ap-southeast-2](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-deployment.s3.amazonaws.com/main/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-deployment&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix=main/) | [Documentation / next steps](https://console.aws.amazon.com/cloudwatch/home?region=ap-southeast-2#dashboards:name=superwerker) |
+After creating the CloudFormation stack, please follow the [Living documentation]() for installation instructions, next steps and standard operating procedures. 
 
 ### Installation video
 
@@ -85,8 +76,7 @@ You can find more information about the costs on the detailed pricing pages for 
 
 ### How do I install superwerker?
 
-superwerker uses the proven infrastructure-as-code service AWS CloudFormation for installation.
-Here installation can be launched with a click.
+superwerker uses the proven infrastructure-as-code service AWS CloudFormation for installation. Please have a look at the [installation section](#installation).
 
 ### Can I activate and deactivate the features of superwerker individually?
 
