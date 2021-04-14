@@ -6,9 +6,7 @@
 
 ## Project state / Roadmap
 
-We are currently completing the [1.1 milestone](https://github.com/superwerker/superwerker/milestone/1).
-
-Currently, there is no public mid/long-term roadmap available.
+superwerker is stable and used in production by several customers. The roadmap is currently organized in [Github milestones](https://github.com/superwerker/superwerker/milestones).
 
 ## Quick install
 
