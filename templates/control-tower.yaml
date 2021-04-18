@@ -122,21 +122,58 @@ Resources:
 
             if (landingZoneState == 'new') {
               await synthetics.executeStep('createLandingZone', async function () {
-                await page.click("#awsui-input-0")
-                await page.waitFor(3000)
-                await page.click("#awsui-input-1")
-                await page.waitFor(3000)
-                await page.click("#awsui-input-2")
-                await page.waitFor(3000)
-                await page.type("#awsui-input-0", "${LogArchiveAWSAccountEmail}")
-                await page.waitFor(3000)
-                await page.type("#awsui-input-1", "${AuditAWSAccountEmail}")
-                await page.waitFor(3000)
-                await page.click("#awsui-checkbox-0")
-                await page.waitFor(10000); // wait for AWS UI to settle, then click
-                await page.click("#save-button > button");
-                await page.waitFor(10000)
-                await page.waitForNavigation({waitUntil: ['domcontentloaded']});
+                let newUi
+                try {
+                  await page.waitForSelector("#regions-config-page")
+                  newUi = true
+                } catch (e) {
+                  newUi = false
+                }
+
+                if (newUi) {
+                  await page.waitForSelector("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
+                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
+                  await page.waitFor(3000)
+
+                  await page.waitForSelector("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
+                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
+                  await page.waitFor(3000)
+
+                  await page.waitForSelector("#aws-control-tower-log-archive-email")
+                  await page.type("#aws-control-tower-log-archive-email input:first-child", "${LogArchiveAWSAccountEmail}")
+                  await page.waitFor(3000)
+                  await page.type("#aws-control-tower-cross-account-audit-email input:first-child", "${AuditAWSAccountEmail}")
+                  await page.waitFor(3000)
+
+                  // click somewhere else to trigger email address verification
+                  await page.click("#aws-control-tower-cross-account-audit-name input:first-child")
+                  await page.waitFor(10000)
+                  // now it's possible to click the "next" button
+                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
+
+                  await page.waitForSelector("#consent-checkbox")
+                  await page.click("#consent-checkbox input:first-child")
+
+                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
+                  await page.waitFor(10000)
+                  await page.waitForNavigation({waitUntil: ['domcontentloaded']});
+                } else {
+                  await page.click("#awsui-input-0")
+                  await page.waitFor(3000)
+                  await page.click("#awsui-input-1")
+                  await page.waitFor(3000)
+                  await page.click("#awsui-input-2")
+                  await page.waitFor(3000)
+                  await page.type("#awsui-input-0", "${LogArchiveAWSAccountEmail}")
+                  await page.waitFor(3000)
+                  await page.type("#awsui-input-1", "${AuditAWSAccountEmail}")
+                  await page.waitFor(3000)
+                  await page.click("#awsui-checkbox-0")
+                  await page.waitFor(10000); // wait for AWS UI to settle, then click
+                  await page.click("#save-button > button");
+                  await page.waitFor(10000)
+                  await page.waitForNavigation({waitUntil: ['domcontentloaded']});
+                }
               });
             } else {
                 await synthetics.executeStep('updateLandingZone', async function () {
