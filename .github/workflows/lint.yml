@@ -11,6 +11,6 @@ jobs:
       uses: actions/checkout@v2
 
     - name: cfn-lint
-      uses: scottbrenner/cfn-lint-action@master
+      uses: scottbrenner/cfn-lint-action@main
       with:
         args: "templates/*.yaml"
