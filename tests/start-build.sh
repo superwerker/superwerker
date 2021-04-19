@@ -10,4 +10,5 @@ template_prefix=${git_branch}/
 
 aws --profile ${SOURCE_PROFILE} --no-cli-pager codebuild start-build \
   --project-name ${CODEBUILD_PROJECT_NAME} \
+  --source-version ${git_branch} \
   --environment-variables-override name=TEMPLATE_PREFIX,value=${template_prefix} name=SUPERWERKER_REGION,value=${superwerker_region}
