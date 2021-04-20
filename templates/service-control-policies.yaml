@@ -86,7 +86,7 @@ Resources:
                         "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
                     ],
                     "Effect": "Deny",
-                    "Sid": "SWProtectBackup"
+                    "Sid": "SWProtectBackupRoles"
                 }
               - !Ref AWS::NoValue
       Attach: true
