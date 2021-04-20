@@ -103,7 +103,7 @@ Resources:
                         "arn:aws:backup:*:*:backup-vault:*"
                     ],
                     "Effect": "Deny",
-                    "Sid": "SWProtectBackups",
+                    "Sid": "SWProtectBackups"
                 }
               - !Ref AWS::NoValue
       Attach: true
