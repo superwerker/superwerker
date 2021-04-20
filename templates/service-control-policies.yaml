@@ -176,7 +176,7 @@ Resources:
             parameters = dict(
                 Content=Policy,
                 Description="superwerker - {}".format(LogicalResourceId),
-                Name=LogicalResourceId,
+                Name="superwerker",
             )
 
             policy_id = PhysicalResourceId
