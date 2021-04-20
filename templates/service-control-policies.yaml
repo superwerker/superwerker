@@ -87,6 +87,23 @@ Resources:
                     ],
                     "Effect": "Deny",
                     "Sid": "SWProtectBackupRoles"
+                },
+                {
+                    "Condition": {
+                        "ArnNotLike": {
+                            "aws:PrincipalARN": "arn:aws:iam::*:role/AWSControlTowerExecution"
+                        }
+                    },
+                    "Action": [
+                        "backup:Delete*",
+                        "backup:Update*"
+                    ],
+                    "Resource": [
+                        "arn:aws:backup:*:*:backup-plan:*",
+                        "arn:aws:backup:*:*:backup-vault:*"
+                    ],
+                    "Effect": "Deny",
+                    "Sid": "SWProtectBackups",
                 }
               - !Ref AWS::NoValue
       Attach: true
