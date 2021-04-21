@@ -14,7 +14,7 @@ There are two ways to install superwerker:
 - Via [Github releases](https://github.com/superwerker/superwerker/releases) (the latest stable release - recommended)
 - Via [AWS QuickStart](https://aws.amazon.com/quickstart/architecture/superwerker/) (currently slower release frequency)
 
-After creating the CloudFormation stack, please follow the [Living documentation]() for installation instructions, next steps and standard operating procedures. 
+After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for installation instructions, next steps and standard operating procedures.
 
 ### Installation video
 
