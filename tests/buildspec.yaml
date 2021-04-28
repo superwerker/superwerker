@@ -35,15 +35,6 @@ phases:
       - sleep 1800 # give superwerker stack time to finish (Control Tower needs ~30min)
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
 
-      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
-      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-fixture --template-file tests/account-factory.yaml --parameter-overrides AccountName=sw-${aws_account_id} AccountEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} SSOUserFirstName=Isolde SSOUserLastName=Mawidder-Baden SSOUserEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} ManagedOrganizationalUnit=Sandbox --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
-
-      - sleep 300 # give superwerker components some time to settle, e.g. SecurityHub member adding takes some minutes after account factory fixture has been rolled out
-      - cd tests
-      - rm -rf ~/.aws/cli/cache # run tests with fresh credentials
-      - AWS_MAX_ATTEMPTS=10 AWS_REGION=${SUPERWERKER_REGION} AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootmail.py backup.py notifications.py tests.py
-
-    finally:
       # close sub-accounts so that the OVM can close the main / management account later
       - cd $CODEBUILD_SRC_DIR/tests/close-active-subaccounts
       - npm i
