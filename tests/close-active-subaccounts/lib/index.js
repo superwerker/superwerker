@@ -7,20 +7,25 @@ const ssm = new AWS.SSM();
 const puppeteer = require('puppeteer');
 
 const PASSWORD = 'TesTIdontCare243!'
+let CAPTCHA_STORE = ''
 
 async function deleteAccount(email, captchaKey) {
     const browser = await puppeteer.launch({args: ['--no-sandbox']});
     const page = await browser.newPage();
 
-    const pw_reset_url = await requestPwResetLink(page, email, captchaKey)
+    CAPTCHA_STORE = captchaKey
+
+    const pw_reset_url = await requestPwResetLink(page, email)
     await pwReset(page, pw_reset_url, PASSWORD);
     await accountDelete(page, email, PASSWORD);
 
     await browser.close();
 }
 
-async function requestPwResetLink(page, ACCOUNT_EMAIL, captchaKey) {
+async function requestPwResetLink(page, ACCOUNT_EMAIL) {
     await loginStage1(page, ACCOUNT_EMAIL);
+
+    console.log("Request password recovery link for AWS Account:", ACCOUNT_EMAIL)
 
     await page.click('#root_forgot_password_link');
 
@@ -42,7 +47,7 @@ async function requestPwResetLink(page, ACCOUNT_EMAIL, captchaKey) {
         }, recaptchaimg);
 
 
-        let captcharesult = await solveCaptcha2captcha(page, recaptchaurl, captchaKey);
+        let captcharesult = await solveCaptcha2captcha(page, recaptchaurl, CAPTCHA_STORE);
 
         let input2 = await page.$('#password_recovery_captcha_guess');
         await input2.press('Backspace');
@@ -70,6 +75,8 @@ async function requestPwResetLink(page, ACCOUNT_EMAIL, captchaKey) {
     const params = {
         Name: '/superwerker/rootmail/pw_reset_link/' + ACCOUNT_EMAIL.split('@')[0].split('+')[1]
     };
+
+    console.log('Wait for URL to show up in Parameter Store: ', params.Name)
 
     let tries = 0
     const max_tries = 20
@@ -109,6 +116,8 @@ async function pwReset(page, url, password) {
 }
 
 async function accountDelete(page, email, password) {
+
+    console.log('Delete AWS Account for email address:', email)
 
     await loginStage1(page, email);
 
@@ -212,8 +221,6 @@ async function loginStage1(page, email) {
                 }, captchacontainer);
 
                 if (captchacontainerstyle.includes("display: none")) {
-
-
                     captchanotdone = false;
                 }
             } catch (error) {
@@ -285,13 +292,13 @@ const httpPostJson = (url, postData) => {
     });
 };
 
-const solveCaptcha2captcha = async (page, url, captchaKey) => {
+const solveCaptcha2captcha = async (page, url) => {
     var imgbody = await httpGetBinary(url).then(res => {
         return res;
     });
 
     var captcharef = await httpPostJson('https://2captcha.com/in.php', {
-        'key': captchaKey,
+        'key': CAPTCHA_STORE,
         'method': 'base64',
         'body': imgbody.toString('base64')
     }).then(res => {
@@ -304,7 +311,7 @@ const solveCaptcha2captcha = async (page, url, captchaKey) => {
     while (!captcharesult.startsWith("OK") && i < 20) {
         await new Promise(resolve => { setTimeout(resolve, 5000); });
 
-        captcharesult = await httpGet('https://2captcha.com/res.php?key=' + captchaKey + '&action=get&id=' + captcharef).then(res => {
+        captcharesult = await httpGet('https://2captcha.com/res.php?key=' + CAPTCHA_STORE + '&action=get&id=' + captcharef).then(res => {
             return res;
         });
 
