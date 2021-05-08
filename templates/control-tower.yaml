@@ -40,7 +40,7 @@ Resources:
       Name: superwerker-ct-setup
       ArtifactS3Location: !Sub s3://${SetupControlTowerArtifactLocation}
       ExecutionRoleArn: !GetAtt SetupControlTowerCanaryRole.Arn
-      RuntimeVersion: syn-1.0
+      RuntimeVersion: syn-nodejs-puppeteer-3.1
       StartCanaryAfterCreation: true
       RunConfig:
         TimeoutInSeconds: 600
