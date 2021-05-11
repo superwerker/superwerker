@@ -10,9 +10,23 @@ superwerker is stable and used in production by several customers. The roadmap i
 
 ## Installation
 
+Prerequisites:
+- Amazon Web Services account, you can sign up here -> https://aws.amazon.com (you will only be charged for services you use).
+- Familiarity with DNS configuration
+
 There are two ways to install superwerker:
 - Via [Github releases](https://github.com/superwerker/superwerker/releases) (the latest stable release - recommended)
 - Via [AWS QuickStart](https://aws.amazon.com/quickstart/architecture/superwerker/) (currently slower release frequency)
+
+## Step by step installation guide
+
+1. Sign into your AWS account.
+1. Check in the upper-right corner of the console that you are in the region in which you want to deploy superwerker.
+1. Click on the github releases link in the section above and select the 'quick install' link for the latest version of superwerker.
+
+You should now be on the AWS cloudformation console and are ready to begin the installation. 
+
+1. 
 
 After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for installation instructions, next steps and standard operating procedures.
 
