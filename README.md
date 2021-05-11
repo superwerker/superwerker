@@ -20,19 +20,19 @@ There are two ways to install superwerker:
 
 ## Step by step installation guide
 
+[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
+
 1. Sign into your AWS account.
 1. Check in the upper-right corner of the console that you are in the region in which you want to deploy superwerker.
-1. Click on the github releases link in the section above and select the 'quick install' link for the latest version of superwerker.
+1. Click on the github releases link in the section above, then select 'quick install' for the latest version of superwerker.
 
-You should now be on the AWS cloudformation console and are ready to begin the installation. 
+You should now be on the AWS CloudFormation console and are ready to begin the installation. 
 
-1. 
+1.  Fill in the Domain for automated DNS configuration
+1.  Tick the box acknowledging that CloudFormation might create IAM resources such as Roles and Policies
+1. Click the 'create stack' button.
 
 After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for installation instructions, next steps and standard operating procedures.
-
-### Installation video
-
-[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
 
 ## What's included in the setup?
 
