@@ -55,18 +55,18 @@ In the initial release, superwerker configures the following AWS services and fe
 AWS provides all the building blocks. superwerker adds the wiring and "how to" so you can start right ahead with a well-architected AWS foundation:
 
 1. Manage multiple AWS accounts and perform access management
-1. Sign in to your AWS accounts with your existing login provider (usually your email infrastructure provider, e.g. Office 365 or Google Workspace)
-1. Security built-in:
-  - Protect superuser ("root") access to your AWS accounts
-  - Scanning for best practise violations and active threats against your infrastructure
-  - Backups enabled for all database and file systems
-1. Billing best practices built-in:
-  - Automatic cost control and budget alarms
-  - Prevents your from using inappropriate AWS regions
-1. Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
-1. Notification centre: aggregates notifications from several services in a single place
-1. Gradual roll-out: features can be enabled/disabled individually
-1. Living quickstart dashboard with status overview (which features are active?) and actionable links to e.g. the notification center, or your security findings
+2. Sign in to your AWS accounts with your existing login provider (usually your email infrastructure provider, e.g. Office 365 or Google Workspace)
+3. Security built-in:
+    1. Protect superuser ("root") access to your AWS accounts
+    2. Scanning for best practise violations and active threats against your infrastructure
+    3. Backups enabled for all database and file systems
+4. Billing best practices built-in:
+    1. Automatic cost control and budget alarms
+    2. Prevents your from using inappropriate AWS regions
+5. Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
+6. Notification centre: aggregates notifications from several services in a single place
+7. Gradual roll-out: features can be enabled/disabled individually
+8. Living quickstart dashboard with status overview (which features are active?) and actionable links to e.g. the notification center, or your security findings
 
 ## Help & Feedback
 
