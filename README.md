@@ -8,26 +8,25 @@
 
 superwerker is stable and used in production by several customers. The roadmap is currently organized in [Github milestones](https://github.com/superwerker/superwerker/milestones).
 
-## Installation
+## Installation Prerequisites
 
-Prerequisites:
 - Amazon Web Services account, you can sign up here -> https://aws.amazon.com (you will only be charged for services you use).
 - Familiarity with DNS configuration
+
+## Installation guide
+
+[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
+
 
 There are two ways to install superwerker:
 - Via [Github releases](https://github.com/superwerker/superwerker/releases) (the latest stable release - recommended)
 - Via [AWS QuickStart](https://aws.amazon.com/quickstart/architecture/superwerker/) (currently slower release frequency)
 
-## Step by step installation guide
-
-[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
+You can watch the video or follow the instructions below to complete the installation
 
 1. Sign into your AWS account.
 1. Check in the upper-right corner of the console that you are in the region in which you want to deploy superwerker.
-1. Click on the github releases link in the section above, then select 'quick install' for the latest version of superwerker.
-
-You should now be on the AWS CloudFormation console and are ready to begin the installation. 
-
+1. Click on the github releases link in the section above, then select 'quick install' for the latest version of superwerker. (You should now be on the AWS CloudFormation console and are ready to begin the installation).
 1.  Fill in the Domain for automated DNS configuration
 1.  Tick the box acknowledging that CloudFormation might create IAM resources such as Roles and Policies
 1. Click the 'create stack' button.
