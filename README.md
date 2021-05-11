@@ -11,8 +11,12 @@ superwerker is stable and used in production by several customers. The roadmap i
 ## Installation
 
 There are two ways to install superwerker:
-- Via [Github releases](https://github.com/superwerker/superwerker/releases) (the latest stable release - recommended)
-- Via [AWS QuickStart](https://aws.amazon.com/quickstart/architecture/superwerker/) (currently slower release frequency)
+
+[![GitHub Release](https://badgen.net/badge/Install/GitHub%20Release/purple?1)](https://github.com/superwerker/superwerker/releases) \
+_(the latest stable release - recommended)_
+
+[![AWS Quick Start](https://badgen.net/badge/Install/AWS%20Quick%20Start/orange?1)](https://aws.amazon.com/quickstart/architecture/superwerker) \
+_(currently slower release frequency)_
 
 After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for installation instructions, next steps and standard operating procedures.
 
