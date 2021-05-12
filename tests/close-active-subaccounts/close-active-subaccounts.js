@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const org = new AWS.Organizations({region: 'us-east-1'});
-
+const retry = require('async-retry')
 const lib = require('./lib')
 
 const CAPTCHA_KEY = process.env['CAPTCHA_KEY'];
@@ -14,9 +14,12 @@ const CAPTCHA_KEY = process.env['CAPTCHA_KEY'];
                 continue;
             }
 
-            console.log(account);
-    
-            await lib.deleteAccount(account.Email, CAPTCHA_KEY);
+            await retry(async bail => {
+                console.log(account);
+                await lib.deleteAccount(account.Email, CAPTCHA_KEY);
+            }, {
+                retries: 10
+            });
         }
     } catch (e) {
         console.log('got exception in outer scope', e)
