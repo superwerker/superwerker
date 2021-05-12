@@ -12,7 +12,6 @@ Metadata:
         default: Features
       Parameters:
       - IncludeBudget
-      - IncludeControlTower
       - IncludeGuardDuty
       - IncludeSecurityHub
       - IncludeBackup
@@ -41,8 +40,6 @@ Metadata:
         default: Mail address used for important notification regarding your AWS account (leave empty for no notifications)
       IncludeBudget:
         default: Include AWS Budgets alarm
-      IncludeControlTower:
-        default: Include AWS Control Tower
       IncludeGuardDuty:
         default: Include Amazon GuardDuty
       IncludeSecurityHub:
@@ -77,13 +74,6 @@ Parameters:
     Default: 'Yes'
     Type: String
     Description: Enable AWS Budgets alarm for monthly AWS spending
-  IncludeControlTower:
-    AllowedValues:
-      - 'Yes'
-      - 'No'
-    Default: 'Yes'
-    Type: String
-    Description: Enable AWS Control Tower
   IncludeGuardDuty:
     AllowedValues:
       - 'Yes'
@@ -151,19 +141,10 @@ Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
   IncludeNotifications: !Not [!Equals [ !Ref NotificationsMail, '' ]]
   IncludeBudget: !Equals [ !Ref IncludeBudget, 'Yes' ]
-  IncludeControlTower: !Equals [ !Ref IncludeControlTower, 'Yes' ]
-  IncludeGuardDuty: !And
-    - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeGuardDuty, 'Yes' ]
-  IncludeSecurityHub: !And
-    - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeSecurityHub, 'Yes' ]
-  IncludeBackup: !And
-    - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeBackup, 'Yes' ]
-  IncludeServiceControlPolicies: !And
-    - !Condition IncludeControlTower
-    - !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
+  IncludeGuardDuty: !Equals [ !Ref IncludeGuardDuty, 'Yes' ]
+  IncludeSecurityHub: !Equals [ !Ref IncludeSecurityHub, 'Yes' ]
+  IncludeBackup: !Equals [ !Ref IncludeBackup, 'Yes' ]
+  IncludeServiceControlPolicies: !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
 
 Resources:
   Budget:
@@ -177,7 +158,6 @@ Resources:
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
 
   ControlTower:
-    Condition: IncludeControlTower
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL:
