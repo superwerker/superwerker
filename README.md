@@ -8,50 +8,65 @@
 
 superwerker is stable and used in production by several customers. The roadmap is currently organized in [Github milestones](https://github.com/superwerker/superwerker/milestones).
 
-## Installation
+## Installation guide
+
+[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
+
 
 There are two ways to install superwerker:
 - Via [Github releases](https://github.com/superwerker/superwerker/releases) (the latest stable release - recommended)
 - Via [AWS QuickStart](https://aws.amazon.com/quickstart/architecture/superwerker/) (currently slower release frequency)
 
+### Installation prerequisites
+
+- A dedicated AWS Account with administrative access ([sign up here](https://portal.aws.amazon.com/billing/signup))
+- A domain and manageable DNS settings (You can register domains with [Amazon Route53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html))
+
+### Installation video with quickstart option.
+
+You can watch the video or follow the instructions below to complete the installation :
+
+1. Sign into your AWS account.
+1. Check in the upper-right corner of the console that you are in the region in which you want to deploy superwerker.
+1. Click on the github releases link in the section above, then select 'quick install' for the latest version of superwerker. (You should now be on the AWS CloudFormation console and are ready to begin the installation).
+1.  Fill in the Domain for automated DNS configuration
+1.  Tick the box acknowledging that CloudFormation might create IAM resources such as Roles and Policies
+1. Click the 'create stack' button.
+
 After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for installation instructions, next steps and standard operating procedures.
-
-### Installation video
-
-[![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
 
 ## What's included in the setup?
 
 In the initial release, superwerker configures the following AWS services and features in a fully automated way:
 
-- [AWS Control Tower](https://aws.amazon.com/controltower/) and [AWS Single Sign-On](https://aws.amazon.com/single-sign-on/) as the basis for a future-proof multi-account setup
-- [Amazon GuardDuty](https://aws.amazon.com/guardduty/) for automatic detection of possible threats breaches
-- [AWS Security Hub](https://aws.amazon.com/security-hub) to ensure established security standards
-- [AWS Backup](https://aws.amazon.com/backup/) for automated creation of backups
-- Budget alarms for cost control
-- Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
-- [AWS Systems Manager](https://aws.amazon.com/systems-manager) OpsCenter/Items notification aggregation and incident response handling
-- Secure mailboxes and service catalogue aliases for all root accounts
-- Feature flippers to gradually opt into functionality
-- A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+1. [AWS Control Tower](https://aws.amazon.com/controltower/) and [AWS Single Sign-On](https://aws.amazon.com/single-sign-on/) as the basis for a future-proof multi-account setup
+1. [Amazon GuardDuty](https://aws.amazon.com/guardduty/) for automatic detection of possible threats breaches
+1. [AWS Security Hub](https://aws.amazon.com/security-hub) to ensure established security standards
+1. [AWS Backup](https://aws.amazon.com/backup/) for automated creation of backups
+1. Budget alarms for cost control
+1. Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
+1. [AWS Systems Manager](https://aws.amazon.com/systems-manager) OpsCenter/Items notification aggregation and incident response handling
+1. Secure mailboxes and service catalogue aliases for all root accounts
+1. Feature flippers to gradually opt into functionality
+1. A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
 
 ### Say what again? (the non-technical what's included)
 
 AWS provides all the building blocks. superwerker adds the wiring and "how to" so you can start right ahead with a well-architected AWS foundation:
 
-- Manage multiple AWS accounts and perform access management
-- Sign in to your AWS accounts with your existing login provider (usually your email infrastructure provider, e.g. Office 365 or Google Workspace)
-- Security built-in:
-  - Protect superuser ("root") access to your AWS accounts
-  - Scanning for best practise violations and active threats against your infrastructure
-  - Backups enabled for all database and file systems
-- Billing best practices built-in:
-  - Automatic cost control and budget alarms
-  - Prevents your from using inappropriate AWS regions
-- Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
-- Notification centre: aggregates notifications from several services in a single place
-- Gradual roll-out: features can be enabled/disabled individually
-- Living quickstart dashboard with status overview (which features are active?) and actionable links to e.g. the notification center, or your security findings
+1. Manage multiple AWS accounts and perform access management
+2. Sign in to your AWS accounts with your existing login provider (usually your email infrastructure provider, e.g. Office 365 or Google Workspace)
+3. Security built-in:
+    1. Protect superuser ("root") access to your AWS accounts
+    2. Scanning for best practise violations and active threats against your infrastructure
+    3. Backups enabled for all database and file systems
+4. Billing best practices built-in:
+    1. Automatic cost control and budget alarms
+    2. Prevents your from using inappropriate AWS regions
+5. Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
+6. Notification centre: aggregates notifications from several services in a single place
+7. Gradual roll-out: features can be enabled/disabled individually
+8. Living quickstart dashboard with status overview (which features are active?) and actionable links to e.g. the notification center, or your security findings
 
 ## Help & Feedback
 
