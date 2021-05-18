@@ -22,7 +22,7 @@ Conditions:
 
 Resources:
 
-  ServiceControlPolicy:
+  SCPBaseline:
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt SCPCustomResource.Arn
