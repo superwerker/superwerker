@@ -31,7 +31,7 @@ _(currently slower release frequency)_
 - A dedicated AWS Account with administrative access ([sign up here](https://portal.aws.amazon.com/billing/signup))
 - A domain and manageable DNS settings (You can register domains with [Amazon Route53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html))
 
-### Installation video with quickstart option.
+### Installation video with quickstart option
 
 You can watch the video or follow the instructions below to complete the installation :
 
@@ -39,11 +39,28 @@ You can watch the video or follow the instructions below to complete the install
 1. Check in the upper-right corner of the console that you are in the region in which you want to deploy superwerker.
 1. Click on the github releases link in the section above, then select 'quick install' for the latest version of superwerker. (You should now be on the AWS CloudFormation console and are ready to begin the installation).
 1.  Fill in the Domain for automated DNS configuration
-1.  Tick the box acknowledging that CloudFormation might create IAM resources such as Roles and Policies
+1.  Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
 1. Click the 'create stack' button.
 
-After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for installation instructions, next steps and standard operating procedures.
+After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for further installation instructions, next steps and standard operating procedures.
 
+### Update an existing installation
+
+1. Go to the AWS Console
+1. Navigate to the CloudFormation service
+1. Choose the superwerker stack
+1. Choose "Update"
+1. Choose "Replace current template"
+1. For "Amazon S3 URL", copy the link to the latest version of the template e.g. "https://superwerker-deployment.s3.amazonaws.com/0.12.3/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
+1. Click "Next"
+1. Recommended: Enter an email address to "Mail address used for important notification regarding your AWS account".
+1. Change the parameter "QSS3KeyPrefix" to the current version number e.g. "0.12.3/"
+1. Click "Next"
+1. Click "Next" again
+1. Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
+
+After completion of the stack update, navigate to the superwerker [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) dashboard for more information.
+    
 ## What's included in the setup?
 
 In the initial release, superwerker configures the following AWS services and features in a fully automated way:
