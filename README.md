@@ -43,23 +43,6 @@ You can watch the video or follow the instructions below to complete the install
 1. Click the 'create stack' button.
 
 After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for further installation instructions, next steps and standard operating procedures.
-
-### Update an existing installation
-
-1. Go to the AWS Console
-1. Navigate to the CloudFormation service
-1. Choose the superwerker stack
-1. Choose "Update"
-1. Choose "Replace current template"
-1. For "Amazon S3 URL", copy the link to the latest version of the template e.g. "https://superwerker-deployment.s3.amazonaws.com/0.12.3/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
-1. Click "Next"
-1. Recommended: Enter an email address to "Mail address used for important notification regarding your AWS account".
-1. Change the parameter "QSS3KeyPrefix" to the current version number e.g. "0.12.3/"
-1. Click "Next"
-1. Click "Next" again
-1. Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
-
-After completion of the stack update, navigate to the superwerker [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) dashboard for more information.
     
 ## What's included in the setup?
 
@@ -203,3 +186,20 @@ We use CloudWatch Events where possible in order to decouple architecture. We ac
 
 - [Ian McKay and his AWS Account Controller](https://github.com/iann0036/aws-account-controller)
 - [Flo Motlik / theserverlessway.com AWS Baseline](https://github.com/theserverlessway/aws-baseline)
+
+### Update an existing installation
+
+1. Go to the AWS Console
+1. Navigate to the CloudFormation service
+1. Choose the superwerker stack
+1. Choose "Update"
+1. Choose "Replace current template"
+1. For "Amazon S3 URL", copy the link to the latest version of the template e.g. "https://superwerker-deployment.s3.amazonaws.com/0.12.3/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
+1. Click "Next"
+1. Recommended: Enter an email address to "Mail address used for important notification regarding your AWS account".
+1. Change the parameter "QSS3KeyPrefix" to the current version number e.g. "0.12.3/"
+1. Click "Next"
+1. Click "Next" again
+1. Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
+
+After completion of the stack update, navigate to the superwerker [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) dashboard for more information.
