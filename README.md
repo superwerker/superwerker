@@ -1,5 +1,10 @@
 # superwerker - automated best practices for AWS
 
+[![AWS Quick Start](https://badgen.net/badge/AWS/Quick%20Start/FF9900?1)](https://aws.amazon.com/quickstart/architecture/superwerker)
+[![kreuzwerker.de](https://badgen.net/badge/by/kreuzwerker/C62B3F?1)](https://kreuzwerker.de/post/introducing-superwerker)
+[![superluminar.io](https://badgen.net/badge/by/superluminar/ff3b61?1)](https://superluminar.io/2021/02/15/superwerker-kostenloser-schnellstart-in-die-aws-cloud/)
+[![MIT License](https://badgen.now.sh/badge/License/MIT/blue?1)](https://github.com/superwerker/superwerker/blob/master/LICENSE.md)
+
 > The superwerker open source solution by **AWS Advanced Partners** [kreuzwerker](https://kreuzwerker.de/) and [superluminar](https://superluminar.io/) automates the setup of an AWS Cloud environment with prescriptive best practices. It enables startups and SMBs to focus on their core business - by saving setup and maintenance time and money.
 
 ![superwerker](/docs/images/splash.jpg)
@@ -18,7 +23,7 @@ There are two ways to install superwerker:
 [![GitHub Release](https://badgen.net/badge/Install/GitHub%20Release/purple?1)](https://github.com/superwerker/superwerker/releases) \
 _(the latest stable release - recommended)_
 
-[![AWS Quick Start](https://badgen.net/badge/Install/AWS%20Quick%20Start/orange?1)](https://aws.amazon.com/quickstart/architecture/superwerker) \
+[![AWS Quick Start](https://badgen.net/badge/Install/AWS%20Quick%20Start/FF9900?1)](https://aws.amazon.com/quickstart/architecture/superwerker) \
 _(currently slower release frequency)_
 
 ### Installation prerequisites
