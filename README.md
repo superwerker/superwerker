@@ -19,8 +19,8 @@ There are two ways to install superwerker:
 
 ### Installation prerequisites
 
-- Amazon Web Services account, you can sign up here -> https://aws.amazon.com (you will only be charged for services you use).
-- Familiarity with DNS configuration
+- A dedicated AWS Account with administrative access ([sign up here](https://portal.aws.amazon.com/billing/signup))
+- A domain and manageable DNS settings (You can register domains with [Amazon Route53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html))
 
 ### Installation video with quickstart option.
 
