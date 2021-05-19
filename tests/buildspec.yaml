@@ -15,7 +15,7 @@ phases:
     commands:
       # vend fresh account/org
       - pip3 install -r tests/requirements.txt
-      - pip3 install awscli --upgrade
+      - pip3 install awscli --upgrade --use-feature=2020-resolver
       - curl --version
       - aws --version
       - ovm_result=$(curl --fail --retry 10 -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
