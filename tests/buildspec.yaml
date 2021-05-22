@@ -27,23 +27,39 @@ phases:
       - aws configure --profile test_account set role_arn $aws_cross_account_role_arn
       - aws configure --profile test_account set credential_source EcsContainer
 
+      # create IAM user and configure static access keypair in order to circumvent "The security token included in the request is invalid" errors in longer running processes like CloudFormation or the testsuite
+      - aws --profile test_account iam create-user --user-name superwerker-tests
+      - aws --profile test_account iam attach-user-policy --user-name superwerker-tests --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+      - eval $(aws --profile test_account iam create-access-key --user-name superwerker-tests | jq -r '.AccessKey | "export SUPERWERKER_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport SUPERWERKER_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\n"')
+
+      - aws configure --profile test_account_iam_user_access set aws_access_key_id "${SUPERWERKER_AWS_ACCESS_KEY_ID}"
+      - aws configure --profile test_account_iam_user_access set aws_secret_access_key "${SUPERWERKER_AWS_SECRET_ACCESS_KEY}"
+      # wait for IAM eventual consistency
+      - for i in {1..5}; do sleep 15; aws sts get-caller-identity --profile test_account_iam_user_access && break || exit 1; done
+
       # setup superwerker in vended account
-      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-body file://templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${TEMPLATE_BUCKET_NAME} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${TEMPLATE_PREFIX} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
+      - aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-body file://templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${TEMPLATE_BUCKET_NAME} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${TEMPLATE_PREFIX} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
       - sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
-      - while ! domain_name_servers=$(aws --profile test_account --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
+      - while ! domain_name_servers=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
       - aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
       - sleep 1800 # give superwerker stack time to finish (Control Tower needs ~30min)
-      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
+      - aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
 
+      # wire CT account factory SC product so that the cross account role can access the CT SC portfolio
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-fixture --template-file tests/account-factory.yaml --parameter-overrides AccountName=sw-${aws_account_id} AccountEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} SSOUserFirstName=Isolde SSOUserLastName=Mawidder-Baden SSOUserEmail=root+test@${aws_account_id}.${ROOT_MAIL_DOMAIN} ManagedOrganizationalUnit=Sandbox --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
 
       - sleep 300 # give superwerker components some time to settle, e.g. SecurityHub member adding takes some minutes after account factory fixture has been rolled out
       - cd tests
       - rm -rf ~/.aws/cli/cache # run tests with fresh credentials
-      - AWS_MAX_ATTEMPTS=10 AWS_REGION=${SUPERWERKER_REGION} AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootmail.py backup.py notifications.py tests.py
+      - AWS_MAX_ATTEMPTS=10 AWS_REGION=${SUPERWERKER_REGION} AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -munittest rootmail.py backup.py notifications.py tests.py
 
     finally:
+      # remove temp IAM user
+      - aws --profile test_account iam delete-access-key --user-name superwerker-tests --access-key-id "${SUPERWERKER_AWS_ACCESS_KEY_ID}"
+      - aws --profile test_account iam detach-user-policy --user-name superwerker-tests --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
+      - aws --profile test_account iam delete-user --user-name superwerker-tests
+
       # close sub-accounts so that the OVM can close the main / management account later
       - cd $CODEBUILD_SRC_DIR/tests/close-active-subaccounts
       - npm i
