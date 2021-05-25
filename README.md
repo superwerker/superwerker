@@ -11,7 +11,7 @@
 
 ## Project state / Roadmap
 
-superwerker is stable and used in production by several customers. The roadmap is currently organized in [Github milestones](https://github.com/superwerker/superwerker/milestones).
+superwerker is stable and used in production by several customers. The roadmap is currently organized in [projects](https://github.com/superwerker/superwerker/projects).
 
 ## Installation guide
 
