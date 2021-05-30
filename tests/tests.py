@@ -166,6 +166,9 @@ class MyTestCase(unittest.TestCase):
 
         scp_test_session_security_hub = scp_test_session.client('securityhub')
 
+        # give IAM some time to settle
+        time.sleep(30)
+
         # assert that SCP forbids disabling of security hub
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_security_hub.disable_security_hub()
