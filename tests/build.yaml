@@ -9,6 +9,11 @@ Parameters:
   DeploymentBucket:
     Type: String
     Default: superwerker-deployment
+  AllowedGitHubAccountIDs:
+    Type: CommaDelimitedList
+  AllowedGitHubCommitMessageRegExp:
+    Type: String
+    Default: \[CodeBuild\]
 
 Resources:
 
@@ -46,9 +51,13 @@ Resources:
         - - Type: EVENT
             Pattern: PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED
           - Type: COMMIT_MESSAGE
-            Pattern: \[CodeBuild\]
+            Pattern: !Ref AllowedGitHubCommitMessageRegExp
           - Type: ACTOR_ACCOUNT_ID
-            Pattern: ^(35994499)$
+            Pattern: !Sub
+              - ^(${AllowedGitHubAccountIDsRegExp})$
+              - AllowedGitHubAccountIDsRegExp: !Join
+                - "|"
+                - !Ref AllowedGitHubAccountIDs
 
   BuildAndTestProjectRole:
     Type: AWS::IAM::Role
