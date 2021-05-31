@@ -40,6 +40,15 @@ Resources:
         Type: GITHUB
         Location: https://github.com/superwerker/superwerker.git
         BuildSpec: tests/buildspec.yaml
+      Triggers:
+        Webhook: true
+        FilterGroups:
+        - - Type: EVENT
+            Pattern: PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED
+          - Type: COMMIT_MESSAGE
+            Pattern: \[CodeBuild\]
+          - Type: ACTOR_ACCOUNT_ID
+            Pattern: ^(35994499)$
 
   BuildAndTestProjectRole:
     Type: AWS::IAM::Role
