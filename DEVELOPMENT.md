@@ -18,15 +18,6 @@ superwerker provides a [CodeBuild job](tests/build.yaml) which can be used to te
 
 The CodeBuild job is started if a commit message includes `[CodeBuild]` and is authored by one of the allowed GitHub user ids.
 
-### Usage
-
-1. Deploy the [CodeBuild CloudFormation template](tests/build.yaml)
-2. Run the build
-```shell
-cd tests
-CODEBUILD_PROJECT_NAME=<codebuild_project_name_from_above_cloudformation_stack> SOURCE_PROFILE=<source_profile> ./start-build.sh
-```
-
 #### Update CodeBuild for PR Test
 
 ```bash
