@@ -4,6 +4,13 @@
 
 ### MAVM (Management Account Vending Machine)
 
+#### Create New AWS Account
+
+```bash
+> $ ORGANIZATIONS_VENDING_MACHINE_ENDPOINT=https://api.example.com/mavm \
+  ./tests/setup-test-organization.sh
+```
+
 TBD
 
 ## Development
