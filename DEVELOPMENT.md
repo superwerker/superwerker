@@ -26,3 +26,12 @@ This can also be seen as preparation for [PR tests](https://github.com/superwerk
 cd tests
 CODEBUILD_PROJECT_NAME=<codebuild_project_name_from_above_cloudformation_stack> SOURCE_PROFILE=<source_profile> ./start-build.sh
 ```
+
+#### Update CodeBuild for PR Test
+
+```bash
+$ > aws cloudformation deploy --region eu-west-1 \
+    --template-file ./tests/build.yaml \
+    --stack-name superwerker-build \
+    --capabilities CAPABILITY_IAM
+```
