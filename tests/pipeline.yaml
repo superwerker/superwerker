@@ -45,27 +45,8 @@ Resources:
                 OAuthToken: '{{resolve:secretsmanager:/superwerker/github-token:SecretString}}'
                 PollForSourceChanges: false
 
-        - Name: DeployAndTestSuperwerker
+        - Name: TestSuperwerker
           Actions:
-            - ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref DeployProject
-                EnvironmentVariables: |
-                  [
-                    {
-                      "name": "BRANCH_NAME",
-                      "value": "#{source.BranchName}"
-                    }
-                  ]
-              InputArtifacts:
-                - Name: SourceOutput
-              Name: Deploy
-              RunOrder: 40
-
             - ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -82,10 +63,6 @@ Resources:
                     {
                       "name": "TEMPLATE_REGION",
                       "value": "eu-west-1"
-                    },
-                    {
-                      "name": "TEMPLATE_PREFIX",
-                      "value": "#{source.BranchName}/"
                     }
                   ]
                 BatchEnabled: true
@@ -233,31 +210,6 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
-
-  DeployProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      TimeoutInMinutes: 180
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:2.0
-        Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: DEPLOYMENT_BUCKET
-            Value: !Ref DeploymentBucket
-      ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
-      Artifacts:
-        Type: CODEPIPELINE
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          env:
-            shell: bash
-          phases:
-            build:
-              commands:
-                - aws s3 sync templates s3://${DEPLOYMENT_BUCKET}/${BRANCH_NAME}/templates
 
   DeploymentBucketUser:
     Type: AWS::IAM::User
