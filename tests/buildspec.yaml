@@ -23,6 +23,9 @@ phases:
       - aws_cross_account_role_arn=$(echo $ovm_result | jq -r .cross_account_role)
       - echo AccountId ${aws_account_id} - Cross Account Role ${aws_cross_account_role_arn}
 
+      - export TEMPLATE_PREFIX=build/${CODEBUILD_SOURCE_VERSION}/
+      - aws s3 sync templates s3://superwerker-deployment/${TEMPLATE_PREFIX}templates
+
       # setup AWS CLI to talk to vended account
       - aws configure --profile test_account set role_arn $aws_cross_account_role_arn
       - aws configure --profile test_account set credential_source EcsContainer
