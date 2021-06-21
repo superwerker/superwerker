@@ -1,0 +1,4 @@
+ - ssm attachments can be used multi region
+ - no clpudwatch logs config / retention needed
+ - has a free tier
+ - no inline limit
