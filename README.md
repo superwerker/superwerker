@@ -69,9 +69,7 @@ AWS provides all the building blocks. superwerker adds the wiring and "how to" s
     1. Protect superuser ("root") access to your AWS accounts
     2. Scanning for best practise violations and active threats against your infrastructure
     3. Backups enabled for all database and file systems
-4. Billing best practices built-in:
-    1. Automatic cost control and budget alarms
-    2. Prevents your from using inappropriate AWS regions
+4. Billing best practices built-in: Automatic cost control and budget alarm
 5. Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
 6. Notification centre: aggregates notifications from several services in a single place
 7. Gradual roll-out: features can be enabled/disabled individually
