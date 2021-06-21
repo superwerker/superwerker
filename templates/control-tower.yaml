@@ -10,6 +10,35 @@ Parameters:
 
 Resources:
 
+  SetupControlTower:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Attachments:
+        - Key: S3FileUrl
+          Name: assets.zip
+          Values:
+            - s3://ssmsoenketest-2/assets.zip
+      Content:
+        schemaVersion: '0.3'
+        files:
+          assets.zip:
+            checksums:
+              sha256: 11946502cbbf2a1d7057b6f209d26376311717c89f4380ba9af09a1e1359e872
+        mainSteps:
+          - name: ctower
+            action: 'aws:executeScript'
+            inputs:
+              Runtime: python3.7
+              Handler: script_handler
+              Script: |
+                def script_handler(events, context):
+                  import os
+                  arr = os.listdir()
+                  print(arr)
+
+              Attachment: assets.zip
+
   SetupControlTowerCanaryRole:
     Type: AWS::IAM::Role
     Properties:
