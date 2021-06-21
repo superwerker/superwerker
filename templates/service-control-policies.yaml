@@ -19,7 +19,7 @@ Parameters:
 Conditions:
   IncludeSecurityHub: !Equals [ !Ref IncludeSecurityHub, true ]
   IncludeBackup: !Equals [ !Ref IncludeBackup, true ]
-  SCPwithSecurityAndBackup: !And
+  RolloutSCPs: !And
     - !Equals [ !Ref IncludeSecurityHub, true ]
     - !Equals [ !Ref IncludeBackup, true ]
 
@@ -27,7 +27,7 @@ Resources:
 
   SCPBaseline:
     Type: AWS::CloudFormation::CustomResource
-    Condition: SCPwithSecurityAndBackup
+    Condition: RolloutSCPs
     Properties:
       ServiceToken: !GetAtt SCPCustomResource.Arn
       Policy: !Sub
