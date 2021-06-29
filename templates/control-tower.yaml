@@ -10,6 +10,52 @@ Parameters:
 
 Resources:
 
+  SetupControlTowerAutomationTriggerParameter:
+    DependsOn: SetupControlTowerAutomationTrigger # trigger needs to be there before the event is fired
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name:  /superwerker/setup_control_tower_automation_trigger
+      Value: trigger
+      Type: String
+
+  SetupControlTowerAutomationTrigger:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.ssm
+        detail-type:
+          - Parameter Store Change
+        detail:
+          name:
+            - /superwerker/setup_control_tower_automation_trigger
+          operation:
+            - Create
+      State: ENABLED
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${SetupControlTowerAutomation}
+          Id: EnableSecurityHubOrganizations
+          RoleArn: !GetAtt SetupControlTowerAutomationTriggerRole.Arn
+
+  SetupControlTowerAutomationTriggerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowStartAutomationExecution
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: ssm:StartAutomationExecution
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${SetupControlTowerAutomation}:*
+
+
   SetupControlTowerAutomation:
     Type: AWS::SSM::Document
     Properties:
