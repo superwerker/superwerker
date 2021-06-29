@@ -11,9 +11,9 @@ Parameters:
     Default: superwerker-deployment
   AllowedGitHubAccountIDs:
     Type: CommaDelimitedList
-  AllowedGitHubCommitMessageRegExp:
+  SkipBuildCommitMessageRegExp:
     Type: String
-    Default: \[CodeBuild\]
+    Default: \[skip ci\]
 
 Resources:
 
@@ -54,7 +54,8 @@ Resources:
         - - Type: EVENT
             Pattern: PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED
           - Type: COMMIT_MESSAGE
-            Pattern: !Ref AllowedGitHubCommitMessageRegExp
+            Pattern: !Ref SkipBuildCommitMessageRegExp
+            ExcludeMatchedPattern: true
           - Type: ACTOR_ACCOUNT_ID
             Pattern: !Sub
               - ^(${AllowedGitHubAccountIDsRegExp})$
