@@ -1,4 +1,4 @@
  - ssm attachments can be used multi region
- - no clpudwatch logs config / retention needed
- - has a free tier
+ - Cloudwatch Logs config / retention settings not needed. Nop orphaned logs. SSM Automation provides execution logs out of the box
+ - SSM Automation has a free tier as well
  - no inline limit

@@ -10,36 +10,35 @@ Parameters:
 
 Resources:
 
-  SetupControlTower:
+  SetupControlTowerAutomation:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
-      Attachments:
-        - Key: S3FileUrl
-          Name: assets.zip
-          Values:
-            - s3://ssmsoenketest-2/assets.zip
       Content:
         schemaVersion: '0.3'
-        files:
-          assets.zip:
-            checksums:
-              sha256: 11946502cbbf2a1d7057b6f209d26376311717c89f4380ba9af09a1e1359e872
+        assumeRole: !GetAtt SetupControlTowerAssumeRole.Arn
         mainSteps:
-          - name: ctower
-            action: 'aws:executeScript'
+          - name: setupOrUpdateControlTower
+            action: aws:executeScript
+            maxAttempts: 10
             inputs:
               Runtime: python3.7
               Handler: script_handler
-              Script: |
+              Script: !Sub |
                 def script_handler(events, context):
-                  import os
-                  arr = os.listdir()
-                  print(arr)
+                  import sys
+                  import subprocess
 
-              Attachment: assets.zip
+                  sys.path.insert(1, './packages')
+                  subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', 'packages', 'awsapilib'])
 
-  SetupControlTowerCanaryRole:
+                  import awsapilib
+                  from awsapilib import ControlTower
+
+                  tower = ControlTower('${SetupControlTowerRoleForAwsApiLib.Arn}')
+                  tower.deploy(logging_account_email='${LogArchiveAWSAccountEmail}', security_account_email='${AuditAWSAccountEmail}')
+
+  SetupControlTowerAssumeRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -47,200 +46,34 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: lambda.amazonaws.com
+              Service: ssm.amazonaws.com
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AdministratorAccess # fixme: least privilege
-      Policies:
-        - PolicyName: AllowS3List
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:ListAllMyBuckets
-                  - s3:GetBucketLocation
-                  - cloudwatch:PutMetricData
-                Resource: '*'
 
-  SetupControlTowerCanary:
-    Type: AWS::Synthetics::Canary
+  SetupControlTowerAssumeRolePolicy:
+    Type: AWS::IAM::Policy
     Properties:
-      Name: superwerker-ct-setup
-      ArtifactS3Location: !Sub s3://${SetupControlTowerArtifactLocation}
-      ExecutionRoleArn: !GetAtt SetupControlTowerCanaryRole.Arn
-      RuntimeVersion: syn-nodejs-puppeteer-3.1
-      StartCanaryAfterCreation: true
-      RunConfig:
-        TimeoutInSeconds: 600
-      Schedule:
-        DurationInSeconds: "3600"
-        Expression: rate(0 minute)
-      Code:
-        Handler: pageLoadBlueprint.handler
-        Script: !Sub |
-          var synthetics = require('Synthetics');
-          const log = require('SyntheticsLogger');
-
-          const httpGet = url => {
-            const https = require('https');
-            return new Promise((resolve, reject) => {
-              https.get(url, res => {
-                res.setEncoding('utf8');
-                let body = '';
-                res.on('data', chunk => body += chunk);
-                res.on('end', () => resolve(body));
-              }).on('error', reject);
-            });
-          };
-
-          const flowBuilderBlueprint = async function () {
-            let page = await synthetics.getPage();
-
-            await synthetics.executeStep('consoleLogin', async function () {
-              const AWS = require("aws-sdk");
-
-              const federationEndpoint = 'https://signin.aws.amazon.com/federation';
-              const issuer = 'superwerker';
-              const destination = 'https://console.aws.amazon.com/';
-
-              let credentials = await AWS.config.credentialProvider.resolve((err, cred) => { return cred; }).resolvePromise()
-
-              const session = {
-                sessionId: credentials.accessKeyId,
-                sessionKey: credentials.secretAccessKey,
-                sessionToken: credentials.sessionToken
-              };
-
-              const encodedSession = encodeURIComponent(JSON.stringify(session));
-              const signinTokenUrl = `${!federationEndpoint}?Action=getSigninToken&SessionDuration=3600&Session=${!encodedSession}`;
-
-              const signinResponse = await httpGet(signinTokenUrl);
-
-              let consoleLoginUrl = `${!federationEndpoint}?Action=login&Issuer=${!issuer}&Destination=${!destination}&SigninToken=${!
-                JSON.parse(signinResponse).SigninToken
-              }`;
-
-              await page.goto(consoleLoginUrl, {waitUntil: ['load', 'networkidle0']});
-
-              // remove cookie banner if present
-              try {
-                page.waitForSelector('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
-                await page.click('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
-                await page.waitFor(1000);
-              } catch (e) {
-              }
-            });
-
-            await synthetics.executeStep('gotoCT', async function () {
-              await page.goto("https://${AWS::Region}.console.aws.amazon.com/controltower/home?region=${AWS::Region}", {waitUntil: ['load', 'networkidle0']});
-            });
-
-            let landingZoneState;
-            await synthetics.executeStep('gotoLlandingZoneCreation', async function () {
-
-              if (await page.$('#get-started-btn > button') !== null) {
-                landingZoneState = 'new';
-                await page.click('#get-started-btn > button');
-                await page.waitFor(10000); // waitForNavigation does not work here, so use sleep()
-              } else {
-                landingZoneState = 'existing';
-                await page.goto('https://${AWS::Region}.console.aws.amazon.com/controltower/home/update?region=${AWS::Region}', {waitUntil: ['load', 'networkidle0']});
-              }
-            });
-
-            if (landingZoneState == 'new') {
-              await synthetics.executeStep('createLandingZone', async function () {
-                let newUi
-                try {
-                  await page.waitForSelector("#regions-config-page")
-                  newUi = true
-                } catch (e) {
-                  newUi = false
-                }
-
-                if (newUi) {
-                  await page.waitForSelector("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
-                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
-                  await page.waitFor(3000)
-
-                  await page.waitForSelector("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
-                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
-                  await page.waitFor(3000)
-
-                  await page.waitForSelector("#aws-control-tower-log-archive-email")
-                  await page.type("#aws-control-tower-log-archive-email input:first-child", "${LogArchiveAWSAccountEmail}")
-                  await page.waitFor(3000)
-                  await page.type("#aws-control-tower-cross-account-audit-email input:first-child", "${AuditAWSAccountEmail}")
-                  await page.waitFor(3000)
-
-                  // click somewhere else to trigger email address verification
-                  await page.click("#aws-control-tower-cross-account-audit-name input:first-child")
-                  await page.waitFor(10000)
-                  // now it's possible to click the "next" button
-                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
-
-                  await page.waitForSelector("#consent-checkbox")
-                  await page.click("#consent-checkbox input:first-child")
-
-                  await page.click("#ct-configure-landing-zone button.awsui-button-variant-primary:first-child")
-                  await page.waitFor(10000)
-                  await page.waitForNavigation({waitUntil: ['domcontentloaded']});
-                } else {
-                  await page.click("#awsui-input-0")
-                  await page.waitFor(3000)
-                  await page.click("#awsui-input-1")
-                  await page.waitFor(3000)
-                  await page.click("#awsui-input-2")
-                  await page.waitFor(3000)
-                  await page.type("#awsui-input-0", "${LogArchiveAWSAccountEmail}")
-                  await page.waitFor(3000)
-                  await page.type("#awsui-input-1", "${AuditAWSAccountEmail}")
-                  await page.waitFor(3000)
-                  await page.click("#awsui-checkbox-0")
-                  await page.waitFor(10000); // wait for AWS UI to settle, then click
-                  await page.click("#save-button > button");
-                  await page.waitFor(10000)
-                  await page.waitForNavigation({waitUntil: ['domcontentloaded']});
-                }
-              });
-            } else {
-                await synthetics.executeStep('updateLandingZone', async function () {
-                  await page.click("#save-button > button")
-                  await page.waitFor(10000)
-                  await page.waitForNavigation({waitUntil: ['domcontentloaded']});
-                });
-            }
-
-          };
-
-          exports.handler = async () => {
-            return await flowBuilderBlueprint();
-          };
-
-  SetupControlTowerArtifactLocation:
-    Type: AWS::S3::Bucket
-    Properties:
-      LifecycleConfiguration:
-        Rules:
-          - ExpirationInDays: 1
-            Status: Enabled
-
-
-  SetupControlTowerArtifactLocationPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref SetupControlTowerArtifactLocation
+      PolicyName: SetupControlTowerAssumeRolePolicy
       PolicyDocument:
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
-            Action: '*'
-            Resource:
-              - !GetAtt SetupControlTowerArtifactLocation.Arn
-              - !Sub ${SetupControlTowerArtifactLocation.Arn}/*
+            Action: sts:AssumeRole
+            Resource: !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
+      Roles:
+        - !Ref SetupControlTowerAssumeRole
+
+  SetupControlTowerRoleForAwsApiLib:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
             Principal:
-              AWS: !GetAtt SetupControlTowerCanaryRole.Arn
+              AWS: !GetAtt SetupControlTowerAssumeRole.Arn
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess # fixme: least privilege
 
   ControlTowerReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
@@ -271,22 +104,6 @@ Resources:
                       - SUCCEEDED
                 eventName:
                   - SetupLandingZone
-        UpdateLandingZone: # event from updated existing landing zone
-          Type: CloudWatchEvent
-          Properties:
-            InputPath: $.detail.serviceEventDetails.updateLandingZoneStatus
-            Pattern:
-              detail-type:
-                - AWS Service Event via CloudTrail
-              source:
-                - aws.controltower
-              detail:
-                serviceEventDetails:
-                  updateLandingZoneStatus:
-                    state:
-                      - SUCCEEDED
-                eventName:
-                  - UpdateLandingZone
 
       Handler: index.handler
       Runtime: python3.7

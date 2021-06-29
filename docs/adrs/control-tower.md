@@ -10,7 +10,7 @@ Control Tower (CT) is the native service as the foundation for a secure multi-ac
 
 ## Decision
 
-- Since CT has no API yet, automate it via CloudWatch Synthetics (CWS) Canaries
+- Since CT has no API yet, automate it via [awsapilib](https://awsapilib.readthedocs.io/en/latest/usage.html#usage-for-controltower)
 - To keep it simple, superwerker can be installed into regions that Control Tower supports. Choosing a home region for Control Tower / AWS SSO has no impact on other resources' multi regionality.
 - Update Control Tower to the latest version when installing/updating superwerker to ensure a sane state. We'll live with the risk of unintended upstream changes for now.
 - Since CT uses AWS SSO, it is set as the default login and AWS account switching solution.
@@ -22,6 +22,5 @@ Control Tower (CT) is the native service as the foundation for a secure multi-ac
 
 - superwerker only supports regions supported by CT
 - CT implies additional costs (e.g., Config Rules), which is covered by our design decision to enable services which negligible costs
-- Using CWS Canaries provides an audit log of the Click Ops because of the screenshots
 - The CT LZ set up/update/repair has to be supervised since it fails sometimes and has to be restarted -> #61
 - superwerker provides links to how-tos for wiring existing IdPs like Google Workspace, AzureAD, etc. -> #20
