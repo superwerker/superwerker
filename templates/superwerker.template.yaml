@@ -124,15 +124,15 @@ Parameters:
     See https://aws-quickstart.github.io/option1.html.'
     Type: String
   QSS3KeyPrefix:
-    AllowedPattern: '^([0-9a-zA-Z-.]+/)*$'
+    AllowedPattern: '^([0-9a-zA-Z-.:]+/)*$'
     ConstraintDescription: The Quick Start S3 key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), and forward slashes (/).
+      uppercase letters, hyphens (-), colon (:), and forward slashes (/).
     Default: quickstart-superwerker/
     Description: S3 key prefix that is used to simulate a directory for your copy of the 
       Quick Start assets. Keep the default prefix unless you are customizing 
       the template. Changing this prefix updates code references to point to 
       a new Quick Start location. This prefix can include numbers, lowercase 
-      letters, uppercase letters, hyphens (-), and forward slashes (/). 
+      letters, uppercase letters, hyphens (-), colon (:), and forward slashes (/). 
       See https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html 
       and https://aws-quickstart.github.io/option1.html.
     Type: String
