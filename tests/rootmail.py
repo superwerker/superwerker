@@ -137,36 +137,6 @@ class RootMailTestCase(unittest.TestCase):
             Status='Resolved',
         )
 
-    def test_root_email_spam(self):
-
-        GTUBE='XJS*C4JDBQADN1.NSBN3*2IDNEN*GTUBE-STANDARD-ANTI-UBE-TEST-EMAIL*C.34X'
-
-        id = uuid.uuid4().hex
-        self.send_email(id, GTUBE)
-
-        time.sleep(10)
-
-        res = ssm.get_ops_summary(
-            Filters=[
-                {
-                    'Key': 'AWS:OpsItem.Title',
-                    'Values': [
-                        id,
-                    ],
-                    'Type': 'Equal',
-                },
-                {
-                    'Key': 'AWS:OpsItem.Status',
-                    'Values': [
-                        'Open',
-                    ],
-                    'Type': 'Equal',
-                },
-            ],
-        )
-
-        self.assertEqual(0, len(res['Entities']))
-
     def test_root_email_virus(self):
 
         EICAR='X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'
