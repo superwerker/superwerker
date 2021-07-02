@@ -107,6 +107,7 @@ Resources:
             Resource: !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
       Roles:
         - !Ref SetupControlTowerAssumeRole
+        - !Ref SuperwerkerBootstrapFunctionRole
 
   SetupControlTowerRoleForAwsApiLib:
     Type: AWS::IAM::Role
@@ -153,9 +154,12 @@ Resources:
 
       Handler: index.handler
       Runtime: python3.7
+      Timeout: 120 # give it more memory since it install awsapilib
+      MemorySize: 1024
       Environment:
         Variables:
           SIGNAL_URL: !Ref ControlTowerReadyHandle
+          AWSAPILIB_CONTROLTOWER_ASSUME_ROLE: !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
       InlineCode: |-
         import boto3
         import json
@@ -165,7 +169,21 @@ Resources:
         import urllib3
         import os
 
+        # load awsapilib in-process as long as we have no strategy for bundling assets
+        import sys
+        import subprocess
+        sys.path.insert(1, '/tmp/packages')
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib'])
+        import awsapilib
+        from awsapilib import ControlTower
+
         def handler(event, context):
+
+          tower = ControlTower(os.environ['AWSAPILIB_CONTROLTOWER_ASSUME_ROLE'])
+
+          if not tower.is_deployed:
+            raise Exception('Control Tower has not successfully been deployed')
+
           for account in event['accounts']:
               ssm.put_parameter(
                   Name='/superwerker/account_id_{}'.format(account['accountName'].lower().replace(' ', '')),
