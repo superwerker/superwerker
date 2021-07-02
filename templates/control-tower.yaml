@@ -55,7 +55,6 @@ Resources:
                 Action: ssm:StartAutomationExecution
                 Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${SetupControlTowerAutomation}:*
 
-
   SetupControlTowerAutomation:
     Type: AWS::SSM::Document
     Properties:
@@ -107,7 +106,6 @@ Resources:
             Resource: !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
       Roles:
         - !Ref SetupControlTowerAssumeRole
-        - !Ref SuperwerkerBootstrapFunctionRole
 
   SetupControlTowerRoleForAwsApiLib:
     Type: AWS::IAM::Role
@@ -117,7 +115,9 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !GetAtt SetupControlTowerAssumeRole.Arn
+              AWS:
+               - !GetAtt SetupControlTowerAssumeRole.Arn
+               - !GetAtt SuperwerkerBootstrapFunctionRole.Arn
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # fixme: least privilege
@@ -228,6 +228,9 @@ Resources:
             - Action: events:PutEvents
               Effect: Allow
               Resource: '*'
+            - Action: sts:AssumeRole
+              Effect: Allow
+              Resource: '*' # FIXME: least privilege
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
