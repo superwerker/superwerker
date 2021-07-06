@@ -78,4 +78,4 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.BOT_ACCESS_TOKEN }}" \
           https://api.github.com/repos/aws-quickstart/quickstart-superwerker/pulls \
-          -d '{"head":"superwerker:release/${{ steps.semantic.outputs.new_release_version }}", "base":"main", "title": "release: ${{ steps.semantic.outputs.new_release_version }}", "body": "Hey @sbstjn, take a look at the most recent release:\n\nhttps://github.com/superwerker/superwerker/releases/tag/v${{ steps.semantic.outputs.new_release_version }}"}'
+          -d '{"head":"superwerker:release/${{ steps.semantic.outputs.new_release_version }}", "base":"main", "title": "release: ${{ steps.semantic.outputs.new_release_version }}", "body": "Hey @davmayd @troy-ameigh, please take a look at the most recent release:\n\nhttps://github.com/superwerker/superwerker/releases/tag/v${{ steps.semantic.outputs.new_release_version }}"}'
