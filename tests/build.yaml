@@ -52,7 +52,7 @@ Resources:
         Webhook: true
         FilterGroups:
         - - Type: EVENT
-            Pattern: PUSH, PULL_REQUEST_CREATED
+            Pattern: PUSH
           - Type: COMMIT_MESSAGE
             Pattern: !Ref SkipBuildCommitMessageRegExp
             ExcludeMatchedPattern: true
