@@ -110,7 +110,7 @@ Resources:
       State: ENABLED
       RoleArn: !GetAtt CodeBuildAndTestProjectSchedulerRole.Arn
       Targets:
-        - Arn: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${BuildAndTestProject}
+        - Arn: !Sub arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:${BuildAndTestProject}
           Id: nightly-codebuild-scheduler
           RoleArn: !GetAtt CodeBuildAndTestProjectSchedulerRole.Arn
           Input: '{"sourceVersion":"^/refs/head/main$"}'
