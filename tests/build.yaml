@@ -76,3 +76,41 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+  
+  CodeBuildAndTestProjectSchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+        Version: 2012-10-17
+
+  CodeBuildAndTestProjectSchedulerRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - codebuild:StartBuild
+              - codebuild:StartBuildBatch
+            Effect: Allow
+            Resource: !Sub arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/${BuildAndTestProject}
+        Version: 2012-10-17
+      PolicyName: !Sub ${BuildAndTestProject}-scheduler-role-policy
+      Roles:
+        - !Ref CodeBuildAndTestProjectSchedulerRole
+
+  CodeBuildAndTestProjectScheduler:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(1 day)
+      State: ENABLED
+      RoleArn: !GetAtt CodeBuildAndTestProjectSchedulerRole.Arn
+      Targets:
+        - Arn: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${BuildAndTestProject}
+          Id: nightly-codebuild-scheduler
+          RoleArn: !GetAtt CodeBuildAndTestProjectSchedulerRole.Arn
+          Input: '{"sourceVersion":"^/refs/head/main$"}'
