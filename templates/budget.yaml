@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
+Description: Sets up Budget pieces for account management. (qs-1s3rsr7io)
 
 Parameters:
   BudgetLimitInUSD:
@@ -8,12 +9,11 @@ Parameters:
     Type: String
 
 Resources:
-
   BudgetAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
-        - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:opsitem:3#CATEGORY=Cost # severity 3 (~medium) should suffice
+        - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:opsitem:3#CATEGORY=Cost # severity 3 (~medium) should suffice
       AlarmDescription: Superwerker default budget forecast exceed previous three months
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
@@ -120,7 +120,7 @@ Resources:
             - Effect: Allow
               Action:
                 - budgets:ModifyBudget
-              Resource: !Sub arn:aws:budgets::${AWS::AccountId}:budget/${BudgetReport}
+              Resource: !Sub arn:${AWS::Partition}:budgets::${AWS::AccountId}:budget/${BudgetReport}
             - Effect: Allow
               Action:
                 - cloudformation:UpdateStack
