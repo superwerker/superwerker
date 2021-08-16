@@ -311,7 +311,7 @@ Resources:
           # workaround for CT bug: trigger the `GetLandingZone` event once by reloading the dashboard
           # otherwise enrolling new accounts via tge CT Account Factory would fail with
           # "AWS Control Tower cannot create accounts until your landing zone is set up completely."
-          time.sleep(2.5)
+          time.sleep(30)
           cws = boto3.client('synthetics')
           cws.start_canary(Name=os.environ['CT_BUG_WORKSROUND_CANARY'])
 
