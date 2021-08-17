@@ -30,9 +30,9 @@ jobs:
       id: S3
       if: steps.semantic.outputs.new_release_published == 'true'
       with:
-        aws_key_id: ${{ secrets.AWS_ACCESS_KEY }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-        aws_bucket: ${{ secrets.AWS_BUCKET_NAME}}
+        aws_key_id: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
+        aws_secret_access_key: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY}}
+        aws_bucket: ${{ secrets.RELEASES_AWS_BUCKET_NAME}}
         source_dir: templates/
         destination_dir: ${{ steps.semantic.outputs.new_release_version }}/templates/
 
