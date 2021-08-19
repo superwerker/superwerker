@@ -90,7 +90,7 @@ Resources:
               StringEquals:
                 aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
-                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+                aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
           - Sid: AllowGetBucketAcl
             Effect: Allow
             Principal: "*"
@@ -100,7 +100,7 @@ Resources:
               StringEquals:
                 aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
-                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+                aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
 
   BackupResources:
     Type: AWS::CloudFormation::StackSet
@@ -137,8 +137,8 @@ Resources:
                       Service: backup.amazonaws.com
                     Action: sts:AssumeRole
               ManagedPolicyArns:
-                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
-                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+                - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+                - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
 
           ConfigRemediationRole:
             Type: AWS::IAM::Role
@@ -204,7 +204,7 @@ Resources:
                 AutomationAssumeRole:
                   StaticValue:
                     Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                      - arn:${AWS::Partition}:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
                 ResourceType:
                   StaticValue:
                     Values:
@@ -241,7 +241,7 @@ Resources:
                 AutomationAssumeRole:
                   StaticValue:
                     Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                      - arn:${AWS::Partition}:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
                 ResourceType:
                   StaticValue:
                     Values:
@@ -278,7 +278,7 @@ Resources:
                 AutomationAssumeRole:
                   StaticValue:
                     Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                      - arn:${AWS::Partition}:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
                 ResourceType:
                   StaticValue:
                     Values:
@@ -321,7 +321,7 @@ Resources:
               Tags:
                 - Key: 'superwerker:backup'
                   Value: daily
-              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+              ResourceArn: 'arn:${AWS::Partition}:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
             isEnd: true
           - name: tagEbsVolume
             action: 'aws:executeAwsApi'
@@ -518,7 +518,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
 
   EnableCloudFormationStacksetsOrgAccessArtifacts:
     Type: AWS::S3::Bucket
@@ -839,7 +839,7 @@ Resources:
                         "tags": {
                             "backup-daily": {
                                 "iam_role_arn": {
-                                    "@@assign": "arn:aws:iam::$account:role/service-role/AWSBackupDefaultServiceRole"
+                                    "@@assign": "arn:${AWS::Partition}:iam::$account:role/service-role/AWSBackupDefaultServiceRole"
                                 },
                                 "tag_key": {
                                     "@@assign": "superwerker:backup"
