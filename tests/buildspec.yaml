@@ -40,6 +40,9 @@ phases:
       # wait for IAM eventual consistency
       - for i in {1..5}; do sleep 15; aws sts get-caller-identity --profile test_account_iam_user_access && break || exit 1; done
 
+      - aws --profile test_account --region ${SUPERWERKER_REGION} ssm update-service-setting --setting-id arn:aws:ssm:${SUPERWERKER_REGION}:${aws_account_id}:servicesetting/ssm/automation/customer-script-log-destination --setting-value CloudWatch
+      - aws --profile test_account --region ${SUPERWERKER_REGION} ssm update-service-setting --setting-id arn:aws:ssm:${SUPERWERKER_REGION}:${aws_account_id}:servicesetting/ssm/automation/customer-script-log-group-name --setting-value superwerker-tests
+
       # setup superwerker in vended account
       - aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-body file://templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${TEMPLATE_BUCKET_NAME} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${TEMPLATE_PREFIX} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
       - sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
