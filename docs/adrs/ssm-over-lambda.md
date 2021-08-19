@@ -2,3 +2,4 @@
  - Cloudwatch Logs config / retention settings not needed. Nop orphaned logs. SSM Automation provides execution logs out of the box
  - SSM Automation has a free tier as well
  - no inline limit
+ - SSM Automation is the natural 
