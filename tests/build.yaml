@@ -75,4 +75,4 @@ Resources:
               - codebuild.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
