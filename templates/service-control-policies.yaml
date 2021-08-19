@@ -47,7 +47,7 @@ Resources:
                 {
                     "Condition": {
                         "ArnNotLike": {
-                            "aws:PrincipalARN": "arn:aws:iam::*:role/AWSControlTowerExecution"
+                            "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution"
                         }
                     },
                     "Action": [
@@ -70,7 +70,7 @@ Resources:
                 {
                     "Condition": {
                         "ArnNotLike": {
-                            "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+                            "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/stacksets-exec-*"
                         }
                     },
                     "Action": [
@@ -87,8 +87,8 @@ Resources:
                         "iam:UpdateRoleDescription"
                     ],
                     "Resource": [
-                        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
-                        "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
+                        "arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+                        "arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
                     ],
                     "Effect": "Deny",
                     "Sid": "SWProtectBackup"
