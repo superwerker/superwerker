@@ -2,7 +2,119 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up backups. (qs-1s3rsr7la)
 
+Parameters:
+  FeatureName:
+    Type: String
+    Default: backup
+
 Resources:
+  CheckerConfigRule:
+    Type: AWS::Config::ConfigRule
+    DependsOn: CheckerLambdaPermission
+    Properties:
+      ConfigRuleName: !Sub superwerker-feature-${FeatureName}
+      InputParameters:
+        schniffu: puffi
+        stack: stack_arn
+      Source:
+        Owner: CUSTOM_LAMBDA
+        SourceIdentifier: !GetAtt CheckerLambda.Arn
+        SourceDetails:
+          - EventSource: aws.config
+            MessageType: ScheduledNotification
+            MaximumExecutionFrequency: One_Hour
+
+  CheckerLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CheckerLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: config.amazonaws.com
+
+  CheckerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      InlineCode: |
+        import boto3
+        import json
+
+        # Set to True to get the lambda to assume the Role attached on the Config Service (useful for cross-account).
+        ASSUME_ROLE_MODE = False
+        DEFAULT_RESOURCE_TYPE = 'AWS::::Account'
+
+        # This gets the client after assuming the Config service role
+        # either in the same AWS account or cross-account.
+        def get_client(service, event):
+          return boto3.client(service)
+
+        # Check whether the message is a ScheduledNotification or not.
+        def is_scheduled_notification(message_type):
+          return message_type == 'ScheduledNotification'
+
+        def count_resource_types(applicable_resource_type, next_token, count):
+          resource_identifier = AWS_CONFIG_CLIENT.list_discovered_resources(resourceType=applicable_resource_type, nextToken=next_token)
+          updated = count + len(resource_identifier['resourceIdentifiers']);
+          return updated
+
+        # Evaluates the configuration items in the snapshot and returns the compliance value to the handler.
+        def evaluate_compliance(max_count, actual_count):
+          return 'NON_COMPLIANT' if int(actual_count) > int(max_count) else 'COMPLIANT'
+
+        def evaluate_parameters(rule_parameters):
+          if 'applicableResourceType' not in rule_parameters:
+            raise ValueError('The parameter with "applicableResourceType" as key must be defined.')
+          if not rule_parameters['applicableResourceType']:
+            raise ValueError('The parameter "applicableResourceType" must have a defined value.')
+          return rule_parameters
+
+        # This generate an evaluation for config
+        def build_evaluation(resource_id, compliance_type, event, resource_type=DEFAULT_RESOURCE_TYPE, annotation=None):
+            """Form an evaluation as a dictionary. Usually suited to report on scheduled rules.
+            Keyword arguments:
+            resource_id -- the unique id of the resource to report
+            compliance_type -- either COMPLIANT, NON_COMPLIANT or NOT_APPLICABLE
+            event -- the event variable given in the lambda handler
+            resource_type -- the CloudFormation resource type (or AWS::::Account) to report on the rule (default DEFAULT_RESOURCE_TYPE)
+            annotation -- an annotation to be added to the evaluation (default None)
+            """
+              eval_cc = {}
+              if annotation:
+                eval_cc['Annotation'] = annotation
+              eval_cc['ComplianceResourceType'] = resource_type
+              eval_cc['ComplianceResourceId'] = resource_id
+              eval_cc['ComplianceType'] = compliance_type
+              eval_cc['OrderingTimestamp'] = str(json.loads(event['invokingEvent'])['notificationCreationTime'])
+              return eval_cc
+
+        def lambda_handler(event, context):
+
+          global AWS_CONFIG_CLIENT
+
+          evaluations = []
+          rule_parameters = {}
+          resource_count = 0
+          max_count = 0
+
+          invoking_event = json.loads(event['invokingEvent'])
+          if 'ruleParameters' in event:
+            rule_parameters = json.loads(event['ruleParameters'])
+
+          valid_rule_parameters = evaluate_parameters(rule_parameters)
+
+          compliance_value = 'NOT_APPLICABLE'
+
+          AWS_CONFIG_CLIENT = get_client('config', event)
+          if is_scheduled_notification(invoking_event['messageType']):
+            result_resource_count = count_resource_types(valid_rule_parameters['applicableResourceType'], '', resource_count)
+
+          if valid_rule_parameters.get('maxCount'):
+            max_count = valid_rule_parameters['maxCount']
+
+          compliance_value = evaluate_compliance(max_count, result_resource_count)
+          evaluations.append(build_evaluation(event['accountId'], compliance_value, event, resource_type=DEFAULT_RESOURCE_TYPE))
+          response = AWS_CONFIG_CLIENT.put_evaluations(Evaluations=evaluations, ResultToken=event['resultToken'])
 
   OrganizationsLookup:
     Type: AWS::CloudFormation::CustomResource
