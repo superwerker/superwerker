@@ -8,13 +8,78 @@ Parameters:
     Default: backup
 
 Resources:
+
+  BackupTagRemediation:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        assumeRole: '{{ AutomationAssumeRole }}'
+        parameters:
+          ResourceValue:
+            type: String
+          AutomationAssumeRole:
+            type: String
+            default: ''
+          ResourceType:
+            type: String
+        mainSteps:
+          - name: checkForCloudFormationStack
+            action: aws:branch
+            inputs:
+              Choices:
+                - NextStep: tagDynamoDbTable
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::DynamoDB::Table
+                - NextStep: tagEbsVolume
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::EC2::Volume
+                - NextStep: getRdsDBInstanceArnByDbInstanceResourceIdentifier
+                  Variable: '{{ ResourceType }}'
+                  StringEquals: AWS::RDS::DBInstance
+          - name: createCloudFormationStack
+            action: 'aws:executeAwsApi'
+            inputs:
+              Service: dynamodb
+              Api: TagResource
+              Tags:
+                - Key: 'superwerker:backup'
+                  Value: daily
+              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+            isEnd: true
+          - name: updateCloudFormationStack
+            action: 'aws:executeAwsApi'
+            inputs:
+              Service: dynamodb
+              Api: TagResource
+              Tags:
+                - Key: 'superwerker:backup'
+                  Value: daily
+              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+            isEnd: true
+
+  CheckerConfigServiceLinkedRole:
+    Type: AWS::IAM::ServiceLinkedRole
+    Properties:
+      AWSServiceName: config.amazonaws.com
+
+  CheckerConfigRecorder: # AWS Config Rules need a config recorder to function otherwise they won't execute custom config rules
+    Type: AWS::Config::ConfigurationRecorder
+    DependsOn: CheckerConfigServiceLinkedRole
+    Properties:
+      Name: default
+      RecordingGroup:
+        AllSupported: true
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
+
   CheckerConfigRule:
-    Type: AWS::Config::ConfigRule
     DependsOn: CheckerLambdaPermission
+    Type: AWS::Config::ConfigRule
     Properties:
       ConfigRuleName: !Sub superwerker-feature-${FeatureName}
       InputParameters:
-        schniffu: puffi
+        feature: !Ref FeatureName
         stack: stack_arn
       Source:
         Owner: CUSTOM_LAMBDA
@@ -36,6 +101,12 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.7
+      Policies:
+        - Statement:
+            - Sid: ConfigPutEvaluation
+              Effect: Allow
+              Action: config:PutEvaluations
+              Resource: "*" # No resource level permissions :(
       InlineCode: |
         import boto3
         import json
@@ -53,21 +124,9 @@ Resources:
         def is_scheduled_notification(message_type):
           return message_type == 'ScheduledNotification'
 
-        def count_resource_types(applicable_resource_type, next_token, count):
-          resource_identifier = AWS_CONFIG_CLIENT.list_discovered_resources(resourceType=applicable_resource_type, nextToken=next_token)
-          updated = count + len(resource_identifier['resourceIdentifiers']);
-          return updated
-
         # Evaluates the configuration items in the snapshot and returns the compliance value to the handler.
-        def evaluate_compliance(max_count, actual_count):
-          return 'NON_COMPLIANT' if int(actual_count) > int(max_count) else 'COMPLIANT'
-
-        def evaluate_parameters(rule_parameters):
-          if 'applicableResourceType' not in rule_parameters:
-            raise ValueError('The parameter with "applicableResourceType" as key must be defined.')
-          if not rule_parameters['applicableResourceType']:
-            raise ValueError('The parameter "applicableResourceType" must have a defined value.')
-          return rule_parameters
+        def evaluate_compliance():
+          return 'NON_COMPLIANT'
 
         # This generate an evaluation for config
         def build_evaluation(resource_id, compliance_type, event, resource_type=DEFAULT_RESOURCE_TYPE, annotation=None):
@@ -79,40 +138,31 @@ Resources:
             resource_type -- the CloudFormation resource type (or AWS::::Account) to report on the rule (default DEFAULT_RESOURCE_TYPE)
             annotation -- an annotation to be added to the evaluation (default None)
             """
-              eval_cc = {}
-              if annotation:
-                eval_cc['Annotation'] = annotation
-              eval_cc['ComplianceResourceType'] = resource_type
-              eval_cc['ComplianceResourceId'] = resource_id
-              eval_cc['ComplianceType'] = compliance_type
-              eval_cc['OrderingTimestamp'] = str(json.loads(event['invokingEvent'])['notificationCreationTime'])
-              return eval_cc
+            eval_cc = {}
+            if annotation:
+              eval_cc['Annotation'] = annotation
+            eval_cc['ComplianceResourceType'] = resource_type
+            eval_cc['ComplianceResourceId'] = resource_id
+            eval_cc['ComplianceType'] = compliance_type
+            eval_cc['OrderingTimestamp'] = str(json.loads(event['invokingEvent'])['notificationCreationTime'])
+            return eval_cc
 
-        def lambda_handler(event, context):
+        def handler(event, context):
 
           global AWS_CONFIG_CLIENT
 
           evaluations = []
-          rule_parameters = {}
-          resource_count = 0
-          max_count = 0
+          valid_rule_parameters = {}
 
           invoking_event = json.loads(event['invokingEvent'])
           if 'ruleParameters' in event:
-            rule_parameters = json.loads(event['ruleParameters'])
-
-          valid_rule_parameters = evaluate_parameters(rule_parameters)
+            valid_rule_parameters = json.loads(event['ruleParameters'])
 
           compliance_value = 'NOT_APPLICABLE'
 
           AWS_CONFIG_CLIENT = get_client('config', event)
-          if is_scheduled_notification(invoking_event['messageType']):
-            result_resource_count = count_resource_types(valid_rule_parameters['applicableResourceType'], '', resource_count)
 
-          if valid_rule_parameters.get('maxCount'):
-            max_count = valid_rule_parameters['maxCount']
-
-          compliance_value = evaluate_compliance(max_count, result_resource_count)
+          compliance_value = evaluate_compliance()
           evaluations.append(build_evaluation(event['accountId'], compliance_value, event, resource_type=DEFAULT_RESOURCE_TYPE))
           response = AWS_CONFIG_CLIENT.put_evaluations(Evaluations=evaluations, ResultToken=event['resultToken'])
 
