@@ -63,13 +63,5 @@ phases:
       - aws --profile test_account iam detach-user-policy --user-name superwerker-tests --policy-arn arn:aws:iam::aws:policy/AdministratorAccess
       - aws --profile test_account iam delete-user --user-name superwerker-tests
 
-      # close sub-accounts so that the OVM can close the main / management account later
-      - cd $CODEBUILD_SRC_DIR/tests/close-active-subaccounts
-      - npm i
-      # Node + ECS Container Creds + Assume Role doesn't seem to work, so work around by setting credentials
-      - eval $(aws sts assume-role --role-arn $aws_cross_account_role_arn --role-session-name test | jq -r '.Credentials | "export JS_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport JS_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport JS_AWS_SESSION_TOKEN=\(.SessionToken)\n"')
-      - AWS_ACCESS_KEY_ID=$JS_AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$JS_AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN=$JS_AWS_SESSION_TOKEN AWS_REGION=${SUPERWERKER_REGION} CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
-
-      # remove stacks
-      - aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${aws_account_id}
-      - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation delete-stack --stack-name superwerker
+      # call sub-account closing and stack cleanup
+      - aws codebuild start-build --project-name ${SUPERWERKER_CLEANUP_PROJECT_NAME} --environment-variables-override name=AWS_CROSS_ACCOUNT_ROLE_ARN,value=${aws_cross_account_role_arn} name=SUPERWERKER_REGION,value=${SUPERWERKER_REGION} name=AWS_ACCOUNT_ID,value=${aws_account_id} --source-version $CODEBUILD_RESOLVED_SOURCE_VERSION
