@@ -3,6 +3,7 @@
 
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
+Description: Sets up Service Control Policies(SCP). (qs-1s3rsr7o0)
 
 Parameters:
   IncludeSecurityHub:

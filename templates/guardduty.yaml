@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: Sets up GuardDuty with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization
+Description: Sets up GuardDuty with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization. (qs-1s3rsr7ln)
 
 Resources:
 

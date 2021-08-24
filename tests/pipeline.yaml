@@ -156,6 +156,11 @@ Resources:
     Properties:
       BucketName: superwerker-deployment
 
+  ReleasesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: superwerker-releases
+
   DeploymentBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -170,6 +175,22 @@ Resources:
               - s3:GetObject
               - s3:GetObjectVersion
             Resource: !Sub ${DeploymentBucket.Arn}/*
+
+
+  ReleasesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ReleasesBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: PublicRead
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Resource: !Sub ${ReleasesBucket.Arn}/*
 
   BuildAndTestProject:
     Type: AWS::CodeBuild::Project
@@ -234,10 +255,39 @@ Resources:
               Action: s3:ListBucket
               Resource: !Sub ${DeploymentBucket.Arn}
 
+
+  ReleasesBucketUser:
+    Type: AWS::IAM::User
+    Properties:
+      Policies:
+        - PolicyName: !Sub 'publish'
+          PolicyDocument:
+            Statement:
+            - Sid: VisualEditor0
+              Effect: Allow
+              Action: s3:ListObjects
+              Resource: "*"
+            - Sid: VisualEditor1
+              Effect: Allow
+              Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:PutObjectAcl
+              Resource: !Sub ${ReleasesBucket.Arn}/*
+            - Sid: VisualEditor2
+              Effect: Allow
+              Action: s3:ListBucket
+              Resource: !Sub ${ReleasesBucket.Arn}
+
   DeploymentBucketUserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: !Ref DeploymentBucketUser
+
+  ReleasesBucketUserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref ReleasesBucketUser
 
 Outputs:
   DeploymentBucket:
@@ -246,3 +296,10 @@ Outputs:
     Value: !Ref DeploymentBucketUserAccessKey
   DeploymentBucketUserSecretAccessKey:
     Value: !GetAtt DeploymentBucketUserAccessKey.SecretAccessKey
+
+  ReleasesBucket:
+    Value: !Ref ReleasesBucket
+  ReleasesBucketUserAccessKey:
+    Value: !Ref ReleasesBucketUserAccessKey
+  ReleasesBucketUserSecretAccessKey:
+    Value: !GetAtt ReleasesBucketUserAccessKey.SecretAccessKey

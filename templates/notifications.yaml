@@ -1,5 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
+Description: Sets up notifications. (qs-1s3rsr7mk)
 
 Parameters:
   NotificationsMail:
