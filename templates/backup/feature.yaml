@@ -6,10 +6,44 @@ Parameters:
   FeatureName:
     Type: String
     Default: backup
+  TemplateURL:
+    Type: String
 
 Resources:
 
-  BackupTagRemediation:
+  CheckerConfigRemediation:
+    Type: AWS::Config::RemediationConfiguration
+    Properties:
+      ConfigRuleName: !Ref CheckerConfigRule
+      Automatic: true
+      MaximumAutomaticAttempts: 10
+      RetryAttemptSeconds: 60
+      TargetId: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${CheckerConfigRemediationDocument}
+      TargetType: SSM_DOCUMENT
+      Parameters:
+        FeatureName:
+          StaticValue:
+            Values:
+              - !Ref FeatureName
+        AutomationAssumeRole:
+          StaticValue:
+            Values:
+              - !GetAtt CheckerConfigRemediationRole.Arn
+
+  CheckerConfigRemediationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  CheckerConfigRemediationDocument:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
@@ -17,47 +51,52 @@ Resources:
         schemaVersion: '0.3'
         assumeRole: '{{ AutomationAssumeRole }}'
         parameters:
-          ResourceValue:
-            type: String
           AutomationAssumeRole:
             type: String
             default: ''
-          ResourceType:
+          FeatureName:
             type: String
         mainSteps:
+          - name: CheckForCloudFormationOrganizationsAccess
+            action: aws:executeScript
+            inputs:
+              Runtime: python3.7
+              Handler: script_handler
+              Script: >
+                def script_handler(events, context):
+                  import boto3
+                  client = boto3.client('organizations', region_name='us-east-1')
+                  enabled_services = client.list_aws_service_access_for_organization()['EnabledServicePrincipals']
+                  cloudformation_trusted_access_enabled = len([x for x in enabled_services if x['ServicePrincipal'] == 'member.org.stacksets.cloudformation.amazonaws.com']) == 1
+                  return {'Enable': 'false' if cloudformation_trusted_access_enabled else 'true'}
+            outputs:
+              - Name: Enable
+                Selector: $.Payload.Enable
+                Type: String
+
           - name: checkForCloudFormationStack
-            action: aws:branch
+            action: aws:createStack
             inputs:
-              Choices:
-                - NextStep: tagDynamoDbTable
-                  Variable: '{{ ResourceType }}'
-                  StringEquals: AWS::DynamoDB::Table
-                - NextStep: tagEbsVolume
-                  Variable: '{{ ResourceType }}'
-                  StringEquals: AWS::EC2::Volume
-                - NextStep: getRdsDBInstanceArnByDbInstanceResourceIdentifier
-                  Variable: '{{ ResourceType }}'
-                  StringEquals: AWS::RDS::DBInstance
+              Capabilities:
+                - CAPABILITY_IAM
+                - CAPABILITY_AUTO_EXPAND
+              StackName: "superwerker-{{ FeatureName }}"
+              TemplateURL: !Ref TemplateURL
+              Parameters:
+                - ParameterKey: EnableCloudFormationOrganizationsAccess
+                  ParameterValue: "{{ CheckForCloudFormationOrganizationsAccess.Enable }}"
+
           - name: createCloudFormationStack
-            action: 'aws:executeAwsApi'
+            action: aws:createStack
             inputs:
-              Service: dynamodb
-              Api: TagResource
-              Tags:
-                - Key: 'superwerker:backup'
-                  Value: daily
-              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
-            isEnd: true
-          - name: updateCloudFormationStack
-            action: 'aws:executeAwsApi'
-            inputs:
-              Service: dynamodb
-              Api: TagResource
-              Tags:
-                - Key: 'superwerker:backup'
-                  Value: daily
-              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
-            isEnd: true
+              Capabilities:
+                - CAPABILITY_IAM
+                - CAPABILITY_AUTO_EXPAND
+              StackName: "superwerker-{{ FeatureName }}"
+              TemplateURL: !Ref TemplateURL
+              Parameters:
+                - ParameterKey: EnableCloudFormationOrganizationsAccess
+                  ParameterValue: "{{ CheckForCloudFormationOrganizationsAccess.Enable }}"
 
   CheckerConfigServiceLinkedRole:
     Type: AWS::IAM::ServiceLinkedRole
