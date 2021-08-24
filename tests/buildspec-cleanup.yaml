@@ -5,6 +5,9 @@ env:
 phases:
   build:
     commands:
+      # setup AWS CLI to talk to vended account
+      - aws configure --profile test_account set role_arn ${AWS_CROSS_ACCOUNT_ROLE_ARN}
+      - aws configure --profile test_account set credential_source EcsContainer
 
       # close sub-accounts so that the OVM can close the main / management account later
       - cd $CODEBUILD_SRC_DIR/tests/close-active-subaccounts
