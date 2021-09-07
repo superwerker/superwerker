@@ -18,7 +18,10 @@ const CAPTCHA_KEY = process.env['CAPTCHA_KEY'];
                 console.log(account);
                 await lib.deleteAccount(account.Email, CAPTCHA_KEY);
             }, {
-                retries: 10
+                retries: 10,
+                onRetry: function(error) {
+                    console.log("got error, retrying", error);
+                }
             });
         }
     } catch (e) {
