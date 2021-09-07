@@ -144,19 +144,18 @@ async function accountDelete(page, email, password) {
     } catch (e) {
     }
 
-    await page.click('#billing-console-root > div > div > div > div.content--2j5zk.span10--28Agl > div > div > div > div > div > div.ng-scope > div > div > div > div.animation-content.animation-fade > div:nth-child(13) > div > div > label:nth-child(1) > input');
-    await page.waitForTimeout(1000);
-    await page.click('#billing-console-root > div > div > div > div.content--2j5zk.span10--28Agl > div > div > div > div > div > div.ng-scope > div > div > div > div.animation-content.animation-fade > div:nth-child(13) > div > div > label:nth-child(5) > input');
-    await page.waitForTimeout(1000);
-    await page.click('#billing-console-root > div > div > div > div.content--2j5zk.span10--28Agl > div > div > div > div > div > div.ng-scope > div > div > div > div.animation-content.animation-fade > div:nth-child(13) > div > div > label:nth-child(6) > input');
-    await page.waitForTimeout(1000);
-    await page.click('#billing-console-root > div > div > div > div.content--2j5zk.span10--28Agl > div > div > div > div > div > div.ng-scope > div > div > div > div.animation-content.animation-fade > div:nth-child(13) > div > div > label:nth-child(8) > input');
+    await page.waitForSelector('input[data-testid="aws-billing-account-form-input-is-closing-account"]:first-child');
+
+    await page.click('input[data-testid="aws-billing-account-form-input-is-closing-account"]:first-child');
+    await page.click('input[data-testid="aws-billing-account-form-input-is-second-closing-account"]:first-child');
+    await page.click('input[data-testid="aws-billing-account-form-input-is-third-closing-account"]:first-child');
+    await page.click('input[data-testid="aws-billing-account-form-input-is-fourth-closing-account"]:first-child');
+
     await page.waitForTimeout(5000);
 
-    await page.click('.btn-danger'); // close account button
+    await page.click('button[data-testid="aws-billing-account-form-button-close-account"]:first-child'); // close account button
 
-    await page.waitForTimeout(1000);
-
+    await page.waitForSelector('.modal-footer > button.btn-danger');
     await page.click('.modal-footer > button.btn-danger'); // confirm close account button
 
     await page.waitForTimeout(5000);

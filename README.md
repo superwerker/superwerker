@@ -113,7 +113,7 @@ We plan to roll-out releases via GitHub releases. The update is then deployed vi
 1. Choose the superwerker stack
 1. Choose "Update"
 1. Choose "Replace current template"
-1. For "Amazon S3 URL", copy the link to the latest version of the template e.g. "https://superwerker-deployment.s3.amazonaws.com/0.12.3/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
+1. For "Amazon S3 URL", copy the link to the latest version of the template e.g. "https://superwerker-releases.s3.amazonaws.com/0.12.3/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
 1. Click "Next"
 1. Recommended: Enter an email address to "Mail address used for important notification regarding your AWS account".
 1. Change the parameter "QSS3KeyPrefix" to the current version number e.g. "0.12.3/"
