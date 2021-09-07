@@ -122,7 +122,7 @@ Resources:
           DeploymentTargets:
             OrganizationalUnitIds:
               - !GetAtt OrganizationsLookup.RootId
-      TemplateBody: |
+      TemplateBody: !Sub |
         Resources:
           AWSBackupDefaultServiceRole:
             Type: AWS::IAM::Role
