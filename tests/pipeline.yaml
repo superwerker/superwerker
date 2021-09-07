@@ -210,6 +210,8 @@ Resources:
           - Name: CAPTCHA_API_KEY
             Value: /superwerker/tests/2captcha_api_key
             Type: SECRETS_MANAGER
+          - Name: SUPERWERKER_CLEANUP_PROJECT_NAME
+            Value: !ImportValue superwerker-tests-CleanupProjectName
 
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:

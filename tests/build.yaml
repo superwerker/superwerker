@@ -98,3 +98,9 @@ Resources:
           Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+Outputs:
+  CleanupProjectName:
+    Value: !Ref CleanupProject
+    Export:
+      Name: superwerker-tests-CleanupProjectName
