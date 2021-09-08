@@ -66,7 +66,6 @@ class BackupTestCase(unittest.TestCase):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         ddb = enrolled_account.client('dynamodb')
         table = self.create_random_table(ddb)
-        time.sleep(10)
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             ddb.tag_resource(
                 ResourceArn=table['TableArn'],
@@ -78,7 +77,6 @@ class BackupTestCase(unittest.TestCase):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         ddb = enrolled_account.client('dynamodb')
         table = self.create_random_table(ddb)
-        time.sleep(10)
         ddb.tag_resource(
             ResourceArn=table['TableArn'],
             Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
@@ -185,7 +183,15 @@ class BackupTestCase(unittest.TestCase):
             ],
             BillingMode='PAY_PER_REQUEST',
         )
+        table = BackupTestCase.wait_for_table_available(ddb, table_name)
+        return table
+
+    @staticmethod
+    @retry(stop_max_delay=180000, wait_fixed=1000)
+    def wait_for_table_available(ddb, table_name):
         table = ddb.describe_table(TableName=table_name)['Table']
+        if table['TableStatus'] != 'ACTIVE':
+            raise 'table not ready yet'
         return table
 
     @staticmethod
