@@ -20,7 +20,7 @@ aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_re
 aws sts get-caller-identity --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} --no-cli-pager
 
 # close sub-accounts so that the OVM can close the main / management account later
-cd tests/close-active-subaccounts
+cd ../tests/close-active-subaccounts
 npm i
 # Node + ECS Container Creds + Assume Role doesn't seem to work, so work around by setting credentials
 eval $(aws sts assume-role --profile $SOURCE_PROFILE --role-arn $aws_cross_account_role_arn --role-session-name test | jq -r '.Credentials | "export JS_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport JS_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport JS_AWS_SESSION_TOKEN=\(.SessionToken)\n"')
