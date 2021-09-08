@@ -321,7 +321,7 @@ Resources:
               Tags:
                 - Key: 'superwerker:backup'
                   Value: daily
-              ResourceArn: 'arn:${AWS::Partition}:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+              ResourceArn: !Sub 'arn:${AWS::Partition}:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
             isEnd: true
           - name: tagEbsVolume
             action: 'aws:executeAwsApi'
