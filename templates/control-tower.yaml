@@ -10,102 +10,70 @@ Parameters:
 
 Resources:
 
-  SetupControlTowerAutomationTriggerParameter:
-    DependsOn: SetupControlTowerAutomationTrigger # trigger needs to be there before the event is fired
-    Type: AWS::SSM::Parameter
+  SetupControlTower:
+    Type: AWS::CloudFormation::CustomResource
     Properties:
-      Name:  /superwerker/setup_control_tower_automation_trigger
-      Value: trigger
-      Type: String
+      ServiceToken: !GetAtt SetupControlTowerCustomResource.Arn
 
-  SetupControlTowerAutomationTrigger:
-    Type: AWS::Events::Rule
+  SetupControlTowerCustomResource:
+    Type: AWS::Serverless::Function
     Properties:
-      EventPattern:
-        source:
-          - aws.ssm
-        detail-type:
-          - Parameter Store Change
-        detail:
-          name:
-            - /superwerker/setup_control_tower_automation_trigger
-          operation:
-            - Create
-      State: ENABLED
-      Targets:
-        - Arn: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${SetupControlTowerAutomation}
-          Id: EnableSecurityHubOrganizations
-          RoleArn: !GetAtt SetupControlTowerAutomationTriggerRole.Arn
-
-  SetupControlTowerAutomationTriggerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: events.amazonaws.com
-            Action: sts:AssumeRole
+      Handler: index.handler
+      Runtime: python3.7
+      Timeout: 120 # give it more memory since it install awsapilib
+      MemorySize: 1024
       Policies:
-        - PolicyName: AllowStartAutomationExecution
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action: ssm:StartAutomationExecution
-                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${SetupControlTowerAutomation}:*
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Resource: '*' # FIXME: least privilege, currently circular reference with !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
+      InlineCode: !Sub |
+        import boto3
+        import cfnresponse
+        import sys
+        import subprocess
 
-  SetupControlTowerAutomation:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Automation
-      Content:
-        schemaVersion: '0.3'
-        assumeRole: !GetAtt SetupControlTowerAssumeRole.Arn
-        mainSteps:
-          - name: setupOrUpdateControlTower
-            action: aws:executeScript
-            maxAttempts: 10
-            inputs:
-              Runtime: python3.7
-              Handler: script_handler
-              Script: !Sub |
-                def script_handler(events, context):
-                  import sys
-                  import subprocess
+        # load awsapilib in-process as long as we have no strategy for bundling assets
+        sys.path.insert(1, '/tmp/packages')
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib==0.5.2'])
+        import awsapilib
+        from awsapilib import ControlTower
 
-                  sys.path.insert(1, './packages')
-                  subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', 'packages', 'awsapilib'])
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
 
-                  import awsapilib
-                  from awsapilib import ControlTower
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
-                  tower = ControlTower('${SetupControlTowerRoleForAwsApiLib.Arn}')
-                  tower.deploy(logging_account_email='${LogArchiveAWSAccountEmail}', security_account_email='${AuditAWSAccountEmail}')
+            return catch
 
-  SetupControlTowerAssumeRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ssm.amazonaws.com
-            Action: sts:AssumeRole
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
 
-  SetupControlTowerAssumeRolePolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: SetupControlTowerAssumeRolePolicy
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Action: sts:AssumeRole
-            Resource: !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
-      Roles:
-        - !Ref SetupControlTowerAssumeRole
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            tower = ControlTower('${SetupControlTowerRoleForAwsApiLib.Arn}')
+            tower.deploy(logging_account_email='${LogArchiveAWSAccountEmail}', security_account_email='${AuditAWSAccountEmail}')
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
   SetupControlTowerRoleForAwsApiLib:
     Type: AWS::IAM::Role
@@ -116,8 +84,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS:
-               - !GetAtt SetupControlTowerAssumeRole.Arn
-               - !GetAtt SuperwerkerBootstrapFunctionRole.Arn
+               - !GetAtt SetupControlTowerCustomResourceRole.Arn
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess # fixme: least privilege
@@ -154,12 +121,9 @@ Resources:
 
       Handler: index.handler
       Runtime: python3.7
-      Timeout: 120 # give it more memory since it install awsapilib
-      MemorySize: 1024
       Environment:
         Variables:
           SIGNAL_URL: !Ref ControlTowerReadyHandle
-          AWSAPILIB_CONTROLTOWER_ASSUME_ROLE: !GetAtt SetupControlTowerRoleForAwsApiLib.Arn
       InlineCode: |-
         import boto3
         import json
@@ -169,21 +133,7 @@ Resources:
         import urllib3
         import os
 
-        # load awsapilib in-process as long as we have no strategy for bundling assets
-        import sys
-        import subprocess
-        sys.path.insert(1, '/tmp/packages')
-        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib'])
-        import awsapilib
-        from awsapilib import ControlTower
-
         def handler(event, context):
-
-          tower = ControlTower(os.environ['AWSAPILIB_CONTROLTOWER_ASSUME_ROLE'])
-
-          if not tower.is_deployed:
-            raise Exception('Control Tower has not successfully been deployed')
-
           for account in event['accounts']:
               ssm.put_parameter(
                   Name='/superwerker/account_id_{}'.format(account['accountName'].lower().replace(' ', '')),
