@@ -138,7 +138,7 @@ async function accountDelete(page, email, password) {
 
     // remove cookie banner if present
     try {
-        page.waitForSelector('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
+        await page.waitForSelector('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
         await page.click('#awsccc-cb-buttons > button.awsccc-u-btn.awsccc-u-btn-primary');
         await page.waitForTimeout(1000);
     } catch (e) {
