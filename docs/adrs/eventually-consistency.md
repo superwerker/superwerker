@@ -12,6 +12,7 @@ Plain CloudFormation cannot handle the following scenarios, which are common for
 - Another scenario is the deployment into brownfield environment where resources might already exist and manual cleanup needs to be done first
 - A third scenario is where existing resources need to be imported into CloudFormation 
 - (superwerker) features which need pre- and post-processing outside of CloudFormation which otherwise would need to be maintained with custom resources
+- creating and cleaning resources for one-time tasks, e.g. setting up Control Tower or service managed CFN stack sets
 
 ## Solution
 
