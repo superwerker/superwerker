@@ -14,4 +14,4 @@ aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_re
 aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} set source_profile ${SOURCE_PROFILE}
 
 # open Firefox
-open -a Firefox $(AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} python3 ../scripts/console.py)
+open -a Firefox $(AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} python3 ${BASH_SOURCE%/*}/../scripts/console.py)
