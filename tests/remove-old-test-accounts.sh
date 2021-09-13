@@ -5,11 +5,9 @@ accounts=$(aws dynamodb query \
 --index-name account_status \
 --key-condition-expression "account_status = :name" \
 --expression-attribute-values '{":name":{"S":"VENDED"}}' \
---max-items 3 \
+--max-items 20 \ # just for testing
 --region eu-west-1 \
 --output json | jq '.Items[].account_id.S|tonumber')
-
-echo $accounts
 
 for stale in ${accounts}
 do
