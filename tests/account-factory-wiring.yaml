@@ -78,7 +78,7 @@ Resources:
       PortfolioId: !GetAtt ControlTowerServiceCatalogLookup.PortfolioId
       PrincipalARN: !Ref PipelineCloudformationRoleArn
       PrincipalType: IAM
-  
+
   ControlTowerBugWorkAroundArtifactLocation:
     Type: AWS::S3::Bucket
     Properties:
@@ -112,8 +112,8 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/AdministratorAccess # fixme: least privilege
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # fixme: least privilege
       Policies:
         - PolicyName: AllowS3List
           PolicyDocument:
