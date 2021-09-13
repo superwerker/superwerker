@@ -9,6 +9,9 @@ batch:
           SUPERWERKER_REGION:
             - eu-west-1
             - eu-central-1
+          UPDATE_FROM_LATEST_RELEASE:
+            - true
+            - false
 
 phases:
   build:
@@ -41,12 +44,28 @@ phases:
       - for i in {1..5}; do sleep 15; aws sts get-caller-identity --profile test_account_iam_user_access && break || exit 1; done
 
       # setup superwerker in vended account
-      - aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-body file://templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${TEMPLATE_BUCKET_NAME} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${TEMPLATE_PREFIX} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
+      - |
+        if $UPDATE_FROM_LATEST_RELEASE; then
+          latest_release=$(curl --fail --retry 10 -s https://api.github.com/repos/superwerker/superwerker/releases/latest | jq -r '.name[1:]')
+          install_template_bucket_name="superwerker-releases"
+          install_template_prefix="${latest_release}/"
+        else
+          install_template_bucket_name=${TEMPLATE_BUCKET_NAME}
+          install_template_prefix="${TEMPLATE_PREFIX}"
+        fi
+      - aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url https://${install_template_bucket_name}.s3.${TEMPLATE_REGION}.amazonaws.com/${install_template_prefix}templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${install_template_bucket_name} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${install_template_prefix} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
       - sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
       - while ! domain_name_servers=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
       - aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
       - sleep 1800 # give superwerker stack time to finish (Control Tower needs ~30min)
       - aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
+
+      # if superwerker update is tested, first update to superwerker version under test before running the tests
+      - |
+        if $UPDATE_FROM_LATEST_RELEASE; then
+          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation update-stack --stack-name superwerker --template-body file://templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${TEMPLATE_BUCKET_NAME} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${TEMPLATE_PREFIX} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
+          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation wait stack-update-complete --stack-name superwerker
+        fi
 
       # wire CT account factory SC product so that the cross account role can access the CT SC portfolio
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation deploy --stack-name superwerker-pipeline-account-factory-wiring --template-file tests/account-factory-wiring.yaml --parameter-overrides PipelineCloudformationRoleArn=$aws_cross_account_role_arn --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
