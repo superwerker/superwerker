@@ -198,7 +198,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: sts:AssumeRole
-                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+                Resource: !Sub arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution
         - PolicyName: SSMParameters
           PolicyDocument:
             Statement:
