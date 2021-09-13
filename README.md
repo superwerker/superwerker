@@ -53,7 +53,7 @@ In the initial release, superwerker configures the following AWS services and fe
 1. [AWS Security Hub](https://aws.amazon.com/security-hub) to ensure established security standards
 1. [AWS Backup](https://aws.amazon.com/backup/) for automated creation of backups
 1. Budget alarms for cost control
-1. Service control policies to protect the infrastructure from intentional or unintentional mistakes, e.g. deny use of non allowed AWS regions, deletion of backup copies, deactivation of security features
+1. Service control policies to protect the infrastructure from intentional or unintentional mistakes
 1. [AWS Systems Manager](https://aws.amazon.com/systems-manager) OpsCenter/Items notification aggregation and incident response handling
 1. Secure mailboxes and service catalogue aliases for all root accounts
 1. Feature flippers to gradually opt into functionality
