@@ -16,6 +16,7 @@ phases:
       - eval $(aws sts assume-role --role-arn ${AWS_CROSS_ACCOUNT_ROLE_ARN} --role-session-name test | jq -r '.Credentials | "export js_aws_access_key_id=\(.AccessKeyId)\nexport js_aws_secret_access_key=\(.SecretAccessKey)\nexport js_aws_session_token=\(.SessionToken)\n"')
       - AWS_ACCESS_KEY_ID=$js_aws_access_key_id AWS_SECRET_ACCESS_KEY=$js_aws_secret_access_key AWS_SESSION_TOKEN=$js_aws_session_token AWS_REGION=${SUPERWERKER_REGION} CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
 
+    finally:
       # remove stacks
       - aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${AWS_ACCOUNT_ID}
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation delete-stack --stack-name superwerker
