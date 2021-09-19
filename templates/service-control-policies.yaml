@@ -116,7 +116,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*"
+              Resource: "*" # allow wildcard
       InlineCode: |
         import boto3
         import cfnresponse

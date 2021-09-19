@@ -126,7 +126,7 @@ Resources:
             - Effect: Allow
               Action: # TODO: least privilege
                 - ses:*
-              Resource: "*"
+              Resource: "*" # allow wildcard?
       InlineCode: |
         import boto3
         import cfnresponse
@@ -341,7 +341,7 @@ Resources:
             - Effect: Allow
               Action: # TODO: least privilege
                 - ses:*
-              Resource: '*'
+              Resource: '*' # allow wildcard?
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
   RootMailReadyAlert:

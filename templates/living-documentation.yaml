@@ -28,7 +28,7 @@ Resources:
               Resource: !Sub arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/superwerker
             - Effect: Allow
               Action: cloudwatch:DescribeAlarms
-              Resource: '*'
+              Resource: '*' # allow wildcard, no specific resource?
       Environment:
         Variables:
           SUPERWERKER_DOMAIN: !Ref SuperwerkerDomain

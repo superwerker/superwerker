@@ -210,7 +210,7 @@ Resources:
                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker*
             - Action: events:PutEvents
               Effect: Allow
-              Resource: '*'
+              Resource: '*' # allow wildcard?
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT

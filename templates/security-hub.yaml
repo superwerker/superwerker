@@ -262,7 +262,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: organizations:DescribeAccount
-                Resource: '*'
+                Resource: '*' # allow wildcard
         - PolicyName: SSMParameters
           PolicyDocument:
             Statement:

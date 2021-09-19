@@ -81,7 +81,7 @@ Resources:
         Statement:
           - Sid: AllowGetPutObject
             Effect: Allow
-            Principal: "*"
+            Principal: "*" # keep wildcard (condition is there)
             Action:
               - s3:GetObject
               - s3:PutObject
@@ -93,7 +93,7 @@ Resources:
                 aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
           - Sid: AllowGetBucketAcl
             Effect: Allow
-            Principal: "*"
+            Principal: "*" # keep wildcard (condition is there)
             Action: s3:GetBucketAcl
             Resource: !Sub ${OrganizationConformancePackBucket.Arn}
             Condition:
@@ -622,7 +622,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*"
+              Resource: "*" # probably allow wildcard (actions specify resource)
       InlineCode: |
         import boto3
         import cfnresponse
@@ -737,7 +737,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "*"
+              Resource: "*" # probably allow wildcard (resource specified in action/no specific resource?)
       InlineCode: |
         import boto3
         import cfnresponse
@@ -876,7 +876,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*"
+              Resource: "*" # probably allow wildcard (resource specified in action/no specific resource?)
       InlineCode: |
         import boto3
         import cfnresponse
@@ -992,7 +992,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "*"
+              Resource: "*" # allow wildcard (resource specified in action/no specific resource)
       InlineCode: |
         import boto3
         import cfnresponse

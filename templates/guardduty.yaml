@@ -184,7 +184,7 @@ Resources:
                   - organizations:RegisterDelegatedAdministrator
                   - organizations:DescribeOrganization
                   - ssm:DescribeAutomationExecutions
-                Resource: '*'
+                Resource: '*' # allow wildcard?
         - PolicyName: AllowStartAutomationExecution
           PolicyDocument:
             Statement:
