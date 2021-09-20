@@ -124,9 +124,10 @@ Resources:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
-              Action: # TODO: least privilege
-                - ses:*
-              Resource: "*" # allow wildcard?
+              Action:
+                - ses:VerifyDomainDkim
+                - ses:VerifyDomainIdentity
+              Resource: "*" # allow wildcard? resource dynamic?
       InlineCode: |
         import boto3
         import cfnresponse
@@ -339,8 +340,11 @@ Resources:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
-              Action: # TODO: least privilege
-                - ses:*
+              Action:
+                - ses:GetIdentityVerificationAttributes
+                - ses:GetAccountSendingEnabled
+                - ses:GetIdentityDkimAttributes
+                - ses:GetIdentityNotificationAttributes
               Resource: '*' # allow wildcard?
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
