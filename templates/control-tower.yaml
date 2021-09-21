@@ -122,6 +122,56 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
+  SetupControlTowerRetyFunction: # handle failed setup by retrying
+    Type: AWS::Serverless::Function
+    Properties:
+      Events:
+        SetupLandingZoneFailed:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              detail-type:
+                - AWS Service Event via CloudTrail
+              source:
+                - aws.controltower
+              detail:
+                serviceEventDetails:
+                  setupLandingZoneStatus:
+                    state:
+                      - FAILED
+                eventName:
+                  - SetupLandingZone
+      Handler: index.handler
+      Runtime: python3.7
+      Timeout: 120 # give it more time since it installs awsapilib
+      Role: !GetAtt SetupControlTowerCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Resource: !GetAtt AwsApiLibRole.Arn
+      Environment:
+        Variables:
+          AWSAPILIB_CONTROL_TOWER_ROLE_ARN: !GetAtt AwsApiLibRole.Arn
+          LOG_ARCHIVE_AWS_ACCOUNT_EMAIL: !Ref LogArchiveAWSAccountEmail
+          AUDIT_AWS_ACCOUNT_EMAIL: !Ref AuditAWSAccountEmail
+      InlineCode: |
+        import boto3
+        import os
+        import sys
+        import subprocess
+
+        # load awsapilib in-process as long as we have no strategy for bundling assets
+        sys.path.insert(1, '/tmp/packages')
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib==0.5.2'])
+        import awsapilib
+        from awsapilib import ControlTower
+
+        def handler(event, context):
+            tower = ControlTower(os.environ['AWSAPILIB_CONTROL_TOWER_ROLE_ARN'])
+            tower.deploy(logging_account_email=os.environ['LOG_ARCHIVE_AWS_ACCOUNT_EMAIL'], security_account_email=os.environ['AUDIT_AWS_ACCOUNT_EMAIL'])
+
   ControlTowerReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
 
