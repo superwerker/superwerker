@@ -17,6 +17,8 @@ phases:
       - AWS_ACCESS_KEY_ID=$js_aws_access_key_id AWS_SECRET_ACCESS_KEY=$js_aws_secret_access_key AWS_SESSION_TOKEN=$js_aws_session_token AWS_REGION=${SUPERWERKER_REGION} CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
 
     finally:
+      # empty buckets before trying to delete them
+      - for bucket in $(aws s3 ls --profile test_account --region ${SUPERWERKER_REGION} | cut -d" " -f 3); do echo "Emptying bucket $bucket"; aws s3 rm --profile test_account --region ${SUPERWERKER_REGION} s3://$bucket --recursive; done
       # remove stacks
       - aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${AWS_ACCOUNT_ID}
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation delete-stack --stack-name superwerker
