@@ -10,8 +10,13 @@ batch:
             - eu-west-1
             - eu-central-1
           UPDATE_FROM_LATEST_RELEASE:
-            - true
             - false
+          SCHNUFFI:
+            - puffi
+            - troedel
+            - dumdidum
+            - hallo
+            - bluvver
 
 phases:
   build:
