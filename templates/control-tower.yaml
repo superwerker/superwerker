@@ -139,12 +139,6 @@ Resources:
       Runtime: python3.7
       Timeout: 120 # give it more time since it installs awsapilib
       Role: !GetAtt SetupControlTowerCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action: sts:AssumeRole
-              Resource: !GetAtt AwsApiLibRole.Arn
       Environment:
         Variables:
           AWSAPILIB_CONTROL_TOWER_ROLE_ARN: !GetAtt AwsApiLibRole.Arn
