@@ -57,35 +57,6 @@ Resources:
           FeatureName:
             type: String
         mainSteps:
-          - name: CheckForCloudFormationOrganizationsAccess
-            action: aws:executeScript
-            inputs:
-              Runtime: python3.7
-              Handler: script_handler
-              Script: >
-                def script_handler(events, context):
-                  import boto3
-                  client = boto3.client('organizations', region_name='us-east-1')
-                  enabled_services = client.list_aws_service_access_for_organization()['EnabledServicePrincipals']
-                  cloudformation_trusted_access_enabled = len([x for x in enabled_services if x['ServicePrincipal'] == 'member.org.stacksets.cloudformation.amazonaws.com']) == 1
-                  return {'Enable': 'false' if cloudformation_trusted_access_enabled else 'true'}
-            outputs:
-              - Name: Enable
-                Selector: $.Payload.Enable
-                Type: String
-
-          - name: checkForCloudFormationStack
-            action: aws:createStack
-            inputs:
-              Capabilities:
-                - CAPABILITY_IAM
-                - CAPABILITY_AUTO_EXPAND
-              StackName: "superwerker-{{ FeatureName }}"
-              TemplateURL: !Ref TemplateURL
-              Parameters:
-                - ParameterKey: EnableCloudFormationOrganizationsAccess
-                  ParameterValue: "{{ CheckForCloudFormationOrganizationsAccess.Enable }}"
-
           - name: createCloudFormationStack
             action: aws:createStack
             inputs:

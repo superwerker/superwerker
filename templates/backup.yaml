@@ -2,16 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up backups. (qs-1s3rsr7la)
 
-Parameters:
-  EnableCloudFormationOrganizationsAccess:
-    Type: String
-    AllowedValues:
-      - true
-      - false
-
-Conditions:
-  EnableCloudFormationOrganizationsAccess: !Equals [ !Ref EnableCloudFormationOrganizationsAccess, true]
-
 Resources:
 
   Fn::Transform:
@@ -442,7 +432,6 @@ Resources:
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
   EnableCloudFormationStacksetsOrgAccess:
-    Condition: EnableCloudFormationOrganizationsAccess
     Type: AWS::Synthetics::Canary
     DependsOn: CfnStackSetsReadyEnablePermission # make sure the Lambda which handles the wait condition is entirely ready before enabling Cloudformation Org access. This includes Lambda event+permission have to be ready.
     Metadata:
@@ -524,7 +513,6 @@ Resources:
           };
 
   EnableCloudFormationStacksetsOrgAccessRole:
-    Condition: EnableCloudFormationOrganizationsAccess
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -538,7 +526,6 @@ Resources:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
   EnableCloudFormationStacksetsOrgAccessArtifacts:
-    Condition: EnableCloudFormationOrganizationsAccess
     Type: AWS::S3::Bucket
     Properties:
       LifecycleConfiguration:
@@ -547,18 +534,15 @@ Resources:
             Status: Enabled
 
   EnableCloudFormationStacksetsOrgAccessReadyHandle:
-    Condition: EnableCloudFormationOrganizationsAccess
     Type: AWS::CloudFormation::WaitConditionHandle
 
   EnableCloudFormationStacksetsOrgAccessReadyWaitCondition:
-    Condition: EnableCloudFormationOrganizationsAccess
     Type: AWS::CloudFormation::WaitCondition
     Properties:
       Handle: !Ref EnableCloudFormationStacksetsOrgAccessReadyHandle
       Timeout: '1200'
 
   CfnStackSetsReady:
-    Condition: EnableCloudFormationOrganizationsAccess
     Type: AWS::Serverless::Function
     Properties:
       Events:
