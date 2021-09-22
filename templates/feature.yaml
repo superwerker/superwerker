@@ -65,6 +65,7 @@ Resources:
                 - CAPABILITY_AUTO_EXPAND
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
+              DisableRollback: true
 
   CheckerConfigServiceLinkedRole:
     Type: AWS::IAM::ServiceLinkedRole
