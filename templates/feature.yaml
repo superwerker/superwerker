@@ -65,9 +65,6 @@ Resources:
                 - CAPABILITY_AUTO_EXPAND
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
-              Parameters:
-                - ParameterKey: EnableCloudFormationOrganizationsAccess
-                  ParameterValue: "{{ CheckForCloudFormationOrganizationsAccess.Enable }}"
 
   CheckerConfigServiceLinkedRole:
     Type: AWS::IAM::ServiceLinkedRole
