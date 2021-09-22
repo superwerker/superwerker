@@ -4,11 +4,6 @@ Description: Sets up backups. (qs-1s3rsr7la)
 
 Resources:
 
-  Fn::Transform:
-    Name: 'AWS::Include'
-    Parameters:
-      Location: 's3://MyAmazonS3BucketName/MyFileName.yaml'
-
   OrganizationsLookup:
     Type: AWS::CloudFormation::CustomResource
     Properties:
