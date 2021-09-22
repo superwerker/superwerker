@@ -160,6 +160,51 @@ Resources:
             tower = ControlTower(os.environ['AWSAPILIB_CONTROL_TOWER_ROLE_ARN'])
             tower.deploy(logging_account_email=os.environ['LOG_ARCHIVE_AWS_ACCOUNT_EMAIL'], security_account_email=os.environ['AUDIT_AWS_ACCOUNT_EMAIL'])
 
+  LogsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.controltower
+      Targets:
+        - Arn: !GetAtt LogGroupForEvents.Arn
+          Id: LogTarget
+
+  LogGroupForEventsPolicy:
+    Type: AWS::Logs::ResourcePolicy
+    Properties:
+      PolicyName: EventBridgeToCWLogsPolicy
+      PolicyDocument: !Sub
+        - >
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "EventBridgetoCWLogsPolicy",
+                "Effect": "Allow",
+                "Principal": {
+                  "Service": [
+                    "delivery.logs.amazonaws.com",
+                    "events.amazonaws.com"
+                  ]
+                },
+                "Action": [
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents"
+                ],
+                "Resource": [
+                  "${logArn}"
+                ]
+              }
+            ]
+          }
+        - { logArn: !GetAtt LogGroupForEvents.Arn }
+
+  LogGroupForEvents:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/events/ct
+
   ControlTowerReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
 
