@@ -72,14 +72,14 @@ Resources:
     Properties:
       AWSServiceName: config.amazonaws.com
 
-#  CheckerConfigRecorder: # AWS Config Rules need a config recorder to function otherwise they won't execute custom config rules
-#    Type: AWS::Config::ConfigurationRecorder
-#    DependsOn: CheckerConfigServiceLinkedRole
-#    Properties:
-#      Name: default
-#      RecordingGroup:
-#        AllSupported: true
-#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
+  CheckerConfigRecorder: # AWS Config Rules need a config recorder to function otherwise they won't execute custom config rules
+    Type: AWS::Config::ConfigurationRecorder
+    DependsOn: CheckerConfigServiceLinkedRole
+    Properties:
+      Name: !Sub superwerker-${FeatureName}
+      RecordingGroup:
+        AllSupported: true
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
 
   CheckerConfigRule:
     DependsOn: CheckerLambdaPermission
