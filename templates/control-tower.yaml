@@ -157,6 +157,7 @@ Resources:
         from awsapilib import ControlTower
 
         def handler(event, context):
+            print(event)
             tower = ControlTower(os.environ['AWSAPILIB_CONTROL_TOWER_ROLE_ARN'])
             tower.deploy(logging_account_email=os.environ['LOG_ARCHIVE_AWS_ACCOUNT_EMAIL'], security_account_email=os.environ['AUDIT_AWS_ACCOUNT_EMAIL'])
 
