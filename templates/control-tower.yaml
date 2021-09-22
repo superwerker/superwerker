@@ -137,7 +137,7 @@ Resources:
                   - SetupLandingZone
       Handler: index.handler
       Runtime: python3.7
-      Timeout: 120 # give it more time since it installs awsapilib
+      Timeout: 900 # give it more time since it installs awsapilib and tries to deploy control tower with retries
       Role: !GetAtt SetupControlTowerCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
       Environment:
         Variables:
@@ -159,7 +159,7 @@ Resources:
         def handler(event, context):
             print(event)
             tower = ControlTower(os.environ['AWSAPILIB_CONTROL_TOWER_ROLE_ARN'])
-            tower.deploy(logging_account_email=os.environ['LOG_ARCHIVE_AWS_ACCOUNT_EMAIL'], security_account_email=os.environ['AUDIT_AWS_ACCOUNT_EMAIL'])
+            tower.deploy(logging_account_email=os.environ['LOG_ARCHIVE_AWS_ACCOUNT_EMAIL'], security_account_email=os.environ['AUDIT_AWS_ACCOUNT_EMAIL'], retries=50, wait=5)
 
   LogsRule:
     Type: AWS::Events::Rule
