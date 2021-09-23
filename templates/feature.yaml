@@ -28,6 +28,9 @@ Resources:
             - Effect: Allow
               Action: ssm:StartAutomationExecution
               Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FeatureAutomationDocument}:*
+            - Effect: Allow
+              Action: iam:PassRole
+              Resource: !GetAtt FeatureAutomationRole.Arn
       Environment:
         Variables:
           SSM_DOCUMENT_TO_EXECUTE: !Ref FeatureAutomationDocument
