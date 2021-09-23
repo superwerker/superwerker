@@ -102,6 +102,7 @@ Resources:
             default: !GetAtt FeatureAutomationRole.Arn
           FeatureName:
             type: String
+            default: !Ref FeatureName
         mainSteps:
           - name: createCloudFormationStack
             action: aws:createStack
