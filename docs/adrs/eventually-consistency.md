@@ -21,3 +21,8 @@ Plain CloudFormation cannot handle the following scenarios, which are common for
  - AWS Config Rules + Remediation (via SSM automatiom)
  - CloudFormation resources are rolled out in SSM Automation remediation (if any)
 
+ - AWS Config recorder, delivery channel, and S3 Bucket are installed into the management AWS account so that AWS Config works. S3 Bucket is set up with a lifecycle policy to remove objects asap, since the Config delivery channel is only needed to have AWS Config working.
+ 
+## Consequences
+
+- AWS Config recorder, delivery channel, and S3 in the Management account induce small amount of costs (24 hours * 30 days * 0,003$ per item recorded = $2,16?). But do custom periodic rules really cost money?
