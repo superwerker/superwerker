@@ -342,6 +342,7 @@ Resources:
       RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
 
   FeatureConfigDeliveryChannel:
+    DependsOn: FeatureConfigRecorder
     Type: AWS::Config::DeliveryChannel
     Properties:
       S3BucketName: !Ref FeatureConfigDeliveryChannelBucket
