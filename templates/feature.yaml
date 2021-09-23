@@ -106,6 +106,8 @@ Resources:
         mainSteps:
           - name: createCloudFormationStack
             action: aws:createStack
+            maxAttempts: 1
+            onFailure: step:updateCloudFormationStack
             inputs:
               Capabilities:
                 - CAPABILITY_IAM
@@ -113,6 +115,21 @@ Resources:
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
               DisableRollback: true
+              TimeoutInMinutes: 20
+            isEnd: true
+          - name: updateCloudFormationStack
+            action: aws:executeAwsApi
+            inputs:
+              Service: cloudformation
+              Api: UpdateStack
+              Capabilities:
+                - CAPABILITY_IAM
+                - CAPABILITY_AUTO_EXPAND
+              StackName: "superwerker-{{ FeatureName }}"
+              TemplateURL: !Ref TemplateURL
+              DisableRollback: true
+            isEnd: true
+            maxAttempts: 10
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
