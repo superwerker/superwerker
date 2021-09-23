@@ -332,29 +332,6 @@ Resources:
     Properties:
       AWSServiceName: config.amazonaws.com
 
-  FeatureConfigRecorder: # AWS Config Rules need a config recorder to function otherwise they won't execute custom config rules
-    Type: AWS::Config::ConfigurationRecorder
-    DependsOn: FeatureConfigServiceLinkedRole
-    Properties:
-      Name: superwerker
-      RecordingGroup:
-        AllSupported: true
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
-
-  FeatureConfigDeliveryChannel:
-    DependsOn: FeatureConfigRecorder
-    Type: AWS::Config::DeliveryChannel
-    Properties:
-      S3BucketName: !Ref FeatureConfigDeliveryChannelBucket
-
-  FeatureConfigDeliveryChannelBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      LifecycleConfiguration:
-        Rules:
-          - ExpirationInDays: 1
-            Status: Enabled
-
 Outputs:
   RootMailDelegationTarget:
     Description: Name servers for the hosted zone delegation

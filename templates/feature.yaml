@@ -11,26 +11,69 @@ Parameters:
 
 Resources:
 
-  CheckerConfigRemediation:
-    Type: AWS::Config::RemediationConfiguration
+  SetupFeature:
+    Type: AWS::CloudFormation::CustomResource
     Properties:
-      ConfigRuleName: !Ref CheckerConfigRule
-      Automatic: true
-      MaximumAutomaticAttempts: 10
-      RetryAttemptSeconds: 60
-      TargetId: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${CheckerConfigRemediationDocument}
-      TargetType: SSM_DOCUMENT
-      Parameters:
-        FeatureName:
-          StaticValue:
-            Values:
-              - !Ref FeatureName
-        AutomationAssumeRole:
-          StaticValue:
-            Values:
-              - !GetAtt CheckerConfigRemediationRole.Arn
+      ServiceToken: !GetAtt SetupFeatureCustomResource.Arn
 
-  CheckerConfigRemediationRole:
+  SetupFeatureCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Timeout: 10
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: ssm:StartAutomationExecution
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${FeatureAutomationDocument}:*
+      Environment:
+        Variables:
+          SSM_DOCUMENT_TO_EXECUTE: !Ref FeatureAutomationDocument
+      InlineCode: |
+        import boto3
+        import os
+        import cfnresponse
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            ssm = boto3.client('ssm')
+
+            if RequestType == CREATE:
+                ssm.start_automation_execution(DocumentName=os.environ['SSM_DOCUMENT_TO_EXECUTE'])
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
+  FeatureAutomationRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -43,7 +86,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-  CheckerConfigRemediationDocument:
+  FeatureAutomationDocument:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
@@ -53,7 +96,7 @@ Resources:
         parameters:
           AutomationAssumeRole:
             type: String
-            default: ''
+            default: !GetAtt FeatureAutomationRole.Arn
           FeatureName:
             type: String
         mainSteps:
@@ -66,99 +109,6 @@ Resources:
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
               DisableRollback: true
-
-  CheckerConfigRule:
-    DependsOn: CheckerLambdaPermission
-    Type: AWS::Config::ConfigRule
-    Properties:
-      ConfigRuleName: !Sub superwerker-feature-${FeatureName}
-      InputParameters:
-        feature: !Ref FeatureName
-        stack: stack_arn
-      Source:
-        Owner: CUSTOM_LAMBDA
-        SourceIdentifier: !GetAtt CheckerLambda.Arn
-        SourceDetails:
-          - EventSource: aws.config
-            MessageType: ScheduledNotification
-            MaximumExecutionFrequency: One_Hour
-
-  CheckerLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !GetAtt CheckerLambda.Arn
-      Action: lambda:InvokeFunction
-      Principal: config.amazonaws.com
-
-  CheckerLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: index.handler
-      Runtime: python3.7
-      Policies:
-        - Statement:
-            - Sid: ConfigPutEvaluation
-              Effect: Allow
-              Action: config:PutEvaluations
-              Resource: "*" # No resource level permissions :(
-      InlineCode: |
-        import boto3
-        import json
-
-        # Set to True to get the lambda to assume the Role attached on the Config Service (useful for cross-account).
-        ASSUME_ROLE_MODE = False
-        DEFAULT_RESOURCE_TYPE = 'AWS::::Account'
-
-        # This gets the client after assuming the Config service role
-        # either in the same AWS account or cross-account.
-        def get_client(service, event):
-          return boto3.client(service)
-
-        # Check whether the message is a ScheduledNotification or not.
-        def is_scheduled_notification(message_type):
-          return message_type == 'ScheduledNotification'
-
-        # Evaluates the configuration items in the snapshot and returns the compliance value to the handler.
-        def evaluate_compliance():
-          return 'NON_COMPLIANT'
-
-        # This generate an evaluation for config
-        def build_evaluation(resource_id, compliance_type, event, resource_type=DEFAULT_RESOURCE_TYPE, annotation=None):
-            """Form an evaluation as a dictionary. Usually suited to report on scheduled rules.
-            Keyword arguments:
-            resource_id -- the unique id of the resource to report
-            compliance_type -- either COMPLIANT, NON_COMPLIANT or NOT_APPLICABLE
-            event -- the event variable given in the lambda handler
-            resource_type -- the CloudFormation resource type (or AWS::::Account) to report on the rule (default DEFAULT_RESOURCE_TYPE)
-            annotation -- an annotation to be added to the evaluation (default None)
-            """
-            eval_cc = {}
-            if annotation:
-              eval_cc['Annotation'] = annotation
-            eval_cc['ComplianceResourceType'] = resource_type
-            eval_cc['ComplianceResourceId'] = resource_id
-            eval_cc['ComplianceType'] = compliance_type
-            eval_cc['OrderingTimestamp'] = str(json.loads(event['invokingEvent'])['notificationCreationTime'])
-            return eval_cc
-
-        def handler(event, context):
-
-          global AWS_CONFIG_CLIENT
-
-          evaluations = []
-          valid_rule_parameters = {}
-
-          invoking_event = json.loads(event['invokingEvent'])
-          if 'ruleParameters' in event:
-            valid_rule_parameters = json.loads(event['ruleParameters'])
-
-          compliance_value = 'NOT_APPLICABLE'
-
-          AWS_CONFIG_CLIENT = get_client('config', event)
-
-          compliance_value = evaluate_compliance()
-          evaluations.append(build_evaluation(event['accountId'], compliance_value, event, resource_type=DEFAULT_RESOURCE_TYPE))
-          response = AWS_CONFIG_CLIENT.put_evaluations(Evaluations=evaluations, ResultToken=event['resultToken'])
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
