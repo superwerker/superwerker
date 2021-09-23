@@ -81,6 +81,19 @@ Resources:
         AllSupported: true
       RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
 
+  CheckerConfigDeliveryChannel:
+    Type: AWS::Config::DeliveryChannel
+    Properties:
+      S3BucketName: !Ref CheckerConfigDeliveryChannelBucket
+
+  CheckerConfigDeliveryChannelBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Status: Enabled
+
   CheckerConfigRule:
     DependsOn: CheckerLambdaPermission
     Type: AWS::Config::ConfigRule
