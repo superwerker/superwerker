@@ -67,33 +67,6 @@ Resources:
               TemplateURL: !Ref TemplateURL
               DisableRollback: true
 
-  CheckerConfigServiceLinkedRole:
-    Type: AWS::IAM::ServiceLinkedRole
-    Properties:
-      AWSServiceName: config.amazonaws.com
-
-  CheckerConfigRecorder: # AWS Config Rules need a config recorder to function otherwise they won't execute custom config rules
-    Type: AWS::Config::ConfigurationRecorder
-    DependsOn: CheckerConfigServiceLinkedRole
-    Properties:
-      Name: !Sub superwerker-${FeatureName}
-      RecordingGroup:
-        AllSupported: true
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig
-
-  CheckerConfigDeliveryChannel:
-    Type: AWS::Config::DeliveryChannel
-    Properties:
-      S3BucketName: !Ref CheckerConfigDeliveryChannelBucket
-
-  CheckerConfigDeliveryChannelBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      LifecycleConfiguration:
-        Rules:
-          - ExpirationInDays: 1
-            Status: Enabled
-
   CheckerConfigRule:
     DependsOn: CheckerLambdaPermission
     Type: AWS::Config::ConfigRule
