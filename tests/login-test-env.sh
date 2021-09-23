@@ -5,6 +5,7 @@
 set -euo pipefail
 
 superwerker_region=${SUPERWERKER_REGION:-"eu-central-1"}
+console_url="https://${superwerker_region}.console.aws.amazon.com/cloudformation/home?region=${superwerker_region}"
 
 echo AccountId ${AWS_ACCOUNT_ID} - Source Profile ${SOURCE_PROFILE} - Region ${superwerker_region}
 
@@ -14,4 +15,4 @@ aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_re
 aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} set source_profile ${SOURCE_PROFILE}
 
 # open Firefox
-open -a Firefox $(AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} python3 ${BASH_SOURCE%/*}/../scripts/console.py)
+open -a Firefox $(AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} CONSOLE_URL=$console_url python3 ${BASH_SOURCE%/*}/../scripts/console.py)
