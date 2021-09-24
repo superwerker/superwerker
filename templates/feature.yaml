@@ -116,7 +116,7 @@ Resources:
               TemplateURL: !Ref TemplateURL
               DisableRollback: true
               TimeoutInMinutes: 20
-            isEnd: true
+            nextStep: signalCloudFormationWaitCondition
           - name: updateCloudFormationStack
             action: aws:executeAwsApi
             inputs:
@@ -128,8 +128,41 @@ Resources:
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
               # DisableRollback: true # DisableRollback parameter is not yet known by SSM Automation
+            nextStep: signalCloudFormationWaitCondition
+            maxAttempts: 10
+          - name: signalCloudFormationWaitCondition
+            action: aws:executeScript
+            inputs:
+              Runtime: python3.7
+              Handler: script_handler
+              InputPayload:
+                signal_url: !Ref FeatureReadyHandle
+              Script: >
+                import json
+                import urllib3
+                import uuid
+
+                def script_handler(event, context):
+                  encoded_body = json.dumps({
+                    "Status": "SUCCESS",
+                    "Reason": "Feature setup completed",
+                    "UniqueId": str(uuid.uuid4()),
+                    "Data": "Feature setup completed"
+                  })
+
+                  http = urllib3.PoolManager()
+                  http.request('PUT', event['signal_url'], body=encoded_body)
             isEnd: true
             maxAttempts: 10
+
+  FeatureReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  FeatureReadyHandleWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref FeatureReadyHandle
+      Timeout: "1800"
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
