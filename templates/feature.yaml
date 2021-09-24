@@ -128,8 +128,20 @@ Resources:
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
               # DisableRollback: true # DisableRollback parameter is not yet known by SSM Automation
-            nextStep: signalCloudFormationWaitCondition
+            nextStep: waitForCloudFormationStackUpdate
             maxAttempts: 10
+          - name: waitForCloudFormationStackUpdate
+            timeoutSeconds: 1800
+            action: aws:waitForAwsResourceProperty
+            inputs:
+              Service: cloudformation
+              Api: DescribeStacks
+              StackName: "superwerker-{{ FeatureName }}"
+              PropertySelector: $.Stacks[0].StackStatus
+              DesiredValues:
+                - UPDATE_COMPLETE
+            onFailure: step:updateCloudFormationStack # loop until it works or automation is interrupted
+            nextStep: signalCloudFormationWaitCondition
           - name: signalCloudFormationWaitCondition
             action: aws:executeScript
             inputs:
