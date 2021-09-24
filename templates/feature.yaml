@@ -127,7 +127,7 @@ Resources:
                 - CAPABILITY_AUTO_EXPAND
               StackName: "superwerker-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
-              DisableRollback: true
+              # DisableRollback: true # DisableRollback parameter is not yet known by SSM Automation
             isEnd: true
             maxAttempts: 10
 
