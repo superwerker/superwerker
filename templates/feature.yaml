@@ -111,7 +111,7 @@ Resources:
               Capabilities:
                 - CAPABILITY_IAM
                 - CAPABILITY_AUTO_EXPAND
-              StackName: "superwerker-{{ FeatureName }}"
+              StackName: "superwerker-feature-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
               DisableRollback: true
               TimeoutInMinutes: 20
@@ -124,7 +124,7 @@ Resources:
               Capabilities:
                 - CAPABILITY_IAM
                 - CAPABILITY_AUTO_EXPAND
-              StackName: "superwerker-{{ FeatureName }}"
+              StackName: "superwerker-feature-{{ FeatureName }}"
               TemplateURL: !Ref TemplateURL
               # DisableRollback: true # DisableRollback parameter is not yet known by SSM Automation
             nextStep: waitForCloudFormationStackUpdate
@@ -135,7 +135,7 @@ Resources:
             inputs:
               Service: cloudformation
               Api: DescribeStacks
-              StackName: "superwerker-{{ FeatureName }}"
+              StackName: "superwerker-feature-{{ FeatureName }}"
               PropertySelector: $.Stacks[0].StackStatus
               DesiredValues:
                 - UPDATE_COMPLETE
