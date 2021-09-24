@@ -289,6 +289,7 @@ Resources:
           - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
+        FeatureName: backup
         TemplateURL: !Sub
           - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/backup.yaml
           - S3Region: !If [ UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion ]
