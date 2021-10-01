@@ -11,21 +11,12 @@ Resources:
   DashboardGeneratorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Events:
-        Schedule:
-          Type: Schedule
-          Properties:
-            Schedule: rate(1 minute) # runs in Lambda free tier
-
       Handler: index.handler
       Policies:
         - SSMParameterReadPolicy:
             ParameterName: 'superwerker/*'
         - Version: 2012-10-17
           Statement:
-            - Effect: Allow
-              Action: cloudwatch:PutDashboard
-              Resource: !Sub arn:${AWS::Partition}:cloudwatch::${AWS::AccountId}:dashboard/superwerker
             - Effect: Allow
               Action: cloudwatch:DescribeAlarms
               Resource: '*'
@@ -120,12 +111,36 @@ Resources:
         Updated at {current_time} (use browser reload to refresh)
         ```
           """.format(dns_delegation=dns_delegation_text, current_time=datetime.now(), region=os.environ['AWS_REGION'], dns_domain=dns_domain)
-          cw.put_dashboard(
-            DashboardName='superwerker',
-            DashboardBody=json.dumps({"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": markdown}}]}),
-          )
+          return {"markdown":markdown}
       Runtime: python3.7
       Timeout: 60
+
+  Dashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "custom",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 20,
+              "properties":
+                {
+                  "endpoint": "${DashboardGeneratorFunction.Arn}",
+                  "updateOn": {
+                    "refresh": true,
+                    "resize": false,
+                    "timeRange": false
+                  }
+                }
+              }
+            }
+          ]
+        }
+      DashboardName: superwerker
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
