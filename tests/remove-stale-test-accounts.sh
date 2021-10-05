@@ -17,6 +17,6 @@ for stale in ${accounts}
 do
     echo $stale
     SUPERWERKER_REGION=eu-west-1 SOURCE_PROFILE=superwerker-test1-master AWS_ACCOUNT_ID=${stale} CAPTCHA_API_KEY=${captcha_api_key} ./terminate-test-env.sh ||
-    SUPERWERKER_REGION=eu-east-1 SOURCE_PROFILE=superwerker-test1-master AWS_ACCOUNT_ID=${stale} CAPTCHA_API_KEY=${captcha_api_key} ./terminate-test-env.sh ||
+    SUPERWERKER_REGION=eu-central-1 SOURCE_PROFILE=superwerker-test1-master AWS_ACCOUNT_ID=${stale} CAPTCHA_API_KEY=${captcha_api_key} ./terminate-test-env.sh ||
     echo "skipping"
 done
