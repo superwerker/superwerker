@@ -74,6 +74,11 @@ Resources:
 
   OrganizationConformancePackBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EPolicyWildcardPrincipal
     Properties:
       Bucket: !Ref OrganizationConformancePackBucket
       PolicyDocument:
@@ -81,7 +86,7 @@ Resources:
         Statement:
           - Sid: AllowGetPutObject
             Effect: Allow
-            Principal: "*" # keep wildcard (condition is there)
+            Principal: "*"
             Action:
               - s3:GetObject
               - s3:PutObject
@@ -93,7 +98,7 @@ Resources:
                 aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
           - Sid: AllowGetBucketAcl
             Effect: Allow
-            Principal: "*" # keep wildcard (condition is there)
+            Principal: "*"
             Action: s3:GetBucketAcl
             Resource: !Sub ${OrganizationConformancePackBucket.Arn}
             Condition:
@@ -605,6 +610,11 @@ Resources:
 
   TagPolicyCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.7
@@ -622,7 +632,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*" # probably allow wildcard (actions specify resource)
+              Resource: "*"
       InlineCode: |
         import boto3
         import cfnresponse
@@ -725,6 +735,11 @@ Resources:
 
   TagPolicyEnableCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
@@ -737,7 +752,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "*" # probably allow wildcard (resource specified in action/no specific resource?)
+              Resource: "*"
       InlineCode: |
         import boto3
         import cfnresponse
@@ -859,6 +874,11 @@ Resources:
 
   BackupPolicyCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.7
@@ -876,7 +896,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*" # probably allow wildcard (resource specified in action/no specific resource?)
+              Resource: "*"
       InlineCode: |
         import boto3
         import cfnresponse
@@ -980,6 +1000,11 @@ Resources:
 
   BackupPolicyEnableCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
@@ -992,7 +1017,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "*" # allow wildcard (resource specified in action/no specific resource)
+              Resource: "*"
       InlineCode: |
         import boto3
         import cfnresponse
