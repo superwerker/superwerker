@@ -730,11 +730,6 @@ Resources:
 
   TagPolicyEnableCustomResource:
     Type: AWS::Serverless::Function
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
@@ -747,7 +742,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "*"
+              Resource: "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
       InlineCode: |
         import boto3
         import cfnresponse
