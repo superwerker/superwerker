@@ -864,11 +864,6 @@ Resources:
 
   BackupPolicyCustomResource:
     Type: AWS::Serverless::Function
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.7
@@ -886,7 +881,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*"
+              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
       InlineCode: |
         import boto3
         import cfnresponse
@@ -990,11 +985,6 @@ Resources:
 
   BackupPolicyEnableCustomResource:
     Type: AWS::Serverless::Function
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
@@ -1007,7 +997,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "*"
+              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
       InlineCode: |
         import boto3
         import cfnresponse
