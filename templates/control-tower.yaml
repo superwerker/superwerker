@@ -120,7 +120,7 @@ Resources:
               AWS: !GetAtt SetupControlTowerCustomResourceRole.Arn
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
 
   ControlTowerReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
