@@ -78,7 +78,7 @@ Resources:
       cfn-lint:
         config:
           ignore_checks:
-          - EPolicyWildcardResource
+          - EPolicyWildcardPrincipal
     Properties:
       Bucket: !Ref OrganizationConformancePackBucket
       PolicyDocument:
