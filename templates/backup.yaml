@@ -74,13 +74,13 @@ Resources:
 
   OrganizationConformancePackBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EPolicyWildcardPrincipal
     Properties:
       Bucket: !Ref OrganizationConformancePackBucket
-        Metadata:
-          cfn-lint:
-            config:
-              ignore_checks:
-              - EPolicyWildcardPrincipal
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
