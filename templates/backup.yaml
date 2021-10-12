@@ -632,7 +632,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: "*"
+              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
       InlineCode: |
         import boto3
         import cfnresponse
