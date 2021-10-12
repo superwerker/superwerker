@@ -161,6 +161,11 @@ Resources:
 
   EnableGuardDutyOrganizationsRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -184,7 +189,7 @@ Resources:
                   - organizations:RegisterDelegatedAdministrator
                   - organizations:DescribeOrganization
                   - ssm:DescribeAutomationExecutions
-                Resource: '*' # allow wildcard?
+                Resource: '*'
         - PolicyName: AllowStartAutomationExecution
           PolicyDocument:
             Statement:
