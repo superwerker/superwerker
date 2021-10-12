@@ -25,4 +25,4 @@ jobs:
         PYTHONPATH: "$PYTHONPATH:./qs-cfn-lint-rules:/home/runner/.local/lib/python3.8/site-packages"
       uses: scottbrenner/cfn-lint-action@v2
       with:
-        command: "cfn-lint templates/*.yaml -a qs-cfn-lint-rules/qs_cfn_lint_rules"
+        command: "cfn-lint templates/*.yaml -a qs-cfn-lint-rules/qs_cfn_lint_rules --ignore-checks W"
