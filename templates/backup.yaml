@@ -21,7 +21,7 @@ Resources:
               Action:
                 - organizations:ListRoots
                 - organizations:DescribeOrganization
-              Resource: '*'
+              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
       InlineCode: |
         import boto3
         import cfnresponse
