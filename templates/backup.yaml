@@ -742,7 +742,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
+              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
       InlineCode: |
         import boto3
         import cfnresponse
