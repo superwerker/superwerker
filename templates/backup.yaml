@@ -610,11 +610,6 @@ Resources:
 
   TagPolicyCustomResource:
     Type: AWS::Serverless::Function
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.7
