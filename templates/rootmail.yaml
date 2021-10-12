@@ -116,6 +116,11 @@ Resources:
 
   HostedZoneDKIMAndVerificationRecordsCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Handler: index.handler
@@ -127,7 +132,7 @@ Resources:
               Action:
                 - ses:VerifyDomainDkim
                 - ses:VerifyDomainIdentity
-              Resource: "*" # allow wildcard? resource dynamic?
+              Resource: "*"
       InlineCode: |
         import boto3
         import cfnresponse
