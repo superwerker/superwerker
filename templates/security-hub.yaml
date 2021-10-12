@@ -225,6 +225,11 @@ Resources:
 
   EnableSecurityHubInOrgAccountAndAddAsMemberRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -262,7 +267,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: organizations:DescribeAccount
-                Resource: '*' # allow wildcard
+                Resource: '*'
         - PolicyName: SSMParameters
           PolicyDocument:
             Statement:
