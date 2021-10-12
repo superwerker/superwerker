@@ -252,6 +252,11 @@ Resources:
 
   RootMailReady:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Events:
         Schedule:
@@ -350,7 +355,7 @@ Resources:
                 - ses:GetAccountSendingEnabled
                 - ses:GetIdentityDkimAttributes
                 - ses:GetIdentityNotificationAttributes
-              Resource: '*' # allow wildcard?
+              Resource: '*'
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
   RootMailReadyAlert:
