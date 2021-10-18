@@ -21,7 +21,7 @@ Resources:
               Action:
                 - organizations:ListRoots
                 - organizations:DescribeOrganization
-              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
+              Resource: !Sub arn:${AWS::Partition}:organizations::*:organization/*
       InlineCode: |
         import boto3
         import cfnresponse
@@ -627,7 +627,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
+              Resource: !Sub arn:${AWS::Partition}:organizations::*:organization/*
       InlineCode: |
         import boto3
         import cfnresponse
@@ -742,7 +742,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
+              Resource: !Sub arn:${AWS::Partition}:organizations::*:organization/*
       InlineCode: |
         import boto3
         import cfnresponse
@@ -881,7 +881,7 @@ Resources:
                 - organizations:ListRoots
                 - organizations:ListPolicies
                 - organizations:ListPoliciesForTarget
-              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
+              Resource: !Sub arn:${AWS::Partition}:organizations::*:organization/*
       InlineCode: |
         import boto3
         import cfnresponse
@@ -997,7 +997,7 @@ Resources:
                 - organizations:EnablePolicyType
                 - organizations:DisablePolicyType
                 - organizations:ListRoots
-              Resource: !Sub "arn:${AWS::Partition}:organizations::${AWS::AccountId}:organization/*"
+              Resource: !Sub arn:${AWS::Partition}:organizations::*:organization/*
       InlineCode: |
         import boto3
         import cfnresponse
