@@ -9,7 +9,6 @@ Metadata:
       ignore_checks:
         - E9007
         - EPolicyWildcardPrincipal
-        - EIAMPolicyWildcardResource
         - E1029
 
 Resources:
@@ -610,6 +609,11 @@ Resources:
 
   TagPolicyCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.7
