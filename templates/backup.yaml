@@ -2,6 +2,15 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up backups. (qs-1s3rsr7la)
 
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007
+        - EPolicyWildcardPrincipal
+        - E1029
+
 Resources:
 
   OrganizationsLookup:
@@ -1058,12 +1067,3 @@ Resources:
             return [p['Id'] for p in
                     o.list_policies_for_target(TargetId=root_id(), Filter='BACKUP_POLICY')['Policies'] if
                     p['Id'] == policy_id]
-
-Metadata:
-  SuperwerkerVersion: 0.0.0-DEVELOPMENT
-  cfn-lint:
-    config:
-      ignore_checks:
-        - E9007
-        - EPolicyWildcardPrincipal
-        - E1029
