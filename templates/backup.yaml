@@ -1,7 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-Transform: AWS::Serverless-2016-10-31
-Description: Sets up backups. (qs-1s3rsr7la)
-
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
   cfn-lint:
@@ -10,6 +7,9 @@ Metadata:
         - E9007
         - EPolicyWildcardPrincipal
         - E1029
+
+Transform: AWS::Serverless-2016-10-31
+Description: Sets up backups. (qs-1s3rsr7la)
 
 Resources:
 
