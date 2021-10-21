@@ -74,11 +74,6 @@ Resources:
 
   OrganizationConformancePackBucketPolicy:
     Type: AWS::S3::BucketPolicy
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - EPolicyWildcardPrincipal
     Properties:
       Bucket: !Ref OrganizationConformancePackBucket
       PolicyDocument:
@@ -434,11 +429,6 @@ Resources:
   EnableCloudFormationStacksetsOrgAccess:
     Type: AWS::Synthetics::Canary
     DependsOn: CfnStackSetsReadyEnablePermission # make sure the Lambda which handles the wait condition is entirely ready before enabling Cloudformation Org access. This includes Lambda event+permission have to be ready.
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - E1029
     Properties:
       Name: superwerker-cfn-org
       ArtifactS3Location: !Sub s3://${EnableCloudFormationStacksetsOrgAccessArtifacts}
@@ -1071,3 +1061,9 @@ Resources:
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007
+        - EPolicyWildcardPrincipal
+        - E1029
