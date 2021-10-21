@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up Budget pieces for account management. (qs-1s3rsr7io)
 
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007
+
 Parameters:
   BudgetLimitInUSD:
     Default: 100
@@ -163,10 +170,3 @@ Resources:
           Subscribers:
             - SubscriptionType: SNS
               Address: !Ref BudgetNotification
-
-Metadata:
-  SuperwerkerVersion: 0.0.0-DEVELOPMENT
-  cfn-lint:
-    config:
-      ignore_checks:
-        - E9007
