@@ -9,6 +9,7 @@ Metadata:
       ignore_checks:
         - E9007
         - EPolicyWildcardPrincipal
+        - EIAMPolicyWildcardResource
         - E1029
 
 Resources:
