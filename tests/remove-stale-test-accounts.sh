@@ -10,8 +10,9 @@ accounts=$(aws dynamodb query \
 --index-name account_status \
 --key-condition-expression "account_status = :name" \
 --expression-attribute-values '{":name":{"S":"VENDED"}}' \
+--query 'Items[].[account_id.S]' \
 --region eu-west-1 \
---output json | jq '.Items[].account_id.S|tonumber')
+--output text)
 
 for stale in ${accounts}
 do
