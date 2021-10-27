@@ -1,0 +1,14 @@
+version: 0.2
+env:
+  shell: bash
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 14
+    commands:
+      - cd cdk
+      - yarn install
+  build:
+    commands:
+      - npx cdk bootstrap && npx cdk deploy --require-approval never --all
