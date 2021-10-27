@@ -55,6 +55,11 @@ Metadata:
       QSS3KeyPrefix:
         default: Quick Start S3 key prefix
 Parameters:
+  OverrideSourceVersion:
+    Type: String
+    Default: ''
+    Description: Override the GitHub source version, leave it empty
+
   Domain:
     Type: String
     Description: Domain used for root mail feature
@@ -145,6 +150,8 @@ Conditions:
   IncludeSecurityHub: !Equals [ !Ref IncludeSecurityHub, 'Yes' ]
   IncludeBackup: !Equals [ !Ref IncludeBackup, 'Yes' ]
   IncludeServiceControlPolicies: !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
+  OverrideSourceVersion: !Not [!Equals [ !Ref OverrideSourceVersion, '' ]]
+  IsQuickStartDeployment: !Equals [ !Ref QSS3BucketName, 'aws-quickstart' ]
 
 Resources:
   Budget:
@@ -321,6 +328,133 @@ Resources:
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
         NotificationsMail: !Ref NotificationsMail
+
+  DeploymentProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      TimeoutInMinutes: 180
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        Type: LINUX_CONTAINER
+
+      ServiceRole: !GetAtt DeploymentProjectRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        Type: GITHUB
+        GitCloneDepth: 1
+        Location: !If
+          - IsQuickStartDeployment
+          - https://github.com/aws-quickstart/quickstart-superwerker
+          - https://github.com/superwerker/superwerker.git
+        BuildSpec: cdk/buildspec.yaml
+      SourceVersion: !If
+        - IsQuickStartDeployment
+        - !Ref AWS::NoValue
+        - !If
+          - OverrideSourceVersion
+          - !Ref OverrideSourceVersion
+          - !Sub
+            - 'v${Version}'
+            - Version: !Select
+              - 0
+              - !Split
+                - /
+                - !Ref QSS3KeyPrefix
+
+  CdkDeployment:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt CdkDeploymentCustomResource.Arn
+      QSS3KeyPrefix: !If # trigger an update every time the version (or key prefix) changes
+        - OverrideSourceVersion
+        - !Ref OverrideSourceVersion
+        - !Ref QSS3KeyPrefix
+
+  CdkDeploymentCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: codebuild:StartBuild
+              Resource: !GetAtt DeploymentProject.Arn
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: cloudformation:DeleteStack
+              Resource: !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/SuperwerkerStack/*
+      Environment:
+        Variables:
+          CODEBUILD_DEPLOYMENT_PROJECT_ARN: !GetAtt DeploymentProject.Arn
+      InlineCode: |
+        import boto3
+        import cfnresponse
+        import os
+
+        cb = boto3.client("codebuild")
+        cfn = boto3.client("cloudformation")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+            return catch
+
+
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
+
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+            id = PhysicalResourceId
+
+            data = {}
+
+            if RequestType == CREATE or RequestType == UPDATE:
+                cb.start_build(
+                  projectName=os.environ['CODEBUILD_DEPLOYMENT_PROJECT_ARN'],
+                )
+
+            if RequestType == DELETE:
+                cfn.delete_stack(
+                  StackName='SuperwerkerStack',
+                )
+
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
+
+  DeploymentProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+
 
 Outputs:
   RootMailDelegationTarget:
