@@ -1,11 +1,16 @@
 #!/bin/bash
+set -euo pipefail
+
+echo SOURCE_PROFILE: $SOURCE_PROFILE
 
 captcha_api_key=$(aws secretsmanager get-secret-value \
+--profile $SOURCE_PROFILE \
 --secret-id /superwerker/tests/2captcha_api_key \
 --region eu-west-1 \
 --query SecretString --output text)
 
 accounts=$(aws dynamodb query \
+--profile $SOURCE_PROFILE \
 --table-name account \
 --index-name account_status \
 --key-condition-expression "account_status = :name" \
