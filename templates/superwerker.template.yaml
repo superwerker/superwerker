@@ -322,6 +322,41 @@ Resources:
       Parameters:
         NotificationsMail: !Ref NotificationsMail
 
+  DeploymentProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      TimeoutInMinutes: 180
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Type: LINUX_CONTAINER
+
+      ServiceRole: !GetAtt DeploymentProjectRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        Type: GITHUB
+        Location:
+          Fn::Sub:
+            - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/notifications.yaml'
+            - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+              S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+        BuildSpec: cdk/buildspec.yaml
+
+  DeploymentProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+
 Outputs:
   RootMailDelegationTarget:
     Description: Name servers for the hosted zone delegation
