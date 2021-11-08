@@ -40,7 +40,7 @@ You can watch the video or follow the instructions below to complete the install
 1. Click on the github releases link in the section above, then select `quick install` for the latest version of superwerker. (You should now be on the AWS CloudFormation console and are ready to begin the installation).
 1.  Fill in the Domain for automated DNS configuration
 1.  Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
-1. Click the 'create stack' button.
+1. Click the `create stack` button.
 
 After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for further installation instructions, next steps and standard operating procedures.
     
