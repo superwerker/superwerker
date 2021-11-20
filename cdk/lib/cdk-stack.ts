@@ -1,7 +1,7 @@
 import {
   aws_ec2,
-  aws_ecs_patterns, aws_servicecatalog, CfnParameter,
-  custom_resources,
+  aws_ecs_patterns, aws_servicecatalog, CfnOutput, CfnParameter,
+  custom_resources, Fn,
   Stack,
   StackProps
 } from 'aws-cdk-lib';
@@ -18,6 +18,36 @@ class VpcProduct extends servicecatalog.ProductStack {
     this.vpc = new aws_ec2.Vpc(this, 'Vpc', {
       natGateways: 0
     });
+  }
+}
+
+class PlatformProduct extends servicecatalog.ProductStack {
+
+  sharedServicesAccountProduct: aws_servicecatalog.CfnCloudFormationProvisionedProduct;
+
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    const platformName = new CfnParameter(this, 'PlatformName', {});
+    const platformAdminEmail = new CfnParameter(this, 'PlatformAdminEmail', {});
+
+    // create N AWS accounts
+    const provisionedProductName = `platform-${platformName.valueAsString}-sharedservices`;
+    this.sharedServicesAccountProduct = new aws_servicecatalog.CfnCloudFormationProvisionedProduct(this, 'Account', {
+      productName: 'AWS Control Tower Account Factory',
+      provisioningArtifactName: 'AWS Control Tower Account Factory',
+      provisionedProductName: provisionedProductName,
+      provisioningParameters: [
+        {key: 'AccountName', value: provisionedProductName},
+        {key: 'AccountEmail', value:
+              `root+${Fn.select(1, Fn.split('-', Fn.select(2, Fn.split('/', this.stackId))))}@172194514690.a4662202-595c-46a8-87be-22c29f9d33ad.net`
+        },
+        {key: 'SSOUserFirstName', value: 'Platform'},
+        {key: 'SSOUserLastName', value: 'Platform'},
+        {key: 'SSOUserEmail', value: platformAdminEmail.valueAsString},
+        {key: 'ManagedOrganizationalUnit', value: 'Sandbox'},
+      ]
+    })
   }
 }
 
@@ -117,6 +147,18 @@ export class CdkStack extends Stack {
       ],
     });
     managementAccountPortfolio.addProduct(workloadProduct);
+
+    const platformProduct = new servicecatalog.CloudFormationProduct(this, 'PlatformProductStack', {
+      productName: "Platform",
+      owner: "superwerker",
+      productVersions: [
+        {
+          productVersionName: "0.0.3",
+          cloudFormationTemplate: servicecatalog.CloudFormationTemplate.fromProductStack(new PlatformProduct(this, 'PlatformProduct')),
+        },
+      ],
+    });
+    managementAccountPortfolio.addProduct(platformProduct);
 
     const orgId = new custom_resources.AwsCustomResource(this, 'OrgRootLookup', {
       onUpdate: {   // will also be called for a CREATE event
