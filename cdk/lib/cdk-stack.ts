@@ -1,6 +1,7 @@
 import {
+  aws_codecommit,
   aws_ec2,
-  aws_ecs_patterns, aws_servicecatalog, CfnOutput, CfnParameter,
+  aws_ecs_patterns, aws_iam, aws_servicecatalog, CfnOutput, CfnParameter,
   custom_resources, Fn,
   Stack,
   StackProps
@@ -8,6 +9,7 @@ import {
 import { Construct } from 'constructs';
 import * as servicecatalog from '@aws-cdk/aws-servicecatalog-alpha';
 import {ContainerImage} from "aws-cdk-lib/aws-ecs";
+import {CfnStackSetConstraint} from "aws-cdk-lib/aws-servicecatalog";
 
 class VpcProduct extends servicecatalog.ProductStack {
 
@@ -21,11 +23,17 @@ class VpcProduct extends servicecatalog.ProductStack {
   }
 }
 
+interface PlatformProductProps extends StackProps {
+  codeRepoProduct: servicecatalog.CloudFormationProduct;
+
+  adminRole: aws_iam.Role;
+}
+
 class PlatformProduct extends servicecatalog.ProductStack {
 
   sharedServicesAccountProduct: aws_servicecatalog.CfnCloudFormationProvisionedProduct;
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: PlatformProductProps) {
     super(scope, id);
 
     const platformName = new CfnParameter(this, 'PlatformName', {});
@@ -48,12 +56,44 @@ class PlatformProduct extends servicecatalog.ProductStack {
         {key: 'ManagedOrganizationalUnit', value: 'Sandbox'},
       ]
     })
+
+    const sharedServicesPortfolio = new servicecatalog.Portfolio(this, 'SharedServicesAccountPortfolio', {
+      displayName: "superwerker - Shared Services - Platform X", // todo: inject platform name
+      providerName: "superwerker"
+    });
+    // fixme: add permissions for portfolio
+
+    sharedServicesPortfolio.addProduct(props.codeRepoProduct);
+    new CfnStackSetConstraint(this, 'CodeRepoStackset', {
+      accountList: [this.sharedServicesAccountProduct.getAtt('Outputs.AccountId').toString()],
+      adminRole: props.adminRole.roleArn,
+      description: "",
+      executionRole: "AWSControlTowerExecution",
+      portfolioId: sharedServicesPortfolio.portfolioId,
+      productId: props.codeRepoProduct.productId,
+      regionList: ['eu-central-1'],
+      stackInstanceControl: "ALLOWED"
+    })
   }
+}
+
+class CodeRepoProduct extends servicecatalog.ProductStack {
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    new aws_codecommit.Repository(this, 'CodeRepo', {
+      repositoryName: "workload" // fixme: inject
+    })
+  }
+}
+
+interface WorkloadProductProps extends StackProps {
+  codeRepoProduct: servicecatalog.CloudFormationProduct;
 }
 
 class WorkloadProduct extends servicecatalog.ProductStack {
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: WorkloadProductProps) {
     super(scope, id);
 
     const workloadName = new CfnParameter(this, 'WorkloadName', {});
@@ -76,6 +116,15 @@ class WorkloadProduct extends servicecatalog.ProductStack {
         {key: 'ManagedOrganizationalUnit', value: 'Sandbox'},
       ]
     })
+
+    // create CodeCommit in shared-services
+
+    const codeRepoProvisionedProduct = new aws_servicecatalog.CfnCloudFormationProvisionedProduct(this, 'CodeRepoProvisionedProduct', {
+      productId: props.codeRepoProduct.productId,
+      provisioningArtifactName: '0.0.3',
+      provisionedProductName: 'platform-default-dev-coderepo', // fixme: platform name
+    })
+
   }
 }
 
@@ -138,17 +187,33 @@ export class CdkStack extends Stack {
     });
     portfolio.addProduct(fargateProduct);
 
+    const codeRepoProduct = new servicecatalog.CloudFormationProduct(this, 'CodeRepoProductStack', {
+      productName: "Code Repo",
+      owner: "superwerker",
+      productVersions: [
+        {
+          productVersionName: "0.0.3",
+          cloudFormationTemplate: servicecatalog.CloudFormationTemplate.fromProductStack(new CodeRepoProduct(this, 'CodeRepoProduct')),
+        },
+      ],
+    });
+
     const workloadProduct = new servicecatalog.CloudFormationProduct(this, 'WorkloadProductStack', {
       productName: "Workload Account",
       owner: "superwerker",
       productVersions: [
         {
           productVersionName: "0.0.3",
-          cloudFormationTemplate: servicecatalog.CloudFormationTemplate.fromProductStack(new WorkloadProduct(this, 'WorkloadProduct')),
+          cloudFormationTemplate: servicecatalog.CloudFormationTemplate.fromProductStack(new WorkloadProduct(this, 'WorkloadProduct', {codeRepoProduct: codeRepoProduct})),
         },
       ],
     });
     managementAccountPortfolio.addProduct(workloadProduct);
+
+    const platformProductAdminRole = new aws_iam.Role(this, 'PlatformProductAdminRole', {
+      assumedBy: new aws_iam.ServicePrincipal('cloudformation.amazonaws.com')
+    });
+    platformProductAdminRole.addManagedPolicy(aws_iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')) // fixme: least privilege
 
     const platformProduct = new servicecatalog.CloudFormationProduct(this, 'PlatformProductStack', {
       productName: "Platform",
@@ -156,7 +221,7 @@ export class CdkStack extends Stack {
       productVersions: [
         {
           productVersionName: "0.0.3",
-          cloudFormationTemplate: servicecatalog.CloudFormationTemplate.fromProductStack(new PlatformProduct(this, 'PlatformProduct')),
+          cloudFormationTemplate: servicecatalog.CloudFormationTemplate.fromProductStack(new PlatformProduct(this, 'PlatformProduct', {codeRepoProduct: codeRepoProduct, adminRole: platformProductAdminRole})),
         },
       ],
     });
