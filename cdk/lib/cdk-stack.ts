@@ -60,14 +60,16 @@ class WorkloadProduct extends servicecatalog.ProductStack {
     const workloadAdminEmail = new CfnParameter(this, 'WorkloadAdminEmail', {});
 
     // create N AWS accounts
-    const provisionedProductName = `${workloadName.valueAsString}-dev`;
+    const provisionedProductName = `workload-${workloadName.valueAsString}-dev`;
     new aws_servicecatalog.CfnCloudFormationProvisionedProduct(this, 'Account', {
       productName: 'AWS Control Tower Account Factory',
       provisioningArtifactName: 'AWS Control Tower Account Factory',
       provisionedProductName: provisionedProductName,
       provisioningParameters: [
         {key: 'AccountName', value: provisionedProductName},
-        {key: 'AccountEmail', value: `root+${provisionedProductName}@172194514690.a4662202-595c-46a8-87be-22c29f9d33ad.net`},
+        {key: 'AccountEmail', value:
+              `root+${Fn.select(1, Fn.split('-', Fn.select(2, Fn.split('/', this.stackId))))}@172194514690.a4662202-595c-46a8-87be-22c29f9d33ad.net`
+        },
         {key: 'SSOUserFirstName', value: 'Isolde'},
         {key: 'SSOUserLastName', value: 'Mawidder-Baden'},
         {key: 'SSOUserEmail', value: workloadAdminEmail.valueAsString},
