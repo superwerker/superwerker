@@ -199,7 +199,7 @@ export class CdkStack extends Stack {
     });
 
     const workloadProduct = new servicecatalog.CloudFormationProduct(this, 'WorkloadProductStack', {
-      productName: "Workload Account",
+      productName: "superwerker Workload",
       owner: "superwerker",
       productVersions: [
         {
