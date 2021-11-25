@@ -31,18 +31,9 @@ _(currently slower release frequency)_
 - A dedicated AWS Account with administrative access ([sign up here](https://portal.aws.amazon.com/billing/signup))
 - A domain and manageable DNS settings (You can register domains with [Amazon Route53](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html))
 
-### Installation video with quickstart option
+### Installation
 
-You can watch the video or follow the instructions below to complete the installation :
-
-1. Sign into your AWS account.
-1. Check in the upper-right corner of the console that you are in the region in which you want to deploy superwerker.
-1. Click on the github releases link in the section above, then select `quick install` for the latest version of superwerker. (You should now be on the AWS CloudFormation console and are ready to begin the installation).
-1.  Fill in the Domain for automated DNS configuration
-1.  Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
-1. Click the `create stack` button.
-
-After creating the CloudFormation stack, please follow the [living documentation](https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker) for further installation instructions, next steps and standard operating procedures.
+Installations instructions are available in the [superwerker guide](https://superwerker.awsworkshop.io/installation.html).
     
 ## What's included in the setup?
 
@@ -115,7 +106,6 @@ We plan to roll-out releases via GitHub releases. The update is then deployed vi
 1. Choose `Replace current template`
 1. For `Amazon S3 URL`, copy the link to the latest version of the template e.g. "https://superwerker-releases.s3.amazonaws.com/0.13.0/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
 1. Click `Next`
-1. Recommended: Enter an email address to `Mail address used for important notification regarding your AWS account`.
 1. Change the parameter `QSS3KeyPrefix` to the current version number e.g. `0.13.0/`
 1. Click `Next`
 1. Click `Next` again
@@ -125,7 +115,7 @@ After completion of the stack update, navigate to the superwerker [living docume
 
 ### Can I use superwerker for existing AWS set-ups?
 
-superwerker is primarily designed for new AWS set-ups and can be used if AWS Control Tower is available in the respective region or was previously installed. superwerker will then try to set up services including Security Hub and GuardDuty. Depending on whether you already have them, you may need to clear the set-up accordingly beforehand.
+superwerker is primarily designed for new AWS set-ups and can be used if AWS Control Tower is available in the respective region. superwerker will then try to set up services including Security Hub and GuardDuty. Depending on whether you already have them, you may need to clear the set-up accordingly beforehand.
 
 ### Which regions is superwerker available in?
 
