@@ -27,11 +27,11 @@ done
 
 # close sub-accounts so that the OVM can close the main / management account later
 cd $SCRIPT_DIR/close-active-subaccounts
-npm i
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-# Node + ECS Container Creds + Assume Role doesn't seem to work, so work around by setting credentials
-eval $(aws sts assume-role --profile $SOURCE_PROFILE --role-arn $aws_cross_account_role_arn --role-session-name test | jq -r '.Credentials | "export JS_AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport JS_AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport JS_AWS_SESSION_TOKEN=\(.SessionToken)\n"')
-AWS_ACCESS_KEY_ID=$JS_AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY=$JS_AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN=$JS_AWS_SESSION_TOKEN AWS_REGION=${superwerker_region} CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
+AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} AWS_DEFAULT_REGION=${superwerker_region} AWS_REGION=${superwerker_region} CAPTCHA_KEY=$CAPTCHA_API_KEY python3 close-active-subaccounts.py
 
 # remove stacks
 aws cloudformation delete-stack --profile $SOURCE_PROFILE --stack-name superwerker-pipeline-dns-wiring-${AWS_ACCOUNT_ID}  --no-cli-pager
