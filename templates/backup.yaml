@@ -536,14 +536,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
 
-#  EnableCloudFormationStacksetsOrgAccessArtifacts: # left for backwards compatibility
-#    Type: AWS::S3::Bucket
-#    Properties:
-#      LifecycleConfiguration:
-#        Rules:
-#          - ExpirationInDays: 1
-#            Status: Enabled
-
   # Proudly found elsewhere and partially copied from:
   # https://github.com/theserverlessway/aws-baseline
   TagPolicy:
