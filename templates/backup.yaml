@@ -436,7 +436,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.7
-      Timeout: 60
+      Timeout: 900 # give it more time since it installs dependencies on the fly
       Role: !GetAtt EnableCloudFormationStacksetsOrgAccessCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
       Policies:
         - Version: 2012-10-17
