@@ -5,5 +5,4 @@ env:
 phases:
   build:
     commands:
-      - yarn install
-      - npx cdk deploy --require-approval never
+      - cd cdk && yarn install && npx cdk deploy --require-approval never
