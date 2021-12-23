@@ -8,4 +8,4 @@ phases:
       nodejs: 14
   build:
     commands:
-      - cd cdk && yarn install && npx cdk deploy --require-approval never
+      - cd cdk && yarn install && npx cdk bootstrap && npx cdk deploy --require-approval never
