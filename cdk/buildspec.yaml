@@ -5,7 +5,7 @@ env:
 phases:
   install:
     runtime-versions:
-      java: nodejs14
+      nodejs: 14
   build:
     commands:
       - cd cdk && yarn install && npx cdk deploy --require-approval never
