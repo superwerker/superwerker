@@ -336,12 +336,9 @@ Resources:
         Type: NO_ARTIFACTS
       Source:
         Type: GITHUB
-        Location:
-          Fn::Sub:
-            - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/notifications.yaml'
-            - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
-              S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+        Location: https://github.com/superwerker/superwerker.git
         BuildSpec: cdk/buildspec.yaml
+      SourceVersion: cdk
 
   DeploymentProjectRole:
     Type: AWS::IAM::Role
