@@ -11,4 +11,4 @@ phases:
       - yarn install
   build:
     commands:
-      - npx cdk bootstrap && npx cdk deploy --require-approval never --all
+      - npx cdk bootstrap && npx cdk deploy --require-approval never --all --parameters SuperwerkerLivingDocumentationStack:SuperwerkerDomain="${SUPERWERKER_DOMAIN}"
