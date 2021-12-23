@@ -2,8 +2,9 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { SuperwerkerStack } from '../lib/superwerker-stack';
-
+import { SuperwerkerLivingDocumentationStack } from '../lib/superwerker-living-documentation-stack';
 const app = new cdk.App();
+
 new SuperwerkerStack(app, 'SuperwerkerStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
@@ -19,3 +20,5 @@ new SuperwerkerStack(app, 'SuperwerkerStack', {
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
+
+new SuperwerkerLivingDocumentationStack(app, 'SuperwerkerLivingDocumentationStack');
