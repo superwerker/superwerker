@@ -1,0 +1,9 @@
+version: 0.2
+env:
+  shell: bash
+
+phases:
+  build:
+    commands:
+      - yarn install
+      - npx cdk deploy --require-approval never
