@@ -2,6 +2,7 @@ import {CfnParameter, Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as path from 'path';
@@ -20,7 +21,8 @@ export class SuperwerkerLivingDocumentationStack extends Stack {
             handler: 'superwerker-living-documentation.handler',
             environment: {
                 'SUPERWERKER_DOMAIN': superwerkerDomain.valueAsString,
-            }
+            },
+            logRetention: logs.RetentionDays.ONE_DAY,
         });
         livingDocumentationGeneratorFunction.role?.attachInlinePolicy(new iam.Policy(this, 'LivingDocumentationGeneratorFunctionPolicy', {
                 statements: [
