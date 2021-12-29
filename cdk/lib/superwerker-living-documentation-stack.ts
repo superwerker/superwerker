@@ -1,10 +1,11 @@
-import {CfnParameter, Stack, StackProps} from 'aws-cdk-lib';
+import {CfnParameter, Stack, StackProps, custom_resources} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+
 import * as path from 'path';
 
 export class SuperwerkerLivingDocumentationStack extends Stack {
@@ -58,9 +59,30 @@ export class SuperwerkerLivingDocumentationStack extends Stack {
         );
 
         const livingDocumentationGeneratorFunctionTrigger = new events.Rule(this, 'LivingDocumentationGeneratorFunctionRule', {
-            schedule: events.Schedule.expression('rate(1 minute)'), // runs in Lambda free tier
+            eventPattern: {
+                source: ['aws.cloudwatch'],
+                detailType: ['CloudWatch Alarm State Change'],
+                detail: {
+                    'alarmName': ['superwerker-RootMailReady'],
+                },
+            },
         });
 
         livingDocumentationGeneratorFunctionTrigger.addTarget(new targets.LambdaFunction(livingDocumentationGeneratorFunction));
+
+        new custom_resources.AwsCustomResource(this, 'InitialInvokeLivingDocumentationGeneratorFunction', {
+            onUpdate: {
+                service: 'Lambda',
+                action: 'invoke',
+                physicalResourceId: custom_resources.PhysicalResourceId.of('InitialInvokeLivingDocumentationGeneratorFunction'),
+                parameters: {
+                    FunctionName: livingDocumentationGeneratorFunction.functionName,
+                },
+            },
+            policy: custom_resources.AwsCustomResourcePolicy.fromStatements([new iam.PolicyStatement({
+                actions: ['lambda:InvokeFunction'],
+                resources: [livingDocumentationGeneratorFunction.functionArn],
+            })])
+        });
     }
 }
