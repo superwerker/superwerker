@@ -3,6 +3,8 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { SuperwerkerStack } from '../lib/superwerker-stack';
 import { SuperwerkerLivingDocumentationStack } from '../lib/superwerker-living-documentation-stack';
+import { SuperwerkerSecurityHubStack} from '../lib/superwerker-security-hub-stack';
+
 const app = new cdk.App();
 
 new SuperwerkerStack(app, 'SuperwerkerStack', {
@@ -22,3 +24,5 @@ new SuperwerkerStack(app, 'SuperwerkerStack', {
 });
 
 new SuperwerkerLivingDocumentationStack(app, 'SuperwerkerLivingDocumentationStack');
+
+new SuperwerkerSecurityHubStack(app, 'SecurityHubStack');
