@@ -1,0 +1,3 @@
+boto3
+awsapilib==1.0.0
+retrying

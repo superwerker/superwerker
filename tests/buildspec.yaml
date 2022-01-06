@@ -86,5 +86,4 @@ phases:
       - aws --profile test_account iam delete-user --user-name superwerker-tests || true
 
       # call sub-account closing and stack cleanup
-      # when called by codepipeline there is no git source version info, so we ommit source version so codebuild uses the main branch
-      - aws codebuild start-build --project-name ${SUPERWERKER_CLEANUP_PROJECT_NAME} --environment-variables-override name=AWS_CROSS_ACCOUNT_ROLE_ARN,value=${aws_cross_account_role_arn} name=SUPERWERKER_REGION,value=${SUPERWERKER_REGION} name=AWS_ACCOUNT_ID,value=${aws_account_id}  $([[ $CODEBUILD_INITIATOR != "codepipeline/"* ]] && echo --source-version $CODEBUILD_RESOLVED_SOURCE_VERSION)
+      - aws codebuild start-build --project-name ${SUPERWERKER_CLEANUP_PROJECT_NAME} --environment-variables-override name=AWS_CROSS_ACCOUNT_ROLE_ARN,value=${aws_cross_account_role_arn} name=SUPERWERKER_REGION,value=${SUPERWERKER_REGION} name=AWS_ACCOUNT_ID,value=${aws_account_id}

@@ -11,10 +11,8 @@ phases:
 
       # close sub-accounts so that the OVM can close the main / management account later
       - cd $CODEBUILD_SRC_DIR/tests/close-active-subaccounts
-      - npm i
-      # Node + ECS Container Creds + Assume Role doesn't seem to work, so work around by setting credentials
-      - eval $(aws sts assume-role --role-arn ${AWS_CROSS_ACCOUNT_ROLE_ARN} --role-session-name test | jq -r '.Credentials | "export js_aws_access_key_id=\(.AccessKeyId)\nexport js_aws_secret_access_key=\(.SecretAccessKey)\nexport js_aws_session_token=\(.SessionToken)\n"')
-      - AWS_ACCESS_KEY_ID=$js_aws_access_key_id AWS_SECRET_ACCESS_KEY=$js_aws_secret_access_key AWS_SESSION_TOKEN=$js_aws_session_token AWS_REGION=${SUPERWERKER_REGION} CAPTCHA_KEY=$CAPTCHA_API_KEY node close-active-subaccounts.js
+      - pip install -r requirements.txt
+      - AWS_PROFILE=test_account AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_REGION=${SUPERWERKER_REGION} CAPTCHA_KEY=$CAPTCHA_API_KEY python3 close-active-subaccounts.py
 
     finally:
       # remove stacks
