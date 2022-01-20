@@ -94,7 +94,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   SetupControlTowerCustomResourceRolePolicy:
     Type: AWS::IAM::Policy
@@ -120,7 +120,7 @@ Resources:
               AWS: !GetAtt SetupControlTowerCustomResourceRole.Arn
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
 
   ControlTowerReadyHandle:
     Type: AWS::CloudFormation::WaitConditionHandle
@@ -210,7 +210,11 @@ Resources:
                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/superwerker*
             - Action: events:PutEvents
               Effect: Allow
-              Resource: '*'
+              Resource: !Sub 'arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:event-bus/default'
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007

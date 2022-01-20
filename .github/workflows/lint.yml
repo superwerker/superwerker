@@ -10,7 +10,19 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: install Quick Start cfn-lint rules
+      run: |
+        git clone https://github.com/aws-quickstart/qs-cfn-lint-rules.git ./qs-cfn-lint-rules \
+          && cd qs-cfn-lint-rules \
+          && pip install -e .
+
+    - name: debug
+      run: "ls -al; ls -al $PWD/qs-cfn-lint-rules; ls -al $PWD/qs-cfn-lint-rules/qs_cfn_lint_rules"
+
     - name: cfn-lint
+      env:
+        # qs-cfn-lint-rules don't work without setting the $PYTHONPATH explicitly
+        PYTHONPATH: "$PYTHONPATH:./qs-cfn-lint-rules:/home/runner/.local/lib/python3.8/site-packages"
       uses: scottbrenner/cfn-lint-action@v2
       with:
-        command: "cfn-lint templates/*.yaml"
+        command: "cfn-lint templates/*.yaml -a qs-cfn-lint-rules/qs_cfn_lint_rules --ignore-checks W"
