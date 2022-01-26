@@ -1,4 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007
+        - EPolicyWildcardPrincipal
+        - E1029
+
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up backups. (qs-1s3rsr7la)
 
@@ -21,7 +30,7 @@ Resources:
               Action:
                 - organizations:ListRoots
                 - organizations:DescribeOrganization
-              Resource: '*'
+              Resource: "*"
       InlineCode: |
         import boto3
         import cfnresponse
@@ -90,7 +99,7 @@ Resources:
               StringEquals:
                 aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
-                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+                aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
           - Sid: AllowGetBucketAcl
             Effect: Allow
             Principal: "*"
@@ -100,11 +109,11 @@ Resources:
               StringEquals:
                 aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
-                aws:PrincipalArn: arn:aws:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+                aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
 
   BackupResources:
     Type: AWS::CloudFormation::StackSet
-    DependsOn: EnableCloudFormationStacksetsOrgAccessReadyWaitCondition
+    DependsOn: EnableCloudFormationStacksetsOrgAccessCustomResource
     Properties:
       StackSetName: superwerker-backup
       PermissionModel: SERVICE_MANAGED
@@ -122,7 +131,7 @@ Resources:
           DeploymentTargets:
             OrganizationalUnitIds:
               - !GetAtt OrganizationsLookup.RootId
-      TemplateBody: |
+      TemplateBody: !Sub |
         Resources:
           AWSBackupDefaultServiceRole:
             Type: AWS::IAM::Role
@@ -137,8 +146,8 @@ Resources:
                       Service: backup.amazonaws.com
                     Action: sts:AssumeRole
               ManagedPolicyArns:
-                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
-                - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+                - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+                - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
 
           ConfigRemediationRole:
             Type: AWS::IAM::Role
@@ -204,7 +213,7 @@ Resources:
                 AutomationAssumeRole:
                   StaticValue:
                     Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                      - arn:${AWS::Partition}:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
                 ResourceType:
                   StaticValue:
                     Values:
@@ -241,7 +250,7 @@ Resources:
                 AutomationAssumeRole:
                   StaticValue:
                     Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                      - arn:${AWS::Partition}:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
                 ResourceType:
                   StaticValue:
                     Values:
@@ -278,7 +287,7 @@ Resources:
                 AutomationAssumeRole:
                   StaticValue:
                     Values:
-                      - arn:aws:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
+                      - arn:${AWS::Partition}:iam::${AWS::AccountId}:role/SuperwerkerBackupTagsEnforcementRemediationRole # ${AWS::AccountId} is magically replaced with the actual sub-account id (magic by Conformance Pack)
                 ResourceType:
                   StaticValue:
                     Values:
@@ -321,7 +330,7 @@ Resources:
               Tags:
                 - Key: 'superwerker:backup'
                   Value: daily
-              ResourceArn: 'arn:aws:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+              ResourceArn: !Sub 'arn:${AWS::Partition}:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
             isEnd: true
           - name: tagEbsVolume
             action: 'aws:executeAwsApi'
@@ -426,88 +435,78 @@ Resources:
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
-  EnableCloudFormationStacksetsOrgAccess:
-    Type: AWS::Synthetics::Canary
-    DependsOn: CfnStackSetsReadyEnablePermission # make sure the Lambda which handles the wait condition is entirely ready before enabling Cloudformation Org access. This includes Lambda event+permission have to be ready.
-    Metadata:
-      cfn-lint:
-        config:
-          ignore_checks:
-          - E1029
+  EnableCloudFormationStacksetsOrgAccessCustomResource:
+    Type: AWS::CloudFormation::CustomResource
     Properties:
-      Name: superwerker-cfn-org
-      ArtifactS3Location: !Sub s3://${EnableCloudFormationStacksetsOrgAccessArtifacts}
-      ExecutionRoleArn: !GetAtt EnableCloudFormationStacksetsOrgAccessRole.Arn
-      RuntimeVersion: syn-nodejs-puppeteer-3.1
-      StartCanaryAfterCreation: true
-      RunConfig:
-        TimeoutInSeconds: 300
-        EnvironmentVariables:
-          REGION: !Ref AWS::Region
-      Schedule:
-        Expression: rate(0 minute) # manual start
-      Code:
-        Handler: pageLoadBlueprint.handler
-        Script: |
-          var synthetics = require('Synthetics');
-          const log = require('SyntheticsLogger');
+      ServiceToken: !GetAtt EnableCloudFormationStacksetsOrgAccessCustomResourceFunction.Arn
 
-          const httpGet = url => {
-            const https = require('https');
-            return new Promise((resolve, reject) => {
-              https.get(url, res => {
-                res.setEncoding('utf8');
-                let body = '';
-                res.on('data', chunk => body += chunk);
-                res.on('end', () => resolve(body));
-              }).on('error', reject);
-            });
-          };
+  EnableCloudFormationStacksetsOrgAccessCustomResourceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Timeout: 900 # give it more time since it installs dependencies on the fly
+      Role: !GetAtt EnableCloudFormationStacksetsOrgAccessCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Resource: !GetAtt AwsApiLibRole.Arn
+      Environment:
+        Variables:
+          AWSAPILIB_ROLE_ARN: !GetAtt AwsApiLibRole.Arn
+      InlineCode: |
+        import boto3
+        import os
+        import cfnresponse
+        import sys
+        import subprocess
 
-          const flowBuilderBlueprint = async function () {
-            let page = await synthetics.getPage();
+        # load awsapilib in-process as long as we have no strategy for bundling assets
+        sys.path.insert(1, '/tmp/packages')
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib==0.10.1'])
+        import awsapilib
+        from awsapilib import Cloudformation
 
-            await synthetics.executeStep('consoleLogin', async function () {
-              const AWS = require("aws-sdk");
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
 
-              const federationEndpoint = 'https://signin.aws.amazon.com/federation';
-              const issuer = 'superwerker';
-              const destination = 'https://console.aws.amazon.com/';
+        def exception_handling(function):
+            def catch(event, context):
+                try:
+                    function(event, context)
+                except Exception as e:
+                    print(e)
+                    print(event)
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
-              let credentials = await AWS.config.credentialProvider.resolve((err, cred) => { return cred; }).resolvePromise()
+            return catch
 
-              const session = {
-                sessionId: credentials.accessKeyId,
-                sessionKey: credentials.secretAccessKey,
-                sessionToken: credentials.sessionToken
-              };
+        @exception_handling
+        def handler(event, context):
+            RequestType = event["RequestType"]
+            Properties = event["ResourceProperties"]
+            LogicalResourceId = event["LogicalResourceId"]
+            PhysicalResourceId = event.get("PhysicalResourceId")
 
-              const encodedSession = encodeURIComponent(JSON.stringify(session));
-              const signinTokenUrl = `${federationEndpoint}?Action=getSigninToken&SessionDuration=3600&Session=${encodedSession}`;
+            print('RequestType: {}'.format(RequestType))
+            print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+            print('LogicalResourceId: {}'.format(LogicalResourceId))
 
-              const signinResponse = await httpGet(signinTokenUrl);
+            id = PhysicalResourceId
 
-              let consoleLoginUrl = `${federationEndpoint}?Action=login&Issuer=${issuer}&Destination=${destination}&SigninToken=${
-                JSON.parse(signinResponse).SigninToken
-              }`;
+            data = {}
 
-              await page.goto(consoleLoginUrl, {waitUntil: ['load', 'networkidle0']});
+            cf = Cloudformation(os.environ['AWSAPILIB_ROLE_ARN'])
 
-            });
+            if RequestType == CREATE:
+                cf.stacksets.enable_organizations_trusted_access()
 
-            await synthetics.executeStep('stacksets', async function () {
-              await page.goto(`https://${process.env.REGION}.console.aws.amazon.com/cloudformation/home?region=${process.env.REGION}#/stacksets`, {waitUntil: ['load', 'networkidle0']});
-              await page.waitFor(10000);
-              await page.click("#console-app > div > awsui-app-layout > div > main > div > div.awsui-app-layout__content--scrollable > div:nth-child(2) > span > div > awsui-alert > div > div.awsui-alert-body > div > div > span > div > div > div.col-s-3 > awsui-button > button");
-              await page.waitFor(20000);
-            });
-          };
+            cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
-          exports.handler = async () => {
-            return await flowBuilderBlueprint();
-          };
-
-  EnableCloudFormationStacksetsOrgAccessRole:
+  EnableCloudFormationStacksetsOrgAccessCustomResourceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -518,62 +517,33 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !GetAtt AwsApiLibRole.Arn
+        Version: 2012-10-17
+      PolicyName: !Sub ${EnableCloudFormationStacksetsOrgAccessCustomResourceRole}Policy
+      Roles:
+        - !Ref EnableCloudFormationStacksetsOrgAccessCustomResourceRole
+
+  AwsApiLibRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt EnableCloudFormationStacksetsOrgAccessCustomResourceRole.Arn
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
-
-  EnableCloudFormationStacksetsOrgAccessArtifacts:
-    Type: AWS::S3::Bucket
-    Properties:
-      LifecycleConfiguration:
-        Rules:
-          - ExpirationInDays: 1
-            Status: Enabled
-
-  EnableCloudFormationStacksetsOrgAccessReadyHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-
-  EnableCloudFormationStacksetsOrgAccessReadyWaitCondition:
-    Type: AWS::CloudFormation::WaitCondition
-    Properties:
-      Handle: !Ref EnableCloudFormationStacksetsOrgAccessReadyHandle
-      Timeout: '1200'
-
-  CfnStackSetsReady:
-    Type: AWS::Serverless::Function
-    Properties:
-      Events:
-        Enable:
-          Type: CloudWatchEvent
-          Properties:
-            Pattern:
-              source:
-                - aws.cloudformation
-              detail-type:
-                - AWS API Call via CloudTrail
-              detail:
-                eventName:
-                  - EnableOrganizationsAccess
-                eventSource:
-                  - cloudformation.amazonaws.com
-      Handler: index.handler
-      Runtime: python3.7
-      Environment:
-        Variables:
-          SIGNAL_URL: !Ref EnableCloudFormationStacksetsOrgAccessReadyHandle
-      InlineCode: |-
-        import json
-        import urllib3
-        import os
-
-        def handler(event, context):
-          encoded_body = json.dumps({
-              "Status": "SUCCESS",
-              "Reason": "CloudFormation Managed StackSets Organizations ready",
-              "UniqueId": "doesthisreallyhavetobeunique",
-              "Data": "CloudFormation Managed StackSets Organizations ready"
-          })
-          http = urllib3.PoolManager()
-          http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
-
 
   # Proudly found elsewhere and partially copied from:
   # https://github.com/theserverlessway/aws-baseline
@@ -605,6 +575,11 @@ Resources:
 
   TagPolicyCustomResource:
     Type: AWS::Serverless::Function
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.7
@@ -839,7 +814,7 @@ Resources:
                         "tags": {
                             "backup-daily": {
                                 "iam_role_arn": {
-                                    "@@assign": "arn:aws:iam::$account:role/service-role/AWSBackupDefaultServiceRole"
+                                    "@@assign": "arn:${AWS::Partition}:iam::$account:role/service-role/AWSBackupDefaultServiceRole"
                                 },
                                 "tag_key": {
                                     "@@assign": "superwerker:backup"
@@ -1063,6 +1038,3 @@ Resources:
             return [p['Id'] for p in
                     o.list_policies_for_target(TargetId=root_id(), Filter='BACKUP_POLICY')['Policies'] if
                     p['Id'] == policy_id]
-
-Metadata:
-  SuperwerkerVersion: 0.0.0-DEVELOPMENT

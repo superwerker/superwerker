@@ -225,6 +225,11 @@ Resources:
 
   EnableSecurityHubInOrgAccountAndAddAsMemberRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+          - EIAMPolicyWildcardResource
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -256,7 +261,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: sts:AssumeRole
-                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+                Resource: !Sub arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution
         - PolicyName: Organizations
           PolicyDocument:
             Statement:
@@ -393,7 +398,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: sts:AssumeRole
-                Resource: arn:aws:iam::*:role/AWSControlTowerExecution
+                Resource: !Sub arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution
 
   EnableSecurityHub:
     Type: AWS::SSM::Document
@@ -424,3 +429,7 @@ Resources:
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007

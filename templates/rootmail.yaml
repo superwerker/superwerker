@@ -124,9 +124,10 @@ Resources:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
-              Action: # TODO: least privilege
-                - ses:*
-              Resource: "*"
+              Action:
+                - ses:VerifyDomainDkim
+                - ses:VerifyDomainIdentity
+              Resource: '*'
       InlineCode: |
         import boto3
         import cfnresponse
@@ -339,8 +340,11 @@ Resources:
         - Version: 2012-10-17
           Statement:
             - Effect: Allow
-              Action: # TODO: least privilege
-                - ses:*
+              Action:
+                - ses:GetIdentityVerificationAttributes
+                - ses:GetAccountSendingEnabled
+                - ses:GetIdentityDkimAttributes
+                - ses:GetIdentityNotificationAttributes
               Resource: '*'
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
@@ -443,7 +447,7 @@ Resources:
                       Service: lambda.amazonaws.com
                     Action: sts:AssumeRole
               ManagedPolicyArns:
-                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
               Policies:
                 - PolicyName: AllowSesAccess
                   PolicyDocument:
@@ -570,7 +574,7 @@ Resources:
                       Service: lambda.amazonaws.com
                     Action: sts:AssumeRole
               ManagedPolicyArns:
-                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+                - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
               Policies:
                 - PolicyName: OpsSantaFunctionRolePolicy
                   PolicyDocument:
@@ -773,3 +777,8 @@ Resources:
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007
+        - EIAMPolicyWildcardResource

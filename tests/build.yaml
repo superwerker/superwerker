@@ -32,13 +32,12 @@ Resources:
             Value: !Ref RootMailDomain
           - Name: ORGANIZATIONS_VENDING_MACHINE_ENDPOINT
             Value: !Ref OrganizationsVendingMachineEndpoint
-          - Name: CAPTCHA_API_KEY
-            Value: /superwerker/tests/2captcha_api_key
-            Type: SECRETS_MANAGER
           - Name: TEMPLATE_BUCKET_NAME
             Value: !Ref DeploymentBucket
           - Name: TEMPLATE_REGION
             Value: !Ref AWS::Region
+          - Name: SUPERWERKER_CLEANUP_PROJECT_NAME
+            Value: !Ref CleanupProject
 
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
@@ -63,6 +62,29 @@ Resources:
                 - "|"
                 - !Ref AllowedGitHubAccountIDs
 
+  CleanupProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      TimeoutInMinutes: 180
+      BuildBatchConfig:
+        ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: CAPTCHA_API_KEY
+            Value: /superwerker/tests/2captcha_api_key
+            Type: SECRETS_MANAGER
+
+      ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Source:
+        Type: GITHUB
+        Location: https://github.com/superwerker/superwerker.git
+        BuildSpec: tests/buildspec-cleanup.yaml
+
   BuildAndTestProjectRole:
     Type: AWS::IAM::Role
     Properties:
@@ -75,4 +97,11 @@ Resources:
               - codebuild.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+
+Outputs:
+  CleanupProjectName:
+    Value: !Ref CleanupProject
+    Export:
+      Name: superwerker-tests-CleanupProjectName

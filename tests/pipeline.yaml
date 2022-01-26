@@ -86,7 +86,7 @@ Resources:
               Service: codepipeline.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
   SuperwerkerUpdatePipelineWebhook:
     Type: AWS::CodePipeline::Webhook
@@ -210,6 +210,8 @@ Resources:
           - Name: CAPTCHA_API_KEY
             Value: /superwerker/tests/2captcha_api_key
             Type: SECRETS_MANAGER
+          - Name: SUPERWERKER_CLEANUP_PROJECT_NAME
+            Value: !ImportValue superwerker-tests-CleanupProjectName
 
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
@@ -230,7 +232,7 @@ Resources:
               - codebuild.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess # FIXME: least privilege
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
   DeploymentBucketUser:
     Type: AWS::IAM::User
