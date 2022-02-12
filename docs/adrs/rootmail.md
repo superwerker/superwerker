@@ -24,6 +24,9 @@ The superwerker secure setup includes the following considerations:
 
 ## Decision
 
+- The RootMail feature is mandatory because:
+  - the ControlTower stack depends upon it, since RootMail provides the two email addresses (audit, log archive) necessary for Control Tower setup.
+  - (future) automations, such as automated AWS account creation for workloads.
 - A subdomain associated Route53 DNS hosted zone is setup (e.g. `aws.mycompany.test`) that contains the necessary configurations of AWS SES for receiving root emails - this style is chosen to make it convenient to delegate from a company domain and to enable continuous integration testing that does not require a new domain for every build
 - This subdomain handles all root emails for all superwerker provisioned member accounts
 - Email address are generated using random aliases (e.g. `root+22c29f9d33ad@aws.mycompany.test`)
