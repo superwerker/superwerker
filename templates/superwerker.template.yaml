@@ -333,3 +333,6 @@ Outputs:
   CloudWatchDashboard:
     Description: See the CloudWatch superwerker dashboard for post-deployment steps
     Value: https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker
+  Version:
+    Description: Version of superwerker
+    Value: 0.0.0-DEVELOPMENT
