@@ -333,3 +333,6 @@ Outputs:
   CloudWatchDashboard:
     Description: See the CloudWatch superwerker dashboard for post-deployment steps
     Value: https://console.aws.amazon.com/cloudwatch/home#dashboards:name=superwerker
+  Domain:
+    Description: Domain used for RootMail feature
+    Value: !Sub '${Subdomain}.${Domain}'
