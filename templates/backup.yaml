@@ -78,6 +78,7 @@ Resources:
 
   OrganizationConformancePackBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
     Properties:
       BucketName: !Sub awsconfigconforms-${AWS::AccountId}
 
