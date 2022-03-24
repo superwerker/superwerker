@@ -9,6 +9,7 @@ batch:
           SUPERWERKER_REGION:
             - us-east-2
           UPDATE_FROM_LATEST_RELEASE:
+            - true
             - false
 
 phases:
