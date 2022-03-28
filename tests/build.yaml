@@ -20,7 +20,7 @@ Resources:
   BuildAndTestProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      TimeoutInMinutes: 180
+      TimeoutInMinutes: 20
       BuildBatchConfig:
         ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Environment:
