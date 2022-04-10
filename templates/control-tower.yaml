@@ -20,6 +20,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.7
+      MemorySize: 2048
       Timeout: 900 # give it more time since it installs awsapilib and tries to deploy control tower with retries
       Role: !GetAtt SetupControlTowerCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
       Policies:
@@ -42,7 +43,12 @@ Resources:
 
         # load awsapilib in-process as long as we have no strategy for bundling assets
         sys.path.insert(1, '/tmp/packages')
-        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib==0.5.2'])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'https://github.com/superwerker/awsapilib/archive/198a3269e324455dc3cc499b61bf61e5ec095779.zip'])
+
+        # workaround for install awsapilib via zip (remove me once back to official awsapilib version)
+        with open('/tmp/packages/awsapilib/.VERSION', 'w') as version_file:
+            version_file.write("2.3.1-ctapifix\n")
+
         import awsapilib
         from awsapilib import ControlTower
 
