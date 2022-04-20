@@ -122,13 +122,13 @@ Resources:
       ManagedPolicyArns:
         - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
 
-  ControlTowerReadyHandle:
+  ControlTowerReadyHandle2:
     Type: AWS::CloudFormation::WaitConditionHandle
 
   ControlTowerReadyHandleWaitCondition:
     Type: AWS::CloudFormation::WaitCondition
     Properties:
-      Handle: !Ref ControlTowerReadyHandle
+      Handle: !Ref ControlTowerReadyHandle2
       Timeout: "7200"
 
   SuperwerkerBootstrapFunction:
@@ -156,7 +156,7 @@ Resources:
       Runtime: python3.7
       Environment:
         Variables:
-          SIGNAL_URL: !Ref ControlTowerReadyHandle
+          SIGNAL_URL: !Ref ControlTowerReadyHandle2
       InlineCode: |-
         import boto3
         import json
