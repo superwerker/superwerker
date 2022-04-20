@@ -182,6 +182,7 @@ Resources:
               "UniqueId": "doesthisreallyhavetobeunique",
               "Data": "Control Tower Setup completed"
           })
+          karport
           http = urllib3.PoolManager()
           http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
 
