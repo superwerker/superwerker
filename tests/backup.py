@@ -153,7 +153,7 @@ class BackupTestCase(unittest.TestCase):
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             iam.delete_role(RoleName='AWSBackupDefaultServiceRole')
 
-        self.assertEqual(f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{self.get_enrolled_account_id()}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny', str(exception.exception))
+        self.assertEqual(f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{self.get_enrolled_account_id()}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy', str(exception.exception))
 
     def test_cannot_delete_backup_remediation_role(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
@@ -161,7 +161,7 @@ class BackupTestCase(unittest.TestCase):
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             iam.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
 
-        self.assertEqual(f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{self.get_enrolled_account_id()}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny', str(exception.exception))
+        self.assertEqual(f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{self.get_enrolled_account_id()}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy', str(exception.exception))
 
     @staticmethod
     def create_random_table(ddb):
