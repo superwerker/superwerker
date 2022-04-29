@@ -25,7 +25,7 @@ def reset_password(account_to_close):
 @retry(stop_max_attempt_number=100)
 def close_account(account_to_close):
 
-    account_manager = AccountManager(account_to_close['Email'], PASSWORD, 'us-east-1', solver=solver) # TODO: test us-east-1
+    account_manager = AccountManager(account_to_close['Email'], PASSWORD, 'us-east-1', solver=solver)
     account_manager.terminate_account()
 
     print("Closed Account {}".format(account))
