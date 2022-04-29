@@ -13,7 +13,7 @@ solver = Captcha2(os.environ['CAPTCHA_KEY'])
 password_manager = PasswordManager(solver=solver)
 
 
-@retry(stop_max_attempt_number=20)
+@retry(stop_max_attempt_number=100)
 def reset_password(account_to_close):
     pw_reset_link_ssm_parameter_name = '/superwerker/rootmail/pw_reset_link/' + account_to_close['Email'].split('@')[0].split('+')[1]
     password_manager.request_password_reset(account_to_close['Email'])
@@ -22,7 +22,7 @@ def reset_password(account_to_close):
     password_manager.reset_password(pw_reset_url, PASSWORD)
 
 
-@retry(stop_max_attempt_number=20)
+@retry(stop_max_attempt_number=100)
 def close_account(account_to_close):
 
     account_manager = AccountManager(account_to_close['Email'], PASSWORD, 'us-east-1', solver=solver) # TODO: test us-east-1
