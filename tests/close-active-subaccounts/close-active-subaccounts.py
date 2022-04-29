@@ -1,6 +1,7 @@
 from awsapilib import AccountManager, PasswordManager
 from awsapilib.captcha import Captcha2
 import boto3
+import botocore
 import os
 import time
 from retrying import retry
@@ -30,7 +31,14 @@ def close_account(account_to_close):
 
     print("Closed Account {}".format(account))
 
-accounts = org.list_accounts()['Accounts']
+try:
+    accounts = org.list_accounts()['Accounts']
+except botocore.exceptions.ClientError as e:
+    if e.response['Error']['Code'] == 'AWSOrganizationsNotInUseException':
+        print("No AWS Organization found, nothing to do")
+        exit(0)
+    raise e
+
 for account in accounts:
     if account['JoinedMethod'] != 'CREATED' or account['Status'] != 'ACTIVE':
         continue
