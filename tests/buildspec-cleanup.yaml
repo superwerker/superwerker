@@ -14,7 +14,6 @@ phases:
       - pip install -r requirements.txt
       - AWS_PROFILE=test_account AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_REGION=${SUPERWERKER_REGION} CAPTCHA_KEY=$CAPTCHA_API_KEY python3 close-active-subaccounts.py
 
-    finally:
       # remove stacks
       - aws cloudformation delete-stack --stack-name superwerker-pipeline-dns-wiring-${AWS_ACCOUNT_ID}
       - aws --profile test_account --region ${SUPERWERKER_REGION} cloudformation delete-stack --stack-name superwerker

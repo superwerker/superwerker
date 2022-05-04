@@ -65,7 +65,7 @@ Resources:
   CleanupProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      TimeoutInMinutes: 180
+      TimeoutInMinutes: 20
       BuildBatchConfig:
         ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Environment:
@@ -97,7 +97,6 @@ Resources:
               - codebuild.amazonaws.com
           Action: sts:AssumeRole
       ManagedPolicyArns:
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
         - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
 Outputs:
