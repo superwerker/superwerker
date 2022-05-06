@@ -87,4 +87,4 @@ phases:
 
       # call sub-account closing and stack cleanup
       - |
-        aws --profile superwerker-test1-master stepfunctions start-execution  --state-machine-arn ${SUPERWERKER_CLEANUP_STATE_MACHINE} --input '{"AWS_CROSS_ACCOUNT_ROLE_ARN": "'"${AWS_CROSS_ACCOUNT_ROLE_ARN}"'", "AWS_ACCOUNT_ID": "'"${AWS_ACCOUNT_ID}"'", "SUPERWERKER_REGION": "'"${SUPERWERKER_REGION}"'"}'
+        aws stepfunctions start-execution  --state-machine-arn ${SUPERWERKER_CLEANUP_STATE_MACHINE} --input '{"AWS_CROSS_ACCOUNT_ROLE_ARN": "'"${AWS_CROSS_ACCOUNT_ROLE_ARN}"'", "AWS_ACCOUNT_ID": "'"${AWS_ACCOUNT_ID}"'", "SUPERWERKER_REGION": "'"${SUPERWERKER_REGION}"'"}'
