@@ -212,6 +212,8 @@ Resources:
             Type: SECRETS_MANAGER
           - Name: SUPERWERKER_CLEANUP_PROJECT_NAME
             Value: !ImportValue superwerker-tests-CleanupProjectName
+          - Name: SUPERWERKER_CLEANUP_STATE_MACHINE
+            Value: !ImportValue superwerker-tests-CleanupStateMachine
 
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
