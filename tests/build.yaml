@@ -36,8 +36,6 @@ Resources:
             Value: !Ref DeploymentBucket
           - Name: TEMPLATE_REGION
             Value: !Ref AWS::Region
-          - Name: SUPERWERKER_CLEANUP_PROJECT_NAME
-            Value: !Ref CleanupProject
           - Name: SUPERWERKER_CLEANUP_STATE_MACHINE
             Value: !ImportValue superwerker-tests-CleanupStateMachine
 
@@ -68,29 +66,6 @@ Resources:
     Type: AWS::CodeBuild::Project
     Properties:
       TimeoutInMinutes: 20
-      Environment:
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-        Type: LINUX_CONTAINER
-        EnvironmentVariables:
-          - Name: CAPTCHA_API_KEY
-            Value: /superwerker/tests/2captcha_api_key
-            Type: SECRETS_MANAGER
-
-      ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
-      Artifacts:
-        Type: NO_ARTIFACTS
-      Source:
-        Type: GITHUB
-        Location: https://github.com/superwerker/superwerker.git
-        BuildSpec: tests/buildspec-cleanup.yaml
-
-  CleanupProject:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      TimeoutInMinutes: 20
-      BuildBatchConfig:
-        ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
@@ -190,10 +165,6 @@ Resources:
       - CleanupStateMachineRoleDefaultPolicy
 
 Outputs:
-  CleanupProjectName:
-    Value: !Ref CleanupProject
-    Export:
-      Name: superwerker-tests-CleanupProjectName
   CleanupStateMachine:
     Value: !Ref CleanupStateMachine
     Export:
