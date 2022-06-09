@@ -1,8 +1,9 @@
 #!/bin/bash
-
-# Open AWS Consolelogged in into test account AWS_ACCOUNT_ID
+# Open AWS Console and logged in into test account AWS_ACCOUNT_ID
 
 set -euo pipefail
+
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 superwerker_region=${SUPERWERKER_REGION:-"eu-central-1"}
 
@@ -14,4 +15,4 @@ aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_re
 aws configure --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} set source_profile ${SOURCE_PROFILE}
 
 # open Firefox
-open -a Firefox $(AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} python3 ../scripts/console.py)
+open -a Firefox $(AWS_PROFILE=test_account_${AWS_ACCOUNT_ID} python3 $SCRIPT_DIR/../scripts/console.py)
