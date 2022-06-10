@@ -120,5 +120,4 @@ Resources:
 Outputs:
 
   AccountId:
-    Description: Nameservers for the hosted zone delegation
     Value: !GetAtt Account.Outputs.AccountId
