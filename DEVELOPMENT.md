@@ -39,6 +39,16 @@ SOURCE_PROFILE=... \
   ./tests/update-test-env.sh
 ```
 
+#### Run tests
+
+```bash
+cd tests
+ACCOUNT_FACTORY_ACCOUNT_ID=... \
+  AWS_DEFAULT_REGION=uk-east-1 \
+  AWS_PROFILE=test_account_... \
+  python -v -m unittest some_test.py
+```
+
 #### Login to the test environment
 
 ```bash
