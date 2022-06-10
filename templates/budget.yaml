@@ -166,7 +166,7 @@ Resources:
         - Notification:
             ComparisonOperator: GREATER_THAN
             NotificationType: FORECASTED
-            Threshold: 100
+            Threshold: 200
           Subscribers:
             - SubscriptionType: SNS
               Address: !Ref BudgetNotification
