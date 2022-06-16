@@ -188,7 +188,7 @@ Resources:
           Statement:
             - Effect: Allow
               Action:
-                - budgets:UpdateBudget
+                - budgets:ModifyBudget
               Resource: "*"
       Environment:
         Variables:
