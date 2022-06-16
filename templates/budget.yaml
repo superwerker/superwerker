@@ -266,6 +266,8 @@ Resources:
                      AccountId=account_id,
                      NewBudget=args
                    )
+               elif RequestType == DELETE:
+                  pass
                else:
                    raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
