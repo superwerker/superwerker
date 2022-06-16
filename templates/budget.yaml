@@ -241,10 +241,6 @@ Resources:
 
            args = {
              'BudgetName': budget,
-             'BudgetLimit': {
-               'Amount': budget_limit_in_usd,
-               'Unit': 'USD'
-             },
              'BudgetType': 'COST',
              'CostTypes': {
                'IncludeCredit': False,
