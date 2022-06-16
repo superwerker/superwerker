@@ -43,7 +43,7 @@ Resources:
 
         # load awsapilib in-process as long as we have no strategy for bundling assets
         sys.path.insert(1, '/tmp/packages')
-        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'https://github.com/superwerker/awsapilib/archive/198a3269e324455dc3cc499b61bf61e5ec095779.zip'])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'https://github.com/superwerker/awsapilib/archive/e7aed2a35882a9473ac996ed45ca688bb5d2b29a.zip'])
 
         # workaround for install awsapilib via zip (remove me once back to official awsapilib version)
         with open('/tmp/packages/awsapilib/.VERSION', 'w') as version_file:
