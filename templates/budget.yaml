@@ -170,3 +170,101 @@ Resources:
           Subscribers:
             - SubscriptionType: SNS
               Address: !Ref BudgetNotification
+
+#  EnableAutoAdjustingBudget:
+#    Type: AWS::CloudFormation::CustomResource
+#    Properties:
+#      ServiceToken: !GetAtt EnableAutoAdjustingBudgetCustomResource.Arn
+
+  EnableAutoAdjustingBudgetCustomResource:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.7
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - budgets:UpdateBudget
+              Resource: "*"
+      Environment:
+        Variables:
+          AWS_ACCOUNT_ID: !Ref AWS::AccountId
+          BUDGET: !Ref BudgetReport
+          BUDGET_LIMIT_IN_USD: !Ref BudgetLimitInUSD
+      InlineCode: |
+        import os
+        import boto3
+        import cfnresponse
+
+        budgets = boto3.client("budgets")
+
+        CREATE = 'Create'
+        DELETE = 'Delete'
+        UPDATE = 'Update'
+
+
+        def exception_handling(function):
+           def catch(event, context):
+               try:
+                   function(event, context)
+               except Exception as e:
+                   print(e)
+                   print(event)
+                   cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+           return catch
+
+
+        @exception_handling
+        def handler(event, context):
+           RequestType = event["RequestType"]
+           LogicalResourceId = event["LogicalResourceId"]
+           PhysicalResourceId = event.get("PhysicalResourceId")
+
+           print('RequestType: {}'.format(RequestType))
+           print('PhysicalResourceId: {}'.format(PhysicalResourceId))
+           print('LogicalResourceId: {}'.format(LogicalResourceId))
+
+           id = PhysicalResourceId
+
+           account_id = os.environ['AWS_ACCOUNT_ID']
+           budget = os.environ['BUDGET']
+           budget_limit_in_usd = os.environ['BUDGET_LIMIT_IN_USD']
+
+           args = {
+             'BudgetName': budget,
+             'BudgetLimit': {
+               'Amount': budget_limit_in_usd,
+               'Unit': 'USD'
+             },
+             'BudgetType': 'COST',
+             'CostTypes': {
+               'IncludeCredit': False,
+               'IncludeRefund': False
+             },
+             'TimeUnit': 'MONTHLY',
+             'AutoAdjustData': {
+                     'AutoAdjustType': 'HISTORICAL',
+                     'HistoricalOptions': {
+                         'BudgetAdjustmentPeriod': 3
+                     }
+                 }
+           }
+
+           try:
+               if RequestType == CREATE or RequestType == UPDATE:
+                   print('Updating budget: {}'.format(budget))
+                   budgets.update_budget(
+                     AccountId=account_id,
+                     NewBudget=args
+                   )
+               else:
+                   raise Exception('Unexpected RequestType: {}'.format(RequestType))
+
+               cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, id)
+           except Exception as e:
+               print(e)
+               print(event)
+               cfnresponse.send(event, context, cfnresponse.FAILED, {}, id)
