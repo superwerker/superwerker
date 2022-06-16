@@ -181,6 +181,8 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: python3.7
+      MemorySize: 2048
+      Timeout: 60 # give it more time since it installs boto3
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -194,9 +196,13 @@ Resources:
           BUDGET: !Ref BudgetReport
           BUDGET_LIMIT_IN_USD: !Ref BudgetLimitInUSD
       InlineCode: |
-        import os
-        import boto3
+        import os, subprocess
         import cfnresponse
+
+        # Latest boto3 release, not the bundled one
+        sys.path.insert(1, '/tmp/packages')
+        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'boto3==1.24.10'])
+        import boto3
 
         budgets = boto3.client("budgets")
 
