@@ -171,10 +171,10 @@ Resources:
             - SubscriptionType: SNS
               Address: !Ref BudgetNotification
 
-#  EnableAutoAdjustingBudget:
-#    Type: AWS::CloudFormation::CustomResource
-#    Properties:
-#      ServiceToken: !GetAtt EnableAutoAdjustingBudgetCustomResource.Arn
+  EnableAutoAdjustingBudget:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt EnableAutoAdjustingBudgetCustomResource.Arn
 
   EnableAutoAdjustingBudgetCustomResource:
     Type: AWS::Serverless::Function
