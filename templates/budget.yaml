@@ -196,7 +196,7 @@ Resources:
           BUDGET: !Ref BudgetReport
           BUDGET_LIMIT_IN_USD: !Ref BudgetLimitInUSD
       InlineCode: |
-        import os, subprocess
+        import os, subprocess, sys
         import cfnresponse
 
         # Latest boto3 release, not the bundled one
