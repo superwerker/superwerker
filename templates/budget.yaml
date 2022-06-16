@@ -9,12 +9,6 @@ Metadata:
       ignore_checks:
         - E9007
 
-Parameters:
-  BudgetLimitInUSD:
-    Default: 100
-    Description: Initial value. Will be overwritten by the scheduled lambda function.
-    Type: String
-
 Resources:
   BudgetAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -33,106 +27,6 @@ Resources:
       Statistic: Sum
       Threshold: 0
       TreatMissingData: missing # currently CW does not auto close ops items where it's alert transitions back to OK - but still transition back after one (1) initial SNS notification from budgets to "Ok" would communicate wrong semantics;
-
-  BudgetLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      Environment:
-        Variables:
-          StackName: !Sub ${AWS::StackName}
-      Events:
-        Schedule:
-          Type: Schedule
-          Properties:
-            Schedule: cron(0 0 L * ? *)
-      Handler: index.handler
-      InlineCode: |
-        from dateutil.relativedelta import *
-        import boto3
-        import datetime
-        import json
-        import os
-
-        def handler(event, context):
-
-          ce = boto3.client('ce')
-
-          end = datetime.date.today().replace(day=1)
-          start = end + relativedelta(months=-3)
-
-          start = start.strftime("%Y-%m-%d")
-          end = end.strftime("%Y-%m-%d")
-
-          response = ce.get_cost_and_usage(
-              Granularity='MONTHLY',
-              Metrics=[
-                  'UnblendedCost',
-              ],
-              TimePeriod={
-                  'Start': start,
-                  'End': end,
-              },
-          )
-
-          avg = 0
-
-          for result in response['ResultsByTime']:
-              total = result['Total']
-              cost = total['UnblendedCost']
-              amount = int(float(cost['Amount']))
-              avg = avg + amount
-
-          avg = int(avg/3)
-          budget = str(avg)
-
-          stack_name = os.environ['StackName']
-
-          log({
-              'average': avg,
-              'budget': budget,
-              'end': end,
-              'event': event,
-              'level': 'debug',
-              'stack': stack_name,
-              'start': start,
-          })
-
-          cf = boto3.client('cloudformation')
-
-          cf.update_stack(
-            Capabilities=[
-              'CAPABILITY_IAM',
-            ],
-            Parameters=[
-              {
-                'ParameterKey': 'BudgetLimitInUSD',
-                'ParameterValue': budget,
-              }
-            ],
-            StackName=stack_name,
-            UsePreviousTemplate=True,
-          )
-
-        def log(msg):
-          print(json.dumps(msg), flush=True)
-
-      Runtime: python3.7
-      Policies:
-        - Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - ce:GetCostAndUsage
-              Resource: '*'
-            - Effect: Allow
-              Action:
-                - budgets:ModifyBudget
-              Resource: !Sub arn:${AWS::Partition}:budgets::${AWS::AccountId}:budget/${BudgetReport}
-            - Effect: Allow
-              Action:
-                - cloudformation:UpdateStack
-              Resource: !Sub ${AWS::StackId}
-      Timeout: 10
 
   BudgetNotification:
     Type: AWS::SNS::Topic
@@ -155,7 +49,7 @@ Resources:
     Properties:
       Budget:
         BudgetLimit:
-          Amount: !Ref BudgetLimitInUSD
+          Amount: 100 # this is just for creating, will be overwritten by enabling auto adjustment
           Unit: USD
         BudgetType: COST
         CostTypes:
@@ -194,7 +88,6 @@ Resources:
         Variables:
           AWS_ACCOUNT_ID: !Ref AWS::AccountId
           BUDGET: !Ref BudgetReport
-          BUDGET_LIMIT_IN_USD: !Ref BudgetLimitInUSD
       InlineCode: |
         import os, subprocess, sys
         import cfnresponse
