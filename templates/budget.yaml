@@ -130,8 +130,7 @@ Resources:
 
            account_id = os.environ['AWS_ACCOUNT_ID']
            budget = os.environ['BUDGET']
-           budget_limit_in_usd = os.environ['BUDGET_LIMIT_IN_USD']
-
+           
            args = {
              'BudgetName': budget,
              'BudgetType': 'COST',
