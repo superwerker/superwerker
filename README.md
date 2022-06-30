@@ -186,6 +186,35 @@ All code has to be convergent so we ensure that tasks which have been interrupte
 
 We use CloudWatch Events where possible in order to decouple architecture. We acknowledge this decision makes end-to-end testing harder sometimes.
 
+## Troubleshooting
+
+If the RootMail Nested Stack happens to fail and the RootMailReady Lambda reports error like this:
+
+```json
+{
+    "level": "info",
+    "msg": "verification not yet successful",
+    "res": {
+        "VerificationAttributes": {
+            "aws.example.com": {
+                "VerificationStatus": "Pending",
+    ...
+```
+
+```json
+{
+    "level": "info",
+    "msg": "DKIM verification not yet successful",
+    "res": {
+        "DkimAttributes": {
+            "aws.example.com": {
+                "DkimEnabled": true,
+                "DkimVerificationStatus": "Pending",
+    ...
+```
+
+check if your custom domain and hosted zone is set up properly!
+
 ## Thanks
 
 - [Ian McKay and his AWS Account Controller](https://github.com/iann0036/aws-account-controller)
