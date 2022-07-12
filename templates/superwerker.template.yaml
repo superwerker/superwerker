@@ -326,6 +326,17 @@ Resources:
       Parameters:
         NotificationsMail: !Ref NotificationsMail
 
+  Tooling:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/tooling.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        SuperwerkerDomain: !Sub '${Subdomain}.${Domain}'
+
 Outputs:
   RootMailDelegationTarget:
     Description: Name servers for the hosted zone delegation

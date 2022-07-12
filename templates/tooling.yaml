@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Sets up tooling. (qs-1s3rsr7m0)
+
+Parameters:
+  SuperwerkerDomain:
+    Type: String
+
+Resources:
+  CreateAccount:
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "0.3"
+        description: "Create AWS account"
+        parameters:
+          Name:
+            type: String
+        mainSteps:
+          - name: GetCurrentVersion
+            action: "aws:executeAwsApi"
+            inputs:
+              Service: servicecatalog
+              Api: DescribeProduct
+              Name: AWS Control Tower Account Factory
+            outputs:
+              - Name: Version
+                Selector: "$.ProvisioningArtifacts[0].Id"
+                Type: String
+          - name: ProvisionServiceCatalog
+            action: "aws:executeAwsApi"
+            inputs:
+              Api: ProvisionProduct
+              Service: servicecatalog
+              ProductName: AWS Control Tower Account Factory
+              ProvisionedProductName: "{{Name}}"
+              ProvisioningArtifactId: "{{GetCurrentVersion.Version}}"
+              ProvisioningParameters:
+                - Key: ManagedOrganizationalUnit
+                  Value: "Sandbox"
+                - Key: AccountEmail
+                  Value: !Sub "root+{{Name}}@${SuperwerkerDomain}"
+                - Key: AccountName
+                  Value: "{{Name}}"
+                - Key: SSOUserEmail
+                  Value: !Sub "root@${SuperwerkerDomain}"
+                - Key: SSOUserFirstName
+                  Value: "AWS Control Tower"
+                - Key: SSOUserLastName
+                  Value: "Admin"
+      DocumentFormat: YAML
+      DocumentType: Automation
+      Name: "CreateAccount"
+
+Metadata:
+  SuperwerkerVersion: 0.0.0-DEVELOPMENT
+  cfn-lint:
+    config:
+      ignore_checks:
+        - E9007
