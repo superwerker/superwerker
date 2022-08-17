@@ -216,7 +216,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: iam:CreateServiceLinkedRole
-                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/guardduty.amazonaws.com/AWSServiceRoleForAmazonGuardDuty
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/aws-service-role/*
 
   EnableGuardDutyExistingAccounts:
     Type: AWS::SSM::Document
