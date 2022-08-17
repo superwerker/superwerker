@@ -189,6 +189,7 @@ Resources:
                   - organizations:RegisterDelegatedAdministrator
                   - organizations:DescribeOrganization
                   - ssm:DescribeAutomationExecutions
+                  - iam:GetRole
                 Resource: '*'
         - PolicyName: AllowStartAutomationExecution
           PolicyDocument:
