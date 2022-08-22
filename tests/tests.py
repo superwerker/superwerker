@@ -13,7 +13,9 @@ sts = boto3.client('sts')
 
 class MyTestCase(unittest.TestCase):
 
-    management_account_id = sts.get_caller_identity()['Account']
+    @classmethod
+    def get_management_account_id(cls):
+        return sts.get_caller_identity()['Account']
 
     @classmethod
     def get_audit_account_id(cls):
@@ -40,7 +42,7 @@ class MyTestCase(unittest.TestCase):
 
         expected_members = [
             self.get_log_archive_account_id(),
-            self.management_account_id,
+            self.get_management_account_id(),
             self.get_enrolled_account_id()
         ]
 
