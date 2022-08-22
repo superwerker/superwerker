@@ -10,7 +10,7 @@ import warnings
 sts = boto3.client('sts')
 
 
-class BackupTestCase(unittest.TestCase):
+class BackupTest(unittest.TestCase):
 
     maxDiff = None
 
