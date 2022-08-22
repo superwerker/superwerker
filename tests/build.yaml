@@ -16,6 +16,32 @@ Parameters:
     Default: \[skip ci\]
 
 Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: codebuild/pr-builds/superwerker
+      RetentionInDays: 30
+
+  PublicReadRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Description: A role required for CodeBuild to access CloudWatch Logs for public visibility
+      Policies:
+        - PolicyName: S3CloudWatchLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - logs:GetLogEvents
+                Resource: !GetAtt LogGroup.Arn
+                Effect: Allow
 
   BuildAndTestProject:
     Type: AWS::CodeBuild::Project
@@ -38,7 +64,6 @@ Resources:
             Value: !Ref AWS::Region
           - Name: SUPERWERKER_CLEANUP_STATE_MACHINE
             Value: !ImportValue superwerker-tests-CleanupStateMachine
-
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
         Type: NO_ARTIFACTS
@@ -61,6 +86,12 @@ Resources:
               - AllowedGitHubAccountIDsRegExp: !Join
                 - "|"
                 - !Ref AllowedGitHubAccountIDs
+      Visibility: PUBLIC_READ
+      ResourceAccessRole: !GetAtt PublicReadRole.Arn
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: !Ref LogGroup
+          Status: ENABLED
 
   CleanupProjectForStepFunction:
     Type: AWS::CodeBuild::Project
@@ -74,7 +105,6 @@ Resources:
           - Name: CAPTCHA_API_KEY
             Value: /superwerker/tests/2captcha_api_key
             Type: SECRETS_MANAGER
-
       ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Artifacts:
         Type: NO_ARTIFACTS
@@ -112,6 +142,7 @@ Resources:
                     - Ref: AWS::Region
                     - .amazonaws.com
         Version: "2012-10-17"
+
   CleanupStateMachineRoleDefaultPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -146,6 +177,7 @@ Resources:
       PolicyName: CleanupStateMachineRoleDefaultPolicy
       Roles:
         - Ref: CleanupStateMachineRole
+
   CleanupStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
