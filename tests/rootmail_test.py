@@ -9,7 +9,7 @@ import warnings
 ses = boto3.client('ses', region_name='eu-west-1')
 ssm = boto3.client('ssm')
 
-class RootMailTestCase(unittest.TestCase):
+class RootMailTest(unittest.TestCase):
 
     # https://github.com/boto/boto3/issues/454
     def setUp(self):
