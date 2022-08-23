@@ -91,6 +91,7 @@ phases:
 
 reports:
   pytest_reports:
+    base-directory: tests
     files:
       - test-results.xml
     file-format: JUNITXML
