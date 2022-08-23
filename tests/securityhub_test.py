@@ -83,7 +83,7 @@ class SecurityHubTest(unittest.TestCase):
                     {
                         "Effect": "Allow",
                         "Principal": {
-                            "AWS": f'arn:aws:iam::{self.management_account_id}:root'
+                            "AWS": f'arn:aws:iam::{self.get_management_account_id()}:root'
                         },
                         "Action": "sts:AssumeRole"
                     }

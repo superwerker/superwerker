@@ -183,7 +183,7 @@ class BackupTest(unittest.TestCase):
             ],
             BillingMode='PAY_PER_REQUEST',
         )
-        table = BackupTestCase.wait_for_table_available(ddb, table_name)
+        table = BackupTest.wait_for_table_available(ddb, table_name)
         return table
 
     @staticmethod
