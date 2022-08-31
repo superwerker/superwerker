@@ -7,12 +7,33 @@ Parameters:
     Type: String
 
 Resources:
-  CreateAccount:
+  CloseAccountFactory:
     Type: AWS::SSM::Document
     Properties:
       Content:
         schemaVersion: "0.3"
-        description: "Create AWS account"
+        description: Close AWS account
+        assumeRole: !GetAtt CloseAccountExecutionRole.Arn
+        parameters:
+          AccountId:
+            type: String
+        mainSteps:
+          - name: CloseAccount
+            action: "aws:executeAwsApi"
+            inputs:
+              Service: organizations
+              Api: CloseAccount
+              AccountId: "{{AccountId}}"
+      DocumentFormat: YAML
+      DocumentType: Automation
+
+  CreateAccountFactory:
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "0.3"
+        description: Create AWS account
+        assumeRole: !GetAtt CreateAccountExecutionRole.Arn
         parameters:
           Name:
             type: String
@@ -50,7 +71,51 @@ Resources:
                   Value: "Admin"
       DocumentFormat: YAML
       DocumentType: Automation
-      Name: "CreateAccount"
+
+  CloseAccountExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ssm.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  CreateAccountExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ssm.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  PortfolioAssignment:
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
+    Properties:
+      PortfolioId: port-lnnbnguvntdzo # Retrieve from API
+      PrincipalARN: !GetAtt CreateAccountExecutionRole.Arn
+      PrincipalType: IAM
+
+Outputs:
+  CreateAccountFactoryName:
+    Value: !Ref CreateAccountFactory
+  CloseAccountFactoryName:
+    Value: !Ref CloseAccountFactory
 
 Metadata:
   SuperwerkerVersion: 0.0.0-DEVELOPMENT
