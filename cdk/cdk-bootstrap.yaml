@@ -1,0 +1,26 @@
+Resources:
+  BootStrapBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'superwerker-assets-${AWS::Region}'
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+  BootStrapBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: BootStrapBucket
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Resource:
+              Fn::Join:
+                - ""
+                - - Fn::GetAtt:
+                      - BootStrapBucket
+                      - Arn
+                  - /*
+        Version: "2012-10-17"
