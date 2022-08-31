@@ -2,7 +2,6 @@ import os
 import unittest
 import boto3
 import uuid
-import time
 import botocore
 from retrying import retry
 import warnings
@@ -99,24 +98,22 @@ class BackupTest(unittest.TestCase):
         ec2 = enrolled_account.client('ec2')
         volume_id = self.create_random_ebs(ec2)
 
-        time.sleep(10)
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
-            ec2.create_tags(
-                Resources=[volume_id],
-                Tags=[{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}]
-            )
+            self.wait_for_create_tags(ec2, volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
         self.assertEqual('An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.', str(exception.exception))
 
     def test_can_change_ebs_backup_tags_to_none(self):
         enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
         ec2 = enrolled_account.client('ec2')
         volume_id = self.create_random_ebs(ec2)
+        self.wait_for_create_tags(ec2, volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
 
-        time.sleep(10)
-        ec2.create_tags(
-            Resources=[volume_id],
-            Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
-        )
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
+    def wait_for_create_tags(self, ec2, volume_id, tags):
+           ec2.create_tags(
+                Resources=[volume_id],
+                Tags=tags
+            )
 
     @retry(stop_max_delay=1800000, wait_fixed=20000)
     def wait_for_ebs_tags_to_appear(self, ec2, volume_id):
