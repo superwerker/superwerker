@@ -2,7 +2,6 @@ import os
 import unittest
 import boto3
 import uuid
-import time
 from retrying import retry
 import warnings
 
@@ -53,7 +52,7 @@ class RootMailTest(unittest.TestCase):
         return res
 
     @classmethod
-    @retry(stop_max_delay=100000, wait_fixed=5000)
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=20000)
     def get_ops_item_by_title(cls, title):
         res = ssm.get_ops_summary(
             Filters=[
@@ -82,8 +81,6 @@ class RootMailTest(unittest.TestCase):
 
         id = uuid.uuid4().hex
         self.send_email(id, 'This is a mail body')
-
-        time.sleep(10)
 
         res = self.get_ops_item_by_title(id)
 
@@ -144,9 +141,7 @@ class RootMailTest(unittest.TestCase):
         id = uuid.uuid4().hex
         self.send_email(id, EICAR)
 
-        time.sleep(10)
-
-        res = ssm.get_ops_summary(
+        res = self.wait_for_get_ops_summary(
             Filters=[
                 {
                     'Key': 'AWS:OpsItem.Title',
@@ -173,9 +168,7 @@ class RootMailTest(unittest.TestCase):
         subject = 'Welcome to Amazon Web Services'
         self.send_email(id=id, subject=subject, body_text='some mail body')
 
-        time.sleep(10)
-
-        res = ssm.get_ops_summary(
+        res = self.wait_for_get_ops_summary(
             Filters=[
                 {
                     'Key': 'AWS:OpsItem.Title',
@@ -202,9 +195,7 @@ class RootMailTest(unittest.TestCase):
         subject = 'Your AWS Account is Ready - Get Started Now'
         self.send_email(id=id, subject=subject, body_text='some mail body')
 
-        time.sleep(10)
-
-        res = ssm.get_ops_summary(
+        res = self.wait_for_get_ops_summary(
             Filters=[
                 {
                     'Key': 'AWS:OpsItem.Title',
@@ -224,3 +215,8 @@ class RootMailTest(unittest.TestCase):
         )
 
         self.assertEqual(0, len(res['Entities']))
+
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=20000)
+    def wait_for_get_ops_summary(self, **kwargs):
+        return ssm.get_ops_summary(**kwargs)
+

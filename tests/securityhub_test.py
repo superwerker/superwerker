@@ -3,6 +3,7 @@ import unittest
 import boto3
 import json
 import botocore
+from retrying import retry
 
 events = boto3.client('events')
 organizations = boto3.client('organizations')
@@ -94,14 +95,8 @@ class SecurityHubTest(unittest.TestCase):
             PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
         )
 
-        # give IAM some time to settle
-        import time
-        time.sleep(10)
+        scp_test_role_creds = self.wait_for_role_to_be_assumed()
 
-        scp_test_role_creds = sts.assume_role(
-            RoleArn=f'arn:aws:iam::{self.get_log_archive_account_id()}:role/SuperWerkerScpTestRole',
-            RoleSessionName='SuperWerkerScpTest'
-        )['Credentials']
         scp_test_session = boto3.session.Session(
             aws_access_key_id=scp_test_role_creds['AccessKeyId'],
             aws_secret_access_key=scp_test_role_creds['SecretAccessKey'],
@@ -111,9 +106,6 @@ class SecurityHubTest(unittest.TestCase):
         print(scp_test_session_sts.get_caller_identity())
 
         scp_test_session_security_hub = scp_test_session.client('securityhub')
-
-        # give IAM some time to settle
-        time.sleep(30)
 
         # assert that SCP forbids disabling of security hub
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
@@ -126,3 +118,11 @@ class SecurityHubTest(unittest.TestCase):
             scp_test_session_security_hub.disassociate_from_master_account()
 
         self.assertEqual(f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{self.get_log_archive_account_id()}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:{scp_test_session.region_name}:{self.get_log_archive_account_id()}:hub/default with an explicit deny', str(exception.exception))
+
+    # Wait for up to 1 minute, exponentially increasing by 2^x * 1000ms
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
+    def wait_for_role_to_be_assumed(self):
+        return sts.assume_role(
+                    RoleArn=f'arn:aws:iam::{self.get_log_archive_account_id()}:role/SuperWerkerScpTestRole',
+                    RoleSessionName='SuperWerkerScpTest'
+                )['Credentials']
