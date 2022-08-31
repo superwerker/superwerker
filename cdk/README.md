@@ -5,7 +5,7 @@ This holds code for the issue https://github.com/superwerker/superwerker/issues/
 # 1. CDK bootstrap
 
 For CDK/Cloudformation to deploy an S3 bucket has to exist. Because Cloudformation can only
-deploy code from buckets as the same region as the Cloudformation deployment we need a bucket in each region.
+deploy code from buckets as the same region as the Cloudformation deployment we need a bucket in each region (see [details](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-code.html)).
 
 The bucket is called `superwerker-assets-${AWS:Region}` with public read access. 
 
@@ -26,6 +26,15 @@ b'\nWaiting for changeset to be created..\n\nNo changes to deploy. Stack superwe
 Deploying to region=us-west-2 with cmd=['aws', 'cloudformation', 'deploy', '--stack-name', 'superwerker-cdk-bootstrap', '--region', 'us-west-2', '--template-file', '/Users/jan/Code/superwerker/tests/cdk-bootstrap.yaml']
 b'\nWaiting for changeset to be created..\n\nNo changes to deploy. Stack superwerker-cdk-bootstrap is up to date\n'
 ```
+
+# 2. CDK development
+
+The project layout is stolen from [projen](https://projen.io/api/API.html#projen-awscdk-awscdktypescriptapp).
+All CDK code resides in the folder `cdk/`.
+
+We have one stack construct per original stack, e.g. `SuperwerkerStack / superwerker.template.yaml`, `BudgetStack / budget.yaml` etc.
+
+
 
 
 

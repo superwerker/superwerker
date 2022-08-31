@@ -61,14 +61,14 @@ Metadata:
 Parameters:
   Domain:
     Type: String
-    Description: Domain used for root mail feature
+    Description: Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information
   Subdomain:
     Type: String
     Default: aws
-    Description: Subdomain used for root mail feature
+    Description: Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information
   NotificationsMail:
     Type: String
-    Description: Mail address used for notifications
+    Description: Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information
     Default: ""
     AllowedPattern: "(^$|^.*@.*\\..*$)"
   IncludeBudget:
@@ -121,11 +121,11 @@ Parameters:
     Type: String
   QSS3BucketRegion:
     Default: 'us-east-1'
-    Description: 'AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
-    hosted. Keep the default Region unless you are customizing the template.
-    Changing this Region updates code references to point to a new Quick Start location.
-    When using your own bucket, specify the Region.
-    See https://aws-quickstart.github.io/option1.html.'
+    Description: AWS Region where the Quick Start S3 bucket (QSS3BucketName) is
+      hosted. Keep the default Region unless you are customizing the template.
+      Changing this Region updates code references to point to a new Quick Start location.
+      When using your own bucket, specify the Region.
+      See https://aws-quickstart.github.io/option1.html.
     Type: String
   QSS3KeyPrefix:
     AllowedPattern: '^([0-9a-zA-Z-.:]+/)*$'

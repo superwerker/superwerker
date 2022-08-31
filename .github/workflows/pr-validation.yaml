@@ -1,0 +1,52 @@
+name: Build and test
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+jobs:
+  pr-conventions:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: check PR title
+        uses: deepakputhraya/action-pr-title@master
+        with:
+          allowed_prefixes: 'build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test'
+      - name: check commit messages
+        run: |
+          npm install
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        working-directory: cdk
+
+  run-codebuild:
+    runs-on: ubuntu-latest
+    needs: pr-conventions
+    permissions:
+      id-token: write
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
+      - name: Run CodeBuild
+        uses: aws-actions/aws-codebuild-run-build@v1
+        with:
+          project-name: build-pull-request
+          env-vars-for-codebuild: |
+            SUPERWERKER_REGION,
+            UPDATE_FROM_LATEST_RELEASE
+        env:
+          SUPERWERKER_REGION: eu-central-1
+          UPDATE_FROM_LATEST_RELEASE: false

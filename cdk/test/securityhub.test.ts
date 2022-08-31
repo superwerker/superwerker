@@ -4,13 +4,21 @@ import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { BUNDLING_STACKS } from 'aws-cdk-lib/cx-api';
 import { Construct } from 'constructs';
-import { SuperwerkerStack } from '../src/stacks/superwerker';
+import { SecurityHubStack } from '../src/stacks/security-hub';
+
+export class UnderTestStack extends Stack {
+  public readonly inner: Stack;
+  constructor(scope: Construct, id: string, props: StackProps) {
+    super(scope, id, props);
+    this.inner = new SecurityHubStack(this, 'stack', {});
+  }
+}
 
 export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
-    new CfnInclude(this, 'SuperwerkerTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'superwerker.template.yaml'),
+    new CfnInclude(this, 'SecurityHubTemplate', {
+      templateFile: path.join(__dirname, '..', '..', 'templates', 'security-hub.yaml'),
     });
   }
 }
@@ -21,28 +29,25 @@ const context = {
   [BUNDLING_STACKS]: [],
 };
 
-describe('parameters', () => {
-  const app = new App({ context });
-  const originalStack = new OriginalStack(app, 'original', {});
-  const stack = new SuperwerkerStack(app, 'stack', {});
-  const expectedParameters = Template.fromStack(originalStack).toJSON().Parameters as { [key: string]: { [key: string]: string } };
-  // Ignore the quickstart stuff for now
-  for (const key in expectedParameters) {
-    if (key.startsWith('QS')) delete expectedParameters[key];
-  }
-  test.each(Object.entries(expectedParameters))('parameter: %p', (param, value) => {
-    Template.fromStack(stack).hasParameter(param, value);
-  });
-});
-
 describe('resources', () => {
   const app = new App({ context });
   const originalStack = new OriginalStack(app, 'original', {});
-  const stack = new SuperwerkerStack(app, 'stack', {});
+  const stack = new UnderTestStack(app, 'stack', {}).inner;
   const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: any } };
-  // Ignore the original resources for generating an email
+
+  // Ignore the resources from previous SH 'invite dance' from
+  // https://github.com/superwerker/superwerker/issues/70
   for (const key in expectedResources) {
-    if (key.startsWith('Generate')) delete expectedResources[key];
+    if (key === 'EnableSecurityHub') delete expectedResources[key]; // AWS::SSM::Document
+    if (key === 'EnableSecurityHubInOrgAccountRole') delete expectedResources[key]; // AWS::IAM::Role
+    if (key === 'EnableSecurityHubInOrgAccount') delete expectedResources[key]; // AWS::SSM::Document
+    if (key === 'InviteSecurityHubMember') delete expectedResources[key]; // AWS::SSM::Document
+    if (key === 'AcceptSecurityHubInvitation') delete expectedResources[key]; // AWS::SSM::Document
+    if (key === 'EnableSecurityHubInOrgAccountAndAddAsMemberRole') delete expectedResources[key]; // AWS::IAM::Role
+    if (key === 'EnableSecurityHubInOrgAccountAndAddAsMember') delete expectedResources[key]; // AWS::SSM::Document
+    if (key === 'CreateLandingZoneEnableSecurityHubRole') delete expectedResources[key]; // AWS::IAM::Role
+    if (key === 'CreateLandingZoneEnableSecurityHub') delete expectedResources[key]; // AWS::SSM::Document
+    if (key === 'CreateManagedAccountTrigger') delete expectedResources[key]; // AWS::Events::Rule -> targets SSM EnableSecurityHubInOrgAccountAndAddAsMember
   }
 
   test.each(Object.entries(expectedResources))('resource: %p', (resource, resourceProps) => {
@@ -71,16 +76,5 @@ describe('resources', () => {
     }
 
     expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty(resource);
-  });
-});
-
-describe('email generation', () => {
-  const app = new App({ context });
-  const stack = new SuperwerkerStack(app, 'stack', {});
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.AUDIT_ACCOUNT,
-  });
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
   });
 });

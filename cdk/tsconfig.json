@@ -9,7 +9,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "lib": [
-      "es2019"
+      "es2022"
     ],
     "module": "CommonJS",
     "noEmitOnError": false,
@@ -27,7 +27,8 @@
     "target": "ES2019"
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "test/**/*.ts"
   ],
   "exclude": [
     "cdk.out"
