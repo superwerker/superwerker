@@ -10,7 +10,7 @@ import warnings
 sts = boto3.client('sts')
 
 
-class BackupTestCase(unittest.TestCase):
+class BackupTest(unittest.TestCase):
 
     maxDiff = None
 
@@ -183,7 +183,7 @@ class BackupTestCase(unittest.TestCase):
             ],
             BillingMode='PAY_PER_REQUEST',
         )
-        table = BackupTestCase.wait_for_table_available(ddb, table_name)
+        table = BackupTest.wait_for_table_available(ddb, table_name)
         return table
 
     @staticmethod
