@@ -5,7 +5,7 @@ This holds code for the issue https://github.com/superwerker/superwerker/issues/
 # 1. CDK bootstrap
 
 For CDK/Cloudformation to deploy an S3 bucket has to exist. Because Cloudformation can only
-deploy code from buckets as the same region as the Cloudformation deployment we need a bucket in each region.
+deploy code from buckets in the same region as the Cloudformation deployment we need a bucket in each region.
 
 The bucket is called `superwerker-assets-${AWS:Region}` with public read access. 
 
