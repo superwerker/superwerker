@@ -11,12 +11,10 @@ const app = new App();
 
 new SuperwerkerStack(app, 'SuperwerkerStack', {
   env: devEnv,
-  synthesizer: new CliCredentialsStackSynthesizer(
-    {
-      fileAssetsBucketName: 'superwerker-assets12123-bucket',
-      bucketPrefix: 'example',
-    },
-  ),
+  synthesizer: new CliCredentialsStackSynthesizer({
+    fileAssetsBucketName: 'superwerker-assets12123-bucket',
+    bucketPrefix: 'example',
+  }),
 });
 
 app.synth();

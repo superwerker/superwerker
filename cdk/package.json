@@ -1,7 +1,8 @@
 {
   "name": "superwerker-cdk-poc",
   "scripts": {
-    "synth": "cdk synth"
+    "synth": "cdk synth",
+    "test": "jest"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
