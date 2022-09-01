@@ -147,7 +147,7 @@ export class SuperwerkerStack extends Stack {
      */
 
     const generatorFunction = new lambda.NodejsFunction(this, 'GenerateMailAddress', {
-      entry: resolve(__dirname, 'functions/generate-mail-address.ts'),
+      entry: resolve(__dirname, '../functions/generate-mail-address.ts'),
     });
 
     generatorFunction.addToRolePolicy(
