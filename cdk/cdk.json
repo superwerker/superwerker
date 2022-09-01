@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node -P tsconfig.json --prefer-ts-exts src/main.ts",
+  "app": "npx ts-node -P tsconfig.json --prefer-ts-exts src",
   "output": "cdk.out",
   "watch": {
     "include": [
