@@ -1,5 +1,5 @@
 import { App, CliCredentialsStackSynthesizer } from 'aws-cdk-lib';
-import { SuperwerkerStack } from './superwerker';
+import { SuperwerkerStack } from './stacks/superwerker';
 
 // for development, use account/region from cdk cli
 const devEnv = {

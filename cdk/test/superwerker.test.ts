@@ -3,7 +3,7 @@ import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Capture, Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
-import { SuperwerkerStack } from '../src/superwerker';
+import { SuperwerkerStack } from '../src/stacks/superwerker';
 
 export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
@@ -56,7 +56,6 @@ describe('resources', () => {
 describe('email generation', () => {
   const app = new App();
   const stack = new SuperwerkerStack(app, 'stack', {});
-  //const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: string } };
   const createCapture = new Capture();
   Template.fromStack(stack).hasResourceProperties('Custom::AWS', {
     Create: createCapture,
