@@ -1,4 +1,14 @@
-import { CfnCondition, CfnParameter, CfnStack, custom_resources, Fn, Stack, StackProps } from 'aws-cdk-lib';
+import {
+  CfnCondition,
+  CfnParameter,
+  CfnStack,
+  custom_resources,
+  Fn,
+  Stack,
+  StackProps,
+  aws_lambda_nodejs as lambda,
+  aws_iam,
+} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
@@ -7,8 +17,12 @@ import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
+import { resolve } from 'path';
 
 export class SuperwerkerStack extends Stack {
+  public static AUDIT_ACCOUNT = 'Audit';
+  public static LOG_ARCHIVE_ACCOUNT = 'Log Archive';
+
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
 
@@ -21,20 +35,17 @@ export class SuperwerkerStack extends Stack {
       },
     };
 
-    // @ts-ignore
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
       description: 'Domain used for root mail feature',
     });
 
-    // @ts-ignore
     const subdomain = new CfnParameter(this, 'Subdomain', {
       type: 'String',
       description: 'Subdomain used for root mail feature',
       default: 'aws',
     });
 
-    // @ts-ignore
     const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
       type: 'String',
       description: 'Mail address used for notifications',
@@ -42,7 +53,6 @@ export class SuperwerkerStack extends Stack {
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
 
-    // @ts-ignore
     const includeBudget = new CfnParameter(this, 'IncludeBudget', {
       type: 'String',
       description: 'Enable AWS Budgets alarm for monthly AWS spending',
@@ -50,7 +60,6 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    // @ts-ignore
     const includeGuardDuty = new CfnParameter(this, 'IncludeGuardDuty', {
       type: 'String',
       description: 'Enable Amazon GuardDuty',
@@ -58,7 +67,6 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    // @ts-ignore
     const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
       type: 'String',
       description: 'Enable AWS Security Hub',
@@ -66,7 +74,6 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    // @ts-ignore
     const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
       description: 'Enable automated backups',
@@ -74,7 +81,6 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    // @ts-ignore
     const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
       type: 'String',
       description: 'Enable service control policies in AWS organizations',
@@ -140,28 +146,35 @@ export class SuperwerkerStack extends Stack {
      * Core Components
      */
 
-    // RootMail
-    const rootMailStack = new RootmailStack(this, 'RootMail', {});
-    (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
+    const generatorFunction = new lambda.NodejsFunction(this, 'GenerateMailAddress', {
+      entry: resolve(__dirname, 'functions/generate-mail-address.ts'),
+    });
+
+    generatorFunction.addToRolePolicy(
+      new aws_iam.PolicyStatement({
+        actions: ['organizations:ListAccounts'],
+        resources: ['*'],
+      }),
+    );
 
     const emailAudit = new custom_resources.AwsCustomResource(this, 'GeneratedAuditAWSAccountEmail', {
       onUpdate: {
+        // will also be called for a CREATE event
         service: 'lambda',
         action: 'invoke',
         parameters: {
-          FunctionName: (rootMailStack.node.defaultChild as CfnStack).getAtt('Outputs.EmailGeneratorFunction'),
+          FunctionName: generatorFunction.functionName,
           Payload: {
-            Purpose: 'audit',
+            domain: `${subdomain.value}.${domain.value}`,
+            name: SuperwerkerStack.AUDIT_ACCOUNT,
           },
         },
         physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
       },
       policy: custom_resources.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: custom_resources.AwsCustomResourcePolicy.ANY_RESOURCE,
+        resources: [generatorFunction.functionArn],
       }),
     });
-
-    // (emailAudit.node.defaultChild as CfnResource).overrideLogicalId('GeneratedAuditAWSAccountEmail');
 
     const emailLogArchive = new custom_resources.AwsCustomResource(this, 'GeneratedLogArchiveAWSAccountEmail', {
       onUpdate: {
@@ -169,19 +182,22 @@ export class SuperwerkerStack extends Stack {
         service: 'lambda',
         action: 'invoke',
         parameters: {
-          FunctionName: (rootMailStack.node.defaultChild as CfnStack).getAtt('Outputs.EmailGeneratorFunction'),
+          FunctionName: generatorFunction.functionName,
           Payload: {
-            Purpose: 'logarchive',
+            domain: `${subdomain.value}.${domain.value}`,
+            name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
           },
         },
         physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
       },
       policy: custom_resources.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: custom_resources.AwsCustomResourcePolicy.ANY_RESOURCE,
+        resources: [generatorFunction.functionArn],
       }),
     });
 
-    // (emailLogArchive.node.defaultChild as CfnResource).overrideLogicalId('GeneratedLogArchiveAWSAccountEmail');
+    // RootMail
+    const rootMailStack = new RootmailStack(this, 'RootMail', {});
+    (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
 
     // ControlTower
     const controlTowerStack = new ControlTowerStack(this, 'ControlTower', {
