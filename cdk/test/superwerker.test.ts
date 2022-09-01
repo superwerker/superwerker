@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { App, Stack, StackProps } from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Capture, Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import { SuperwerkerStack } from '../src/superwerker';
@@ -32,8 +32,12 @@ describe('resources', () => {
   const app = new App();
   const originalStack = new OriginalStack(app, 'original', {});
   const stack = new SuperwerkerStack(app, 'stack', {});
-  console.log(Template.fromStack(stack).toJSON());
   const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: string } };
+  // Ignore the original resources for generating an email
+  for (const key in expectedResources) {
+    if (key.startsWith('Generate')) delete expectedResources[key];
+  }
+
   test.each(Object.entries(expectedResources))('resource: %p', (resource, resourceProps) => {
     // This sucks. Unfortunately we can't just call 'hasResource('myLogicalId').
     // TODO: make this better, either extend Template to have a better matcher or come up with a helper method.
@@ -47,4 +51,17 @@ describe('resources', () => {
       expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty(resource);
     }
   });
+});
+
+describe('email generation', () => {
+  const app = new App();
+  const stack = new SuperwerkerStack(app, 'stack', {});
+  //const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: string } };
+  const createCapture = new Capture();
+  Template.fromStack(stack).hasResourceProperties('Custom::AWS', {
+    Create: createCapture,
+  });
+  expect(JSON.stringify(createCapture.asObject())).toContain(SuperwerkerStack.AUDIT_ACCOUNT);
+  createCapture.next();
+  expect(JSON.stringify(createCapture.asObject())).toContain(SuperwerkerStack.LOG_ARCHIVE_ACCOUNT);
 });
