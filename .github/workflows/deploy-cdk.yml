@@ -1,0 +1,57 @@
+name: CDK Deployments
+
+on:
+  push:
+    branches: ["*"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Branch name
+        run: echo running on branch ${GITHUB_REF##*/}
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      # - name: Version the templates
+      #   shell: bash
+      #   run: scripts/versioning.sh ${{ steps.extract_branch.outputs.branch }}
+      #   id: version_templates
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::824014778649:role/superwerker-github
+
+      - name: Yarn
+        run: |
+          cd cdk
+          yarn
+
+      - name: CDK Synth
+        run: |
+          cd cdk
+          yarn cdk synth
+
+      - name: CDK Assets
+        run: |
+          cd cdk
+          yarn publish-assets
+
+    # - uses: shallwefootball/s3-upload-action@master
+    #   name: Upload S3
+    #   id: S3
+    #   with:
+    #     aws_key_id: ${{ secrets.AWS_ACCESS_KEY }}
+    #     aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+    #     aws_bucket: ${{ secrets.AWS_BUCKET_NAME}}
+    #     source_dir: templates/
+    #     destination_dir: ${{ steps.extract_branch.outputs.branch }}/templates/
