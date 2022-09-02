@@ -28,8 +28,7 @@
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts",
-    "functions/**/*.ts",
+    "test/**/*.ts"
   ],
   "exclude": [
     "cdk.out"
