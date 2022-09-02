@@ -9,7 +9,7 @@
     "lib": [
       "es2019"
     ],
-    "module": "CommonJS",
+    "module": "es2022",
     "noEmitOnError": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
