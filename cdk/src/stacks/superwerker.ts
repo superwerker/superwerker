@@ -18,6 +18,7 @@ import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { resolve } from 'path';
+import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 
 export class SuperwerkerStack extends Stack {
   public static AUDIT_ACCOUNT = 'Audit';
@@ -176,9 +177,13 @@ export class SuperwerkerStack extends Stack {
         },
         physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
       },
-      policy: custom_resources.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: [generatorFunction.functionArn],
-      }),
+      policy: custom_resources.AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ['lambda:InvokeFunction'],
+          effect: Effect.ALLOW,
+          resources: [generatorFunction.functionArn],
+        })
+      ]),
     });
 
     const emailLogArchive = new custom_resources.AwsCustomResource(this, 'GeneratedLogArchiveAWSAccountEmail', {
@@ -195,9 +200,13 @@ export class SuperwerkerStack extends Stack {
         },
         physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
       },
-      policy: custom_resources.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: [generatorFunction.functionArn],
-      }),
+      policy: custom_resources.AwsCustomResourcePolicy.fromStatements([
+        new PolicyStatement({
+          actions: ['lambda:InvokeFunction'],
+          effect: Effect.ALLOW,
+          resources: [generatorFunction.functionArn],
+        })
+      ]),
     });
 
     // RootMail
