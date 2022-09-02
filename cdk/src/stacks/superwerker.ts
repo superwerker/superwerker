@@ -169,10 +169,10 @@ export class SuperwerkerStack extends Stack {
         action: 'invoke',
         parameters: {
           FunctionName: generatorFunction.functionName,
-          Payload: {
-            domain: `${subdomain.value}.${domain.value}`,
-            name: SuperwerkerStack.AUDIT_ACCOUNT,
-          },
+          Payload: `{
+            "domain": "${subdomain.value}.${domain.value}",
+            "name": "${SuperwerkerStack.AUDIT_ACCOUNT}"
+          }`,
         },
         physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
       },
@@ -188,10 +188,10 @@ export class SuperwerkerStack extends Stack {
         action: 'invoke',
         parameters: {
           FunctionName: generatorFunction.functionName,
-          Payload: {
-            domain: `${subdomain.value}.${domain.value}`,
-            name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
-          },
+          Payload: `{
+            "domain": "${subdomain.value}.${domain.value}",
+            "name": "${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}"
+          }`,
         },
         physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
       },
