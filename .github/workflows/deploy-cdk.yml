@@ -1,5 +1,9 @@
 name: CDK Deployments
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     branches: ["*"]
