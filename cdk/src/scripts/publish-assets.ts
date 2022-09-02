@@ -1,11 +1,9 @@
+import { exec } from 'child_process';
 import * as path from 'path';
 import AWS from 'aws-sdk';
-import { AssetManifest, AssetPublishing, DefaultAwsClient } from 'cdk-assets';
 
 const main = async () => {
   const assetManifestPath = path.resolve(__dirname, '..', '..', 'cdk.out', 'SuperwerkerStack.assets.json');
-  const manifest = AssetManifest.fromPath(assetManifestPath);
-  console.log(`Loaded manifest from ${assetManifestPath}: ${manifest.entries.length} assets found`);
 
   // Fetch all enabled regions from EC2
   // In our master account we have enabled all regions
@@ -13,15 +11,15 @@ const main = async () => {
   const regions = (await ec2Client.describeRegions().promise()).Regions!.map((r) => r.RegionName);
 
   for (const region of regions) {
-    console.log('Publishing to region:', region);
-    const awsClient = new DefaultAwsClient();
-    // @ts-ignore
-    awsClient.AWS.config.update({ region });
-    const pub = new AssetPublishing(manifest, {
-      aws: awsClient,
-      throwOnError: true,
+    const command = `AWS_REGION=${region} yarn cdk-assets publish -p ${assetManifestPath}`;
+    console.log(command);
+    await exec(command, (err, stdout, stderr) => {
+      if (err) {
+        console.log(stdout);
+        console.log(stderr);
+        throw new Error(err.message);
+      }
     });
-    await pub.publish();
   }
 };
 
