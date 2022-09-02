@@ -30,6 +30,7 @@ jobs:
         with:
           aws-region: eu-central-1
           role-to-assume: arn:aws:iam::824014778649:role/superwerker-github
+          role-session-name: branch-${{ steps.extract_branch.outputs.branch }}
 
       - name: Yarn
         run: |
