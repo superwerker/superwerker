@@ -165,7 +165,7 @@ export class SuperwerkerStack extends Stack {
     const emailAudit = new custom_resources.AwsCustomResource(this, 'GeneratedAuditAWSAccountEmail', {
       onUpdate: {
         // will also be called for a CREATE event
-        service: 'lambda',
+        service: 'Lambda',
         action: 'invoke',
         parameters: {
           FunctionName: generatorFunction.functionName,
@@ -184,7 +184,7 @@ export class SuperwerkerStack extends Stack {
     const emailLogArchive = new custom_resources.AwsCustomResource(this, 'GeneratedLogArchiveAWSAccountEmail', {
       onUpdate: {
         // will also be called for a CREATE event
-        service: 'lambda',
+        service: 'Lambda',
         action: 'invoke',
         parameters: {
           FunctionName: generatorFunction.functionName,
