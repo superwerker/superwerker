@@ -2,7 +2,8 @@
   "name": "superwerker-cdk-poc",
   "scripts": {
     "synth": "cdk synth",
-    "test": "jest"
+    "test": "jest",
+    "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
@@ -27,8 +28,8 @@
     "@types/aws-lambda": "^8.10.102",
     "aws-cdk-lib": "^2.40.0",
     "aws-sdk": "^2.1207.0",
-    "cdk-assets": "^2.40.0",
     "constructs": "^10.0.5",
+    "cdk-assets": "^2.40.0",
     "uuid4": "^2.0.3"
   },
   "license": "Apache-2.0",
