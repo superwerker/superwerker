@@ -2,6 +2,8 @@ import { exec } from 'child_process';
 import * as path from 'path';
 import AWS from 'aws-sdk';
 
+// Publish assets into all regional buckets
+// e.g. superwerker-assets-eu-central-1 etc.
 const main = async () => {
   const assetManifestPath = path.resolve(__dirname, '..', '..', 'cdk.out', 'SuperwerkerStack.assets.json');
 
