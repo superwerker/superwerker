@@ -27,6 +27,7 @@
     "@types/aws-lambda": "^8.10.102",
     "aws-cdk-lib": "^2.40.0",
     "aws-sdk": "^2.1207.0",
+    "cdk-assets": "^2.40.0",
     "constructs": "^10.0.5",
     "uuid4": "^2.0.3"
   },
