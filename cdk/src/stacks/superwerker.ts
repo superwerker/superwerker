@@ -35,6 +35,11 @@ export class SuperwerkerStack extends Stack {
       },
     };
 
+    // keep these around so we can still deploy the stack with the same parameters
+    new CfnParameter(this, 'QSS3BucketName', { default: '' });
+    new CfnParameter(this, 'QSS3BucketRegion', { default: '' });
+    new CfnParameter(this, 'QSS3KeyPrefix', { default: '' });
+
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
       description: 'Domain used for root mail feature',
