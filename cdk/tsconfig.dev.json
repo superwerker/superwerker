@@ -7,9 +7,9 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "lib": [
-      "es2019"
+      "es2022"
     ],
-    "module": "es2022",
+    "module": "CommonJS",
     "noEmitOnError": false,
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
@@ -25,7 +25,6 @@
     "target": "ES2019"
   },
   "include": [
-    ".projenrc.js",
     "src/**/*.ts",
     "test/**/*.ts"
   ],
