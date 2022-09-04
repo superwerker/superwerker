@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { App, Stack, StackProps } from 'aws-cdk-lib';
-import { Capture, Template } from 'aws-cdk-lib/assertions';
+import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import { SuperwerkerStack } from '../src/stacks/superwerker';
@@ -56,11 +56,10 @@ describe('resources', () => {
 describe('email generation', () => {
   const app = new App();
   const stack = new SuperwerkerStack(app, 'stack', {});
-  const createCapture = new Capture();
-  Template.fromStack(stack).hasResourceProperties('Custom::AWS', {
-    Create: createCapture,
+  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+    Name: SuperwerkerStack.AUDIT_ACCOUNT,
   });
-  expect(JSON.stringify(createCapture.asObject())).toContain(SuperwerkerStack.AUDIT_ACCOUNT);
-  createCapture.next();
-  expect(JSON.stringify(createCapture.asObject())).toContain(SuperwerkerStack.LOG_ARCHIVE_ACCOUNT);
+  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+    Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+  });
 });
