@@ -1,13 +1,12 @@
 import { randomUUID } from 'crypto';
-import { Handler } from 'aws-lambda';
+// eslint-disable-next-line import/no-unresolved
+import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import AWS from 'aws-sdk';
+export const PROP_DOMAIN = 'Domain';
+export const PROP_NAME = 'Name';
+export const ATTR_EMAIL = 'Email';
 
 const Organizations = new AWS.Organizations({ region: 'us-east-1' });
-
-export interface HandlerEvent {
-  domain: string;
-  name: string;
-}
 
 export interface HandlerResponse {
   email: string;
@@ -52,12 +51,12 @@ const getAccounts = async () => {
   return data;
 };
 
-export const handler: Handler<HandlerEvent, HandlerResponse> = async (event) => {
-  if (!event.domain || event.domain === '') {
+async function generateEmail(domain: string, name: string): Promise<string> {
+  if (!domain || domain === '') {
     throw new Error('Missing domain');
   }
 
-  if (!event.name || event.name === '') {
+  if (!name || name === '') {
     throw new Error('Missing name');
   }
 
@@ -66,26 +65,42 @@ export const handler: Handler<HandlerEvent, HandlerResponse> = async (event) => 
   // on the Control Tower stack.
   console.log('Checking to see if account exists in AWS Organizations...');
   const data = await getAccounts();
-  const account = data.find((item) => item.name === event.name && item.email.endsWith(`@${event.domain}`));
+  const account = data.find((item) => item.name === name && item.email.endsWith(`@${domain}`));
   if (account) {
-    const result = { email: account!.email };
-    console.log('Found account', result);
-    return result;
+    const email = account!.email;
+    console.log('Found account', email);
+    return email;
   }
 
   const maxCharacters = 64;
-  const availableCharacters = maxCharacters - (event.domain.length + 1 + 5); // root+{uuid}@domain.tld
+  const availableCharacters = maxCharacters - (domain.length + 1 + 5); // root+{uuid}@domain.tld
   const id = randomUUID().substring(0, availableCharacters);
 
-  const email = `root+${id}@${event.domain}`;
+  const email = `root+${id}@${domain}`;
 
   if (email.length > 64) {
     throw new Error('Unable to generate email address with less than 64 characters (Control Tower requirement)');
   }
 
-  const result = {
-    email,
-  };
-  console.log('Created new email for account', result);
-  return result;
-};
+  console.log('Created new email for account', email);
+  return email;
+}
+
+export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+  switch (event.RequestType) {
+    case 'Create':
+    case 'Update':
+      console.log('Creating/updating email address for account');
+      const email = await generateEmail(event.ResourceProperties[PROP_DOMAIN], event.ResourceProperties[PROP_NAME]);
+      return {
+        PhysicalResourceId: `${event.ResourceProperties[PROP_NAME]}@${event.ResourceProperties[PROP_DOMAIN]}`,
+        Data: {
+          [ATTR_EMAIL]: email,
+        },
+      };
+    case 'Delete':
+      console.log('Deleting email address, doing nothing');
+      return {};
+  }
+}
+

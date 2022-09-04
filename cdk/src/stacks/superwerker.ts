@@ -2,14 +2,12 @@ import {
   CfnCondition,
   CfnParameter,
   CfnStack,
-  custom_resources,
   Fn,
   Stack,
   StackProps,
-  aws_lambda_nodejs as lambda,
-  aws_iam,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { GenerateEmailAddress } from '../constructs/generate-email-address';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
 import { GuardDutyStack } from './guardduty';
@@ -17,8 +15,6 @@ import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
-import { resolve } from 'path';
-import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam';
 
 export class SuperwerkerStack extends Stack {
   public static AUDIT_ACCOUNT = 'Audit';
@@ -152,61 +148,15 @@ export class SuperwerkerStack extends Stack {
      * Core Components
      */
 
-    const generatorFunction = new lambda.NodejsFunction(this, 'GenerateMailAddress', {
-      entry: resolve(__dirname, '../functions/generate-mail-address.ts'),
+    const emailAudit = new GenerateEmailAddress(this, 'GeneratedAuditAWSAccountEmail', {
+      domain: `${subdomain.value}.${domain.value}`,
+      name: `${SuperwerkerStack.AUDIT_ACCOUNT}`,
     });
 
-    generatorFunction.addToRolePolicy(
-      new aws_iam.PolicyStatement({
-        actions: ['organizations:ListAccounts'],
-        resources: ['*'],
-      }),
-    );
 
-    const emailAudit = new custom_resources.AwsCustomResource(this, 'GeneratedAuditAWSAccountEmail', {
-      onUpdate: {
-        // will also be called for a CREATE event
-        service: 'Lambda',
-        action: 'invoke',
-        parameters: {
-          FunctionName: generatorFunction.functionName,
-          Payload: `{
-            "domain": "${subdomain.value}.${domain.value}",
-            "name": "${SuperwerkerStack.AUDIT_ACCOUNT}"
-          }`,
-        },
-        physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
-      },
-      policy: custom_resources.AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({
-          actions: ['lambda:InvokeFunction'],
-          effect: Effect.ALLOW,
-          resources: [generatorFunction.functionArn],
-        })
-      ]),
-    });
-
-    const emailLogArchive = new custom_resources.AwsCustomResource(this, 'GeneratedLogArchiveAWSAccountEmail', {
-      onUpdate: {
-        // will also be called for a CREATE event
-        service: 'Lambda',
-        action: 'invoke',
-        parameters: {
-          FunctionName: generatorFunction.functionName,
-          Payload: `{
-            "domain": "${subdomain.value}.${domain.value}",
-            "name": "${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}"
-          }`,
-        },
-        physicalResourceId: custom_resources.PhysicalResourceId.of(Date.now().toString()), // Update physical id to always fetch the latest version
-      },
-      policy: custom_resources.AwsCustomResourcePolicy.fromStatements([
-        new PolicyStatement({
-          actions: ['lambda:InvokeFunction'],
-          effect: Effect.ALLOW,
-          resources: [generatorFunction.functionArn],
-        })
-      ]),
+    const emailLogArchive = new GenerateEmailAddress(this, 'GeneratedLogArchiveAWSAccountEmail', {
+      domain: `${subdomain.value}.${domain.value}`,
+      name: `${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}`,
     });
 
     // RootMail
@@ -216,8 +166,8 @@ export class SuperwerkerStack extends Stack {
     // ControlTower
     const controlTowerStack = new ControlTowerStack(this, 'ControlTower', {
       parameters: {
-        AuditAWSAccountEmail: emailAudit.getResponseField('email'),
-        LogArchiveAWSAccountEmail: emailLogArchive.getResponseField('email'),
+        AuditAWSAccountEmail: emailAudit.email,
+        LogArchiveAWSAccountEmail: emailLogArchive.email,
       },
     });
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
