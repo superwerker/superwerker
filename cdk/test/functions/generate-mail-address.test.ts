@@ -1,5 +1,4 @@
 import { Context } from 'aws-lambda';
-
 const spyOrganizationsListAccounts = jest.fn();
 const spyOrganizations = jest.fn(() => ({ listAccounts: spyOrganizationsListAccounts }));
 
@@ -33,7 +32,36 @@ describe('generate-mail-address', () => {
     expect(spyOrganizationsListAccounts).toHaveBeenCalledTimes(1);
 
     await expect(result).resolves.toHaveProperty('email');
-    await expect(result).resolves.not.toHaveProperty('email', 'root+sbstjn-example@aws.superluminar.io');
+    await expect(result).resolves.toMatchObject(
+      { email: expect.stringMatching(/root\+[0-9a-f\-]*@aws.superluminar.io/) },
+    );
+  });
+
+  it('generates new address if account is not part of organizations yet', async () => {
+    spyOrganizationsListAccounts.mockImplementation(() => ({
+      promise() {
+        const error = new Error();
+        // @ts-ignore
+        error.code = 'AWSOrganizationsNotInUseException';
+        throw error;
+      },
+    }));
+
+    const result = handler(
+      {
+        domain: 'aws.superluminar.io',
+        name: 'sbstjn-example',
+      },
+      {} as Context,
+      () => {},
+    );
+
+    expect(spyOrganizationsListAccounts).toHaveBeenCalledTimes(1);
+
+    await expect(result).resolves.toHaveProperty('email');
+    await expect(result).resolves.toMatchObject(
+      { email: expect.stringMatching(/root\+[0-9a-f\-]*@aws.superluminar.io/) },
+    );
   });
 
   it('returns email address for existing account', async () => {

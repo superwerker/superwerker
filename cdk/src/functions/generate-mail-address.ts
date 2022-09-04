@@ -1,5 +1,5 @@
-import { Handler } from 'aws-lambda';
 import { randomUUID } from 'crypto';
+import { Handler } from 'aws-lambda';
 import AWS from 'aws-sdk';
 
 const Organizations = new AWS.Organizations({ region: 'us-east-1' });
@@ -21,7 +21,15 @@ export interface TmpAccount {
 
 const getAccounts = async () => {
   const data: TmpAccount[] = [];
-  let response = await Organizations.listAccounts({}).promise();
+  let response;
+  try {
+    response = await Organizations.listAccounts({}).promise();
+  } catch (e) {
+    // @ts-ignore
+    if (e.code == 'AWSOrganizationsNotInUseException') {
+      return data;
+    }
+  }
 
   const parseAccountResponse = (accounts: AWS.Organizations.Accounts) => {
     accounts.forEach((account) => {
@@ -29,14 +37,16 @@ const getAccounts = async () => {
     });
   };
 
-  parseAccountResponse(response.Accounts!);
-  while (response.NextToken) {
-    response = await Organizations.listAccounts({
-      NextToken: response.NextToken,
-      MaxResults: 20,
-    }).promise();
-
+  if (response) {
     parseAccountResponse(response.Accounts!);
+    while (response.NextToken) {
+      response = await Organizations.listAccounts({
+        NextToken: response.NextToken,
+        MaxResults: 20,
+      }).promise();
+
+      parseAccountResponse(response.Accounts!);
+    }
   }
 
   return data;
