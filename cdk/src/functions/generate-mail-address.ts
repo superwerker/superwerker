@@ -64,10 +64,13 @@ export const handler: Handler<HandlerEvent, HandlerResponse> = async (event) => 
   // Check if we already generated an email for an account previously.
   // We do this so that our function doesn't accidentally generates new mails, thus triggering a stack update
   // on the Control Tower stack.
+  console.log('Checking to see if account exists in AWS Organizations...');
   const data = await getAccounts();
   const account = data.find((item) => item.name === event.name && item.email.endsWith(`@${event.domain}`));
   if (account) {
-    return { email: account!.email };
+    const result = { email: account!.email };
+    console.log('Found account', result);
+    return result;
   }
 
   const maxCharacters = 64;
@@ -80,7 +83,9 @@ export const handler: Handler<HandlerEvent, HandlerResponse> = async (event) => 
     throw new Error('Unable to generate email address with less than 64 characters (Control Tower requirement)');
   }
 
-  return {
+  const result = {
     email,
   };
+  console.log('Created new email for account', result);
+  return result;
 };
