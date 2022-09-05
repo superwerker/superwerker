@@ -32,7 +32,7 @@ describe('resources', () => {
   const app = new App();
   const originalStack = new OriginalStack(app, 'original', {});
   const stack = new SuperwerkerStack(app, 'stack', {});
-  const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: string } };
+  const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: any } };
   // Ignore the original resources for generating an email
   for (const key in expectedResources) {
     if (key.startsWith('Generate')) delete expectedResources[key];
@@ -45,11 +45,20 @@ describe('resources', () => {
     // https://cdk-dev.slack.com/archives/C018XT6REKT/p1662017721195839
     // For now we just check that the logical id and the condition are the same
 
+
+    // check that conditions match the original ones
     if (resourceProps.Condition) {
       expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Condition'], resourceProps.Condition);
-    } else {
-      expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty(resource);
     }
+
+    // check that parameters match the original ones
+    if (resourceProps.Properties.Parameters) {
+      for (const param of Object.keys(resourceProps.Properties.Parameters)) {
+        expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Properties', 'Parameters', param]);
+      }
+    }
+
+    expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty(resource);
   });
 });
 
