@@ -15,6 +15,7 @@ import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
+import { ServiceControlPoliciesStack } from './sevice-control-policies';
 
 export class SuperwerkerStack extends Stack {
   public static AUDIT_ACCOUNT = 'Audit';
@@ -122,7 +123,11 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
     });
     notificationsCondition.overrideLogicalId('IncludeNotifications');
-    const notificationsStack = new NotificationsStack(this, 'Notifications', {});
+    const notificationsStack = new NotificationsStack(this, 'Notifications', {
+      parameters: {
+        NotificationsMail: notificationsMail.value.toString(),
+      },
+    });
     (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
     (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
 
@@ -140,7 +145,12 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
     });
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    const serviceControlPoliciesStack = new SecurityHubStack(this, 'ServiceControlPolicies', {});
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
+      parameters: {
+        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
+        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
+      },
+    });
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
 
@@ -160,7 +170,12 @@ export class SuperwerkerStack extends Stack {
     });
 
     // RootMail
-    const rootMailStack = new RootmailStack(this, 'RootMail', {});
+    const rootMailStack = new RootmailStack(this, 'RootMail', {
+      parameters: {
+        Domain: domain.value.toString(),
+        Subdomain: subdomain.value.toString(),
+      },
+    });
     (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
 
     // ControlTower
@@ -173,7 +188,11 @@ export class SuperwerkerStack extends Stack {
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
 
     // LivingDocumentation
-    const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {});
+    const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
+      parameters: {
+        SuperwerkerDomain: `${subdomain.value.toString()}.${domain.value.toString()}`,
+      },
+    });
     (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
   }
 }
