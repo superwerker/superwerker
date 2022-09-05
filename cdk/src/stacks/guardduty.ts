@@ -6,16 +6,6 @@ import { Construct } from 'constructs';
 export class GuardDutyStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-    //new CfnInclude(this, 'SuperwerkerTemplate', {
-    //templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'guardduty.yaml'),
-    //});
-
-
-    const ssmAutomationExecutionRoleforCWEvents = new iam.Role(this, 'SSMAutomationExecutionRoleforCWEvents', {
-      assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
-      // TODO: move out of here because of circular dependencies
-    });
-    (ssmAutomationExecutionRoleforCWEvents.node.defaultChild as iam.CfnRole).overrideLogicalId('SSMAutomationExecutionRoleforCWEvents');
 
     const enableGuardDutyExistingAccounts = new ssm.CfnDocument(this, 'EnableGuardDutyExistingAccounts', {
       documentType: 'Automation',
@@ -389,10 +379,10 @@ export class GuardDutyStack extends NestedStack {
       },
     });
 
-    ssmAutomationExecutionRoleforCWEvents.attachInlinePolicy(
-      new iam.Policy(this, 'AllowStartAutomationExecution', {
-        policyName: 'AllowStartAutomationExecution',
-        document: new iam.PolicyDocument({
+    const ssmAutomationExecutionRoleforCWEvents = new iam.Role(this, 'SSMAutomationExecutionRoleforCWEvents', {
+      assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
+      inlinePolicies: {
+        AllowStartAutomationExecution: new iam.PolicyDocument({
           statements: [
             new iam.PolicyStatement({
               actions: [
@@ -409,8 +399,10 @@ export class GuardDutyStack extends NestedStack {
 
           ],
         }),
-      }),
-    );
+      },
+    });
+    (ssmAutomationExecutionRoleforCWEvents.node.defaultChild as iam.CfnRole).overrideLogicalId('SSMAutomationExecutionRoleforCWEvents');
+
 
     const landingZoneSetupFinishedTrigger = new events.Rule(this, 'LandingZoneSetupFinishedTrigger', {
       eventPattern: {
