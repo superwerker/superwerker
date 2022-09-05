@@ -26,6 +26,21 @@
     "@aws-cdk/cloud-assembly-schema" "2.40.0"
     semver "^7.3.7"
 
+"@aws-lambda-powertools/commons@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@aws-lambda-powertools/commons/-/commons-1.2.1.tgz#4d0ba33576b8ee379aeff3a51087ab88f881cf40"
+  integrity sha512-wHdAgzXQfRqcm6kIuxrQjKL8x02sVTMc7rcMJPkHU1DsGNL7Z3g0H+tkrlmFimGkRqPv724J2OqNdEvBJKaoMQ==
+
+"@aws-lambda-powertools/logger@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@aws-lambda-powertools/logger/-/logger-1.2.1.tgz#069c94d13d89a761216e5d9a872ff05f5b95488f"
+  integrity sha512-Yb9uOi49h7yOut/NujnHjTd+sP4nBMsnuxMIsNtKvBFZ2ftaPlGAfqOdevqC3ImcIXlyiypxXd1gQmEMq3uJ8Q==
+  dependencies:
+    "@aws-lambda-powertools/commons" "^1.2.1"
+    lodash.clonedeep "^4.5.0"
+    lodash.merge "^4.6.2"
+    lodash.pickby "^4.6.0"
+
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.18.6":
   version "7.18.6"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.18.6.tgz#3b25d38c89600baa2dcc219edfa88a74eb2c427a"
@@ -650,6 +665,11 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
+"@middy/core@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@middy/core/-/core-3.3.0.tgz#0342a3e130e72da0843f75ebcd6cdb37042f14c4"
+  integrity sha512-27gn/e3lgBx5bI5yDkIdr/CWFAGmBK7M1mSQpnciak762YKyj/pABXpzj/l6SjFPxKXr9uMhUgr2qr/6s8/zow==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -816,7 +836,7 @@
   resolved "https://registry.yarnpkg.com/@tsconfig/node16/-/node16-1.0.3.tgz#472eaab5f15c1ffdd7f8628bd4c4f753995ec79e"
   integrity sha512-yOlFc+7UtL/89t2ZhjPvvB/DeAr3r+Dq58IgzsFkOAvVC6NMJXmCGjbptdXdR9qsX7pKcTL+s87FtYREi2dEEQ==
 
-"@types/aws-lambda@^8.10.102":
+"@types/aws-lambda@*", "@types/aws-lambda@^8.10.102":
   version "8.10.102"
   resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.102.tgz#d2402224ec30cdddfb669005c25b6ee01fd6f5be"
   integrity sha512-BT05v46n9KtSHa9SgGuOvm49eSruJ9utD8iNXpdpuUVYk8wOcqmm1LEzpNRkrXxD0CULc38sdLpk6q3Wa2WOwg==
@@ -863,6 +883,13 @@
     "@types/keyv" "*"
     "@types/node" "*"
     "@types/responselike" "*"
+
+"@types/cfn-response@^1.0.5":
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/@types/cfn-response/-/cfn-response-1.0.5.tgz#ee39e84b501624a773301d9a63e5a62344b0ebfb"
+  integrity sha512-CG4X/S8jXbNv+wZfCMl3dgrTBEPaIhxSO4PT2vKoZPXy2Z0E+QlPw7TeRFgCAhbT5IhQNaas5PDobWcJk5kpGg==
+  dependencies:
+    "@types/aws-lambda" "*"
 
 "@types/graceful-fs@^4.1.3":
   version "4.1.5"
@@ -1553,6 +1580,11 @@ cdk-assets@^2.40.0:
     glob "^7.2.3"
     mime "^2.6.0"
     yargs "^16.2.0"
+
+cfn-response@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/cfn-response/-/cfn-response-1.0.1.tgz#a8ec03950c0683c51495e8ca680d9dc0b884b137"
+  integrity sha512-mHfgHUcGpIbmioV/gQ//5V+b8em/ZKFwAgzmbycflJ1q0AU66wlhIgarkYc4JXGgIca+0lxg+XEKO4ZwyZedaw==
 
 chalk@^2.0.0:
   version "2.4.2"
@@ -3717,6 +3749,11 @@ locate-path@^6.0.0:
   dependencies:
     p-locate "^5.0.0"
 
+lodash.clonedeep@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
+  integrity sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==
+
 lodash.defaults@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/lodash.defaults/-/lodash.defaults-4.2.0.tgz#d09178716ffea4dde9e5fb7b37f6f0802274580c"
@@ -3746,6 +3783,11 @@ lodash.merge@^4.6.2:
   version "4.6.2"
   resolved "https://registry.yarnpkg.com/lodash.merge/-/lodash.merge-4.6.2.tgz#558aa53b43b661e1925a0afdfa36a9a1085fe57a"
   integrity sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==
+
+lodash.pickby@^4.6.0:
+  version "4.6.0"
+  resolved "https://registry.yarnpkg.com/lodash.pickby/-/lodash.pickby-4.6.0.tgz#7dea21d8c18d7703a27c704c15d3b84a67e33aff"
+  integrity sha512-AZV+GsS/6ckvPOVQPXSiFFacKvKB4kOQu6ynt9wz0F3LO4R9Ij4K1ddYsIytDpSgLz88JHd9P+oaLeej5/Sl7Q==
 
 lodash.union@^4.6.0:
   version "4.6.0"
