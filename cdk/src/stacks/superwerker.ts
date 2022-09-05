@@ -8,6 +8,7 @@ import {
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
+import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
 import { GuardDutyStack } from './guardduty';
@@ -140,7 +141,7 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeBackup, 'Yes'),
     });
     backupCondition.overrideLogicalId('IncludeBackup');
-    const backupStack = new BudgetStack(this, 'Backup', {});
+    const backupStack = new BackupStack(this, 'Backup', {});
     backupStack.addDependency(controlTowerStack);
     (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
     (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
