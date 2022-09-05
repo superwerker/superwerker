@@ -86,7 +86,7 @@ phases:
       - sleep 300 # give superwerker components some time to settle, e.g. SecurityHub member adding takes some minutes after account factory fixture has been rolled out
       - cd tests
       - rm -rf ~/.aws/cli/cache # run tests with fresh credentials
-      - PYTHON_UNBUFFERED=1 AWS_REGION=${SUPERWERKER_REGION} AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -m pytest -s --junitxml=./test-results.xml
+      - PYTEST_TIMEOUT=300 PYTHON_UNBUFFERED=1 AWS_REGION=${SUPERWERKER_REGION} AWS_DEFAULT_REGION=${SUPERWERKER_REGION} AWS_PROFILE=test_account ACCOUNT_FACTORY_ACCOUNT_ID=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation describe-stacks --stack-name superwerker-pipeline-account-factory-fixture --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" --output text) python3 -m pytest -s --junitxml=./test-results.xml
 
     finally:
       # remove temp IAM user
