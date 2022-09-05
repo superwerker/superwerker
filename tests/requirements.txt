@@ -1,3 +1,4 @@
 boto3==1.16.60
 retrying
 pytest
+pytest-timeout
