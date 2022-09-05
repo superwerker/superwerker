@@ -1,6 +1,4 @@
-//import path from 'path';
 import { Arn, aws_events as events, aws_iam as iam, aws_ssm as ssm, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-//import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 
 export class GuardDutyStack extends NestedStack {
