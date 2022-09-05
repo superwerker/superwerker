@@ -51,6 +51,11 @@ describe('resources', () => {
       expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Condition'], resourceProps.Condition);
     }
 
+    // check that dependsOn match the original ones
+    if (resourceProps.DependsOn) {
+      expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'DependsOn'], resourceProps.DependsOn);
+    }
+
     // check that parameters match the original ones
     if (resourceProps.Properties.Parameters) {
       for (const param of Object.keys(resourceProps.Properties.Parameters)) {
