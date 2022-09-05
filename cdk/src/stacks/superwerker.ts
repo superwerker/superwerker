@@ -91,73 +91,9 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    // Backup
-    const backupCondition = new CfnCondition(this, 'IncludeBackupCondition', {
-      expression: Fn.conditionEquals(includeBackup, 'Yes'),
-    });
-    backupCondition.overrideLogicalId('IncludeBackup');
-    const backupStack = new BudgetStack(this, 'Backup', {});
-    (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
-    (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
-
-    // Budgets
-    const budgetCondition = new CfnCondition(this, 'IncludeBudgetCondition', {
-      expression: Fn.conditionEquals(includeBudget, 'Yes'),
-    });
-    budgetCondition.overrideLogicalId('IncludeBudget');
-    const budgetStack = new BudgetStack(this, 'Budget', {});
-    (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('Budget');
-    (budgetStack.node.defaultChild as CfnStack).cfnOptions.condition = budgetCondition;
-
-    // GuardDuty
-    const guardDutyCondition = new CfnCondition(this, 'IncludeGuardDutyCondition', {
-      expression: Fn.conditionEquals(includeGuardDuty, 'Yes'),
-    });
-    guardDutyCondition.overrideLogicalId('IncludeGuardDuty');
-    const guardDutyStack = new GuardDutyStack(this, 'GuardDuty', {});
-    (guardDutyStack.node.defaultChild as CfnStack).overrideLogicalId('GuardDuty');
-    (guardDutyStack.node.defaultChild as CfnStack).cfnOptions.condition = guardDutyCondition;
-
-    // Notifications
-    const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
-      expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
-    });
-    notificationsCondition.overrideLogicalId('IncludeNotifications');
-    const notificationsStack = new NotificationsStack(this, 'Notifications', {
-      parameters: {
-        NotificationsMail: notificationsMail.value.toString(),
-      },
-    });
-    (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
-    (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
-
-    // SecurityHub
-    const securityHubCondition = new CfnCondition(this, 'IncludeSecurityHubCondition', {
-      expression: Fn.conditionEquals(includeSecurityHub, 'Yes'),
-    });
-    securityHubCondition.overrideLogicalId('IncludeSecurityHub');
-    const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
-    (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
-    (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
-
-    // ServiceControlPolicies
-    const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
-      expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
-    });
-    serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
-      parameters: {
-        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
-        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
-      },
-    });
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
-
     /**
      * Core Components
      */
-
     const emailAudit = new GenerateEmailAddress(this, 'GeneratedAuditAWSAccountEmail', {
       domain: `${subdomain.value}.${domain.value}`,
       name: `${SuperwerkerStack.AUDIT_ACCOUNT}`,
@@ -194,5 +130,77 @@ export class SuperwerkerStack extends Stack {
       },
     });
     (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
+
+    /**
+     * optional components
+     */
+
+    // Backup
+    const backupCondition = new CfnCondition(this, 'IncludeBackupCondition', {
+      expression: Fn.conditionEquals(includeBackup, 'Yes'),
+    });
+    backupCondition.overrideLogicalId('IncludeBackup');
+    const backupStack = new BudgetStack(this, 'Backup', {});
+    backupStack.addDependency(controlTowerStack);
+    (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
+    (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
+
+    // Budgets
+    const budgetCondition = new CfnCondition(this, 'IncludeBudgetCondition', {
+      expression: Fn.conditionEquals(includeBudget, 'Yes'),
+    });
+    budgetCondition.overrideLogicalId('IncludeBudget');
+    const budgetStack = new BudgetStack(this, 'Budget', {});
+    (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('Budget');
+    (budgetStack.node.defaultChild as CfnStack).cfnOptions.condition = budgetCondition;
+
+    // GuardDuty
+    const guardDutyCondition = new CfnCondition(this, 'IncludeGuardDutyCondition', {
+      expression: Fn.conditionEquals(includeGuardDuty, 'Yes'),
+    });
+    guardDutyCondition.overrideLogicalId('IncludeGuardDuty');
+    const guardDutyStack = new GuardDutyStack(this, 'GuardDuty', {});
+    (guardDutyStack.node.defaultChild as CfnStack).overrideLogicalId('GuardDuty');
+    (guardDutyStack.node.defaultChild as CfnStack).cfnOptions.condition = guardDutyCondition;
+
+    // Notifications
+    const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
+      expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
+    });
+    notificationsCondition.overrideLogicalId('IncludeNotifications');
+    const notificationsStack = new NotificationsStack(this, 'Notifications', {
+      parameters: {
+        NotificationsMail: notificationsMail.value.toString(),
+      },
+    });
+    notificationsStack.addDependency(rootMailStack);
+    (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
+    (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
+
+    // SecurityHub
+    const securityHubCondition = new CfnCondition(this, 'IncludeSecurityHubCondition', {
+      expression: Fn.conditionEquals(includeSecurityHub, 'Yes'),
+    });
+    securityHubCondition.overrideLogicalId('IncludeSecurityHub');
+    const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
+    (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
+    (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
+
+    // ServiceControlPolicies
+    const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
+      expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
+    });
+    serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
+      parameters: {
+        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
+        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
+      },
+    });
+    serviceControlPoliciesStack.addDependency(controlTowerStack);
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+
+
   }
 }
