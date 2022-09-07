@@ -189,4 +189,5 @@ We use CloudWatch Events where possible in order to decouple architecture. We ac
 ## Thanks
 
 - [Ian McKay and his AWS Account Controller](https://github.com/iann0036/aws-account-controller)
+- [awsapilib](https://github.com/schubergphilis/awsapilib/)
 - [Flo Motlik / theserverlessway.com AWS Baseline](https://github.com/theserverlessway/aws-baseline)

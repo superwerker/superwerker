@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
 echo SOURCE_PROFILE: $SOURCE_PROFILE
 
 captcha_api_key=$(aws secretsmanager get-secret-value \
@@ -22,5 +24,5 @@ accounts=$(aws dynamodb query \
 for stale in ${accounts}
 do
     echo $stale
-    SOURCE_PROFILE=superwerker-test1-master AWS_ACCOUNT_ID="${stale}" CAPTCHA_API_KEY=${captcha_api_key} ./terminate-test-env.sh
+    SOURCE_PROFILE=superwerker-test1-master AWS_ACCOUNT_ID="${stale}" CAPTCHA_API_KEY=${captcha_api_key} $SCRIPT_DIR/terminate-test-env.sh
 done

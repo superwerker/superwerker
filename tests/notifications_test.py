@@ -11,7 +11,7 @@ sns = boto3.client('sns')
 ssm = boto3.client('ssm')
 
 
-class NotificationsTestCase(unittest.TestCase):
+class NotificationsTest(unittest.TestCase):
     @staticmethod
     def create_queue_for_sns_subscription(queue_name):
         queue_policy = {
