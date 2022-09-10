@@ -18,16 +18,20 @@ import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
 
+export interface SuperwerkerStackProps extends StackProps{
+  readonly version?: string;
+}
+
 export class SuperwerkerStack extends Stack {
   public static AUDIT_ACCOUNT = 'Audit';
   public static LOG_ARCHIVE_ACCOUNT = 'Log Archive';
 
-  constructor(scope: Construct, id: string, props: StackProps) {
+  constructor(scope: Construct, id: string, props: SuperwerkerStackProps) {
     super(scope, id, props);
 
     Stack.of(this).templateOptions.description = 'Automated Best Practices for AWS Cloud setups - https://superwerker.cloud (qs-1rhrhoi4t)';
     Stack.of(this).templateOptions.metadata = {
-      SuperwerkerVersion: '0.0.0-DEVELOPMENT',
+      SuperwerkerVersion: props.version,
       QuickStartDocumentation: {
         EntrypointName: 'Parameters for launching Superwerker',
         Order: '1',
