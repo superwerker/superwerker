@@ -74,7 +74,7 @@ export class GuardDutyStack extends NestedStack {
             Service: 'guardduty',
             Api: 'UpdateOrganizationConfiguration',
             DetectorId: '{{ GetDetectorId.DetectorId }}',
-            AutoEnable: 'true',
+            AutoEnable: true,
           },
         }],
       },
@@ -102,11 +102,11 @@ export class GuardDutyStack extends NestedStack {
           inputs: {
             Service: 'guardduty',
             Api: 'UpdateOrganizationConfiguration',
-            AutoEnable: 'true',
+            AutoEnable: true,
             DetectorId: '{{ GetDetectorId.DetectorId }}',
             DataSources: {
               S3Logs: {
-                AutoEnable: 'true',
+                AutoEnable: true,
               },
             },
           },
@@ -277,7 +277,7 @@ export class GuardDutyStack extends NestedStack {
           inputs: {
             Service: 'guardduty',
             Api: 'CreateDetector',
-            Enable: 'true',
+            Enable: true,
           },
         }, {
           name: 'SleepEnableGuardDutyExistingAccounts', // GuardDuty Org Admin needs to settle first, give it some time',
