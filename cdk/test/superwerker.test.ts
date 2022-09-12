@@ -2,6 +2,7 @@ import * as path from 'path';
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
+import { BUNDLING_STACKS } from 'aws-cdk-lib/cx-api';
 import { Construct } from 'constructs';
 import { SuperwerkerStack } from '../src/stacks/superwerker';
 
@@ -14,8 +15,14 @@ export class OriginalStack extends Stack {
   }
 }
 
+// Disable asset bundling while testing.
+// This context needs to be passed to all instances of cdk.App in the test case.
+const context = {
+  [BUNDLING_STACKS]: [],
+};
+
 describe('parameters', () => {
-  const app = new App();
+  const app = new App({ context });
   const originalStack = new OriginalStack(app, 'original', {});
   const stack = new SuperwerkerStack(app, 'stack', {});
   const expectedParameters = Template.fromStack(originalStack).toJSON().Parameters as { [key: string]: { [key: string]: string } };
@@ -29,7 +36,7 @@ describe('parameters', () => {
 });
 
 describe('resources', () => {
-  const app = new App();
+  const app = new App({ context });
   const originalStack = new OriginalStack(app, 'original', {});
   const stack = new SuperwerkerStack(app, 'stack', {});
   const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: any } };
@@ -68,7 +75,7 @@ describe('resources', () => {
 });
 
 describe('email generation', () => {
-  const app = new App();
+  const app = new App({ context });
   const stack = new SuperwerkerStack(app, 'stack', {});
   Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
     Name: SuperwerkerStack.AUDIT_ACCOUNT,
