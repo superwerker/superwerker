@@ -1,21 +1,9 @@
-//import path from 'path';
 import { Arn, aws_events as events, aws_iam as iam, aws_ssm as ssm, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-//import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 
 export class GuardDutyStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-    //new CfnInclude(this, 'SuperwerkerTemplate', {
-    //templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'guardduty.yaml'),
-    //});
-
-
-    const ssmAutomationExecutionRoleforCWEvents = new iam.Role(this, 'SSMAutomationExecutionRoleforCWEvents', {
-      assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
-      // TODO: move out of here because of circular dependencies
-    });
-    (ssmAutomationExecutionRoleforCWEvents.node.defaultChild as iam.CfnRole).overrideLogicalId('SSMAutomationExecutionRoleforCWEvents');
 
     const enableGuardDutyExistingAccounts = new ssm.CfnDocument(this, 'EnableGuardDutyExistingAccounts', {
       documentType: 'Automation',
@@ -86,7 +74,7 @@ export class GuardDutyStack extends NestedStack {
             Service: 'guardduty',
             Api: 'UpdateOrganizationConfiguration',
             DetectorId: '{{ GetDetectorId.DetectorId }}',
-            AutoEnable: 'true',
+            AutoEnable: true,
           },
         }],
       },
@@ -114,11 +102,11 @@ export class GuardDutyStack extends NestedStack {
           inputs: {
             Service: 'guardduty',
             Api: 'UpdateOrganizationConfiguration',
-            AutoEnable: 'true',
+            AutoEnable: true,
             DetectorId: '{{ GetDetectorId.DetectorId }}',
             DataSources: {
               S3Logs: {
-                AutoEnable: 'true',
+                AutoEnable: true,
               },
             },
           },
@@ -289,7 +277,7 @@ export class GuardDutyStack extends NestedStack {
           inputs: {
             Service: 'guardduty',
             Api: 'CreateDetector',
-            Enable: 'true',
+            Enable: true,
           },
         }, {
           name: 'SleepEnableGuardDutyExistingAccounts', // GuardDuty Org Admin needs to settle first, give it some time',
@@ -389,10 +377,10 @@ export class GuardDutyStack extends NestedStack {
       },
     });
 
-    ssmAutomationExecutionRoleforCWEvents.attachInlinePolicy(
-      new iam.Policy(this, 'AllowStartAutomationExecution', {
-        policyName: 'AllowStartAutomationExecution',
-        document: new iam.PolicyDocument({
+    const ssmAutomationExecutionRoleforCWEvents = new iam.Role(this, 'SSMAutomationExecutionRoleforCWEvents', {
+      assumedBy: new iam.ServicePrincipal('events.amazonaws.com'),
+      inlinePolicies: {
+        AllowStartAutomationExecution: new iam.PolicyDocument({
           statements: [
             new iam.PolicyStatement({
               actions: [
@@ -409,8 +397,10 @@ export class GuardDutyStack extends NestedStack {
 
           ],
         }),
-      }),
-    );
+      },
+    });
+    (ssmAutomationExecutionRoleforCWEvents.node.defaultChild as iam.CfnRole).overrideLogicalId('SSMAutomationExecutionRoleforCWEvents');
+
 
     const landingZoneSetupFinishedTrigger = new events.Rule(this, 'LandingZoneSetupFinishedTrigger', {
       eventPattern: {
