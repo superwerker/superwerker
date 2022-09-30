@@ -27,13 +27,15 @@ phases:
       - echo AccountId ${aws_account_id} - Cross Account Role ${aws_cross_account_role_arn}
 
       # CDK synth && publish
-      - export TEMPLATE_PREFIX=build/${CODEBUILD_SOURCE_VERSION}/
+      - export TEMPLATE_PREFIX=build/${CODEBUILD_SOURCE_VERSION}
+      - export SUPERWERKER_VERSION=${CODEBUILD_SOURCE_VERSION}
       - cd cdk
       - yarn
       - yarn test
       - yarn synth
       - yarn publish-assets
-      - aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-deployment/${TEMPLATE_PREFIX}templates/
+      - aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-deployment/${TEMPLATE_PREFIX}/templates/superwerker.template.yaml
+      - aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-deployment/${TEMPLATE_PREFIX}/templates/
       - cd -
 
       # setup AWS CLI to talk to vended account
@@ -55,23 +57,36 @@ phases:
 
       # setup superwerker in vended account
       - |
+        template_url=https://superwerker-deployment.s3.${TEMPLATE_REGION}.amazonaws.com/${TEMPLATE_PREFIX}/templates/superwerker.template.yaml
         if $UPDATE_FROM_LATEST_RELEASE; then
           latest_release=$(curl --fail --retry 10 -s https://api.github.com/repos/superwerker/superwerker/releases/latest | jq -r '.name[1:]')
-          install_template_bucket_name="superwerker-releases"
-          install_template_prefix="${latest_release}/"
-          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url https://${install_template_bucket_name}.s3.${TEMPLATE_REGION}.amazonaws.com/${install_template_prefix}templates/superwerker.template.yaml --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${install_template_bucket_name} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${install_template_prefix} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
+          previously_released_template_url=https://superwerker-releases.s3.${TEMPLATE_REGION}.amazonaws.com/${latest_release}/templates/superwerker.template.yaml
+          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url ${previously_released_template_url} \
+              --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} \
+                           ParameterKey=Subdomain,ParameterValue=${aws_account_id} \
+                           ParameterKey=QSS3BucketName,ParameterValue=superwerker-releases \
+                           ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} \
+                           ParameterKey=QSS3KeyPrefix,ParameterValue="${latest_release}/" \
+                           ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} \
+               --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
           sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
           while ! domain_name_servers=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
           aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
           aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker || true  # needed as wait only waits for 60 minutes
           aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation wait stack-create-complete --stack-name superwerker
           # if superwerker update is tested, first update to superwerker version under test before running the tests
-          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation update-stack --stack-name superwerker --template-body file://cdk/cdk.out/SuperwerkerStack.template.json --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${TEMPLATE_BUCKET_NAME} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${TEMPLATE_PREFIX} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
+          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation update-stack --stack-name superwerker --template-url ${template_url} \
+              --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} \
+                           ParameterKey=Subdomain,ParameterValue=${aws_account_id} \
+                           ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} \
+              --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM
           aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation wait stack-update-complete --stack-name superwerker
         else
-          install_template_bucket_name=${TEMPLATE_BUCKET_NAME}
-          install_template_prefix="${TEMPLATE_PREFIX}"
-          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url https://${install_template_bucket_name}.s3.${TEMPLATE_REGION}.amazonaws.com/${install_template_prefix}templates/SuperwerkerStack.template.json --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} ParameterKey=Subdomain,ParameterValue=${aws_account_id} ParameterKey=QSS3BucketName,ParameterValue=${install_template_bucket_name} ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} ParameterKey=QSS3KeyPrefix,ParameterValue=${install_template_prefix} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
+          aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url ${template_url} \
+              --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} \
+                           ParameterKey=Subdomain,ParameterValue=${aws_account_id} \
+                           ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} \
+              --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
           sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'
           while ! domain_name_servers=$(aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text); do sleep 10; done
           aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${aws_account_id} --template-file tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=$domain_name_servers RootMailDomain=${ROOT_MAIL_DOMAIN} RootMailSubdomain=${aws_account_id} --no-fail-on-empty-changeset
