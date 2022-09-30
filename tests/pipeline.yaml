@@ -280,6 +280,16 @@ Resources:
               Effect: Allow
               Action: s3:ListBucket
               Resource: !Sub ${ReleasesBucket.Arn}
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+                - s3:PutObjectAcl
+              Resource: !Sub arn:aws:s3:::superwerker-assets-*/*
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !Sub arn:aws:s3:::superwerker-assets-*
+
 
   DeploymentBucketUserAccessKey:
     Type: AWS::IAM::AccessKey
