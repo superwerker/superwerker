@@ -34,6 +34,7 @@
     "cdk-assets": "^2.40.0",
     "cfn-response": "^1.0.1",
     "constructs": "^10.0.5",
+    "endent": "^2.1.0",
     "uuid4": "^2.0.3"
   },
   "license": "Apache-2.0",
