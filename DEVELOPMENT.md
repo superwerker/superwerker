@@ -13,6 +13,20 @@ An instance of the [MAVM](https://github.com/superluminar-io/mavm) needs to be d
 
 ## Development
 
+All development takes place in the `superwerker-test-master - 824014778649` AWS account.
+This account also hosts the MAVM.
+To get access to the test environment contact @bracki or @sbstjn.
+
+Make sure to configure your profile in your `~/.aws/config` for example like:
+
+```
+[profile superwerker-test-master]
+source_profile = <your profile>
+role_arn = <role to access account>
+```
+
+Now set `SOURCE_PROFILE` to the value you chose above.
+
 ### Development/Testing Workflow
 
 #### Create a new dev environment
