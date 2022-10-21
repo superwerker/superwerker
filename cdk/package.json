@@ -35,6 +35,7 @@
     "cfn-response": "^1.0.1",
     "constructs": "^10.0.5",
     "endent": "^2.1.0",
+    "typescript-retry-decorator": "^2.0.6",
     "uuid4": "^2.0.3"
   },
   "license": "Apache-2.0",

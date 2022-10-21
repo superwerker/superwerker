@@ -3,6 +3,7 @@ import { aws_ssm as ssm, Fn, Arn, aws_cloudformation as cfn, CfnCustomResource, 
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import endent from 'endent';
+import { EnableCloudFormationStacksetsOrgAccess } from '../constructs/enable-cfn-stacksets-org';
 
 export class BackupStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -443,6 +444,8 @@ export class BackupStack extends NestedStack {
       },
     });
     (backupTagRemediation.node.defaultChild as CfnCustomResource).overrideLogicalId('BackupTagRemediationPublic');
+
+    new EnableCloudFormationStacksetsOrgAccess(this, 'EnableCloudFormationStacksetsOrgAccess');
   }
 }
 
