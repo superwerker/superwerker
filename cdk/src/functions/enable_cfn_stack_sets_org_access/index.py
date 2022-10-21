@@ -7,11 +7,11 @@ UPDATE = 'Update'
 
 
 def handler(event, context):
-    RequestType = event["RequestType"]
+    request_type = event['RequestType']
 
     cf = Cloudformation(os.environ['AWSAPILIB_ROLE_ARN'])
 
-    if RequestType == CREATE:
+    if request_type == CREATE:
         cf.stacksets.enable_organizations_trusted_access()
 
     return {}
