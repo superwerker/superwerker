@@ -9,9 +9,6 @@ def test_handler(mocker):
     cfn_cls_mock = mocker.patch('index.Cloudformation')
     cfn_mock = MagicMock()
     cfn_cls_mock.return_value = cfn_mock
-    stacksets_mock = mocker.patch('index.Cloudformation.stacksets')
-
-    cfn_mock.stacksets.return_value = stacksets_mock
 
     handler({
         'RequestType': CREATE
