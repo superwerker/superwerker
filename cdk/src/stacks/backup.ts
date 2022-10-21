@@ -1,5 +1,5 @@
 import path from 'path';
-import { aws_ssm as ssm, Fn, Arn, aws_cloudformation as cfn, aws_config as config, aws_iam as iam, aws_s3 as s3, custom_resources as cr, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { aws_ssm as ssm, Fn, Arn, aws_cloudformation as cfn, CfnCustomResource, aws_config as config, aws_iam as iam, aws_s3 as s3, custom_resources as cr, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import endent from 'endent';
@@ -421,6 +421,28 @@ export class BackupStack extends NestedStack {
       },
     });
     (backupTagRemediation.node.defaultChild as ssm.CfnDocument).overrideLogicalId('BackupTagRemediation');
+
+    const backupTagRemediationPublic = new cr.AwsCustomResource(this, 'BackupTagRemediationPublic', {
+      onUpdate: {
+        service: 'SSM',
+        action: 'modifyDocumentPermission',
+        parameters: {
+          Name: backupTagRemediation.ref,
+          PermissionType: 'Share',
+          AccountIdsToAdd: ['All'],
+        },
+      },
+      onDelete: {
+        service: 'SSM',
+        action: 'modifyDocumentPermission',
+        parameters: {
+          Name: backupTagRemediation.ref,
+          PermissionType: 'Share',
+          AccountIdsToRemove: ['All'],
+        },
+      },
+    });
+    (backupTagRemediation.node.defaultChild as CfnCustomResource).overrideLogicalId('BackupTagRemediationPublic');
   }
 }
 

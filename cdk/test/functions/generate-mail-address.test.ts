@@ -5,6 +5,7 @@ jest.mock('aws-sdk', () => ({
   Organizations: spyOrganizations,
 }));
 
+// eslint-disable-next-line import/no-unresolved
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { handler } from '../../src/functions/generate-mail-address';
 
