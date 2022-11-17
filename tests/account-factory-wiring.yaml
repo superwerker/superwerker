@@ -136,7 +136,7 @@ Resources:
       Name: superwerker-ct-bug-wa
       ArtifactS3Location: !Sub s3://${ControlTowerBugWorkAroundArtifactLocation}
       ExecutionRoleArn: !GetAtt ControlTowerBugWorkAroundCanaryRole.Arn
-      RuntimeVersion: syn-nodejs-puppeteer-3.1
+      RuntimeVersion: syn-nodejs-puppeteer-3.8
       StartCanaryAfterCreation: true
       RunConfig:
         TimeoutInSeconds: 300
