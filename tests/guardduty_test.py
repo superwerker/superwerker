@@ -64,7 +64,7 @@ class GuardDutyTest(unittest.TestCase):
         # assert that membership cannot be cancelled
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_guardduty.disassociate_from_master_account(DetectorId=detector_id)
-        self.assertEqual('An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because member cannot disassociate from Organization administrator', str(exception.exception))
+        self.assertEqual('An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because an invalid or out-of-range value is specified as an input parameter.', str(exception.exception))
 
     def test_guardduty_s3_protection_enabled_for_org_members(self):
         audit_account = self.control_tower_exection_role_session(self.get_audit_account_id())
