@@ -59,7 +59,7 @@ class GuardDutyTest(unittest.TestCase):
         # assert that guardduty delegated admin forbids deleting the detector
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
             scp_test_session_guardduty.delete_detector(DetectorId=detector_id)
-        self.assertEqual('An error occurred (BadRequestException) when calling the DeleteDetector operation: The request is rejected because member cannot disassociate from Organization administrator', str(exception.exception))
+        self.assertEqual('An error occurred (BadRequestException) when calling the DeleteDetector operation: The request is rejected because an invalid or out-of-range value is specified as an input parameter.', str(exception.exception))
 
         # assert that membership cannot be cancelled
         with self.assertRaises(botocore.exceptions.ClientError) as exception:
