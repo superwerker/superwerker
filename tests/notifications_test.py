@@ -10,6 +10,8 @@ sqs = boto3.client('sqs')
 sns = boto3.client('sns')
 ssm = boto3.client('ssm')
 
+class NoSQSMessageException(Exception): 
+    pass
 
 class NotificationsTest(unittest.TestCase):
     @staticmethod
@@ -109,7 +111,7 @@ class NotificationsTest(unittest.TestCase):
         return stack
 
     @staticmethod
-    @retry(stop_max_delay=30000, wait_fixed=5000)
+    @retry(stop_max_delay=60000, wait_fixed=5000)
     def wait_for_message(queue_url):
         res = sqs.receive_message(
             QueueUrl=queue_url,
@@ -117,7 +119,7 @@ class NotificationsTest(unittest.TestCase):
         )
 
         if res.get('Messages', None) == None:
-            raise
+            raise NoSQSMessageException
 
         return res['Messages']
 
