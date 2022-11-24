@@ -5,13 +5,12 @@ import uuid
 import itertools
 from retrying import retry
 
+
 cf = boto3.client('cloudformation')
 sqs = boto3.client('sqs')
 sns = boto3.client('sns')
 ssm = boto3.client('ssm')
 
-class NoSQSMessageException(Exception): 
-    pass
 
 class NotificationsTest(unittest.TestCase):
     @staticmethod
@@ -119,7 +118,7 @@ class NotificationsTest(unittest.TestCase):
         )
 
         if res.get('Messages', None) == None:
-            raise NoSQSMessageException
+            raise Exception('no sqs message received')
 
         return res['Messages']
 
