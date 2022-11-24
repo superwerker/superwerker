@@ -24,7 +24,7 @@ export class AttachTagPolicy extends Construct {
 
     new CustomResource(this, 'Resource', {
       serviceToken: AttachTagPolicyProvider.getOrCreate(this),
-      resourceType: 'Custom::EnableCloudFormationStacksetsOrgAccess',
+      resourceType: 'Custom::AttachTagPolicy',
       properties: {
         [POLICY]: props.policy,
         [ATTACH]: props.attach ?? true,
@@ -74,7 +74,7 @@ class AttachTagPolicyProvider extends Construct {
       }),
     );
 
-    this.provider = new cr.Provider(this, 'enable-cfn-stack-sets-org-access-provider', {
+    this.provider = new cr.Provider(this, 'attach-tag-policy', {
       onEventHandler: attachTagPolicyFn,
     });
   }
