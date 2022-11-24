@@ -5,6 +5,7 @@ import uuid
 import itertools
 from retrying import retry
 
+
 cf = boto3.client('cloudformation')
 sqs = boto3.client('sqs')
 sns = boto3.client('sns')
@@ -109,7 +110,7 @@ class NotificationsTest(unittest.TestCase):
         return stack
 
     @staticmethod
-    @retry(stop_max_delay=30000, wait_fixed=5000)
+    @retry(stop_max_delay=60000, wait_fixed=5000)
     def wait_for_message(queue_url):
         res = sqs.receive_message(
             QueueUrl=queue_url,
@@ -117,7 +118,7 @@ class NotificationsTest(unittest.TestCase):
         )
 
         if res.get('Messages', None) == None:
-            raise
+            raise Exception('no sqs message received')
 
         return res['Messages']
 
