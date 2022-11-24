@@ -8,6 +8,9 @@ const UPDATE = 'Update';
 const DELETE = 'Delete';
 const TAG_POLICY = 'TAG_POLICY';
 
+export const POLICY = 'Policy';
+export const ATTACH = 'Attach';
+
 
 class RetryableFn {
   @Retryable({
@@ -43,24 +46,24 @@ async function policyAttached(policyId: string): Promise<boolean> {
 }
 
 export async function handler(event: any, _context: any) {
-  const RequestType = event.RequestType;
-  const Properties = event.ResourceProperties;
-  const LogicalResourceId = event.LogicalResourceId;
-  const PhysicalResourceId = event.PhysicalResourceId;
-  const Policy = Properties.Policy;
-  const Attach = Properties.Attach == 'true';
+  const requestType = event.RequestType;
+  const properties = event.ResourceProperties;
+  const logicalResourceId = event.LogicalResourceId;
+  const physicalResourceId = event.PhysicalResourceId;
+  const policy = properties[POLICY];
+  const attach = properties[ATTACH];
 
   const parameters = {
-    Content: Policy,
-    Description: `superwerker - ${LogicalResourceId}`,
-    Name: LogicalResourceId,
+    Content: policy,
+    Description: `superwerker - ${logicalResourceId}`,
+    Name: logicalResourceId,
   };
 
-  const policyId = PhysicalResourceId!;
+  const policyId = physicalResourceId!;
 
-  switch (RequestType) {
+  switch (requestType) {
     case CREATE:
-      console.log(`Creating Policy: ${LogicalResourceId}`);
+      console.log(`Creating Policy: ${logicalResourceId}`);
       const response = await RetryableFn.withRetry(
         organizations.createPolicy, {
           ...parameters,
@@ -69,7 +72,7 @@ export async function handler(event: any, _context: any) {
       );
 
       const createdPolicyId = response!.Policy!.PolicySummary!.Id!;
-      if (Attach) {
+      if (attach) {
         await RetryableFn.withRetry(organizations.attachPolicy, {
           PolicyId: createdPolicyId,
           TargetId: rootId(),
@@ -77,14 +80,14 @@ export async function handler(event: any, _context: any) {
       }
       break;
     case UPDATE:
-      console.log(`Updating Policy: ${LogicalResourceId}`);
+      console.log(`Updating Policy: ${logicalResourceId}`);
       await RetryableFn.withRetry(organizations.updatePolicy, {
         PolicyId: policyId,
         ...parameters,
       });
       break;
     case DELETE:
-      console.log(`Deleting Policy: ${LogicalResourceId}`);
+      console.log(`Deleting Policy: ${logicalResourceId}`);
       // Same as above
       if (policyId.match(/p-[0-9a-z]/)) {
         if (await policyAttached(policyId)) {
@@ -100,7 +103,7 @@ export async function handler(event: any, _context: any) {
       }
       break;
     default:
-      throw new Error(`Unexpected RequestType: ${RequestType}`);
+      throw new Error(`Unexpected RequestType: ${requestType}`);
   }
   return {};
 }

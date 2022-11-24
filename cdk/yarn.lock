@@ -10,6 +10,11 @@
     "@jridgewell/gen-mapping" "^0.1.0"
     "@jridgewell/trace-mapping" "^0.3.9"
 
+"@aws-cdk/aws-lambda-python-alpha@^2.51.1-alpha.0":
+  version "2.51.1-alpha.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda-python-alpha/-/aws-lambda-python-alpha-2.51.1-alpha.0.tgz#f8cb424cf4768780dc8a044eb72c49c0d2936882"
+  integrity sha512-81gJdO5R7SOtv2v3Fy8dzAOJyUdd2lO4kXc2xhwq0bU5nM5CvYy7WED2xRLaDsvLfDTIWQFf6Imsl4o6OS25tA==
+
 "@aws-cdk/cloud-assembly-schema@2.40.0":
   version "2.40.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-2.40.0.tgz#17e1f66f1fc61094ddb857b2b5d2fe79a57891b9"

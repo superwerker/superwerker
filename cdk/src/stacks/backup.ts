@@ -3,6 +3,7 @@ import { aws_ssm as ssm, Fn, Arn, aws_cloudformation as cfn, CfnCustomResource, 
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import endent from 'endent';
+import { AttachTagPolicy } from '../constructs/attach-tag-policy';
 import { EnableCloudFormationStacksetsOrgAccess } from '../constructs/enable-cfn-stacksets-org';
 
 export class BackupStack extends NestedStack {
@@ -443,9 +444,30 @@ export class BackupStack extends NestedStack {
         },
       },
     });
-    (backupTagRemediation.node.defaultChild as CfnCustomResource).overrideLogicalId('BackupTagRemediationPublic');
+    (backupTagRemediationPublic.node.defaultChild as CfnCustomResource).overrideLogicalId('BackupTagRemediationPublic');
 
     new EnableCloudFormationStacksetsOrgAccess(this, 'EnableCloudFormationStacksetsOrgAccess');
+
+    const attachTagPolicy = new AttachTagPolicy(this, 'TagPolicy', {
+      policy: JSON.stringify({
+        tags: {
+          'superwerker:backup': {
+            tag_value: {
+              '@@assign': [
+                'none',
+                'daily',
+              ],
+            },
+            enforced_for: {
+              '@@assign': [
+                'dynamodb:table',
+                'ec2:volume',
+              ],
+            },
+          },
+        },
+      }),
+    });
   }
 }
 
