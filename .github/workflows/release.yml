@@ -11,6 +11,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-1
+
     - name: Semantic Release
       uses: cycjimmy/semantic-release-action@v2
       id: semantic
@@ -19,7 +26,7 @@ jobs:
           @semantic-release/git
           @semantic-release/changelog
         branches: |
-          ['v+([0-9])?(.{+([0-9]),x}).x', 'main', {name: 'cdk-migration', prerelease: true}]
+          ['v+([0-9])?(.{+([0-9]),x}).x', 'main', {name: 'cdk', prerelease: true}]
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -36,8 +43,6 @@ jobs:
         aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
       env:
         SUPERWERKER_VERSION: ${{ steps.semantic.outputs.new_release_version }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}
       shell: bash
       working-directory: cdk
 

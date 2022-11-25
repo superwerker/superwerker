@@ -1,5 +1,5 @@
 {
-  "branches": ["main", "next"],
+  "branches": ['v+([0-9])?(.{+([0-9]),x}).x', 'main', {name: 'cdk', prerelease: true}],
   "plugins": [
     [
       "@semantic-release/release-notes-generator",
