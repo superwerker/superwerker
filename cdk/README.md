@@ -27,5 +27,14 @@ Deploying to region=us-west-2 with cmd=['aws', 'cloudformation', 'deploy', '--st
 b'\nWaiting for changeset to be created..\n\nNo changes to deploy. Stack superwerker-cdk-bootstrap is up to date\n'
 ```
 
+# 2. CDK development
+
+The project layout is stolen from [projen](https://projen.io/api/API.html#projen-awscdk-awscdktypescriptapp).
+All CDK code resides in the folder `cdk/`.
+
+We have one stack construct per original stack, e.g. `SuperwerkerStack / superwerker.template.yaml`, `BudgetStack / budget.yaml` etc.
+
+
+
 
 
