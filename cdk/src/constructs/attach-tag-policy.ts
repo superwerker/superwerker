@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, CustomResource, custom_resources as cr, Stack } from 'aws-cdk-lib';
+import { aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, CfnCustomResource, CustomResource, custom_resources as cr, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ATTACH, POLICY } from '../functions/attach-tag-policy';
 
@@ -22,7 +22,7 @@ export class AttachTagPolicy extends Construct {
   constructor(scope: Construct, id: string, props: AttachTagPolicyProps) {
     super(scope, id);
 
-    new CustomResource(this, 'Resource', {
+    const resource = new CustomResource(this, 'AttachTagPolicyResource', {
       serviceToken: AttachTagPolicyProvider.getOrCreate(this),
       resourceType: 'Custom::AttachTagPolicy',
       properties: {
@@ -30,6 +30,7 @@ export class AttachTagPolicy extends Construct {
         [ATTACH]: props.attach ?? true,
       },
     });
+    (resource.node.defaultChild as CfnCustomResource).overrideLogicalId(id);
   }
 }
 

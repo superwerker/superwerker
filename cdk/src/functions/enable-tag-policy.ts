@@ -11,14 +11,14 @@ async function root() {
 }
 
 
-async function rootId(): Promise<string> {
+export async function rootId(): Promise<string> {
   return (await root()).Id!;
 }
 
 
 async function tagPolicyEnabled(): Promise<boolean> {
   const enabledPolicies = (await root()).PolicyTypes;
-  return enabledPolicies?.includes({ Type: TAG_POLICY, Status: 'ENABLED' }) ?? false;
+  return enabledPolicies?.some((e) => e.Type === TAG_POLICY && e.Status === 'ENABLED') ?? false;
 }
 
 
@@ -27,6 +27,8 @@ export async function handler(event: any, _context: any) {
   if (requestType == CREATE && !(await tagPolicyEnabled())) {
     const rId = await rootId();
     console.log(`Enable TAG_POLICY for root: ${rId}`);
-    await organizations.enablePolicyType({ RootId: rId, PolicyType: TAG_POLICY }).promise();
+    await organizations.enablePolicyType({
+      RootId: rId, PolicyType: TAG_POLICY,
+    }).promise();
   }
 }
