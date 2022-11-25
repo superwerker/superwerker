@@ -17,8 +17,7 @@ export class BackupStack extends NestedStack {
       onUpdate: {
         service: 'Organizations',
         action: 'describeOrganization',
-        // TODO: Do we even need that?
-        // physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
+        physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
       },
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
         resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
@@ -100,8 +99,7 @@ export class BackupStack extends NestedStack {
       onUpdate: {
         service: 'Organizations',
         action: 'listRoots',
-        // TODO: Do we even need that?
-        // physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
+        physicalResourceId: cr.PhysicalResourceId.of(Date.now().toString()),
       },
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
         resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
@@ -176,7 +174,7 @@ export class BackupStack extends NestedStack {
                         Resource: '*'
         `,
     });
-    (backupResources.node.defaultChild as cfn.CfnStackSet).overrideLogicalId('BackupResources');
+    backupResources.overrideLogicalId('BackupResources');
 
     new config.CfnOrganizationConformancePack(this, 'BackupTagsEnforcement', {
       excludedAccounts: [
@@ -422,12 +420,13 @@ export class BackupStack extends NestedStack {
         }],
       },
     });
-    (backupTagRemediation.node.defaultChild as ssm.CfnDocument).overrideLogicalId('BackupTagRemediation');
+    backupTagRemediation.overrideLogicalId('BackupTagRemediation');
 
     const backupTagRemediationPublic = new cr.AwsCustomResource(this, 'BackupTagRemediationPublic', {
       onUpdate: {
         service: 'SSM',
         action: 'modifyDocumentPermission',
+        physicalResourceId: cr.PhysicalResourceId.of('BackupTagRemediationPublic'),
         parameters: {
           Name: backupTagRemediation.ref,
           PermissionType: 'Share',
@@ -443,12 +442,16 @@ export class BackupStack extends NestedStack {
           AccountIdsToRemove: ['All'],
         },
       },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+        resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+      }),
     });
-    (backupTagRemediationPublic.node.defaultChild as CfnCustomResource).overrideLogicalId('BackupTagRemediationPublic');
+
+    (backupTagRemediationPublic.node.defaultChild?.node.defaultChild as CfnCustomResource).overrideLogicalId('BackupTagRemediationPublic');
 
     new EnableCloudFormationStacksetsOrgAccess(this, 'EnableCloudFormationStacksetsOrgAccess');
 
-    const attachTagPolicy = new AttachTagPolicy(this, 'TagPolicy', {
+    new AttachTagPolicy(this, 'TagPolicy', {
       policy: JSON.stringify({
         tags: {
           'superwerker:backup': {
@@ -469,6 +472,5 @@ export class BackupStack extends NestedStack {
       }),
     });
   }
-  (attachTagPolicy.node.defaultChild as CfnCustomResource).overrideLogicalId('TagPolicy')
 }
 
