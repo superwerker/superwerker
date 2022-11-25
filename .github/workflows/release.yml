@@ -1,5 +1,4 @@
-
-name: Release
+name: CDK release
 
 on:
   workflow_dispatch: {}
@@ -19,63 +18,26 @@ jobs:
         extra_plugins: |
           @semantic-release/git
           @semantic-release/changelog
+        branches: |
+          ['v+([0-9])?(.{+([0-9]),x}).x', 'main', {name: 'cdk-migration', prerelease: true}]
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Version the templates
-      run: scripts/versioning.sh ${{ steps.semantic.outputs.new_release_version }}
-
-    - uses: shallwefootball/s3-upload-action@master
-      name: Upload S3
-      id: S3
+    - name: cdk release
       if: steps.semantic.outputs.new_release_published == 'true'
-      with:
-        aws_key_id: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
-        aws_secret_access_key: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY}}
-        aws_bucket: ${{ secrets.RELEASES_AWS_BUCKET_NAME}}
-        source_dir: templates/
-        destination_dir: ${{ steps.semantic.outputs.new_release_version }}/templates/
+      run: |
+        pip install cfn-flip
+        yarn
+        yarn test
+        yarn synth
+        yarn publish-assets
+        cfn-flip cdk.out/SuperwerkerStack.template.json cdk.out/superwerker.template.yaml
+        aws s3 cp cdk.out/superwerker.template.yaml s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
+        aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
+      env:
+        SUPERWERKER_VERSION: ${{ steps.semantic.outputs.new_release_version }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}
+      shell: bash
+      working-directory: cdk
 
-    - name: Clone superwerker-quickstart
-      run: git clone https://superwerker-bot:${{ secrets.BOT_ACCESS_TOKEN }}@github.com/superwerker/quickstart-superwerker.git quickstart-superwerker
-  
-    - name: Configure Git, email
-      run: git config --global user.email "services+github-superwerker-bot@superluminar.io"
-  
-    - name: Configure Git, name
-      run: git config --global user.name "superwerker-bot"
-  
-    - name: sync main branch of fork with upstream
-      run: |
-        cd quickstart-superwerker \
-          && git remote add upstream https://superwerker-bot:${{ secrets.BOT_ACCESS_TOKEN }}@github.com/aws-quickstart/quickstart-superwerker.git \
-          && git fetch upstream \
-          && git reset --hard upstream/main \
-          && git push origin main
-  
-    - name: Create a new branch for the release
-      run: 'cd quickstart-superwerker && git checkout -b release/${{ steps.semantic.outputs.new_release_version }}'
-  
-    - name: Remove existing CloudFormation templates
-      run: rm -rf quickstart-superwerker/templates
-  
-    - name: Copy CloudFormation templates
-      run: cp -a templates quickstart-superwerker/
-  
-    - name: List files
-      run: ls -ahl quickstart-superwerker/templates
-  
-    - name: Create commit
-      run: 'cd quickstart-superwerker && git add templates && git commit -m "release: ${{ steps.semantic.outputs.new_release_version }}"'
-  
-    - name: Push to repository
-      run: 'cd quickstart-superwerker && git push -u origin release/${{ steps.semantic.outputs.new_release_version }}'
-  
-    - name: Create Pull Request
-      run: |
-        curl \
-          -X POST \
-          -H "Accept: application/vnd.github.v3+json" \
-          -H "Authorization: token ${{ secrets.BOT_ACCESS_TOKEN }}" \
-          https://api.github.com/repos/aws-quickstart/quickstart-superwerker/pulls \
-          -d '{"head":"superwerker:release/${{ steps.semantic.outputs.new_release_version }}", "base":"main", "title": "release: ${{ steps.semantic.outputs.new_release_version }}", "body": "Hey @davmayd @troy-ameigh, please take a look at the most recent release:\n\nhttps://github.com/superwerker/superwerker/releases/tag/v${{ steps.semantic.outputs.new_release_version }}"}'
