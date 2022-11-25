@@ -24,17 +24,14 @@ class RetryableFn {
   }
 }
 
-async function root() {
-  return (await organizations.listRoots().promise()).Roots![0];
+
+export async function rootId(): Promise<string> {
+  const root = (await organizations.listRoots().promise()).Roots![0];
+  return root.Id!;
 }
 
 
-async function rootId(): Promise<string> {
-  return (await root()).Id!;
-}
-
-
-async function policyAttached(policyId: string): Promise<boolean> {
+export async function policyAttached(policyId: string): Promise<boolean> {
   const result = await organizations.listPoliciesForTarget({
     TargetId: await rootId(),
     Filter: TAG_POLICY,
@@ -75,7 +72,7 @@ export async function handler(event: any, _context: any) {
       if (attach) {
         await RetryableFn.withRetry(organizations.attachPolicy, {
           PolicyId: createdPolicyId,
-          TargetId: rootId(),
+          TargetId: await rootId(),
         });
       }
       break;
@@ -93,7 +90,8 @@ export async function handler(event: any, _context: any) {
         if (await policyAttached(policyId)) {
           await RetryableFn.withRetry(
             organizations.detachPolicy, {
-              PolicyId: policyId, TargetId: rootId(),
+              PolicyId: policyId,
+              TargetId: await rootId(),
             },
           );
         }
