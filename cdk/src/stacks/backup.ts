@@ -469,5 +469,6 @@ export class BackupStack extends NestedStack {
       }),
     });
   }
+  (attachTagPolicy.node.defaultChild as CfnCustomResource).overrideLogicalId('TagPolicy')
 }
 
