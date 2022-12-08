@@ -1,6 +1,4 @@
-import path from 'path';
 import { aws_ssm as ssm, Fn, Arn, aws_cloudformation as cfn, CfnCustomResource, aws_config as config, aws_iam as iam, aws_s3 as s3, custom_resources as cr, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import endent from 'endent';
 import { AttachBackupPolicy } from '../constructs/attach-backup-policy';
@@ -12,10 +10,6 @@ import { EnableTagPolicy } from '../constructs/enable-tag-policy';
 export class BackupStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-    new CfnInclude(this, 'SuperwerkerTemplate', {
-      templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'backup.yaml'),
-    });
-
     const orgLookup = new cr.AwsCustomResource(this, 'OrganizationsLookup', {
       onUpdate: {
         service: 'Organizations',
