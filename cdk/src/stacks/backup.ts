@@ -3,8 +3,11 @@ import { aws_ssm as ssm, Fn, Arn, aws_cloudformation as cfn, CfnCustomResource, 
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import endent from 'endent';
+import { AttachBackupPolicy } from '../constructs/attach-backup-policy';
 import { AttachTagPolicy } from '../constructs/attach-tag-policy';
+import { EnableBackupPolicy } from '../constructs/enable-backup-policy';
 import { EnableCloudFormationStacksetsOrgAccess } from '../constructs/enable-cfn-stacksets-org';
+import { EnableTagPolicy } from '../constructs/enable-tag-policy';
 
 export class BackupStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -471,6 +474,55 @@ export class BackupStack extends NestedStack {
         },
       }),
     });
+
+    const enablePolicy = new EnableTagPolicy(this, 'TagPolicyEnable');
+    attachTagPolicy.node.addDependency(enablePolicy);
+
+
+    const attachBackupPolicy = new AttachBackupPolicy(this, 'BackupPolicy', {
+      policy: JSON.stringify({
+        plans: {
+          'superwerker-backup': {
+            regions: {
+              '@@assign': [
+                '${AWS::Region}',
+              ],
+            },
+            rules: {
+              'backup-daily': {
+                lifecycle: {
+                  delete_after_days: {
+                    '@@assign': '30',
+                  },
+                },
+                target_backup_vault_name: {
+                  '@@assign': 'Default',
+                },
+              },
+            },
+            selections: {
+              tags: {
+                'backup-daily': {
+                  iam_role_arn: {
+                    '@@assign': 'arn:${AWS::Partition}:iam::$account:role/service-role/AWSBackupDefaultServiceRole',
+                  },
+                  tag_key: {
+                    '@@assign': 'superwerker:backup',
+                  },
+                  tag_value: {
+                    '@@assign': [
+                      'daily',
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+    });
+    const enableBackupPolicy = new EnableBackupPolicy(this, 'BackupPolicyEnable');
+    attachBackupPolicy.node.addDependency(enableBackupPolicy);
   }
 }
 
