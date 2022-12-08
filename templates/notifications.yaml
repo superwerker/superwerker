@@ -57,9 +57,12 @@ Resources:
         client = boto3.client('sns')
 
         def handler(event, context):
-          id = event['detail']['responseElements']['opsItemId']
-          desc = event['detail']['requestParameters']['description']
-          title = event['detail']['requestParameters']['title']
+          response_elements = event['detail']['responseElements']
+          id = response_elements.get('OpsItemId', response_elements.get('opsItemId'))
+          request_parameters = event['detail']['requestParameters']
+          desc = request_parameters.get('Description', request_parameters.get('description'))
+          title = request_parameters.get('Title', request_parameters.get('title'))
+          assert id and title and desc
 
           url = "https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(id)
 

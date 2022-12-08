@@ -287,7 +287,10 @@ Resources:
                 - s3:PutObjectAcl
               Resource: !Sub arn:aws:s3:::superwerker-assets-*/*
             - Effect: Allow
-              Action: s3:ListBucket
+              Action:
+                - s3:ListBucket
+                - s3:GetBucketLocation
+                - s3:GetEncryptionConfiguration
               Resource: !Sub arn:aws:s3:::superwerker-assets-*
 
 
