@@ -1,4 +1,4 @@
-boto3==1.16.60
+boto3>=1.16.60,<2
 retrying
 pytest
 pytest-timeout
