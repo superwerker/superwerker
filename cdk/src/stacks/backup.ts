@@ -451,7 +451,7 @@ export class BackupStack extends NestedStack {
 
     new EnableCloudFormationStacksetsOrgAccess(this, 'EnableCloudFormationStacksetsOrgAccess');
 
-    new AttachTagPolicy(this, 'TagPolicy', {
+    const attachTagPolicy = new AttachTagPolicy(this, 'TagPolicy', {
       policy: JSON.stringify({
         tags: {
           'superwerker:backup': {

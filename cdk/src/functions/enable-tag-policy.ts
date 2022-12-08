@@ -28,7 +28,8 @@ export async function handler(event: any, _context: any) {
     const rId = await rootId();
     console.log(`Enable TAG_POLICY for root: ${rId}`);
     await organizations.enablePolicyType({
-      RootId: rId, PolicyType: TAG_POLICY,
+      RootId: rId,
+      PolicyType: TAG_POLICY,
     }).promise();
   }
 }

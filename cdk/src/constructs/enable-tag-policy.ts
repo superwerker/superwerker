@@ -3,7 +3,7 @@ import { aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, Cust
 import { Construct } from 'constructs';
 
 
-export interface AttachTagPolicyProps {
+export interface EnableTagPolicyProps {
   /**
    * The policy to create
    */
