@@ -61,14 +61,14 @@ Metadata:
 Parameters:
   Domain:
     Type: String
-    Description: Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/tree/main/docs/technical_faq.md for more information
+    Description: Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information
   Subdomain:
     Type: String
     Default: aws
-    Description: Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/tree/main/docs/technical_faq.md for more information
+    Description: Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information
   NotificationsMail:
     Type: String
-    Description: Mail address used for notifications. Please see https://github.com/superwerker/superwerker/tree/main/docs/technical_faq.md for more information
+    Description: Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information
     Default: ""
     AllowedPattern: "(^$|^.*@.*\\..*$)"
   IncludeBudget:
