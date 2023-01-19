@@ -51,7 +51,7 @@ sso_role_name = AWSAdministratorAccess
 output = json
  
 [profile SuperwerkerTestMaster]
-source_profile = VogelManuelSandboxAdmin
+source_profile = YourSandboxAdmin
 role_arn = arn:aws:iam::824014778649:role/<xyz>
 region = eu-west-1
  
