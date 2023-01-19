@@ -50,6 +50,7 @@ class EnableBackupPolicyProvider extends Construct {
       entry: path.join(__dirname, '..', 'functions', 'enable-backup-policy.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
+    (enableBackupPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyEnableCustomResource');
 
     enableBackupPolicyFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({

@@ -55,6 +55,7 @@ class AttachBackupPolicyProvider extends Construct {
       entry: path.join(__dirname, '..', 'functions', 'attach-backup-policy.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
+    (attachBackupPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyCustomResource');
 
     attachBackupPolicyFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({

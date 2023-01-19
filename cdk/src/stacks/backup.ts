@@ -103,7 +103,7 @@ export class BackupStack extends NestedStack {
       }),
     });
 
-    const backupResources = new cfn.CfnStackSet(this, 'BackupResources', {
+    new cfn.CfnStackSet(this, 'BackupResources', {
       stackSetName: 'superwerker-backup',
       permissionModel: 'SERVICE_MANAGED',
       operationPreferences: {
@@ -171,7 +171,6 @@ export class BackupStack extends NestedStack {
                         Resource: '*'
         `,
     });
-    backupResources.overrideLogicalId('BackupResources');
 
     new config.CfnOrganizationConformancePack(this, 'BackupTagsEnforcement', {
       excludedAccounts: [

@@ -55,6 +55,7 @@ class AttachTagPolicyProvider extends Construct {
       entry: path.join(__dirname, '..', 'functions', 'attach-tag-policy.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
+    (attachTagPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyCustomResource');
 
     attachTagPolicyFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({

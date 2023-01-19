@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, CustomResource, custom_resources as cr, Stack } from 'aws-cdk-lib';
+import { aws_iam as iam, aws_lambda as lambda, aws_lambda_nodejs as nodejs, CfnCustomResource, CustomResource, custom_resources as cr, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 
@@ -21,10 +21,11 @@ export class EnableTagPolicy extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    new CustomResource(this, 'Resource', {
+    const enableTagPolicyResource = new CustomResource(this, 'Resource', {
       serviceToken: EnableTagPolicyProvider.getOrCreate(this),
       resourceType: 'Custom::EnableTagPolicies',
     });
+    (enableTagPolicyResource.node.defaultChild as CfnCustomResource).overrideLogicalId(id);
   }
 }
 
@@ -49,6 +50,7 @@ class EnableTagPolicyProvider extends Construct {
       entry: path.join(__dirname, '..', 'functions', 'enable-tag-policy.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
+    (enableTagPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationPublicCustomResource');
 
     enableTagPolicyFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({
