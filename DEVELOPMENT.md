@@ -154,7 +154,7 @@ Creating a PR will trigger the [build job](tests/build.yaml) and run the test su
 
 ## Releasing
 
-We are using the [semantic-release-action](https://github.com/cycjimmy/semantic-release-action), so the plugin determines which version it will cut based on the semantic commit messages (see the format [here](https://github.com/semantic-release/semantic-release)) from the last release until now. 
+We are using the [semantic-release-action](https://github.com/cycjimmy/semantic-release-action), so the plugin determines which version it will cut based on the conventional commit messages [format](https://www.conventionalcommits.org/) from the last release until now. 
 
 We do not have local git hooks for this repository, however we ensure the correct commit message with a GitHub action. Note: you always modify your commit messages afterwards via [git commit --amend](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History)
 
