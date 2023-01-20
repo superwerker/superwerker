@@ -18,7 +18,7 @@ export class BudgetStack extends NestedStack {
     });
 
     // BudgetLambda
-    const budgetUpdaterFn = new pythonLambda.PythonFunction(this, 'enable-cfn-stack-sets-org-access-fn', {
+    const budgetUpdaterFn = new pythonLambda.PythonFunction(this, 'BudgetLambda', {
       entry: path.join(__dirname, '..', 'functions', 'budget_updater'),
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_9,
@@ -26,6 +26,7 @@ export class BudgetStack extends NestedStack {
         Stackname: Stack.of(this).stackName,
       },
     });
+    (budgetUpdaterFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BudgetLambda');
 
     const rule = new Rule(this, 'ScheduleBudgetNotification', {
       // cron(0 0 L * ? *)
@@ -43,8 +44,9 @@ export class BudgetStack extends NestedStack {
 
     // BudgetNotification + BudgetNotificationPolicy
     const budgetNotification = new sns.Topic(this, 'BudgetNotification');
+    (budgetNotification.node.defaultChild as sns.CfnTopic).overrideLogicalId('BudgetNotification');
 
-    new sns.TopicPolicy(this, 'BudgetNotificationPolicy', {
+    const budgetNotificationPolicy = new sns.TopicPolicy(this, 'BudgetNotificationPolicy', {
       topics: [budgetNotification],
       policyDocument: new iam.PolicyDocument({
         statements: [
@@ -57,9 +59,10 @@ export class BudgetStack extends NestedStack {
         ],
       }),
     });
+    (budgetNotificationPolicy.node.defaultChild as sns.CfnTopicPolicy).overrideLogicalId('BudgetNotificationPolicy');
 
     // BudgetAlarm
-    new cloudwatch.Alarm(this, 'BudgetAlarm', {
+    const budgetAlarm = new cloudwatch.Alarm(this, 'BudgetAlarm', {
       alarmDescription: 'Superwerker default budget forecast exceed previous three months',
       comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
       evaluationPeriods: 1,
@@ -75,6 +78,7 @@ export class BudgetStack extends NestedStack {
       threshold: 0,
       treatMissingData: cloudwatch.TreatMissingData.MISSING,
     });
+    (budgetAlarm.node.defaultChild as cloudwatch.CfnAlarm).overrideLogicalId('BudgetAlarm');
 
 
     // BudgetReport
