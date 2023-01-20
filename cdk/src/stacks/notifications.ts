@@ -11,9 +11,10 @@ export class NotificationsStack extends NestedStack {
     // NotificationTopic
     const notificationTopic = new sns.Topic(this, 'NotificationTopic');
     notificationTopic.addSubscription(new subscriptions.EmailSubscription(props.parameters!.NotificationsMail));
+    (notificationTopic.node.defaultChild as sns.CfnTopic).overrideLogicalId('NotificationTopic');
 
     // NotificationOpsItemCreated
-    const notificationOpsItemCreatedFn = new pythonLambda.PythonFunction(this, 'NotificationOpsItemCreatedFn', {
+    const notificationOpsItemCreatedFn = new pythonLambda.PythonFunction(this, 'NotificationOpsItemCreated', {
       entry: path.join(__dirname, '..', 'functions', 'notification_opsItem_created'),
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_9,
@@ -21,6 +22,7 @@ export class NotificationsStack extends NestedStack {
         TOPIC_ARN: notificationTopic.topicArn,
       },
     });
+    (notificationOpsItemCreatedFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('NotificationOpsItemCreated');
 
     const snsPublishMessagePolicy = new iam.PolicyStatement({
       actions: ['sns:Publish'],
