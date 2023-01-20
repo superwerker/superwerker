@@ -36,6 +36,7 @@ jobs:
         aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
       env:
         SUPERWERKER_VERSION: ${{ steps.semantic.outputs.new_release_version }}
+        AWS_DEFAULT_REGION: eu-central-1
         AWS_ACCESS_KEY_ID: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}
       shell: bash
