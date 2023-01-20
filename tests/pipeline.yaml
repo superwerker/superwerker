@@ -200,7 +200,7 @@ Resources:
         ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         Type: LINUX_CONTAINER
         EnvironmentVariables:
           - Name: ROOT_MAIL_DOMAIN
@@ -280,6 +280,19 @@ Resources:
               Effect: Allow
               Action: s3:ListBucket
               Resource: !Sub ${ReleasesBucket.Arn}
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+                - s3:PutObjectAcl
+              Resource: !Sub arn:aws:s3:::superwerker-assets-*/*
+            - Effect: Allow
+              Action:
+                - s3:ListBucket
+                - s3:GetBucketLocation
+                - s3:GetEncryptionConfiguration
+              Resource: !Sub arn:aws:s3:::superwerker-assets-*
+
 
   DeploymentBucketUserAccessKey:
     Type: AWS::IAM::AccessKey
