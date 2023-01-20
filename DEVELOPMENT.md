@@ -54,8 +54,13 @@ output = json
 source_profile = YourSandboxAdmin
 role_arn = arn:aws:iam::824014778649:role/<xyz>
 region = eu-west-1
+
+# login to you SSO provider
+export AWS_PROFILE=YourSandboxAdmin
+# a browser window should open
+aws sso login
  
-# test via if you get a session
+# test the credential chain if you get a session
 aws sts get-caller-identity --profile SuperwerkerTestMaster --no-cli-pager
 ```
 
