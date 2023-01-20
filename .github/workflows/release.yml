@@ -1,4 +1,4 @@
-name: CDK release
+name: Release
 
 on:
   workflow_dispatch: {}
@@ -11,7 +11,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Semantic Release
+    - name: Bounce version and create git tags
       uses: cycjimmy/semantic-release-action@v3
       id: semantic
       with:
@@ -23,7 +23,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: cdk release
+    - name: Build and publish 
       if: steps.semantic.outputs.new_release_published == 'true'
       run: |
         pip install cfn-flip
