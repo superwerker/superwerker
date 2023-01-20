@@ -5,12 +5,17 @@
       "@semantic-release/release-notes-generator",
       {
         "writerOpts": {
-          "mainTemplate": "{{> header}}\n\n- [View template](https://superwerker-releases.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml)\n- [Quick install](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-releases.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml&param_QSS3BucketName=superwerker-releases&param_QSS3BucketRegion=eu-west-1&param_QSS3KeyPrefix={{version}}/)\n- [Update instructions](https://github.com/superwerker/superwerker#how-do-i-receive-updates)\n\n{{#each commitGroups}}\n\n{{#if title}}\n### {{title}}\n\n{{/if}}\n{{#each commits}}\n{{> commit root=@root}}\n{{/each}}\n{{/each}}\n\n{{> footer}}\n"
+          "mainTemplate": "{{> header}}\n\n- [View template](https://superwerker-releases.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml)\n- [Quick install](https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?stackName=superwerker&templateURL=https://superwerker-releases.s3.amazonaws.com/{{version}}/templates/superwerker.template.yaml)\n- [Update instructions](https://github.com/superwerker/superwerker#how-do-i-receive-updates)\n\n{{#each commitGroups}}\n\n{{#if title}}\n### {{title}}\n\n{{/if}}\n{{#each commits}}\n{{> commit root=@root}}\n{{/each}}\n{{/each}}\n\n{{> footer}}\n"
         }
       }
     ],
     [
       "@semantic-release/github"
-    ]
+    ],
+    [
+    "@semantic-release/commit-analyzer", 
+    {
+      "preset": "conventionalcommits"
+    }
   ]
 }

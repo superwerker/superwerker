@@ -16,7 +16,23 @@ class DeployError(Exception):
 
 cfn = boto3.client("cloudformation")
 s = Session()
-regions = s.get_available_regions('s3')
+regions = [ 
+    "ap-northeast-1",
+    "ap-northeast-2",
+    "ap-south-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ca-central-1",
+    "eu-central-1",
+    "eu-north-1",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "sa-east-1",
+    "us-east-1",
+    "us-east-2",
+    "us-west-2"
+]
 
 template_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cdk-bootstrap.yaml")
 for region in regions:
