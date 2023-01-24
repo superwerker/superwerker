@@ -6,6 +6,8 @@
     "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.4.2",
+    "@commitlint/config-conventional": "^17.4.2",
     "@types/jest": "^29.2.6",
     "@types/node": "^18.11.18",
     "@typescript-eslint/eslint-plugin": "^5.48.2",
