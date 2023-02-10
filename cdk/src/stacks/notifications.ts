@@ -1,6 +1,6 @@
 import path from 'path';
 import * as pythonLambda from '@aws-cdk/aws-lambda-python-alpha';
-import { NestedStack, NestedStackProps, aws_events as events, aws_iam as iam, aws_lambda as lambda, aws_sns as sns, aws_sns_subscriptions as subscriptions, CfnOutput } from 'aws-cdk-lib';
+import { NestedStack, NestedStackProps, aws_events as events, aws_iam as iam, aws_lambda as lambda, aws_sns as sns, aws_sns_subscriptions as subscriptions, CfnOutput, CfnParameter } from 'aws-cdk-lib';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { Construct } from 'constructs';
 
@@ -8,9 +8,13 @@ export class NotificationsStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
+    const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
+      type: 'String',
+    });
+
     // NotificationTopic
     const notificationTopic = new sns.Topic(this, 'NotificationTopic');
-    notificationTopic.addSubscription(new subscriptions.EmailSubscription(props.parameters!.NotificationsMail));
+    notificationTopic.addSubscription(new subscriptions.EmailSubscription(notificationsMail.valueAsString));
     (notificationTopic.node.defaultChild as sns.CfnTopic).overrideLogicalId('NotificationTopic');
 
     // NotificationOpsItemCreated
