@@ -11,9 +11,9 @@ export class UnderTestStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     this.inner = new NotificationsStack(this, 'stack', {
-        parameters: {
-            NotificationsMail: "example@email.com",
-        },
+      parameters: {
+        NotificationsMail: 'example@email.com',
+      },
     });
   }
 }
