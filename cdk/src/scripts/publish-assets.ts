@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import * as path from 'path';
+import retry from 'async-retry';
 
 const REGIONS = [
   'ap-northeast-1',
@@ -26,12 +27,18 @@ const main = async () => {
   for (const region of REGIONS) {
     const command = `AWS_REGION=${region} yarn cdk-assets publish -p ${assetManifestPath}`;
     console.log(command);
-    await exec(command, (err, stdout, stderr) => {
-      if (err) {
-        console.log(stdout);
-        console.log(stderr);
-        throw new Error(err.message);
-      }
+    await retry(async () => {
+      await exec(command, (err, stdout, stderr) => {
+        if (err) {
+          console.log(stdout);
+          console.log(stderr);
+          throw new Error(err.message);
+        }
+      });
+    }, {
+      retries: 5,
+      factor: 2,
+      minTimeout: 1000,
     });
   }
 };
