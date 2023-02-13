@@ -4,6 +4,8 @@ import os
 
 client = boto3.client('sns')
 
+def log(msg):
+        print(json.dumps(msg), flush=True)
 
 def handler(event, context):
     response_elements = event['detail']['responseElements']
@@ -34,6 +36,3 @@ def handler(event, context):
         Subject=message_title,
         TopicArn=os.environ['TOPIC_ARN'],
     )
-
-    def log(msg):
-        print(json.dumps(msg), flush=True)
