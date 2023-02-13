@@ -14,8 +14,8 @@ def handler(event, context):
     title = request_parameters.get('Title', request_parameters.get('title'))
     assert id and title and desc
 
-    url = "https://${AWS::Region}.console.aws.amazon.com/systems-manager/opsitems/{}".format(
-        id)
+    url = "https://{}.console.aws.amazon.com/systems-manager/opsitems/{}".format(
+        os.environ['AWS_REGION'], id)
 
     log({
         'desc': desc,
