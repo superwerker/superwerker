@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-name: CDK release
-=======
 name: Release
->>>>>>> main
 
 on:
   workflow_dispatch: {}
