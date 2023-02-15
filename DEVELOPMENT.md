@@ -73,9 +73,22 @@ Make sure you are in the root directory and run the following steps to setup the
 # create a virtualenv  via 
 virtualenv venv
 # activate via source 
-./venv/bin/activate
+source venv/bin/activate
 # install boto3 via 
 pip install boto3
+```
+
+For the function in the `cdk/src/functions` folder:
+```sh
+# at the root
+virtualenv venv # if not already done
+source venv/bin/activate
+
+cd <folder-of-the-function> # e.g. cd cdk/src/functions/notification_opsItem_created/
+pip install -r requirements_dev.txt # will install in the venv in the root of the project
+pip freeze
+# vscode: CMD+Shift+P -> python select interpreter (venv folder)
+python -m pytest tests/test_index.py # to run the tests
 ```
 
 #### Create a new dev environment
@@ -99,7 +112,7 @@ ORGANIZATIONS_VENDING_MACHINE_ENDPOINT=... \
 
 #### Update the test environment
 
-This becomes handy if you directly want to deploy your changes to the test environment:
+This becomes handy if you directly want to deploy your changes to the **old** test environment with the `yaml` files:
 
 ```bash
 SOURCE_PROFILE=... \
@@ -108,12 +121,36 @@ SOURCE_PROFILE=... \
   ./tests/update-test-env.sh
 ```
 
+For the `cdk` stack
+```bash
+# we assume you have your environment variables set
+# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN
+SOURCE_PROFILE=... \
+  SUPERWERKER_REGION=uk-east-1 \
+  AWS_ACCOUNT_ID=... \
+  ./tests/update-test-env-cdk.sh
+```
+
+and for `kreuzwerker` or any other party assuming a role in the `SuperwerkerTestMaster` account:
+
+```bash
+SOURCE_PROFILE=YourSandboxAdmin \
+  ROLE_TO_ASSUME=<xyz> \
+  SUPERWERKER_REGION=uk-east-1 \
+  AWS_ACCOUNT_ID=... \
+  ./tests/update-test-env-cdk.sh
+```
+
 #### Run tests
 
-This runs the python integration tests. Also run `yarn test` before for the unit tests
+This runs the python **integration** tests. Also run `yarn test` before for the unit tests (Note: they do not include the python tests for the functions)
 
 ```bash
 cd tests
+
+virtualenv venv
+./venv/bin/activate
+
 ACCOUNT_FACTORY_ACCOUNT_ID=... \
   AWS_DEFAULT_REGION=uk-east-1 \
   AWS_PROFILE=test_account_... \
@@ -129,7 +166,7 @@ This uses `firefox` and logs you in to the test account. You get the `AWS_ACCOUN
  
 ```bash
 SUPERWERKER_REGION=uk-east-1 \
-  SOURCE_PROFILE=... \
+  SOURCE_PROFILE=SuperwerkerTestMaster \
   AWS_ACCOUNT_ID=... \
   ./tests/login-test-env.sh
 ```
