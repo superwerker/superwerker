@@ -73,9 +73,21 @@ Make sure you are in the root directory and run the following steps to setup the
 # create a virtualenv  via 
 virtualenv venv
 # activate via source 
-./venv/bin/activate
+source venv/bin/activate
 # install boto3 via 
 pip install boto3
+```
+
+For the function in the `cdk/src/functions` folder:
+```sh
+# at the root
+virtualenv venv # if not already done
+source venv/bin/activate
+
+cd <folder-of-the-function>
+pip install -r requirements_dev.txt
+pip freeze
+# vscode: CMD+Shift+P -> python select interpreter (venv folder)
 ```
 
 #### Create a new dev environment

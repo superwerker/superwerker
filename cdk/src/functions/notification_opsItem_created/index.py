@@ -7,7 +7,7 @@ client = boto3.client('sns')
 def log(msg):
     print(json.dumps(msg), flush=True)
 
-def handler(event, context):
+def handler(event, _):
     response_elements = event['detail']['responseElements']
     id = response_elements.get('OpsItemId', response_elements.get('opsItemId'))
     request_parameters = event['detail']['requestParameters']
