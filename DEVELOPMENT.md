@@ -84,10 +84,11 @@ For the function in the `cdk/src/functions` folder:
 virtualenv venv # if not already done
 source venv/bin/activate
 
-cd <folder-of-the-function>
-pip install -r requirements_dev.txt
+cd <folder-of-the-function> # e.g. cd cdk/src/functions/notification_opsItem_created/
+pip install -r requirements_dev.txt # will install in the venv in the root of the project
 pip freeze
 # vscode: CMD+Shift+P -> python select interpreter (venv folder)
+python -m pytest tests/test_index.py # to run the tests
 ```
 
 #### Create a new dev environment
@@ -142,7 +143,7 @@ SOURCE_PROFILE=YourSandboxAdmin \
 
 #### Run tests
 
-This runs the python integration tests. Also run `yarn test` before for the unit tests
+This runs the python **integration** tests. Also run `yarn test` before for the unit tests (Note: they do not include the python tests for the functions)
 
 ```bash
 cd tests
