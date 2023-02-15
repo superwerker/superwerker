@@ -145,7 +145,8 @@
       {
         "devDependencies": [
           "**/test/**",
-          "**/build-tools/**"
+          "**/build-tools/**",
+          "**/scripts/**"
         ],
         "optionalDependencies": false,
         "peerDependencies": true
