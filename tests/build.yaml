@@ -74,19 +74,7 @@ Resources:
         BuildSpec: tests/buildspec.yaml
       Triggers:
         BuildType: BUILD_BATCH
-        Webhook: true
-        FilterGroups:
-        - - Type: EVENT
-            Pattern: PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED
-          - Type: COMMIT_MESSAGE
-            Pattern: !Ref SkipBuildCommitMessageRegExp
-            ExcludeMatchedPattern: true
-          - Type: ACTOR_ACCOUNT_ID
-            Pattern: !Sub
-              - ^(${AllowedGitHubAccountIDsRegExp})$
-              - AllowedGitHubAccountIDsRegExp: !Join
-                - "|"
-                - !Ref AllowedGitHubAccountIDs
+        Webhook: false
       Visibility: PUBLIC_READ
       ResourceAccessRole: !GetAtt PublicReadRole.Arn
       LogsConfig:
