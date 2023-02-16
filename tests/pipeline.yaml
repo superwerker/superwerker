@@ -282,8 +282,13 @@ Resources:
               Resource: !Sub ${ReleasesBucket.Arn}
             - Effect: Allow
               Action:
-                - codebuild:*
+                - codebuild:StartBuild
+                - codebuild:BatchGetBuilds
               Resource: arn:aws:codebuild:eu-west-1:824014778649:project/build-pull-request
+            - Effect: Allow
+              Action:
+                - logs:GetLogEvents
+              Resource: arn:aws:logs:eu-west-1:824014778649:log-group:/aws/codebuild/build-pull-request:*
             - Effect: Allow
               Action:
                 - s3:PutObject
@@ -296,7 +301,6 @@ Resources:
                 - s3:GetBucketLocation
                 - s3:GetEncryptionConfiguration
               Resource: !Sub arn:aws:s3:::superwerker-assets-*
-
 
   DeploymentBucketUserAccessKey:
     Type: AWS::IAM::AccessKey
