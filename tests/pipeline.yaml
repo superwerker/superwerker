@@ -288,7 +288,7 @@ Resources:
             - Effect: Allow
               Action:
                 - logs:GetLogEvents
-              Resource: arn:aws:logs:eu-west-1:824014778649:log-group:/aws/codebuild/build-pull-request:*
+              Resource: "*"
             - Effect: Allow
               Action:
                 - s3:PutObject
