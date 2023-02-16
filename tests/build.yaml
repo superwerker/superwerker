@@ -73,9 +73,6 @@ Resources:
         Type: GITHUB
         Location: https://github.com/superwerker/superwerker.git
         BuildSpec: tests/buildspec.yaml
-      Triggers:
-        BuildType: BUILD_BATCH
-        Webhook: false
       Visibility: PUBLIC_READ
       ResourceAccessRole: !GetAtt PublicReadRole.Arn
       LogsConfig:
