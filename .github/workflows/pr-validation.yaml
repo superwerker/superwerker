@@ -31,7 +31,6 @@ jobs:
 
   run-codebuild:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     needs: pr-conventions
     steps:
       - name: Configure AWS credentials
@@ -43,4 +42,4 @@ jobs:
       - name: Run CodeBuild
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
-          project-name: BuildAndTestProject-cF59jfsVuO1q
+          project-name: build-pull-request

@@ -46,6 +46,7 @@ Resources:
   BuildAndTestProject:
     Type: AWS::CodeBuild::Project
     Properties:
+      Name: build-pull-request
       TimeoutInMinutes: 180
       BuildBatchConfig:
         ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
