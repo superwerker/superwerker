@@ -282,6 +282,10 @@ Resources:
               Resource: !Sub ${ReleasesBucket.Arn}
             - Effect: Allow
               Action:
+                - codebuild:*
+              Resource: arn:aws:codebuild:eu-west-1:824014778649:project/build-pull-request
+            - Effect: Allow
+              Action:
                 - s3:PutObject
                 - s3:GetObject
                 - s3:PutObjectAcl
