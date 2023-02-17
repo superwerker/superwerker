@@ -46,6 +46,7 @@ Resources:
   BuildAndTestProject:
     Type: AWS::CodeBuild::Project
     Properties:
+      Name: build-pull-request
       TimeoutInMinutes: 180
       BuildBatchConfig:
         ServiceRole: !GetAtt BuildAndTestProjectRole.Arn
@@ -72,21 +73,6 @@ Resources:
         Type: GITHUB
         Location: https://github.com/superwerker/superwerker.git
         BuildSpec: tests/buildspec.yaml
-      Triggers:
-        BuildType: BUILD_BATCH
-        Webhook: true
-        FilterGroups:
-        - - Type: EVENT
-            Pattern: PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED
-          - Type: COMMIT_MESSAGE
-            Pattern: !Ref SkipBuildCommitMessageRegExp
-            ExcludeMatchedPattern: true
-          - Type: ACTOR_ACCOUNT_ID
-            Pattern: !Sub
-              - ^(${AllowedGitHubAccountIDsRegExp})$
-              - AllowedGitHubAccountIDsRegExp: !Join
-                - "|"
-                - !Ref AllowedGitHubAccountIDs
       Visibility: PUBLIC_READ
       ResourceAccessRole: !GetAtt PublicReadRole.Arn
       LogsConfig:
