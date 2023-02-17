@@ -57,9 +57,15 @@ phases:
       # wait for IAM eventual consistency
       - for i in {1..5}; do sleep 15; aws sts get-caller-identity --profile test_account_iam_user_access && break || exit 1; done
 
+      # QUICK FIX
+      - export UPDATE_FROM_LATEST_RELEASE=false
+      - export SUPERWERKER_REGION=eu-west-1
+
       # setup superwerker in vended account
       - |
         template_url=https://superwerker-deployment.s3.${TEMPLATE_REGION}.amazonaws.com/${TEMPLATE_PREFIX}/templates/superwerker.template.yaml
+        set -x
+        echo "UPDATE_FROM_LATEST_RELEASE $UPDATE_FROM_LATEST_RELEASE"
         if $UPDATE_FROM_LATEST_RELEASE; then
           latest_release=$(curl --fail --retry 10 -s https://api.github.com/repos/superwerker/superwerker/releases/latest | jq -r '.name[1:]')
           previously_released_template_url=https://superwerker-releases.s3.${TEMPLATE_REGION}.amazonaws.com/${latest_release}/templates/superwerker.template.yaml
