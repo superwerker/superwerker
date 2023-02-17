@@ -37,7 +37,8 @@
     "aws-sdk": "^2.1297.0",
     "cdk-assets": "^2.61.0",
     "constructs": "^10.1.224",
-    "uuid4": "^2.0.3"
+    "uuid4": "^2.0.3",
+    "axios": "^1.2.3"
   },
   "license": "Apache-2.0",
   "version": "0.0.0",
