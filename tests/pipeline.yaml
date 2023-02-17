@@ -202,7 +202,6 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         Type: LINUX_CONTAINER
-        PrivilegedMode: true
         EnvironmentVariables:
           - Name: ROOT_MAIL_DOMAIN
             Value: !Ref RootMailDomain
@@ -285,7 +284,7 @@ Resources:
               Action:
                 - codebuild:StartBuild
                 - codebuild:BatchGetBuilds
-              Resource: !Sub arn:aws:codebuild:eu-west-1:824014778649:project/build-pull-request
+              Resource: arn:aws:codebuild:eu-west-1:824014778649:project/build-pull-request
             - Effect: Allow
               Action:
                 - logs:GetLogEvents
@@ -312,93 +311,6 @@ Resources:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: !Ref ReleasesBucketUser
-
-  # We use GitHub actions with OIDC, see the following link for more information:
-  # https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
-  # The following resources fails to be created by CloudFormation, so we have to create them manually
-  #  GitHubOidc:
-  #    Type: AWS::IAM::OIDCProvider
-  #    Properties:
-  #      Url: https://token.actions.githubusercontent.com
-  #      ClientIdList:
-  #        - sts.amazonaws.com
-  #      ThumbprintList:
-  #        - "6938fd4d98bab03faadb97b34396831e3780aea1"
-
-  GitHubActionsSuperwerkerTestRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: gh-actions-superwerker-test
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
-            Action: sts:AssumeRoleWithWebIdentity
-            Condition:
-              StringEquals:
-               "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-              StringLike:
-               "token.actions.githubusercontent.com:sub": "repo:superwerker/superwerker:*"
-      Policies:
-        - PolicyName: 'trigger-codebuild'
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - codebuild:StartBuild
-                  - codebuild:BatchGetBuilds
-                Resource: !Sub arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/build-pull-request
-              - Effect: Allow
-                Action:
-                  - logs:GetLogEvents
-                Resource: "*"
-
-  GitHubActionsSuperwerkerReleaseRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: gh-actions-superwerker-release
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Federated: !Sub arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
-            Action: sts:AssumeRoleWithWebIdentity
-            Condition:
-              StringEquals:
-                "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-              StringLike:
-                "token.actions.githubusercontent.com:sub": "repo:superwerker/superwerker:ref:refs/heads/main"
-      Policies:
-        - PolicyName: !Sub 'publish'
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action: s3:ListObjects
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                  - s3:PutObjectAcl
-                Resource: !Sub ${ReleasesBucket.Arn}/*
-              - Effect: Allow
-                Action: s3:ListBucket
-                Resource: !Sub ${ReleasesBucket.Arn}
-              - Effect: Allow
-                Action:
-                  - s3:PutObject
-                  - s3:GetObject
-                  - s3:PutObjectAcl
-                Resource: !Sub arn:aws:s3:::superwerker-assets-*/*
-              - Effect: Allow
-                Action:
-                  - s3:ListBucket
-                  - s3:GetBucketLocation
-                  - s3:GetEncryptionConfiguration
-                Resource: !Sub arn:aws:s3:::superwerker-assets-*
 
 Outputs:
   DeploymentBucket:

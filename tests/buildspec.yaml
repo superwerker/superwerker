@@ -8,9 +8,9 @@ batch:
         variables:
           SUPERWERKER_REGION:
             - eu-west-1
-            - eu-central-1
+            #- eu-central-1
           UPDATE_FROM_LATEST_RELEASE:
-            - true
+            #- true
             - false
 
 phases:
@@ -56,6 +56,10 @@ phases:
       - aws configure --profile test_account_iam_user_access set aws_secret_access_key "${SUPERWERKER_AWS_SECRET_ACCESS_KEY}"
       # wait for IAM eventual consistency
       - for i in {1..5}; do sleep 15; aws sts get-caller-identity --profile test_account_iam_user_access && break || exit 1; done
+
+      # QUICK FIX
+      - export UPDATE_FROM_LATEST_RELEASE=false
+      - export SUPERWERKER_REGION=eu-west-1
 
       # setup superwerker in vended account
       - |
@@ -114,8 +118,8 @@ phases:
       - aws --profile test_account iam delete-user --user-name superwerker-tests || true
 
       # call sub-account closing and stack cleanup
-      - |
-        aws stepfunctions start-execution  --state-machine-arn ${SUPERWERKER_CLEANUP_STATE_MACHINE} --input '{"AWS_CROSS_ACCOUNT_ROLE_ARN": "'"${aws_cross_account_role_arn}"'", "AWS_ACCOUNT_ID": "'"${aws_account_id}"'", "SUPERWERKER_REGION": "'"${SUPERWERKER_REGION}"'"}'
+      #- |
+      #  aws stepfunctions start-execution  --state-machine-arn ${SUPERWERKER_CLEANUP_STATE_MACHINE} --input '{"AWS_CROSS_ACCOUNT_ROLE_ARN": "'"${aws_cross_account_role_arn}"'", "AWS_ACCOUNT_ID": "'"${aws_account_id}"'", "SUPERWERKER_REGION": "'"${SUPERWERKER_REGION}"'"}'
 
 reports:
   pytest_reports:
