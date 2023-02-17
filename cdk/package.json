@@ -3,7 +3,8 @@
   "scripts": {
     "synth": "cdk synth",
     "test": "jest",
-    "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts"
+    "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts",
+    "prepare": "cd .. && husky install cdk/.husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.2",
@@ -25,7 +26,8 @@
     "npm-check-updates": "^16.6.2",
     "ts-jest": "^29.0.5",
     "ts-node": "^10",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "husky": "^8.0.0"
   },
   "dependencies": {
     "@aws-cdk/aws-lambda-python-alpha": "^2.61.1-alpha.0",
