@@ -44,3 +44,9 @@ jobs:
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
           project-name: build-pull-request
+          env-vars-for-codebuild: |
+            SUPERWERKER_REGION,
+            UPDATE_FROM_LATEST_RELEASE
+        env:
+          SUPERWERKER_REGION: eu-central-1
+          UPDATE_FROM_LATEST_RELEASE: false
