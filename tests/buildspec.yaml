@@ -68,9 +68,6 @@ phases:
           aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url ${previously_released_template_url} \
               --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} \
                            ParameterKey=Subdomain,ParameterValue=${aws_account_id} \
-                           ParameterKey=QSS3BucketName,ParameterValue=superwerker-releases \
-                           ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} \
-                           ParameterKey=QSS3KeyPrefix,ParameterValue="${latest_release}/" \
                            ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} \
                --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
           sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'

@@ -37,6 +37,9 @@ brew install virtualenv python@3.11
 brew install --cask firefox
 ```
 
+For validating the commit message we use [husky](https://typicode.github.io/husky/#/) and [commitlint](https://commitlint.js.org/#/).a
+You don't need to set up anything, just run `cd cdk && yarn`. The hooks will install itself.
+
 ### AWS config
 
 - Make sure to configure your profile in your `~/.aws/config` for example like:
