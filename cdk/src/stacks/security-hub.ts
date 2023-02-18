@@ -203,19 +203,22 @@ export class SecurityHubStack extends NestedStack {
             Name: 'AdminAccountId',
             Selector: '$.AdminAccounts[0].AdminAccountId',
           }],
-          nextStep: 'EnableOrganizationAdminAccountChoice',
-        }, {
-          name: 'EnableOrganizationAdminAccountChoice',
-          action: 'aws:branch',
-          inputs: {
-            Choices: [{
-              NextStep: 'EnableSecurityHubInManagementAccount',
-              Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}',
-              StringEquals: '{{ AuditAccountId }}',
-            }],
-            Default: 'EnableOrganizationAdminAccount',
-          },
-        }, {
+          // nextStep: 'EnableOrganizationAdminAccountChoice', TODO
+          nextStep: 'EnableOrganizationAdminAccount',
+        },
+        // {
+        //   name: 'EnableOrganizationAdminAccountChoice',
+        //   action: 'aws:branch',
+        //   inputs: {
+        //     Choices: [{
+        //       NextStep: 'EnableSecurityHubInManagementAccount',
+        //       Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}',
+        //       StringEquals: '{{ AuditAccountId }}',
+        //     }],
+        //     Default: 'EnableOrganizationAdminAccount',
+        //   },
+        // },
+        {
           name: 'EnableOrganizationAdminAccount',
           action: 'aws:executeAwsApi',
           inputs: {
