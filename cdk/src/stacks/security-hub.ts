@@ -26,23 +26,23 @@ export class SecurityHubStack extends NestedStack {
           LogArchiveAWSAccountId: {
             type: 'String',
           },
-          ManagementAWSAccountId: {
-            type: 'String',
-          },
+          // ManagementAWSAccountId: {
+          //   type: 'String',
+          // },
         },
         mainSteps: [{
-          name: 'ManagementAWSAccount',
-          action: 'aws:executeAwsApi',
-          inputs: {
-            Service: 'organizations',
-            Api: 'DescribeAccount',
-            AccountId: '{{ ManagementAWSAccountId }}',
-          },
-          outputs: [{
-            Name: 'EmailAddress',
-            Selector: '$.Account.Email',
-          }],
-        }, {
+        //   name: 'ManagementAWSAccount',
+        //   action: 'aws:executeAwsApi',
+        //   inputs: {
+        //     Service: 'organizations',
+        //     Api: 'DescribeAccount',
+        //     AccountId: '{{ ManagementAWSAccountId }}',
+        //   },
+        //   outputs: [{
+        //     Name: 'EmailAddress',
+        //     Selector: '$.Account.Email',
+        //   }],
+        // },{
           name: 'LogArchiveAWSAccount',
           action: 'aws:executeAwsApi',
           inputs: {
@@ -277,10 +277,10 @@ export class SecurityHubStack extends NestedStack {
               LogArchiveAWSAccountId: [
                 '{{ LogArchiveAccountId }}',
               ],
-              ManagementAWSAccountId: [
-                Stack.of(this).account,
-                // !Sub "${AWS::AccountId}"
-              ],
+              // ManagementAWSAccountId: [
+              //   Stack.of(this).account,
+              //   // !Sub "${AWS::AccountId}"
+              // ],
             },
           },
           outputs: [{
