@@ -146,13 +146,22 @@ SOURCE_PROFILE=YourSandboxAdmin \
 
 #### Run tests
 
-This runs the python **integration** tests. Also run `yarn test` before for the unit tests (Note: they do not include the python tests for the functions)
+This runs the python **integration** tests. Also run `yarn test` before for the unit tests (Note: they do not include the python tests for the functions). You can get the `ACCOUNT_FACTORY_ACCOUNT_ID` from the pipeline. This is the id of the account
+we enroll in the test environment in the `Sandbox` OU, to check if it gets automatically added to Security Hub and GuardDuty.
 
 ```bash
 cd tests
 
 virtualenv venv
 ./venv/bin/activate
+
+ACCOUNT_FACTORY_ACCOUNT_ID=$(aws \
+  --profile test_account_... \
+  --region $SUPERWERKER_REGION \
+  cloudformation describe-stacks \
+  --stack-name superwerker-pipeline-account-factory-fixture \
+  --query "Stacks[0].Outputs[?OutputKey=='AccountId'].OutputValue" \
+  --output text)
 
 ACCOUNT_FACTORY_ACCOUNT_ID=... \
   AWS_DEFAULT_REGION=uk-east-1 \
