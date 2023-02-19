@@ -37,6 +37,7 @@ aws s3 cp ${SCRIPT_DIR}/../cdk/cdk.out/SuperwerkerStack.template.json s3://super
 unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 
 echo "----------------------------------------------------------------"
-echo "NOTE: for now update the stack by hand in firefox with new template url 'https://superwerker-deployment.s3.${superwerker_region}.amazonaws.com/${TEMPLATE_PREFIX}/templates/SuperwerkerStack.template.json'"
+# Note: the root superwerker template bucket is always in 'eu-west-1'. The substack are in each region, due to the lambda code which has to be deployed region specific.
+echo "NOTE: for now update the stack by hand in firefox with new template url 'https://superwerker-deployment.s3.eu-west-1.amazonaws.com/${TEMPLATE_PREFIX}/templates/SuperwerkerStack.template.json'"
 # we update the stack in the AWS account under test
 #aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation update-stack --stack-name superwerker --template-url "https://superwerker-deployment.s3.${superwerker_region}.amazonaws.com/${TEMPLATE_PREFIX}/templates/SuperwerkerStack.template.json"  --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-cli-pager                                                                                                                                          
