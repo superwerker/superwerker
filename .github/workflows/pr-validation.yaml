@@ -32,6 +32,7 @@ jobs:
   run-codebuild:
     runs-on: ubuntu-latest
     needs: pr-conventions
+    timeout-minutes: 180 #3h as test run longer than the default timeout of 1h 
     permissions:
       id-token: write
     steps:
