@@ -88,14 +88,15 @@ export class BudgetStack extends NestedStack {
         timeUnit: 'MONTHLY',
 
         // TODO see https://github.com/superwerker/superwerker/discussions/285
-        // could replace the lambda func
-        autoAdjustData: {
-          autoAdjustType: 'FORECAST',
+        // auto adjust could replace the lambda func
 
-          historicalOptions: {
-            budgetAdjustmentPeriod: 3, // take the past 3 months for the moving average
-          },
-        },
+        // autoAdjustData: {
+        //   autoAdjustType: 'FORECAST',
+
+        //   historicalOptions: {
+        //     budgetAdjustmentPeriod: 3, // take the past 3 months for the moving average
+        //   },
+        // },
         budgetLimit: {
           amount: budgetLimitInUSD.valueAsNumber,
           unit: 'USD',
