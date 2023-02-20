@@ -17,8 +17,10 @@ phases:
   build:
     commands:
       # vend fresh account/org
+      - python -m venv .venv
+      - . .venv/bin/activate
       - pip3 install -r tests/requirements.txt
-      - pip3 install awscli --upgrade
+      - export PATH=/usr/local/bin:${PATH}
       - curl --version
       - aws --version
       - ovm_result=$(curl --fail --retry 10 -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
@@ -58,15 +60,14 @@ phases:
       # setup superwerker in vended account
       - |
         template_url=https://superwerker-deployment.s3.${TEMPLATE_REGION}.amazonaws.com/${TEMPLATE_PREFIX}/templates/superwerker.template.yaml
+        set -x
+        echo "UPDATE_FROM_LATEST_RELEASE $UPDATE_FROM_LATEST_RELEASE"
         if $UPDATE_FROM_LATEST_RELEASE; then
           latest_release=$(curl --fail --retry 10 -s https://api.github.com/repos/superwerker/superwerker/releases/latest | jq -r '.name[1:]')
           previously_released_template_url=https://superwerker-releases.s3.${TEMPLATE_REGION}.amazonaws.com/${latest_release}/templates/superwerker.template.yaml
           aws --profile test_account_iam_user_access --region ${SUPERWERKER_REGION} cloudformation create-stack --stack-name superwerker --template-url ${previously_released_template_url} \
               --parameters ParameterKey=Domain,ParameterValue=${ROOT_MAIL_DOMAIN} \
                            ParameterKey=Subdomain,ParameterValue=${aws_account_id} \
-                           ParameterKey=QSS3BucketName,ParameterValue=superwerker-releases \
-                           ParameterKey=QSS3BucketRegion,ParameterValue=${TEMPLATE_REGION} \
-                           ParameterKey=QSS3KeyPrefix,ParameterValue="${latest_release}/" \
                            ParameterKey=NotificationsMail,ParameterValue=root+notifications@${aws_account_id}.${ROOT_MAIL_DOMAIN} \
                --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --disable-rollback
           sleep 10 # work around race condition when multiple aws cli processes want to create the cache: [Errno 17] File exists: '/root/.aws/cli/cache'

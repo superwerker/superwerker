@@ -1,7 +1,11 @@
-name: CDK release
+name: Release
 
 on:
   workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   build:
@@ -9,21 +13,26 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - name: Semantic Release
-      uses: cycjimmy/semantic-release-action@v2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-region: eu-central-1
+        role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-release
+
+    - name: Bounce version and create git tags
+      uses: cycjimmy/semantic-release-action@v3
       id: semantic
       with:
         extra_plugins: |
           @semantic-release/git
           @semantic-release/changelog
-        branches: |
-          ['v+([0-9])?(.{+([0-9]),x}).x', 'main', {name: 'cdk-migration', prerelease: true}]
+          conventional-changelog-conventionalcommits
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: cdk release
+    - name: Build and publish
       if: steps.semantic.outputs.new_release_published == 'true'
       run: |
         pip install cfn-flip
@@ -36,8 +45,7 @@ jobs:
         aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
       env:
         SUPERWERKER_VERSION: ${{ steps.semantic.outputs.new_release_version }}
-        AWS_ACCESS_KEY_ID: ${{ secrets.RELEASES_AWS_ACCESS_KEY }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.RELEASES_AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: eu-central-1
       shell: bash
       working-directory: cdk
 

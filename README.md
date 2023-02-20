@@ -106,8 +106,6 @@ We plan to roll-out releases via GitHub releases. The update is then deployed vi
 1. Choose `Replace current template`
 1. For `Amazon S3 URL`, copy the link to the latest version of the template e.g. "https://superwerker-releases.s3.amazonaws.com/0.13.0/templates/superwerker.template.yaml", the latest version number can be found here: [Github Releases](https://github.com/superwerker/superwerker/releases)
 1. Click `Next`
-1. Ensure the parameter `QSS3BucketName` is set to `superwerker-releases`
-1. Change the parameter `QSS3KeyPrefix` to the current version number e.g. `0.13.0/`
 1. Click `Next`
 1. Click `Next` again
 1. Tick the boxes acknowledging that CloudFormation might create IAM resources such as Roles and Policies
@@ -157,6 +155,20 @@ Some of the infrastructure that superwerker sets up carries out changes to exist
 ### Can superwerker also handle network/VPC and workloads?
 
 superwerker is initially specialised in a basic AWS set-up. An extension to best practices in the network and workload area is planned. Please send us feedback/feature requests in our GitHub repository.
+
+## Technical FAQ
+
+### Why do I need a domain and subdomain
+
+They are only used for the RootMail feature. These values have no relevance for the domains of your final applications and workloads.
+In most cases the domain will be `example.com` and the subdomain `aws`.
+You must have the possibility to add an `NS` entry for `aws.example.com` in your domain registrar console, otherwise the superwerker installation will not succeed.
+
+### What kind of Notifications are sent to the NotificationMail?
+
+At the moment, those are notifications about new OpsItems. Those OpsItems are created from the RootMail feature. So these notifications are about new created AWS accounts or requested password resets.
+
+In the future there might be more notifications, but nothing planned yet.
 
 ## Design decisions
 

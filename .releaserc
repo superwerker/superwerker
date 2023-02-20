@@ -11,6 +11,12 @@
     ],
     [
       "@semantic-release/github"
+    ],
+    [
+      "@semantic-release/commit-analyzer", 
+      {
+        "preset": "conventionalcommits"
+      }
     ]
   ]
 }
