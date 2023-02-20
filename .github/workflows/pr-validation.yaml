@@ -41,6 +41,7 @@ jobs:
         with:
           aws-region: eu-west-1
           role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
+          role-duration-seconds: 14400 #4h as well
       - name: Run CodeBuild
         uses: aws-actions/aws-codebuild-run-build@v1
         with:
