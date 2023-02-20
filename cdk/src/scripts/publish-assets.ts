@@ -36,7 +36,7 @@ const main = async () => {
         }
       });
     }, {
-      retries: 5,
+      retries: 8,
       factor: 2,
       minTimeout: 1000,
     });
