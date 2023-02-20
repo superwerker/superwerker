@@ -29,7 +29,7 @@ export class EnableControltower extends Construct {
         AUDIT_AWS_ACCOUNT_EMAIL: props.auditAwsAccountEmail,
       },
     });
-    (resource.node.defaultChild as CfnCustomResource).overrideLogicalId(id)
+    (resource.node.defaultChild as CfnCustomResource).overrideLogicalId(id);
   }
 }
 
@@ -47,7 +47,7 @@ class EnableControltowerProvider extends Construct {
 
   private readonly provider: cr.Provider;
 
-  constructor(scope: Construct, id: string) {
+  private constructor(scope: Construct, id: string) {
     super(scope, id);
     const fnRole = new iam.Role(this, 'SetupControlTowerCustomResourceRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
