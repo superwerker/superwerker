@@ -4,25 +4,21 @@ import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { BUNDLING_STACKS } from 'aws-cdk-lib/cx-api';
 import { Construct } from 'constructs';
-import { NotificationsStack } from '../src/stacks/notifications';
+import { BudgetStack } from '../src/stacks/budget';
 
 export class UnderTestStack extends Stack {
   public readonly inner: Stack;
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
-    this.inner = new NotificationsStack(this, 'stack', {
-      parameters: {
-        NotificationsMail: 'example@email.com',
-      },
-    });
+    this.inner = new BudgetStack(this, 'stack', {});
   }
 }
 
 export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
-    new CfnInclude(this, 'NotificationsTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'notifications.yaml'),
+    new CfnInclude(this, 'BudgetUpdaterTemplate', {
+      templateFile: path.join(__dirname, '..', '..', 'templates', 'budget.yaml'),
     });
   }
 }
@@ -63,9 +59,11 @@ describe('resources', () => {
     }
 
     // check that parameters match the original ones
-    if (resourceProps.Properties.Parameters) {
-      for (const param of Object.keys(resourceProps.Properties.Parameters)) {
-        expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Properties', 'Parameters', param]);
+    if (resourceProps.Properties) {
+      if (resourceProps.Properties.Parameters) {
+        for (const param of Object.keys(resourceProps.Properties.Parameters)) {
+          expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Properties', 'Parameters', param]);
+        }
       }
     }
 

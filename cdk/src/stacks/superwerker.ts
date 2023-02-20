@@ -7,6 +7,7 @@ import {
   StackProps,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { GenerateEmailAddress } from '../constructs/generate-email-address';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
@@ -16,7 +17,6 @@ import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
-import { GenerateEmailAddress } from '../constructs/generate-email-address';
 
 export interface SuperwerkerStackProps extends StackProps{
   readonly version?: string;
@@ -38,20 +38,25 @@ export class SuperwerkerStack extends Stack {
       },
     };
 
+    // keep these around so we can still deploy the stack with the same parameters
+    new CfnParameter(this, 'QSS3BucketName', { default: '' });
+    new CfnParameter(this, 'QSS3BucketRegion', { default: '' });
+    new CfnParameter(this, 'QSS3KeyPrefix', { default: '' });
+
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
-      description: 'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description: 'Domain used for root mail feature',
     });
 
     const subdomain = new CfnParameter(this, 'Subdomain', {
       type: 'String',
-      description: 'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description: 'Subdomain used for root mail feature',
       default: 'aws',
     });
 
     const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
       type: 'String',
-      description: 'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description: 'Mail address used for notifications',
       default: '',
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });

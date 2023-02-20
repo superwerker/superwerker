@@ -17,4 +17,4 @@ template_prefix=${git_branch}/
 
 aws --profile ${SOURCE_PROFILE} s3 sync ${SCRIPT_DIR}/../templates s3://superwerker-deployment/${git_branch}/templates
 
-aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file ${SCRIPT_DIR}/../templates/superwerker.template.yaml --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
+aws --profile test_account_${AWS_ACCOUNT_ID} --region ${superwerker_region} cloudformation deploy --stack-name superwerker --template-file ${SCRIPT_DIR}/../templates/superwerker.template.yaml --parameter-overrides QSS3BucketName=${template_bucket_name} QSS3BucketRegion=${template_region} QSS3KeyPrefix=${template_prefix} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM --no-fail-on-empty-changeset
