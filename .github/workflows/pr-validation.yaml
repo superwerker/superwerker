@@ -3,7 +3,7 @@ on:
   pull_request:
     types:
       - opened
-      - edited
+      #- edited # disabled on purpose
       - reopened
       - synchronize
 jobs:
