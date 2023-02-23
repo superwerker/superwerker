@@ -29,6 +29,21 @@ const context = {
   [BUNDLING_STACKS]: [],
 };
 
+describe('parameters', () => {
+  const app = new App({ context });
+  const originalStack = new OriginalStack(app, 'original', {});
+  const stack = new UnderTestStack(app, 'stack', {}).inner;
+  const expectedParameters = Template.fromStack(originalStack).toJSON().Parameters as { [key: string]: { [key: string]: string } };
+
+  // CDK adds the BootstrapVersion parameter to all rootstacks. We don't want to test that in nested stacks, where it is not set.
+  for (const key in expectedParameters) {
+    if (key == 'BootstrapVersion') delete expectedParameters[key];
+  }
+  test.each(Object.entries(expectedParameters))('parameter: %p', (param, value) => {
+    Template.fromStack(stack).hasParameter(param, value);
+  });
+});
+
 describe('resources', () => {
   const app = new App({ context });
   const originalStack = new OriginalStack(app, 'original', {});

@@ -8,10 +8,10 @@ export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const logArchiveAWSAccountEmail = new CfnParameter(this, 'LogArchiveAWSAccount', {
+    const logArchiveAWSAccountEmail = new CfnParameter(this, 'LogArchiveAWSAccountEmail', {
       type: 'String',
     });
-    const auditAWSAccountEmail = new CfnParameter(this, 'AuditAWSAccount', {
+    const auditAWSAccountEmail = new CfnParameter(this, 'AuditAWSAccountEmail', {
       type: 'String',
     });
 
