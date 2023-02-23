@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as pythonLambda from '@aws-cdk/aws-lambda-python-alpha';
-import { aws_lambda as lambda, CfnCustomResource, CustomResource, Stack } from 'aws-cdk-lib';
+import { aws_lambda as lambda, CfnCustomResource, CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -63,6 +63,7 @@ class EnableControltowerProvider extends Construct {
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_9,
       role: fnRole,
+      timeout: Duration.seconds(900),
     });
     (enableControltowerFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SetupControlTowerCustomResource');
 
