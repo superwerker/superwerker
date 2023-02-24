@@ -28,6 +28,17 @@ describe('superwerker bootstrap function', () => {
   });
 
   it('puts parameters for each account and sends events', async () => {
+    spySSMPutParameter.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve();
+      },
+    }));
+    spyEventBridgePutEvents.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve();
+      },
+    }));
+
     const event = {
       accounts: [{
         accountName: 'test account name',
