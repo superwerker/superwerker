@@ -6,7 +6,6 @@ const ssm = new AWS.SSM();
 const events = new AWS.EventBridge();
 
 export async function handler(event: any, _context: any) {
-  console.log(JSON.stringify(event));
   for (const account of event.accounts) {
     const name = `/superwerker/account_id_${(account.accountName as string).toLowerCase().replace(/ /g, '')}`;
 
