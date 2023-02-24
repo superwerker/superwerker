@@ -54,7 +54,7 @@ export class ControlTowerStack extends NestedStack {
         resources: [
           Arn.format(
             {
-              service: 'event',
+              service: 'events',
               resource: 'event-bus',
               resourceName: 'default',
             },
