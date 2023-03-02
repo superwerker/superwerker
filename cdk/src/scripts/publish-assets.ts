@@ -25,7 +25,7 @@ const REGIONS = [
 const main = async () => {
   const assetManifestPath = path.resolve(__dirname, '..', '..', 'cdk.out', 'SuperwerkerStack.assets.json');
   for (const region of REGIONS) {
-    const command = `AWS_REGION=${region} yarn cdk-assets publish -p ${assetManifestPath}`;
+    const command = `AWS_REGION=${region} yarn cdk-assets publish -v -p ${assetManifestPath}`;
     console.log(command);
     await retry(async () => {
       await exec(command, (err, stdout, stderr) => {
