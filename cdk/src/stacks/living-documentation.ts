@@ -1,8 +1,9 @@
 import path from 'path';
-import * as pythonLambda from '@aws-cdk/aws-lambda-python-alpha';
 import { NestedStack, NestedStackProps, aws_lambda as lambda, aws_iam as iam, Duration, Arn, ArnFormat, CfnParameter } from 'aws-cdk-lib';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+
 import { Construct } from 'constructs';
 
 export class LivingDocumentationStack extends NestedStack {
@@ -14,10 +15,10 @@ export class LivingDocumentationStack extends NestedStack {
     });
 
     // DashboardGeneratorFunction
-    const dashboardGeneratorFunction = new pythonLambda.PythonFunction(this, 'DashboardGeneratorFunction', {
-      entry: path.join(__dirname, '..', 'functions', 'living_documentation_dashboard_generator'),
+    const dashboardGeneratorFunction = new NodejsFunction(this, 'DashboardGeneratorFunction', {
+      entry: path.join(__dirname, '..', 'functions', 'living_documentation_dashboard_generator.ts'),
       handler: 'handler',
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.NODEJS_16_X,
       environment: {
         SUPERWERKER_DOMAIN: superwerkerDomain.valueAsString,
       },
