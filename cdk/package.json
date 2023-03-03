@@ -2,7 +2,7 @@
   "name": "superwerker-cdk-poc",
   "scripts": {
     "synth": "cdk synth",
-    "test": "jest",
+    "test": "make test && jest --silent",
     "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts",
     "prepare": "cd .. && husky install cdk/.husky"
   },
