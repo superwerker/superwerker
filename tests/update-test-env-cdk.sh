@@ -12,6 +12,7 @@ TEMPLATE_PREFIX=build/${git_long_commit_hash}
 export SUPERWERKER_VERSION=${git_long_commit_hash}
 
 cd ${SCRIPT_DIR}/../cdk
+yarn
 yarn synth
 
 # if you have to assume a role in the 'SuperwerkerTestMaster' AWS account
