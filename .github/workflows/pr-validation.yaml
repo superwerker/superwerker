@@ -51,4 +51,4 @@ jobs:
             UPDATE_FROM_LATEST_RELEASE
         env:
           SUPERWERKER_REGION: eu-central-1
-          UPDATE_FROM_LATEST_RELEASE: false
+          UPDATE_FROM_LATEST_RELEASE: true
