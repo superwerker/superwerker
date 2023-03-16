@@ -16,18 +16,12 @@ batch:
 phases:
   build:
     commands:
-      # vend fresh account/org
+      # python setup
       - python -m venv .venv
       - . .venv/bin/activate
       - pip3 install -r tests/requirements.txt
       - export PATH=/usr/local/bin:${PATH}
-      - curl --version
-      - aws --version
-      - ovm_result=$(curl --fail --retry 10 -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
-      - aws_account_id=$(echo $ovm_result | jq -r .account_id)
-      - aws_cross_account_role_arn=$(echo $ovm_result | jq -r .cross_account_role)
-      - echo AccountId ${aws_account_id} - Cross Account Role ${aws_cross_account_role_arn}
-
+      
       # CDK synth && publish
       - export TEMPLATE_PREFIX=build/${CODEBUILD_SOURCE_VERSION}
       - export SUPERWERKER_VERSION=${CODEBUILD_SOURCE_VERSION}
@@ -39,6 +33,14 @@ phases:
       - aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-deployment/${TEMPLATE_PREFIX}/templates/superwerker.template.yaml
       - aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-deployment/${TEMPLATE_PREFIX}/templates/
       - cd -
+      
+      # vend fresh account/org
+      - curl --version
+      - aws --version
+      - ovm_result=$(curl --fail --retry 10 -s ${ORGANIZATIONS_VENDING_MACHINE_ENDPOINT})
+      - aws_account_id=$(echo $ovm_result | jq -r .account_id)
+      - aws_cross_account_role_arn=$(echo $ovm_result | jq -r .cross_account_role)
+      - echo AccountId ${aws_account_id} - Cross Account Role ${aws_cross_account_role_arn}
 
       # setup AWS CLI to talk to vended account
       - aws configure --profile test_account set role_arn $aws_cross_account_role_arn
