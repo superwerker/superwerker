@@ -29,7 +29,7 @@ on:
         - us-east-2
         - us-west-2
       update-from-latest-release:
-        description: 'False if it is a fresh superwerker installation, true if the installation shall be updated from the last release version'
+        description: 'Check the box for TRUE if the installation shall be updated from the last release version, leave it for FALSE (default) if it shall be fresh superwerker installation'
         required: true
         type: boolean
         default: false
