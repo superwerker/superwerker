@@ -6,6 +6,37 @@ on:
       - edited
       - reopened
       - synchronize
+  workflow_dispatch:
+    inputs:
+      superwerker-region:
+        description: 'The region to deploy superwerker to'
+        required: true
+        type: choice
+        options:
+        - ap-northeast-1
+        - ap-northeast-2
+        - ap-south-1
+        - ap-southeast-1
+        - ap-southeast-2
+        - ca-central-1
+        - eu-central-1
+        - eu-north-1
+        - eu-west-1
+        - eu-west-2
+        - eu-west-3
+        - sa-east-1
+        - us-east-1
+        - us-east-2
+        - us-west-2
+      update-from-latest-release:
+        description: 'False if it is a fresh superwerker installation, true if the installation shall be updated from the last release version'
+        required: true
+        type: boolean
+        default: false
+# the defaults
+env:
+  SUPERWERKER_REGION: eu-central-1
+  UPDATE_FROM_LATEST_RELEASE: false
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
@@ -35,19 +66,31 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: eu-west-1
-          role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
-          role-duration-seconds: 7200      # Set the session duration to 2 hours as codebuild takes very long
-      - name: Run CodeBuild
-        uses: aws-actions/aws-codebuild-run-build@v1
-        with:
-          project-name: build-pull-request
-          env-vars-for-codebuild: |
-            SUPERWERKER_REGION,
-            UPDATE_FROM_LATEST_RELEASE
-        env:
-          SUPERWERKER_REGION: eu-central-1
-          UPDATE_FROM_LATEST_RELEASE: false
+      - name: envs before
+        run: |
+          echo "SUPERWERKER_REGION '${{ env.SUPERWERKER_REGION }}'"
+          echo "UPDATE_FROM_LATEST_RELEASE '${{ env.UPDATE_FROM_LATEST_RELEASE }}'"
+      - name: test override of the envs
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "OVERRIDE in workflow_dispatch"
+          echo "SUPERWERKER_REGION='${{ inputs.superwerker-region }}'" >> $GITHUB_ENV
+          echo "UPDATE_FROM_LATEST_RELEASE='${{ inputs.update-from-latest-release }}'" >> $GITHUB_ENV
+      - name: test passing the envs to the next step
+        run: |
+          echo "NEXT STEP"
+          echo "SUPERWERKER_REGION '${{ env.SUPERWERKER_REGION }}'"
+          echo "UPDATE_FROM_LATEST_RELEASE '${{ env.UPDATE_FROM_LATEST_RELEASE }}'"
+      #- name: Configure AWS credentials
+      #  uses: aws-actions/configure-aws-credentials@v1
+      #  with:
+      #    aws-region: eu-west-1
+      #    role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
+      #    role-duration-seconds: 7200      # Set the session duration to 2 hours as codebuild takes very long
+      #- name: Run CodeBuild
+      #  uses: aws-actions/aws-codebuild-run-build@v1
+      #  with:
+      #    project-name: build-pull-request
+      #    env-vars-for-codebuild: |
+      #      SUPERWERKER_REGION,
+      #      UPDATE_FROM_LATEST_RELEASE      
