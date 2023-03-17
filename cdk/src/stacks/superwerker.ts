@@ -37,6 +37,8 @@ export class SuperwerkerStack extends Stack {
         Order: '1',
       },
     };
+    // Make the quickstart repository linter happy by setting the template format version (https://github.com/aws-quickstart/quickstart-superwerker)
+    Stack.of(this).templateOptions.templateFormatVersion = '2010-09-09';
 
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',

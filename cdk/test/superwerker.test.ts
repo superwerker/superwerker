@@ -75,12 +75,22 @@ describe('resources', () => {
 });
 
 describe('email generation', () => {
-  const app = new App({ context });
-  const stack = new SuperwerkerStack(app, 'stack', {});
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.AUDIT_ACCOUNT,
+  it('generates an email address for the audit and log account', () => {
+    const app = new App({ context });
+    const stack = new SuperwerkerStack(app, 'stack', {});
+    Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+      Name: SuperwerkerStack.AUDIT_ACCOUNT,
+    });
+    Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+      Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+    });
   });
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+});
+
+describe('template options', () => {
+  it('has AWSTemplateFormatVersion because AWS quickstart repo requires it', () => {
+    const app = new App({ context });
+    const stack = new SuperwerkerStack(app, 'stack', {});
+    expect(Template.fromStack(stack).toJSON()).toHaveProperty('AWSTemplateFormatVersion', '2010-09-09');
   });
 });
