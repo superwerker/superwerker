@@ -51,6 +51,7 @@ jobs:
         with:
           node-version: 16
       - name: check PR title
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: deepakputhraya/action-pr-title@master
         with:
           allowed_prefixes: 'build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test'
