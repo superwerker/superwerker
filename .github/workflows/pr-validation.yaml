@@ -18,6 +18,10 @@ on:
         required: true
         type: boolean
         default: false
+# the defaults
+env:
+  SUPERWERKER_REGION: eu-central-1
+  UPDATE_FROM_LATEST_RELEASE: false
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
@@ -47,10 +51,21 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: test passing of the envs
+      - name: envs before
         run: |
-          echo "SUPERWERKER_REGION '${{ inputs.superwerker-region }}'"
-          echo "UPDATE_FROM_LATEST_RELEASE '${{ inputs.update-from-latest-release }}'"
+          echo "SUPERWERKER_REGION '${{ env.SUPERWERKER_REGION }}'"
+          echo "UPDATE_FROM_LATEST_RELEASE '${{ env.UPDATE_FROM_LATEST_RELEASE }}'"
+      - name: test override of the envs
+        if: ${{ github.event_name == "workflow_dispatch }}
+        run: |
+          echo "OVERRIDE in workflow_dispatch"
+          echo "SUPERWERKER_REGION='${{ inputs.superwerker-region }}'" >> $GITHUB_ENV
+          echo "UPDATE_FROM_LATEST_RELEASE='${{ inputs.update-from-latest-release }}'" >> $GITHUB_ENV
+      - name: test passing the envs to the next step
+        run: |
+          echo "NEXT STEP"
+          echo "SUPERWERKER_REGION '${{ env.SUPERWERKER_REGION }}'"
+          echo "UPDATE_FROM_LATEST_RELEASE '${{ env.UPDATE_FROM_LATEST_RELEASE }}'"
       #- name: Configure AWS credentials
       #  uses: aws-actions/configure-aws-credentials@v1
       #  with:
@@ -63,7 +78,4 @@ jobs:
       #    project-name: build-pull-request
       #    env-vars-for-codebuild: |
       #      SUPERWERKER_REGION,
-      #      UPDATE_FROM_LATEST_RELEASE
-      #  env:
-      #    SUPERWERKER_REGION: eu-central-1
-      #    UPDATE_FROM_LATEST_RELEASE: false
+      #      UPDATE_FROM_LATEST_RELEASE      
