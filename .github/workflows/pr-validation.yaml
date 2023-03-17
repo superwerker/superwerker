@@ -6,6 +6,16 @@ on:
       - edited
       - reopened
       - synchronize
+  workflow_dispatch:
+inputs:
+  superwerker-region:
+    description: 'The region to deploy superwerker to'
+    required: true
+    default: 'eu-central-1'
+  update-from-latest-release:
+    description: 'False if it is a fresh superwerker installation, true if the installation shall be updated from the last release version'
+    required: true
+    default: 'false'
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
@@ -35,19 +45,23 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: eu-west-1
-          role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
-          role-duration-seconds: 7200      # Set the session duration to 2 hours as codebuild takes very long
-      - name: Run CodeBuild
-        uses: aws-actions/aws-codebuild-run-build@v1
-        with:
-          project-name: build-pull-request
-          env-vars-for-codebuild: |
-            SUPERWERKER_REGION,
-            UPDATE_FROM_LATEST_RELEASE
-        env:
-          SUPERWERKER_REGION: eu-central-1
-          UPDATE_FROM_LATEST_RELEASE: false
+      - name: test passing of the envs
+        run: |
+          echo "SUPERWERKER_REGION $SUPERWERKER_REGION"
+          echo "UPDATE_FROM_LATEST_RELEASE $UPDATE_FROM_LATEST_RELEASE"
+      #- name: Configure AWS credentials
+      #  uses: aws-actions/configure-aws-credentials@v1
+      #  with:
+      #    aws-region: eu-west-1
+      #    role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
+      #    role-duration-seconds: 7200      # Set the session duration to 2 hours as codebuild takes very long
+      #- name: Run CodeBuild
+      #  uses: aws-actions/aws-codebuild-run-build@v1
+      #  with:
+      #    project-name: build-pull-request
+      #    env-vars-for-codebuild: |
+      #      SUPERWERKER_REGION,
+      #      UPDATE_FROM_LATEST_RELEASE
+      #  env:
+      #    SUPERWERKER_REGION: eu-central-1
+      #    UPDATE_FROM_LATEST_RELEASE: false
