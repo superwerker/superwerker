@@ -7,15 +7,17 @@ on:
       - reopened
       - synchronize
   workflow_dispatch:
-inputs:
-  superwerker-region:
-    description: 'The region to deploy superwerker to'
-    required: true
-    default: 'eu-central-1'
-  update-from-latest-release:
-    description: 'False if it is a fresh superwerker installation, true if the installation shall be updated from the last release version'
-    required: true
-    default: 'false'
+    inputs:
+      superwerker-region:
+        description: 'The region to deploy superwerker to'
+        required: true
+        type: string
+        default: 'eu-central-1'
+      update-from-latest-release:
+        description: 'False if it is a fresh superwerker installation, true if the installation shall be updated from the last release version'
+        required: true
+        type: boolean
+        default: false
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
@@ -47,8 +49,8 @@ jobs:
     steps:
       - name: test passing of the envs
         run: |
-          echo "SUPERWERKER_REGION $SUPERWERKER_REGION"
-          echo "UPDATE_FROM_LATEST_RELEASE $UPDATE_FROM_LATEST_RELEASE"
+          echo "SUPERWERKER_REGION '${{ inputs.superwerker-region }}'"
+          echo "UPDATE_FROM_LATEST_RELEASE '${{ inputs.update-from-latest-release }}'"
       #- name: Configure AWS credentials
       #  uses: aws-actions/configure-aws-credentials@v1
       #  with:
