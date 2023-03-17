@@ -9,46 +9,45 @@ export async function handler(_event: any, _context: any) {
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
 
-  const superwerkerConfig: {
-    [key: string]: string;
-  }={};
-
-  const ssmParams = await ssm.getParameters({
-    Names: [
-      '/superwerker/domain_name_servers',
-    ],
+  const dnsNames = await ssm.getParameter({
+    Name: '/superwerker/domain_name_servers',
   }).promise();
+  const dnsNamesArray = dnsNames.Parameter?.Value?.split(',')??[];
 
-  ssmParams.Parameters?.forEach((param) => {
-    superwerkerConfig[param.Name!] = param.Value!;
-  });
+  const isRootMailConfiguredBool = await isRootMailConfigured();
 
-  const rootMailReadyAlarm = await cloudwatch.describeAlarms({
-    AlarmNames: [
-      'superwerker-RootMailReady',
-    ],
-  }).promise();
-
-  let dnsDelegationText = '';
-
-  if (rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK') {
-    dnsDelegationText = generateSuccesfulDnsConfigurationMessage(dnsDomain!);
-  } else {
-    if ('/superwerker/domain_name_servers' in superwerkerConfig) {
-      const nsRecords = superwerkerConfig['/superwerker/domain_name_servers'].split(',');
-      dnsDelegationText = generateDnsConfigurationRequiredMessage(dnsDomain!, nsRecords);
-    } else {
-      dnsDelegationText = '### DNS Setup pending';
-    }
-  }
+  const dnsDelegationText = createDnsDelegationText(isRootMailConfiguredBool, dnsDomain!, dnsNamesArray);
   const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
-  const finalDashboardMessageEscaped = escape_string(finalDashboardMessage)
+  const finalDashboardMessageEscaped = escape_string(finalDashboardMessage);
 
   await cloudwatch.putDashboard({
     DashboardName: 'superwerker',
     DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
   }).promise();
 
+}
+
+async function isRootMailConfigured() {
+  const rootMailReadyAlarm = await cloudwatch.describeAlarms({
+    AlarmNames: [
+      'superwerker-RootMailReady',
+    ],
+  }).promise();
+  return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
+}
+
+export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDomain: string, dnsNames: string[]) {
+  let dnsDelegationText = '';
+  if (isRootMailConfiguredBool) {
+    dnsDelegationText = generateSuccesfulDnsConfigurationMessage(dnsDomain!);
+  } else {
+    if (dnsNames.length > 0) {
+      dnsDelegationText = generateDnsConfigurationRequiredMessage(dnsDomain!, dnsNames);
+    } else {
+      dnsDelegationText = '### DNS Setup pending';
+    }
+  }
+  return dnsDelegationText;
 }
 
 function escape_string (input: string) {
@@ -61,7 +60,7 @@ function escape_string (input: string) {
     .replace(/[\n]/g, '\\n')
     .replace(/[\r]/g, '\\r')
     .replace(/[\t]/g, '\\t')
-    .replace(/[\u0000-\u0019]+/g,"");
+    .replace(/[\u0000-\u0019]+/g, '');
 };
 
 function generateSuccesfulDnsConfigurationMessage(dnsDomain: string) {
@@ -90,7 +89,7 @@ function generateDnsConfigurationRequiredMessage(dnsDomain: string, ns: string[]
     `;
 }
 
-function generateFinalDashboardMessage(dnsDelegationText: string, dnsDomain: string, region: string) {
+export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDomain: string, region: string) {
   const currentTime=new Date();
   return endent`
   # [superwerker](https://github.com/superwerker/superwerker)

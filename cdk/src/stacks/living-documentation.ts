@@ -78,7 +78,7 @@ export class LivingDocumentationStack extends NestedStack {
       effect: iam.Effect.ALLOW,
     });
 
-    dashboardGeneratorFunction.role?.attachInlinePolicy(
+    dashboardGeneratorFunction.role!.attachInlinePolicy(
       new iam.Policy(this, 'dashboard-generator-function', {
         statements: [
           ssmParametersDescribe,

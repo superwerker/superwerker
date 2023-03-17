@@ -34,7 +34,7 @@ export class NotificationsStack extends NestedStack {
       effect: iam.Effect.ALLOW,
     });
 
-    notificationOpsItemCreatedFn.role?.attachInlinePolicy(
+    notificationOpsItemCreatedFn.role!.attachInlinePolicy(
       new iam.Policy(this, 'NotificationOpsItemCreatedPolicy', {
         statements: [snsPublishMessagePolicy],
       }),
