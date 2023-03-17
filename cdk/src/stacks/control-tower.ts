@@ -15,7 +15,7 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
-    new EnableControltower(this, 'SetupControlTower', {
+    new EnableControltower(this, 'EnableControlTower', {
       logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
       auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
     });

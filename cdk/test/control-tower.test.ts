@@ -53,6 +53,10 @@ describe('resources', () => {
   // Ignore the original resources for generating an email
   for (const key in expectedResources) {
     if (key.startsWith('Generate')) delete expectedResources[key];
+    if (key.startsWith('SetupControlTower')) {
+      expectedResources.EnableControlTower = { ...expectedResources.SetupControlTower };
+      delete expectedResources[key];
+    }
   }
 
   test.each(Object.entries(expectedResources))('resource: %p', (resource, resourceProps) => {
