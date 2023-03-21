@@ -8,10 +8,10 @@ batch:
         variables:
           SUPERWERKER_REGION:
             - eu-west-1
-           # - eu-central-1
+            - eu-central-1
           UPDATE_FROM_LATEST_RELEASE:
             - true
-           # - false
+            - false
 
 phases:
   build:
@@ -113,8 +113,8 @@ phases:
       - aws --profile test_account iam delete-user --user-name superwerker-tests || true
 
       # call sub-account closing and stack cleanup
-      #- |
-      #  aws stepfunctions start-execution  --state-machine-arn ${SUPERWERKER_CLEANUP_STATE_MACHINE} --input '{"AWS_CROSS_ACCOUNT_ROLE_ARN": "'"${aws_cross_account_role_arn}"'", "AWS_ACCOUNT_ID": "'"${aws_account_id}"'", "SUPERWERKER_REGION": "'"${SUPERWERKER_REGION}"'"}'
+      - |
+        aws stepfunctions start-execution  --state-machine-arn ${SUPERWERKER_CLEANUP_STATE_MACHINE} --input '{"AWS_CROSS_ACCOUNT_ROLE_ARN": "'"${aws_cross_account_role_arn}"'", "AWS_ACCOUNT_ID": "'"${aws_account_id}"'", "SUPERWERKER_REGION": "'"${SUPERWERKER_REGION}"'"}'
 
 reports:
   pytest_reports:

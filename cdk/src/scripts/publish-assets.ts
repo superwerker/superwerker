@@ -31,18 +31,8 @@ const main = async () => {
     console.log(command);
     await retry(async (_, attempt) => {
       console.log(`Attempt ${attempt} of ${retries} in region ${region}`);
-<<<<<<< HEAD
-      await exec(command, (err, stdout, stderr) => {
-        if (err) {
-          console.log(stdout);
-          console.log(stderr);
-          throw new Error(err.message);
-        }
-      });
-=======
       const execResult = await execSync(command);
       console.log(execResult.toString());
->>>>>>> main
     }, {
       retries: retries,
       factor: 2,
