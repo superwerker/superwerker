@@ -6,6 +6,37 @@ on:
       - edited
       - reopened
       - synchronize
+  workflow_dispatch:
+    inputs:
+      superwerker-region:
+        description: 'The region to deploy superwerker to'
+        required: true
+        type: choice
+        options:
+        - ap-northeast-1
+        - ap-northeast-2
+        - ap-south-1
+        - ap-southeast-1
+        - ap-southeast-2
+        - ca-central-1
+        - eu-central-1
+        - eu-north-1
+        - eu-west-1
+        - eu-west-2
+        - eu-west-3
+        - sa-east-1
+        - us-east-1
+        - us-east-2
+        - us-west-2
+      update-from-latest-release:
+        description: 'Check the box for TRUE if the installation shall be updated from the last release version, leave it for FALSE (default) if it shall be fresh superwerker installation'
+        required: true
+        type: boolean
+        default: false
+# the defaults
+env:
+  SUPERWERKER_REGION: eu-central-1
+  UPDATE_FROM_LATEST_RELEASE: false
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
@@ -20,10 +51,12 @@ jobs:
         with:
           node-version: 16
       - name: check PR title
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: deepakputhraya/action-pr-title@master
         with:
           allowed_prefixes: 'build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test'
       - name: check commit messages
+        if: ${{ github.ref != 'refs/heads/main' }}
         run: |
           npm install
           npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
@@ -36,6 +69,11 @@ jobs:
     permissions:
       id-token: write
     steps:
+      - name: Override of the envs for workflow_dispatch 
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "SUPERWERKER_REGION=${{ inputs.superwerker-region }}" >> $GITHUB_ENV
+          echo "UPDATE_FROM_LATEST_RELEASE=${{ inputs.update-from-latest-release }}" >> $GITHUB_ENV
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -49,6 +87,3 @@ jobs:
           env-vars-for-codebuild: |
             SUPERWERKER_REGION,
             UPDATE_FROM_LATEST_RELEASE
-        env:
-          SUPERWERKER_REGION: eu-central-1
-          UPDATE_FROM_LATEST_RELEASE: false
