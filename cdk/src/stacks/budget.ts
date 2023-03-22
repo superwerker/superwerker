@@ -1,5 +1,5 @@
 import path from 'path';
-import { Duration, NestedStack, NestedStackProps, aws_cloudwatch as cloudwatch, aws_lambda as lambda, aws_budgets as budgets, aws_sns as sns, aws_iam as iam, Stack, CfnParameter } from 'aws-cdk-lib';
+import { Duration, NestedStack, NestedStackProps, aws_cloudwatch as cloudwatch, aws_cloudwatch_actions as cloudwatch_actions, aws_lambda as lambda, aws_budgets as budgets, aws_sns as sns, aws_iam as iam, Stack, CfnParameter } from 'aws-cdk-lib';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -151,7 +151,7 @@ export class BudgetStack extends NestedStack {
         metricName: 'NumberOfMessagesPublished',
         namespace: 'AWS/SNS',
         dimensionsMap: {
-          TopicName: budgetNotification.topicArn,
+          TopicName: budgetNotification.topicName,
         },
         period: Duration.seconds(300),
         statistic: 'sum',
@@ -160,6 +160,14 @@ export class BudgetStack extends NestedStack {
       treatMissingData: cloudwatch.TreatMissingData.MISSING,
     });
     (budgetAlarm.node.defaultChild as cloudwatch.CfnAlarm).overrideLogicalId('BudgetAlarm');
+
+    // Alarm Action creating SSM OpsItem
+    budgetAlarm.addAlarmAction(
+      new cloudwatch_actions.SsmAction(
+        cloudwatch_actions.OpsItemSeverity.MEDIUM,
+        cloudwatch_actions.OpsItemCategory.COST,
+      ),
+    );
 
   }
 }
