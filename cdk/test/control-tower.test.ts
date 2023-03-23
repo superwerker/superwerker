@@ -53,8 +53,14 @@ describe('resources', () => {
   // Ignore the original resources for generating an email
   for (const key in expectedResources) {
     if (key.startsWith('Generate')) delete expectedResources[key];
-    if (key.startsWith('SetupControlTower')) {
+    if (key == 'SetupControlTower') {
       expectedResources.EnableControlTower = { ...expectedResources.SetupControlTower };
+      delete expectedResources[key];
+    } else if (key.startsWith('SetupControlTower')) {
+      delete expectedResources[key];
+    }
+    if (key == 'AwsApiLibRole') {
+      expectedResources.EnableControltowerApilibRole = { ...expectedResources.AwsApilibRole };
       delete expectedResources[key];
     }
   }
