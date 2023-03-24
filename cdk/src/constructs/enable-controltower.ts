@@ -49,10 +49,10 @@ class EnableControltowerProvider extends Construct {
 
   private constructor(scope: Construct, id: string) {
     super(scope, id);
-    const fnRole = new iam.Role(this, 'SetupControlTowerCustomResourceRole', {
+    const fnRole = new iam.Role(this, 'EnableControlTowerCustomResourceRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
     });
-    (fnRole.node.defaultChild as iam.CfnRole).overrideLogicalId('SetupControlTowerCustomResourceRole');
+    (fnRole.node.defaultChild as iam.CfnRole).overrideLogicalId('EnableControlTowerCustomResourceRole');
 
     fnRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
@@ -65,7 +65,7 @@ class EnableControltowerProvider extends Construct {
       role: fnRole,
       timeout: Duration.seconds(900),
     });
-    (enableControltowerFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SetupControlTowerCustomResource');
+    (enableControltowerFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('EnableControlTowerCustomResource');
 
     const awsApiLibRole = new iam.Role(this, 'AwsApilibRole', {
       assumedBy: fnRole,
@@ -73,9 +73,9 @@ class EnableControltowerProvider extends Construct {
         iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'),
       ],
     });
-    (awsApiLibRole.node.defaultChild as iam.CfnRole).overrideLogicalId('AwsApiLibRole');
+    (awsApiLibRole.node.defaultChild as iam.CfnRole).overrideLogicalId('EnableControltowerApilibRole');
 
-    const fnPolicy = new iam.Policy(this, 'SetupControlTowerCustomResourceRolePolicy', {
+    const fnPolicy = new iam.Policy(this, 'EnableControlTowerCustomResourceRolePolicy', {
       statements: [
         new iam.PolicyStatement({
           actions: [
@@ -87,7 +87,7 @@ class EnableControltowerProvider extends Construct {
         }),
       ],
     });
-    (fnPolicy.node.defaultChild as iam.CfnPolicy).overrideLogicalId('SetupControlTowerCustomResourceRolePolicy');
+    (fnPolicy.node.defaultChild as iam.CfnPolicy).overrideLogicalId('EnableControlTowerCustomResourceRolePolicy');
     fnRole.attachInlinePolicy(fnPolicy);
     enableControltowerFn.addToRolePolicy(
       new iam.PolicyStatement({
