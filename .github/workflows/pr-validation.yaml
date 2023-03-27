@@ -40,7 +40,7 @@ env:
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: ${{ (github.actor != 'dependabot[bot]') && (github.event_name != 'workflow_dispatch') }}
     steps:
       - name: checkout
         uses: actions/checkout@v3
@@ -51,12 +51,10 @@ jobs:
         with:
           node-version: 16
       - name: check PR title
-        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: deepakputhraya/action-pr-title@master
         with:
           allowed_prefixes: 'build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test'
       - name: check commit messages
-        if: ${{ github.ref != 'refs/heads/main' }}
         run: |
           npm install
           npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
