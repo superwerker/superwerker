@@ -62,27 +62,21 @@ jobs:
           npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
         working-directory: cdk
 
-  run-codebuild:
+  test:
     runs-on: ubuntu-latest
     needs: pr-conventions
-    permissions:
-      id-token: write
     steps:
-      - name: Override of the envs for workflow_dispatch 
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        run: |
-          echo "SUPERWERKER_REGION=${{ inputs.superwerker-region }}" >> $GITHUB_ENV
-          echo "UPDATE_FROM_LATEST_RELEASE=${{ inputs.update-from-latest-release }}" >> $GITHUB_ENV
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up node
+        uses: actions/setup-node@v3
         with:
-          aws-region: eu-west-1
-          role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-test
-          role-duration-seconds: 7200      # Set the session duration to 2 hours as codebuild takes very long
-      - name: Run CodeBuild
-        uses: aws-actions/aws-codebuild-run-build@v1
-        with:
-          project-name: build-pull-request
-          env-vars-for-codebuild: |
-            SUPERWERKER_REGION,
-            UPDATE_FROM_LATEST_RELEASE
+          node-version: 16
+      - name: install dependencies
+        run: yarn install
+        working-directory: cdk
+      - name: run tests
+        run: yarn test
+        working-directory: cdk
+
+
