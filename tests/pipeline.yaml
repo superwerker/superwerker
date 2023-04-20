@@ -144,7 +144,7 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       ScheduleExpression: rate(1 day)
-      State: ENABLED
+      State: DISABLED
       RoleArn: !GetAtt CodePipelineSchedulerRole.Arn
       Targets:
         - Arn: !Sub arn:${AWS::Partition}:codepipeline:${AWS::Region}:${AWS::AccountId}:${SuperwerkerBootstrapPipeline}
