@@ -88,21 +88,6 @@ Resources:
       ManagedPolicyArns:
         - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess # FIXME: least privilege
 
-  SuperwerkerUpdatePipelineWebhook:
-    Type: AWS::CodePipeline::Webhook
-    Properties:
-      Authentication: GITHUB_HMAC
-      AuthenticationConfiguration:
-        SecretToken: '{{resolve:secretsmanager:/superwerker/github-token:SecretString}}'
-      Filters:
-        - JsonPath: '$.ref'
-          MatchEquals: refs/heads/{Branch}
-      TargetPipeline: !Ref SuperwerkerBootstrapPipeline
-      TargetAction: SourceAction
-      Name: !Sub ${AWS::StackName}-SuperwerkerUpdatePipelineWebhook
-      TargetPipelineVersion: !GetAtt SuperwerkerBootstrapPipeline.Version
-      RegisterWithThirdParty: true
-
   SuperwerkerUpdatePipelineArtifactStore:
     Type: AWS::S3::Bucket
     Properties:
