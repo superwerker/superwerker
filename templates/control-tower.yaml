@@ -19,7 +19,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.9
       MemorySize: 2048
       Timeout: 900 # give it more time since it installs awsapilib and tries to deploy control tower with retries
       Role: !GetAtt SetupControlTowerCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
@@ -159,7 +159,7 @@ Resources:
                   - SetupLandingZone
 
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.9
       Environment:
         Variables:
           SIGNAL_URL: !Ref ControlTowerReadyHandle
