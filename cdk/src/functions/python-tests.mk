@@ -7,7 +7,8 @@ test: activate test-dependencies
 
 venv:
 	echo $${SHELL}
-	-[ ! -d venv ] && python -m virtualenv venv
+	python3 -m pip install virtualenv
+	-[ ! -d venv ] && python3 -m virtualenv venv
 
 .PHONY: activate
 activate: venv
