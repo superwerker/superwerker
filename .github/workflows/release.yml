@@ -25,10 +25,11 @@ jobs:
       uses: cycjimmy/semantic-release-action@v4
       id: semantic
       with:
+        semantic_version: 22.0.0
         extra_plugins: |
-          @semantic-release/git
-          @semantic-release/changelog
-          conventional-changelog-conventionalcommits
+          @semantic-release/git@10.0.1
+          @semantic-release/changelog@6.0.3
+          conventional-changelog-conventionalcommits@v7.0.2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
