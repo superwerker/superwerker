@@ -22,7 +22,7 @@ jobs:
         role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-release
 
     - name: Bounce version and create git tags
-      uses: cycjimmy/semantic-release-action@v3
+      uses: cycjimmy/semantic-release-action@v4
       id: semantic
       with:
         extra_plugins: |
