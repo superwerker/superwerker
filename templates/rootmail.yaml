@@ -91,7 +91,7 @@ Resources:
         def log(msg):
           print(json.dumps(msg), flush=True)
 
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 260 # the timeout effectivly limits retries to 2^(n+1) - 1 = 9 attempts with backup
 
   HostedZone:
@@ -119,7 +119,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.9
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -335,7 +335,7 @@ Resources:
         def log(msg):
           print(json.dumps(msg), flush=True)
 
-      Runtime: python3.7
+      Runtime: python3.9
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -411,7 +411,7 @@ Resources:
 
           http = urllib3.PoolManager()
           http.request('PUT', os.environ['SIGNAL_URL'], body=encoded_body)
-      Runtime: python3.7
+      Runtime: python3.9
       Timeout: 10
 
   SESReceiveStack:
@@ -463,7 +463,7 @@ Resources:
             Properties:
               Timeout: 200
               Handler: index.handler
-              Runtime: python3.7
+              Runtime: python3.9
               Role: !GetAtt SESReceiptRuleSetActivationCustomResourceRole.Arn
               Code:
                 ZipFile: !Sub | # TODO: adopt function to new ADR for inline python lambdas
@@ -597,7 +597,7 @@ Resources:
             Properties:
               Timeout: 60
               Handler: index.handler
-              Runtime: python3.7
+              Runtime: python3.9
               Role: !GetAtt OpsSantaFunctionRole.Arn
               Code:
                 ZipFile: !Sub |

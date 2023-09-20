@@ -22,7 +22,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.9
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -376,7 +376,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.9
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -444,7 +444,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.11
       Timeout: 900 # give it more time since it installs dependencies on the fly
       Role: !GetAtt EnableCloudFormationStacksetsOrgAccessCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
       Policies:
@@ -460,14 +460,6 @@ Resources:
         import boto3
         import os
         import cfnresponse
-        import sys
-        import subprocess
-
-        # load awsapilib in-process as long as we have no strategy for bundling assets
-        sys.path.insert(1, '/tmp/packages')
-        subprocess.check_call([sys.executable, "-m", "pip", "install", '--target', '/tmp/packages', 'awsapilib==0.10.1'])
-        import awsapilib
-        from awsapilib import Cloudformation
 
         CREATE = 'Create'
         DELETE = 'Delete'
@@ -499,10 +491,9 @@ Resources:
 
             data = {}
 
-            cf = Cloudformation(os.environ['AWSAPILIB_ROLE_ARN'])
-
             if RequestType == CREATE:
-                cf.stacksets.enable_organizations_trusted_access()
+                cloudformation_client = boto3.client('cloudformation')
+                cloudformation_client.activate_organizations_access()
 
             cfnresponse.send(event, context, cfnresponse.SUCCESS, data, id)
 
@@ -517,7 +508,7 @@ Resources:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AdministratorAccess
 
   EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy:
     Type: AWS::IAM::Policy
@@ -582,7 +573,7 @@ Resources:
           - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
-      Runtime: python3.7
+      Runtime: python3.9
       Handler: index.handler
       Policies:
         - Version: 2012-10-17
@@ -703,7 +694,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
-      Runtime: python3.7
+      Runtime: python3.9
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -836,7 +827,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 200
-      Runtime: python3.7
+      Runtime: python3.9
       Handler: index.handler
       Policies:
         - Version: 2012-10-17
@@ -958,7 +949,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
-      Runtime: python3.7
+      Runtime: python3.9
       Policies:
         - Version: 2012-10-17
           Statement:

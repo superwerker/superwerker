@@ -3,6 +3,7 @@ import { Arn, aws_events as events, aws_events_targets as targets, aws_iam as ia
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import { EnableControltower } from '../constructs/enable-controltower';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
 
 export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -28,6 +29,7 @@ export class ControlTowerStack extends NestedStack {
 
     const superwerkerBootstrapFunction = new NodejsFunction(this, 'SuperwerkerBootstrapFunction', {
       entry: path.join(__dirname, '..', 'functions', 'superwerker-bootstrap-function.ts'),
+      runtime: Runtime.NODEJS_16_X,
       environment: {
         SIGNAL_URL: controlTowerReadyHandle.ref,
       },
