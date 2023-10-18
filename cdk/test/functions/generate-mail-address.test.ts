@@ -1,5 +1,9 @@
 const spyOrganizationsListAccounts = jest.fn();
-const spyOrganizations = jest.fn(() => ({ listAccounts: spyOrganizationsListAccounts }));
+const spyOrganizationsListRoots = jest.fn();
+const spyOrganizations = jest.fn(() => ({ 
+  listAccounts: spyOrganizationsListAccounts,
+  listRoots: spyOrganizationsListRoots 
+}));
 
 jest.mock('aws-sdk', () => ({
   Organizations: spyOrganizations,
@@ -17,6 +21,12 @@ describe('generate-mail-address', () => {
     spyOrganizationsListAccounts.mockImplementation(() => ({
       promise() {
         return Promise.resolve({ Accounts: [] });
+      },
+    }));
+
+    spyOrganizationsListRoots.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve({ Roots: [{'Id': 'r-2ts2'}] });
       },
     }));
 
@@ -79,6 +89,12 @@ describe('generate-mail-address', () => {
       },
     }));
 
+    spyOrganizationsListRoots.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve({ Roots: [{'Id': 'r-2ts2'}] });
+      },
+    }));
+
     const result = handler(
       {
         RequestType: 'Create',
@@ -100,6 +116,12 @@ describe('generate-mail-address', () => {
         return Promise.resolve({
           Accounts: [],
         });
+      },
+    }));
+
+    spyOrganizationsListRoots.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve({ Roots: [{'Id': 'r-2ts2'}] });
       },
     }));
 

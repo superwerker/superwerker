@@ -61,7 +61,13 @@ class GenerateEmailAddressProvider extends Construct {
         initialPolicy: [
           new iam.PolicyStatement({
             resources: ['*'],
-            actions: ['organizations:ListAccounts'],
+            actions: [
+              'organizations:ListAccounts',
+              'organizations:ListAccountsForParent',
+              'organizations:ListOrganizationalUnitsForParent',
+              'organizations:ListRoots'
+
+            ],
           }),
         ],
       }),
