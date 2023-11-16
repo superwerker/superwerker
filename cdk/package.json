@@ -4,6 +4,7 @@
     "synth": "cdk synth",
     "test": "make test && jest --silent",
     "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts",
+    "publish-assets-testing": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets-testing.ts",
     "prepare": "cd .. && husky install cdk/.husky"
   },
   "devDependencies": {
@@ -43,6 +44,7 @@
     "cdk-assets": "^2.96.2",
     "constructs": "^10.1.224",
     "endent": "^2.1.0",
+    "unzipper": "^0.10.14",
     "uuid4": "^2.0.3"
   },
   "license": "Apache-2.0",
