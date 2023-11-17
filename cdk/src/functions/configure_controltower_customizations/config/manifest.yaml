@@ -1,0 +1,15 @@
+---
+#Default region for deploying Custom Control Tower: Code Pipeline, Step functions, Lambda, SSM parameters, and StackSets
+region: eu-central-1
+version: 2021-03-15
+
+# Control Tower Custom Resources (Service Control Policies or CloudFormation)
+resources:
+  - name: block-s3-public-access
+    description: To S3 buckets to have public access
+    resource_file: policies/block-s3-public.json
+    deploy_method: scp
+    #Apply to the following OU(s)
+    deployment_targets:
+      organizational_units:
+        - Sandbox

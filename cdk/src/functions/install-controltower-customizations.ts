@@ -5,7 +5,7 @@ import Fs from 'fs';
 import Https from 'https';
 import unzipper from 'unzipper';
 
-const CONTROL_TOWER_CUSTOMIZATIONS_VERSION = '2.6.0';
+const CONTROL_TOWER_CUSTOMIZATIONS_VERSION = '2.7.0';
 const CLOUDFORMATION_URL = `https://github.com/aws-solutions/aws-control-tower-customizations/archive/refs/tags/v${CONTROL_TOWER_CUSTOMIZATIONS_VERSION}.zip`;
 const STACK_NAME = 'customizations-for-aws-control-tower';
 const ZIP_NAME = `aws-control-tower-customizations-${CONTROL_TOWER_CUSTOMIZATIONS_VERSION}`;
