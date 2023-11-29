@@ -1,38 +1,28 @@
 import { CodeCommit, SSM } from 'aws-sdk';
 import Fs from 'fs';
-import * as Handlebars from 'handlebars';
 
 const codecommit = new CodeCommit();
 const ssm = new SSM();
+const SSM_PARAMETER = { Name: '/superwerker/initial-lza-config-done' };
 
 const BRANCH_NAME = 'main';
-const REPOSITORY_NAME = 'custom-control-tower-configuration';
+const REPOSITORY_NAME = 'aws-accelerator-config';
 
 export async function handler(event: any, context: any) {
-  const MAKE_INITIAL_COMMIT = process.env.MAKE_INITIAL_COMMIT;
-  if (MAKE_INITIAL_COMMIT !== 'Yes') {
-    console.log('MAKE_INITIAL_COMMIT is not set to Yes, nothing to do yet');
-    return;
-  }
-
-  const ACCOUNT_ID = context.invokedFunctionArn.split(':')[4];
-  const AWS_REGION = process.env.AWS_REGION;
-
-  const SSM_PARAMETER = { Name: process.env.CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER };
-  let customizationsConfigured = true;
+  let lzaConfigured = true;
   try {
     await ssm.getParameter(SSM_PARAMETER).promise();
   } catch (err) {
     if (err) {
-      customizationsConfigured = false;
+      lzaConfigured = false;
     }
   }
 
-  if (customizationsConfigured) {
-    console.log('Control tower customizations have been configured initially, nothing to do.');
+  if (lzaConfigured) {
+    console.log('LZA has been configured initially, nothing to do.');
     return;
   } else {
-    console.log('Control tower customizations have not been configured yet, starting initial configuration.');
+    console.log('LZA has not been configured yet, starting initial configuration.');
   }
 
   const snsMessage = event.Records[0].Sns.Message;
@@ -41,11 +31,11 @@ export async function handler(event: any, context: any) {
     return;
   }
 
-  console.log('adding variables to manifest.yaml');
-  await addVariablesToManifest(AWS_REGION);
-
   console.log('making inital commit');
   await makeInitalCommit();
+
+  console.log('codepipline release change to trigger codepipeline');
+  // TODO trigger 'AWSAccelerator-Pipeline' codepipeline
 
   console.log('setting initial commit ssm parameter');
   const params = {
@@ -64,6 +54,9 @@ export async function handler(event: any, context: any) {
 async function makeInitalCommit() {
   const branchInfo = await codecommit.getBranch({ branchName: BRANCH_NAME, repositoryName: REPOSITORY_NAME }).promise();
   const commitId = branchInfo.branch.commitId;
+
+  // TODO get current files from codecommit
+  // do changes to files
 
   const params = {
     branchName: BRANCH_NAME,
@@ -85,15 +78,19 @@ function getFilesToUpload() {
   let filesToUpload = [
     {
       filePath: '/service-control-policies/superwerker-sandbox-scp.json',
-      fileContent: getBufferFromFile('./config/service-control-policies/superwerker-sandbox-scp.json'),
+      fileContent: getBufferFromFile('./service-control-policies/superwerker-sandbox-scp.json'),
     },
     {
       filePath: '/cloudformation/iam-access-analyzer.yaml',
-      fileContent: getBufferFromFile('./config/cloudformation/iam-access-analyzer.yaml'),
+      fileContent: getBufferFromFile('./cloudformation/iam-access-analyzer.yaml'),
     },
     {
-      filePath: '/manifest.yaml',
-      fileContent: getBufferFromFile('/tmp/manifest.yaml'),
+      filePath: '/security-config.yaml',
+      fileContent: getBufferFromFile('./security-config.yaml'),
+    },
+    {
+      filePath: '/organization-config.yaml',
+      fileContent: getBufferFromFile('./organization-config.yaml'),
     },
   ];
   return filesToUpload;
@@ -101,11 +98,4 @@ function getFilesToUpload() {
 
 function getBufferFromFile(filePath: string) {
   return Buffer.from(Fs.readFileSync(filePath).toString('utf-8'));
-}
-
-function addVariablesToManifest(region: string) {
-  const source = Fs.readFileSync(`./config/manifest.yaml`).toString();
-  const template = Handlebars.compile(source);
-  const contents = template({ REGION: `${region}` });
-  Fs.writeFileSync(`/tmp/manifest.yaml`, contents);
 }

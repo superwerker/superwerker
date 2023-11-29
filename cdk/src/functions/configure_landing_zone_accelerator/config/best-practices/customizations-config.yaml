@@ -1,0 +1,14 @@
+customizations:
+  cloudFormationStacks:
+    - name: superwerker-lza-iam-access-analyzer
+      description: Enables IAM Access Analyzer
+      regions:
+        - {{REGION}}
+      deploymentTargets:
+        organizationalUnits:
+          - Root
+      runOrder: 1
+      template: ./iam-access-analyzer.yaml
+      terminationProtection: false
+  cloudFormationStackSets: []
+  serviceCatalogPortfolios: []

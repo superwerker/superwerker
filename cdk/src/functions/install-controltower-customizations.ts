@@ -2,8 +2,8 @@
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import AWS from 'aws-sdk';
 import Fs from 'fs';
-import Https from 'https';
 import unzipper from 'unzipper';
+import { downloadFile } from './utils/download-file';
 
 const CONTROL_TOWER_CUSTOMIZATIONS_VERSION = '2.7.0';
 const CLOUDFORMATION_URL = `https://github.com/aws-solutions/aws-control-tower-customizations/archive/refs/tags/v${CONTROL_TOWER_CUSTOMIZATIONS_VERSION}.zip`;
@@ -13,43 +13,10 @@ const FILE_NAME = `${STACK_NAME}.template`;
 
 const s3 = new AWS.S3();
 const cloudformation = new AWS.CloudFormation();
+const ssm = new AWS.SSM();
 
 export interface HandlerResponse {
   email: string;
-}
-
-/**
- * Download a file from the given `url` into the `targetFile`.
- *
- * @param {String} url
- * @param {String} targetFile
- *
- * @returns {Promise<void>}
- */
-async function downloadFile(url: string, targetFile: string) {
-  return await new Promise((resolve, reject) => {
-    Https.get(url, (response) => {
-      const code = response.statusCode ?? 0;
-
-      if (code >= 400) {
-        return reject(new Error(response.statusMessage));
-      }
-
-      // handle redirects
-      if (code > 300 && code < 400 && !!response.headers.location) {
-        return resolve(downloadFile(response.headers.location, targetFile));
-      }
-
-      // save the file to disk
-      const fileWriter = Fs.createWriteStream(targetFile).on('finish', () => {
-        resolve({});
-      });
-
-      response.pipe(fileWriter);
-    }).on('error', (error) => {
-      reject(error);
-    });
-  });
 }
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
@@ -57,8 +24,9 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   const accountId = stackId.split(':')[4];
   const region = stackId.split(':')[3];
 
-  const BUCKET_NAME = `superwerker-deployment-bucket-${accountId}-${region}`;
+  const BUCKET_NAME = `superwerker-cfct-deployment-bucket-${accountId}-${region}`;
   const SNS_NOTIFICATIONS_ARN = event.ResourceProperties.SNS_NOTIFICATIONS_ARN;
+  const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = event.ResourceProperties.CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER;
 
   switch (event.RequestType) {
     case 'Create':
@@ -101,17 +69,14 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
             {
               ParameterKey: 'PipelineApprovalStage',
               ParameterValue: 'No',
-              UsePreviousValue: true,
             },
             {
               ParameterKey: 'PipelineApprovalEmail',
-              ParameterValue: 'dummy@example.com',
-              UsePreviousValue: true,
+              ParameterValue: 'no-email@needed.com',
             },
             {
               ParameterKey: 'CodePipelineSource',
               ParameterValue: 'AWS CodeCommit',
-              UsePreviousValue: true,
             },
           ],
         })
@@ -125,26 +90,38 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
       return {};
     case 'Delete':
       console.log('Delete Control Tower Customizations S3 file');
-      await s3
-        .deleteObject({
-          Bucket: BUCKET_NAME,
-          Key: FILE_NAME,
-        })
-        .promise();
+      try {
+        await s3
+          .deleteObject({
+            Bucket: BUCKET_NAME,
+            Key: FILE_NAME,
+          })
+          .promise();
+      } catch (err) {
+        console.log('Control Tower Customizations S3 file cloud not be deleted, maybe it was already deleted');
+      }
 
       console.log('Delete S3 Deployment Bucket');
-      await s3
-        .deleteBucket({
-          Bucket: BUCKET_NAME,
-        })
-        .promise();
+      try {
+        await s3
+          .deleteBucket({
+            Bucket: BUCKET_NAME,
+          })
+          .promise();
+      } catch (err) {
+        console.log('Control Tower Customizations S3 Deployment Bucket could not be deleted, maybe it was already deleted');
+      }
 
-      // console.log('Deleting Control Tower Customizations Stack');
-      // await cloudformation
-      //   .deleteStack({
-      //     StackName: STACK_NAME,
-      //   })
-      //   .promise();
+      try {
+        console.log('Delete SSM Parameter');
+        await ssm
+          .deleteParameter({
+            Name: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
+          })
+          .promise();
+      } catch (err) {
+        console.log('SSM Parameter could not be deleted, maybe it was already deleted');
+      }
 
       return {
         Status: 'SUCCESS',

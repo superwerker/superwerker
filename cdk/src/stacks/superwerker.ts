@@ -1,11 +1,4 @@
-import {
-  CfnCondition,
-  CfnParameter,
-  CfnStack,
-  Fn,
-  Stack,
-  StackProps,
-} from 'aws-cdk-lib';
+import { CfnCondition, CfnParameter, CfnRule, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
@@ -18,8 +11,10 @@ import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
 import { ControlTowerCustomizationsStack } from './control-tower-customizations';
+import { addParameterToInterface } from '../utils/cfn-interface-parameters';
+import { LandingZoneAcceleratorStack } from './landing-zone-accelerator';
 
-export interface SuperwerkerStackProps extends StackProps{
+export interface SuperwerkerStackProps extends StackProps {
   readonly version?: string;
 }
 
@@ -41,18 +36,21 @@ export class SuperwerkerStack extends Stack {
 
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
-      description: 'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description:
+        'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
     });
 
     const subdomain = new CfnParameter(this, 'Subdomain', {
       type: 'String',
-      description: 'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description:
+        'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: 'aws',
     });
 
     const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
       type: 'String',
-      description: 'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description:
+        'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: '',
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
@@ -64,108 +62,153 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    const landingzoneType = new CfnParameter(this, 'LandingzoneType', {
+    const includeLZA = new CfnParameter(this, 'LandingzoneAccelerator', {
       type: 'String',
-      description: 'Landingzone Type',
+      description:
+        'Roll out Landingzone Accelerator (LZA) on top of Superwerker. REQUIRES creation of Github Token, please see https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html#create-a-github-personal-access-token-and-store-in-secrets-manager',
+      allowedValues: ['Yes', 'No'],
+      default: 'No',
+    });
+
+    const lzaType = new CfnParameter(this, 'LandingzoneAcceleratorType', {
+      type: 'String',
+      description: 'Inital Landingzone Accelerator (LZA) configuration to roll out',
       allowedValues: [
-        'Small: Superwerker & CT Customizations',
-        'Medium: Superwerker & LZA Best Practices',
-        'Large: Superwerker & LZA Finance Practices',
-        'Large: Superwerker & LZA Education Practices',
-        'Large: Superwerker & LZA Healthcare Practices',
-        'Large: Superwerker & LZA Public Sector Practices',
+        'Superwerker Best Practices',
+        'Superwerker Finance Practices',
+        'Superwerker Education Practices',
+        'Superwerker Healthcare Practices',
+        'Superwerker Public Sector Practices',
       ],
-      default: 'Medium: Superwerker & LZA Best Practices',
+      default: 'Superwerker Best Practices',
     });
-    landingzoneType.overrideLogicalId('LandingzoneType');
+    lzaType.overrideLogicalId('LandingzoneAcceleratorType');
 
-    const includeBudget = new CfnParameter(this, 'IncludeBudget', {
+    const makeInitalCommit = new CfnParameter(this, 'makeInitalCommit', {
       type: 'String',
-      description: 'Enable AWS Budgets alarm for monthly AWS spending',
+      description: 'Make inital commit to repo that configures landingzone features, else installs Pipeline with barebone configuration',
       allowedValues: ['Yes', 'No'],
       default: 'Yes',
     });
 
-    const includeGuardDuty = new CfnParameter(this, 'IncludeGuardDuty', {
-      type: 'String',
-      description: 'Enable Amazon GuardDuty',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+    // const includeBudget = new CfnParameter(this, 'IncludeBudget', {
+    //   type: 'String',
+    //   description: 'Enable AWS Budgets alarm for monthly AWS spending',
+    //   allowedValues: ['Yes', 'No'],
+    //   default: 'Yes',
+    // });
+
+    // const includeGuardDuty = new CfnParameter(this, 'IncludeGuardDuty', {
+    //   type: 'String',
+    //   description: 'Enable Amazon GuardDuty',
+    //   allowedValues: ['Yes', 'No'],
+    //   default: 'Yes',
+    // });
+
+    // const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
+    //   type: 'String',
+    //   description: 'Enable AWS Security Hub',
+    //   allowedValues: ['Yes', 'No'],
+    //   default: 'Yes',
+    // });
+
+    // const includeBackup = new CfnParameter(this, 'IncludeBackup', {
+    //   type: 'String',
+    //   description: 'Enable automated backups',
+    //   allowedValues: ['Yes', 'No'],
+    //   default: 'Yes',
+    // });
+
+    // const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
+    //   type: 'String',
+    //   description: 'Enable service control policies in AWS organizations',
+    //   allowedValues: ['Yes', 'No'],
+    //   default: 'Yes',
+    // });
+
+    /**
+     * Core Components
+     */
+    const emailAudit = new GenerateEmailAddress(this, 'GeneratedAuditAWSAccountEmail', {
+      domain: `${subdomain.value}.${domain.value}`,
+      name: `${SuperwerkerStack.AUDIT_ACCOUNT}`,
     });
 
-    const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
-      type: 'String',
-      description: 'Enable AWS Security Hub',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+    const emailLogArchive = new GenerateEmailAddress(this, 'GeneratedLogArchiveAWSAccountEmail', {
+      domain: `${subdomain.value}.${domain.value}`,
+      name: `${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}`,
     });
 
-    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
-      type: 'String',
-      description: 'Enable automated backups',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+    // RootMail
+    const rootMailStack = new RootmailStack(this, 'RootMail', {
+      parameters: {
+        Domain: domain.value.toString(),
+        Subdomain: subdomain.value.toString(),
+      },
     });
+    (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
 
-    const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
-      type: 'String',
-      description: 'Enable service control policies in AWS organizations',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+    // ControlTower
+    const controlTowerStack = new ControlTowerStack(this, 'ControlTower', {
+      parameters: {
+        AuditAWSAccountEmail: emailAudit.email,
+        LogArchiveAWSAccountEmail: emailLogArchive.email,
+      },
     });
+    (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
 
-    // /**
-    //  * Core Components
-    //  */
-    // const emailAudit = new GenerateEmailAddress(this, 'GeneratedAuditAWSAccountEmail', {
-    //   domain: `${subdomain.value}.${domain.value}`,
-    //   name: `${SuperwerkerStack.AUDIT_ACCOUNT}`,
-    // });
+    // LivingDocumentation
+    const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
+      parameters: {
+        SuperwerkerDomain: `${subdomain.value.toString()}.${domain.value.toString()}`,
+      },
+    });
+    (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
 
+    const budgetStack = new BudgetStack(this, 'BudgetAlarm', {});
+    (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('BudgetAlarm');
 
-    // const emailLogArchive = new GenerateEmailAddress(this, 'GeneratedLogArchiveAWSAccountEmail', {
-    //   domain: `${subdomain.value}.${domain.value}`,
-    //   name: `${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}`,
-    // });
-
-    // // RootMail
-    // const rootMailStack = new RootmailStack(this, 'RootMail', {
-    //   parameters: {
-    //     Domain: domain.value.toString(),
-    //     Subdomain: subdomain.value.toString(),
-    //   },
-    // });
-    // (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
-
-    // // ControlTower
-    // const controlTowerStack = new ControlTowerStack(this, 'ControlTower', {
-    //   parameters: {
-    //     AuditAWSAccountEmail: emailAudit.email,
-    //     LogArchiveAWSAccountEmail: emailLogArchive.email,
-    //   },
-    // });
-    // (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
-
-    // // LivingDocumentation
-    // const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
-    //   parameters: {
-    //     SuperwerkerDomain: `${subdomain.value.toString()}.${domain.value.toString()}`,
-    //   },
-    // });
-    // (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
+    // // Notifications
+    const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
+      expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
+    });
+    notificationsCondition.overrideLogicalId('IncludeNotifications');
+    const notificationsStack = new NotificationsStack(this, 'Notifications', {
+      parameters: {
+        NotificationsMail: notificationsMail.value.toString(),
+      },
+    });
+    notificationsStack.addDependency(rootMailStack);
+    (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
+    (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
 
     // ControlTowerCustomizations
     const controlTowerCustomizationsCondition = new CfnCondition(this, 'IncludeControlTowerCustomizationsCondition', {
       expression: Fn.conditionEquals(includeControlTowerCustomizations, 'Yes'),
     });
     controlTowerCustomizationsCondition.overrideLogicalId('IncludeControlTowerCustomizations');
-    const controlTowerCustomizationsStack = new ControlTowerCustomizationsStack(this, 'ControlTowerCustomizationsStack', {});
+    const controlTowerCustomizationsStack = new ControlTowerCustomizationsStack(this, 'ControlTowerCustomizationsStack', {
+      parameters: {
+        makeInitalCommit: makeInitalCommit.value.toString(),
+      },
+    });
     (controlTowerCustomizationsStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTowerCustomizationsStack');
     (controlTowerCustomizationsStack.node.defaultChild as CfnStack).cfnOptions.condition = controlTowerCustomizationsCondition;
 
-    // /**
-    //  * optional components
-    //  */
+    // LandingzoneAccelerator
+    const landingzoneAcceleratorCondition = new CfnCondition(this, 'IncludeLandingzoneAcceleratorCondition', {
+      expression: Fn.conditionEquals(includeLZA, 'Yes'),
+    });
+    landingzoneAcceleratorCondition.overrideLogicalId('IncludeLandingzoneAccelerator');
+    const landingzoneAcceleratorStack = new LandingZoneAcceleratorStack(this, 'LandingzoneAcceleratorStack', {
+      parameters: {
+        AuditAWSAccountEmail: emailAudit.email,
+        LogArchiveAWSAccountEmail: emailLogArchive.email,
+        makeInitalCommit: makeInitalCommit.value.toString(),
+      },
+    });
+    (landingzoneAcceleratorStack.node.defaultChild as CfnStack).overrideLogicalId('LandingzoneAcceleratorStack');
+    (landingzoneAcceleratorStack.node.defaultChild as CfnStack).cfnOptions.condition = landingzoneAcceleratorCondition;
 
     // // Backup
     // const backupCondition = new CfnCondition(this, 'IncludeBackupCondition', {
@@ -195,20 +238,6 @@ export class SuperwerkerStack extends Stack {
     // (guardDutyStack.node.defaultChild as CfnStack).overrideLogicalId('GuardDuty');
     // (guardDutyStack.node.defaultChild as CfnStack).cfnOptions.condition = guardDutyCondition;
 
-    // // Notifications
-    // const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
-    //   expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
-    // });
-    // notificationsCondition.overrideLogicalId('IncludeNotifications');
-    // const notificationsStack = new NotificationsStack(this, 'Notifications', {
-    //   parameters: {
-    //     NotificationsMail: notificationsMail.value.toString(),
-    //   },
-    // });
-    // notificationsStack.addDependency(rootMailStack);
-    // (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
-    // (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
-
     // // SecurityHub
     // const securityHubCondition = new CfnCondition(this, 'IncludeSecurityHubCondition', {
     //   expression: Fn.conditionEquals(includeSecurityHub, 'Yes'),
@@ -233,6 +262,56 @@ export class SuperwerkerStack extends Stack {
     // (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
     // (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
 
+    // /**
+    //  * labels and groups
+    //  */
 
+    const coreLzLabel = 'Landingzone Core Configuration';
+    addParameterToInterface({
+      groupLabel: coreLzLabel,
+      parameter: domain,
+      parameterLabel: 'Domain',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: coreLzLabel,
+      parameter: subdomain,
+      parameterLabel: 'Subdomain',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: coreLzLabel,
+      parameter: notificationsMail,
+      parameterLabel: 'Notifications Mail',
+      scope: this,
+    }).valueAsString;
+
+    const pipelineLabel = 'GitOps Pipeline Configuration (separate Stack managed by user afterwards)';
+    addParameterToInterface({
+      groupLabel: pipelineLabel,
+      parameter: includeControlTowerCustomizations,
+      parameterLabel: 'Simple: Control Tower Customizations (CfCT)',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: pipelineLabel,
+      parameter: includeLZA,
+      parameterLabel: 'Sophisticated: Landingzone Accelerator (LZA)',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: pipelineLabel,
+      parameter: lzaType,
+      parameterLabel: 'Landingzone Accelerator (LZA) Configuration',
+      scope: this,
+    }).valueAsString;
+
+    const advancedOptions = 'Advanced Options';
+    addParameterToInterface({
+      groupLabel: advancedOptions,
+      parameter: makeInitalCommit,
+      parameterLabel: 'Make Inital Commit to Repo',
+      scope: this,
+    }).valueAsString;
   }
 }

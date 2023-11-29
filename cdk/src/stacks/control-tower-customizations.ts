@@ -1,4 +1,4 @@
-import { Arn, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { Arn, CfnParameter, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { InstallControltowerCustomizations } from '../constructs/install-controltower-customizations';
@@ -9,12 +9,22 @@ import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 
 const CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME = 'custom-control-tower-configuration';
+const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = '/superwerker/initial-ct-customizations-done';
 
 export class ControlTowerCustomizationsStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
+    const makeInitalCommit = new CfnParameter(this, 'makeInitalCommit', {
+      type: 'String',
+    });
+
     const notificationsTopic = new Topic(this, 'NotifyControlTowerCustomizationsStackUpdates');
+
+    new InstallControltowerCustomizations(this, 'InstallControltowerCustomizations', {
+      notificationsTopic: notificationsTopic.topicArn,
+      ssmParameterName: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
+    });
 
     const configDirPath = path.join(__dirname, '..', 'functions', 'configure_controltower_customizations', 'config');
 
@@ -22,6 +32,10 @@ export class ControlTowerCustomizationsStack extends NestedStack {
       entry: path.join(__dirname, '..', 'functions', 'configure_controltower_customizations', 'configure-controltower-customizations.ts'),
       runtime: Runtime.NODEJS_16_X,
       timeout: Duration.minutes(15),
+      environment: {
+        MAKE_INITIAL_COMMIT: makeInitalCommit.valueAsString,
+        CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
+      },
       bundling: {
         commandHooks: {
           afterBundling: (inputDir: string, outputDir: string): string[] => [`cp -r ${configDirPath} ${outputDir}`],
@@ -75,9 +89,5 @@ export class ControlTowerCustomizationsStack extends NestedStack {
         ],
       }),
     );
-
-    new InstallControltowerCustomizations(this, 'InstallControltowerCustomizations', {
-      notificationsTopic: notificationsTopic.topicArn,
-    });
   }
 }

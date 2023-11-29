@@ -1,15 +1,22 @@
 ---
 #Default region for deploying Custom Control Tower: Code Pipeline, Step functions, Lambda, SSM parameters, and StackSets
-region: eu-central-1
+region: {{REGION}} # e.g. eu-central-1, eu-west-1, us-east-1
 version: 2021-03-15
+enable_stack_set_deletion: true # Removing Stacksets from manifest deletes the Stackset automatically
 
 # Control Tower Custom Resources (Service Control Policies or CloudFormation)
 resources:
-  - name: block-s3-public-access
-    description: To S3 buckets to have public access
-    resource_file: policies/block-s3-public.json
+  - name: superwerker-cfct-sandbox-scp
+    description: Prevents calling expensive AWS API calls and public s3 buckets
+    resource_file: service-control-policies/superwerker-sandbox-scp.json
     deploy_method: scp
-    #Apply to the following OU(s)
     deployment_targets:
       organizational_units:
         - Sandbox
+  - name: superwerker-cfct-iam-access-analyzer
+    description: Enable IAM Access Analyzer
+    resource_file: cloudformation/iam-access-analyzer.yaml
+    deploy_method: stack_set
+    deployment_targets:
+      organizational_units:
+        - Root

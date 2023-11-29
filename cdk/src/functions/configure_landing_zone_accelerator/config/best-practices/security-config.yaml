@@ -1,0 +1,74 @@
+centralSecurityServices:
+  delegatedAdminAccount: Audit
+  ebsDefaultVolumeEncryption:
+    enable: true
+    excludeRegions: []
+  s3PublicAccessBlock:
+    enable: true
+    excludeAccounts: []
+  scpRevertChangesConfig:
+    enable: true
+  snsSubscriptions: []
+  macie:
+    enable: false
+    excludeRegions: []
+    policyFindingsPublishingFrequency: FIFTEEN_MINUTES
+    publishSensitiveDataFindings: true
+  guardduty:
+    enable: true
+    excludeRegions: []
+    s3Protection:
+      enable: true
+      excludeRegions: []
+    eksProtection:
+      enable: false
+      excludeRegions: []
+    exportConfiguration:
+      enable: true
+      overrideExisting: true
+      destinationType: S3
+      exportFrequency: SIX_HOURS
+  securityHub:
+    enable: true
+    regionAggregation: true
+    excludeRegions: []
+    standards:
+      - name: AWS Foundational Security Best Practices v1.0.0
+        deploymentTargets:
+        organizationalUnits:
+          -  Root
+        enable: true
+        controlsToDisable: []
+      - name: CIS AWS Foundations Benchmark v1.2.0
+        deploymentTargets:
+        organizationalUnits:
+          -  Root
+        enable: true
+        controlsToDisable: []
+    logging:
+      cloudWatch:
+        enable: false
+  ssmAutomation:
+    excludeRegions: []
+    documentSets: []
+accessAnalyzer:
+  enable: false
+iamPasswordPolicy:
+  allowUsersToChangePassword: true
+  hardExpiry: false
+  requireUppercaseCharacters: true
+  requireLowercaseCharacters: true
+  requireSymbols: true
+  requireNumbers: true
+  minimumPasswordLength: 14
+  passwordReusePrevention: 24
+  maxPasswordAge: 90
+awsConfig:
+  enableConfigurationRecorder: true
+  overrideExisting: true
+  ruleSets: []
+cloudWatch:
+  metricSets: []
+  alarmSets: []
+keyManagementService:
+  keySets: []

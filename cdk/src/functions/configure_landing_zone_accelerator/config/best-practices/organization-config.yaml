@@ -1,0 +1,17 @@
+enable: true
+organizationalUnits:
+  - name: Security
+  - name: Sandbox
+  - name: Suspended
+    ignore: true
+serviceControlPolicies:
+  - name: superwerker-sandbox-scp-lza
+    description: >-
+      Prevents calling expensive AWS API calls and public s3 buckets
+    policy: service-control-policies/superwerker-sandbox-scp.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Sandbox
+taggingPolicies: []
+backupPolicies: []
