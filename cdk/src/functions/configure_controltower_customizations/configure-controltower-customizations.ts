@@ -88,6 +88,10 @@ function getFilesToUpload() {
       fileContent: getBufferFromFile('./config/service-control-policies/superwerker-sandbox-scp.json'),
     },
     {
+      filePath: '/service-control-policies/superwerker-cfct-only-us-scp.json',
+      fileContent: getBufferFromFile('./config/service-control-policies/superwerker-cfct-only-us-scp.json'),
+    },
+    {
       filePath: '/cloudformation/iam-access-analyzer.yaml',
       fileContent: getBufferFromFile('./config/cloudformation/iam-access-analyzer.yaml'),
     },

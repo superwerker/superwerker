@@ -6,6 +6,7 @@ enable_stack_set_deletion: true # Removing Stacksets from manifest deletes the S
 
 # Control Tower Custom Resources (Service Control Policies or CloudFormation)
 resources:
+
   - name: superwerker-cfct-sandbox-scp
     description: Prevents calling expensive AWS API calls and public s3 buckets
     resource_file: service-control-policies/superwerker-sandbox-scp.json
@@ -13,10 +14,20 @@ resources:
     deployment_targets:
       organizational_units:
         - Sandbox
+
+  # Example SCP for blocking any action outside specifed regions, modify and attach as needed
+  # More info: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples_general.html 
+  - name: superwerker-cfct-us-only-scp
+    description: Deny access to any operations outside of specified US Regions
+    resource_file: service-control-policies/superwerker-cfct-only-us-scp.json
+    deploy_method: scp
+    deployment_targets:
+      organizational_units: []
+
   - name: superwerker-cfct-iam-access-analyzer
     description: Enable IAM Access Analyzer
     resource_file: cloudformation/iam-access-analyzer.yaml
     deploy_method: stack_set
     deployment_targets:
       organizational_units:
-        - Root
+        - Security

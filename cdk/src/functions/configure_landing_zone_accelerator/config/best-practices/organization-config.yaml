@@ -5,7 +5,7 @@ organizationalUnits:
   - name: Suspended
     ignore: true
 serviceControlPolicies:
-  - name: superwerker-sandbox-scp-lza
+  - name: superwerker-lza-sandbox-scp
     description: >-
       Prevents calling expensive AWS API calls and public s3 buckets
     policy: service-control-policies/superwerker-sandbox-scp.json
@@ -13,5 +13,40 @@ serviceControlPolicies:
     deploymentTargets:
       organizationalUnits:
         - Sandbox
+  - name: superwerker-lza-baseline-scp
+    description: >
+      Baseline SCP for all accounts
+    policy: service-control-policies/superwerker-baseline-scp.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Root
+  - name: superwerker-lza-guardrails-scp-1
+    description: >
+      Landingzone Accelerator GuardRails 1
+    policy: service-control-policies/superwerker-lza-guardrails-scp1.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Sandbox
+        - Security
+  - name: superwerker-lza-guardrails-scp-2
+    description: >
+      Landingzone Accelerator GuardRails 2
+    policy: service-control-policies/superwerker-lza-guardrails-scp1.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits:
+        - Sandbox
+        - Security
+  # Example SCP for blocking any action outside specifed region
+  # More info: https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps_examples_general.html
+  - name: superwerker-lza-us-only-scp
+    description: >
+      Deny access to any operations outside of specified US Regions.
+    policy: service-control-policies/superwerker-lza-only-us-scp.json
+    type: customerManaged
+    deploymentTargets:
+      organizationalUnits: []
 taggingPolicies: []
 backupPolicies: []

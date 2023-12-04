@@ -44,6 +44,7 @@
     "cdk-assets": "^2.96.2",
     "constructs": "^10.1.224",
     "endent": "^2.1.0",
+    "handlebars": "^4.7.8",
     "unzipper": "^0.10.14",
     "uuid4": "^2.0.3"
   },

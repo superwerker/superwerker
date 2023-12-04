@@ -8,7 +8,7 @@ const SSM_PARAMETER = { Name: '/superwerker/initial-lza-config-done' };
 const BRANCH_NAME = 'main';
 const REPOSITORY_NAME = 'aws-accelerator-config';
 
-export async function handler(event: any, context: any) {
+export async function handler(event: any, _context: any) {
   let lzaConfigured = true;
   try {
     await ssm.getParameter(SSM_PARAMETER).promise();
@@ -34,9 +34,6 @@ export async function handler(event: any, context: any) {
   console.log('making inital commit');
   await makeInitalCommit();
 
-  console.log('codepipline release change to trigger codepipeline');
-  // TODO trigger 'AWSAccelerator-Pipeline' codepipeline
-
   console.log('setting initial commit ssm parameter');
   const params = {
     Name: SSM_PARAMETER.Name,
@@ -53,7 +50,7 @@ export async function handler(event: any, context: any) {
 
 async function makeInitalCommit() {
   const branchInfo = await codecommit.getBranch({ branchName: BRANCH_NAME, repositoryName: REPOSITORY_NAME }).promise();
-  const commitId = branchInfo.branch.commitId;
+  const commitId = branchInfo.branch!.commitId;
 
   // TODO get current files from codecommit
   // do changes to files
@@ -82,7 +79,7 @@ function getFilesToUpload() {
     },
     {
       filePath: '/cloudformation/iam-access-analyzer.yaml',
-      fileContent: getBufferFromFile('./cloudformation/iam-access-analyzer.yaml'),
+      fileContent: getBufferFromFile('./iam-access-analyzer.yaml'),
     },
     {
       filePath: '/security-config.yaml',
@@ -92,10 +89,21 @@ function getFilesToUpload() {
       filePath: '/organization-config.yaml',
       fileContent: getBufferFromFile('./organization-config.yaml'),
     },
+    {
+      filePath: '/customizations-config.yaml',
+      fileContent: getBufferFromFile('./customizations-config.yaml'),
+    },
   ];
   return filesToUpload;
 }
 
 function getBufferFromFile(filePath: string) {
   return Buffer.from(Fs.readFileSync(filePath).toString('utf-8'));
+}
+
+function addVariablesToCustomizations(region: string) {
+  const source = Fs.readFileSync(`./config/manifest.yaml`).toString();
+  const template = Handlebars.compile(source);
+  const contents = template({ REGION: `${region}` });
+  Fs.writeFileSync(`/tmp/manifest.yaml`, contents);
 }
