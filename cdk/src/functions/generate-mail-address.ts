@@ -1,12 +1,20 @@
 import { randomUUID } from 'crypto';
 // eslint-disable-next-line import/no-unresolved
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
-import AWS from 'aws-sdk';
+import {
+  OrganizationsClient, 
+  paginateListAccounts,
+  paginateListAccountsForParent,
+  paginateListOrganizationalUnitsForParent,
+  ListRootsCommand,
+  AWSOrganizationsNotInUseException
+} from '@aws-sdk/client-organizations'
 export const PROP_DOMAIN = 'Domain';
 export const PROP_NAME = 'Name';
 export const ATTR_EMAIL = 'Email';
 
-const Organizations = new AWS.Organizations({ region: 'us-east-1' });
+const client = new OrganizationsClient({ region: 'us-east-1' });
+
 
 export interface HandlerResponse {
   email: string;
@@ -20,32 +28,22 @@ export interface TmpAccount {
 
 const getAccounts = async () => {
   const data: TmpAccount[] = [];
-  let response;
+
+
   try {
-    response = await Organizations.listAccounts({}).promise();
+    const paginator = paginateListAccounts(
+      { client, pageSize: 20 }, {}
+    )
+
+    for await (const page of paginator) {
+      page.Accounts!.forEach((account) => {
+        data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
+      });
+    }
   } catch (e) {
-    // @ts-ignore
-    if (e.code == 'AWSOrganizationsNotInUseException') {
-      return data;
-    }
-  }
-
-  const parseAccountResponse = (accounts: AWS.Organizations.Accounts) => {
-    accounts.forEach((account) => {
-      data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
-    });
-  };
-
-  if (response) {
-    parseAccountResponse(response.Accounts!);
-    while (response.NextToken) {
-      response = await Organizations.listAccounts({
-        NextToken: response.NextToken,
-        MaxResults: 20,
-      }).promise();
-
-      parseAccountResponse(response.Accounts!);
-    }
+    if (e instanceof AWSOrganizationsNotInUseException) {
+      return [];
+    } 
   }
 
   return data;
@@ -54,46 +52,43 @@ const getAccounts = async () => {
 const getSuspendedAccounts = async () => {
   const data: TmpAccount[] = [];
 
+
+
   try {
-    await Organizations.listAccounts({}).promise();
-  } catch (e) {
-    // @ts-ignore
-    if (e.code == 'AWSOrganizationsNotInUseException') {
-      return data;
+    const paginator = paginateListAccounts(
+      { client, pageSize: 20 }, {}
+    )
+
+    for await (const {} of paginator) {
+
     }
+  } catch (e) {
+    if (e instanceof AWSOrganizationsNotInUseException) {
+      return [];
+    } 
   }
 
-  const root = await Organizations.listRoots({}).promise();
+
+  const rootCommand = new ListRootsCommand({NextToken: "STRING_VALUE"})
+  const root = await client.send(rootCommand);
   const rootId = root.Roots![0].Id;
 
+
+
   let ouList: AWS.Organizations.OrganizationalUnits = [];
-  let ouResponse;
   try {
-    ouResponse = await Organizations.listOrganizationalUnitsForParent({
-      ParentId: rootId!,
-    }).promise();
-  } catch (e) {
-    return data;
-  }
+    const ouPaginator = paginateListOrganizationalUnitsForParent(
+      { client, pageSize: 20 }, {ParentId: rootId!}
+    )
 
-  const parseOUResponse = (ous: AWS.Organizations.OrganizationalUnits) => {
-    ous.forEach((ou) => {
-      ouList.push(ou);
-    });
-  };
-
-  if (ouResponse) {
-    parseOUResponse(ouResponse.OrganizationalUnits!);
-    while (ouResponse.NextToken) {
-      ouResponse = await Organizations.listOrganizationalUnitsForParent({
-        ParentId: rootId!,
-        NextToken: ouResponse.NextToken,
-        MaxResults: 20,
-      }).promise();
-
-      parseOUResponse(ouResponse.OrganizationalUnits!);
+    for await (const page of ouPaginator) {
+      ouList.push(...page.OrganizationalUnits!)
     }
+  } catch (e) {
+    return [];
   }
+
+
 
   const suspendedOU = ouList.filter(ou => ou.Name === 'Suspended');
 
@@ -102,26 +97,16 @@ const getSuspendedAccounts = async () => {
   }
   const suspendedOUId = suspendedOU[0].Id;
 
-  let accountsResponse = await Organizations.listAccountsForParent({ ParentId: suspendedOUId! }).promise();
+  const accountsForParentPaginator = paginateListAccountsForParent(
+    { client, pageSize: 20 }, {ParentId: suspendedOUId!}
+  )
 
-  const parseAccountResponse = (accounts: AWS.Organizations.Accounts) => {
-    accounts.forEach((account) => {
+  for await (const page of accountsForParentPaginator) {
+    page.Accounts!.forEach((account) => {
       data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
     });
-  };
-
-  if (accountsResponse) {
-    parseAccountResponse(accountsResponse.Accounts!);
-    while (accountsResponse.NextToken) {
-      accountsResponse = await Organizations.listAccountsForParent({
-        ParentId: suspendedOUId!,
-        NextToken: accountsResponse.NextToken,
-        MaxResults: 20,
-      }).promise();
-
-      parseAccountResponse(accountsResponse.Accounts!);
-    }
   }
+
 
   return data;
 };

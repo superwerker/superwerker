@@ -1,0 +1,19 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run Current Jest Test",
+            "program": "${workspaceRoot}/cdk/node_modules/jest/bin/jest.js",
+            "args": ["${fileBasenameNoExtension}", "--config", "cdk/jest.config.js", "--coverage", "false"],
+            "console": "integratedTerminal",
+            "stopOnEntry": false,
+            "sourceMaps": true,
+            "preLaunchTask": "tsc",
+        }
+    ]
+}
