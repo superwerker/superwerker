@@ -1,20 +1,25 @@
-import AWS from 'aws-sdk';
+import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 import axios from 'axios';
 
-const ssm = new AWS.SSM();
-const events = new AWS.EventBridge();
+
+const ssmClient = new SSMClient();
+const eventBridgeClient = new EventBridgeClient();
 
 export async function handler(event: any, _context: any) {
   for (const account of event.accounts) {
     const name = `/superwerker/account_id_${(account.accountName as string).toLowerCase().replace(/ /g, '')}`;
 
-    await ssm.putParameter({
+
+    const putParameterCommand = new PutParameterCommand({
       Name: name,
       Value: account.accountId,
       Overwrite: true,
       Type: 'String',
-    }).promise();
+    });
+
+    await ssmClient.send(putParameterCommand);
   };
 
   // signal cloudformation stack that control tower setup is complete
@@ -25,8 +30,8 @@ export async function handler(event: any, _context: any) {
     Data: 'Control Tower Setup completed',
   });
 
-  // signal Control Tower Landing ZOne Setup/Update has finished
-  await events.putEvents({
+  // signal Control Tower Landing Zone Setup/Update has finished
+  const putEventsCommand = new PutEventsCommand({
     Entries: [
       {
         DetailType: 'superwerker-event',
@@ -38,5 +43,8 @@ export async function handler(event: any, _context: any) {
         Source: 'superwerker',
       },
     ],
-  }).promise();
+  });
+
+  await eventBridgeClient.send(putEventsCommand);
+
 }

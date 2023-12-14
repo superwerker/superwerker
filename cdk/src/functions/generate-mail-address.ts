@@ -1,14 +1,16 @@
 import { randomUUID } from 'crypto';
-// eslint-disable-next-line import/no-unresolved
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+
 import {
-  OrganizationsClient, 
+  OrganizationsClient,
   paginateListAccounts,
   paginateListAccountsForParent,
   paginateListOrganizationalUnitsForParent,
   ListRootsCommand,
-  AWSOrganizationsNotInUseException
-} from '@aws-sdk/client-organizations'
+  AWSOrganizationsNotInUseException,
+  OrganizationalUnit,
+  Account,
+} from '@aws-sdk/client-organizations';
+import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_NAME = 'Name';
 export const ATTR_EMAIL = 'Email';
@@ -27,37 +29,34 @@ export interface TmpAccount {
 }
 
 const getAccounts = async () => {
-  const data: TmpAccount[] = [];
+  const accounts: Account[] = [];
 
 
   try {
     const paginator = paginateListAccounts(
-      { client, pageSize: 20 }, {}
-    )
+      { client, pageSize: 20 }, {},
+    );
 
     for await (const page of paginator) {
-      page.Accounts!.forEach((account) => {
-        data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
-      });
+      accounts.push(...page.Accounts!);
     }
   } catch (e) {
     if (e instanceof AWSOrganizationsNotInUseException) {
       return [];
-    } 
+    }
   }
 
-  return data;
+  return accounts;
 };
 
 const getSuspendedAccounts = async () => {
-  const data: TmpAccount[] = [];
-
+  const accounts: Account[] = [];
 
 
   try {
     const paginator = paginateListAccounts(
-      { client, pageSize: 20 }, {}
-    )
+      { client, pageSize: 20 }, {},
+    );
 
     for await (const {} of paginator) {
 
@@ -65,50 +64,46 @@ const getSuspendedAccounts = async () => {
   } catch (e) {
     if (e instanceof AWSOrganizationsNotInUseException) {
       return [];
-    } 
+    }
   }
 
 
-  const rootCommand = new ListRootsCommand({NextToken: "STRING_VALUE"})
+  const rootCommand = new ListRootsCommand({});
   const root = await client.send(rootCommand);
   const rootId = root.Roots![0].Id;
 
 
-
-  let ouList: AWS.Organizations.OrganizationalUnits = [];
+  let ouList: OrganizationalUnit[] = [];
   try {
     const ouPaginator = paginateListOrganizationalUnitsForParent(
-      { client, pageSize: 20 }, {ParentId: rootId!}
-    )
+      { client, pageSize: 20 }, { ParentId: rootId! },
+    );
 
     for await (const page of ouPaginator) {
-      ouList.push(...page.OrganizationalUnits!)
+      ouList.push(...page.OrganizationalUnits!);
     }
   } catch (e) {
     return [];
   }
 
 
-
   const suspendedOU = ouList.filter(ou => ou.Name === 'Suspended');
 
   if (suspendedOU.length < 1) {
-    return data;
+    return [];
   }
   const suspendedOUId = suspendedOU[0].Id;
 
   const accountsForParentPaginator = paginateListAccountsForParent(
-    { client, pageSize: 20 }, {ParentId: suspendedOUId!}
-  )
+    { client, pageSize: 20 }, { ParentId: suspendedOUId! },
+  );
 
   for await (const page of accountsForParentPaginator) {
-    page.Accounts!.forEach((account) => {
-      data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
-    });
+    accounts.push(...page.Accounts!);
   }
 
 
-  return data;
+  return accounts;
 };
 
 async function generateEmail(domain: string, name: string): Promise<string> {
@@ -131,9 +126,9 @@ async function generateEmail(domain: string, name: string): Promise<string> {
 
   accounts.forEach((account) => {
     console.log('Checking account:', account);
-    abortedEmail = account.email;
-    if (account.name === name && account.email.endsWith(`@${domain}`)) {
-      console.log(`Found potential match for account ${account.id} called ${name} with email ${account.email}`);
+    abortedEmail = account.Email!;
+    if (account.Name === name && account.Email!.endsWith(`@${domain}`)) {
+      console.log(`Found potential match for account ${account.Id} called ${name} with email ${account.Email}`);
 
       console.log('Checking if account is suspended');
       if (suspendedAccounts.length < 1) {
@@ -141,7 +136,7 @@ async function generateEmail(domain: string, name: string): Promise<string> {
         console.log('Aborting email creation');
         abortCreatingNewEmail = true;
       } else {
-        const acc = suspendedAccounts.find((suspendedAccount) => suspendedAccount.id === account.id);
+        const acc = suspendedAccounts.find((suspendedAccount) => suspendedAccount.Id === account.Id);
         if (acc) {
           console.log('Account is suspended and can be ignored');
           console.log('Continuing to create new email');

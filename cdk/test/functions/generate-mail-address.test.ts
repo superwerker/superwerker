@@ -1,4 +1,3 @@
-import {mockClient} from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
 import {
   ListAccountsCommand,
@@ -6,14 +5,14 @@ import {
   ListRootsCommand,
   ListAccountsForParentCommand,
   OrganizationsClient,
-  AWSOrganizationsNotInUseException
-} from '@aws-sdk/client-organizations'
+  AWSOrganizationsNotInUseException,
+} from '@aws-sdk/client-organizations';
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { mockClient } from 'aws-sdk-client-mock';
 import { handler } from '../../src/functions/generate-mail-address';
 
 
 var orgClientMock = mockClient(OrganizationsClient);
-
 
 
 describe('generate-mail-address', () => {
@@ -26,16 +25,16 @@ describe('generate-mail-address', () => {
 
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-       Accounts: []
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [],
+      });
 
     orgClientMock
-    .on(ListRootsCommand)
-    .resolves({
-        Roots: [{'Id': 'r-2ts2'}] ,
-    });
+      .on(ListRootsCommand)
+      .resolves({
+        Roots: [{ Id: 'r-2ts2' }],
+      });
 
 
     const result = await handler(
@@ -59,8 +58,8 @@ describe('generate-mail-address', () => {
 
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .rejects(new AWSOrganizationsNotInUseException({} as any))
+      .on(ListAccountsCommand)
+      .rejects(new AWSOrganizationsNotInUseException({} as any));
 
 
     const result = await handler(
@@ -85,23 +84,23 @@ describe('generate-mail-address', () => {
   it('returns email address for existing account', async () => {
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+this-is-what-we-need@aws.superluminar.io',
-          Id: '333333333333',
-          Name: 'sbstjn-example',
-        },
-      ],
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+this-is-what-we-need@aws.superluminar.io',
+            Id: '333333333333',
+            Name: 'sbstjn-example',
+          },
+        ],
+      });
 
 
     orgClientMock
-    .on(ListRootsCommand)
-    .resolves({
-        Roots: [{'Id': 'r-2-d2'}] ,
-    });
+      .on(ListRootsCommand)
+      .resolves({
+        Roots: [{ Id: 'r-2-d2' }],
+      });
 
 
     const result = await handler(
@@ -124,48 +123,48 @@ describe('generate-mail-address', () => {
   it ('returns email address for existing account AND not in suspended OU', async () => {
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+this-is-what-we-need@aws.superluminar.io',
-          Id: '333333333333',
-          Name: 'sbstjn-example',
-        },
-      ],
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+this-is-what-we-need@aws.superluminar.io',
+            Id: '333333333333',
+            Name: 'sbstjn-example',
+          },
+        ],
+      });
 
 
     orgClientMock
-    .on(ListRootsCommand)
-    .resolves({
-        Roots: [{'Id': 'r-444'}] ,
-    });
+      .on(ListRootsCommand)
+      .resolves({
+        Roots: [{ Id: 'r-444' }],
+      });
 
 
     orgClientMock
-    .on(ListOrganizationalUnitsForParentCommand)
-    .resolves({
-      OrganizationalUnits: [ 
-        { 
-          "Arn": "arn:aws:organizations::111111111111:ou/o-exampleorgid/ou-examplerootid111-exampleouid111",
-          "Name": "NotSuspended"
-        }
-      ]
-    });
+      .on(ListOrganizationalUnitsForParentCommand)
+      .resolves({
+        OrganizationalUnits: [
+          {
+            Arn: 'arn:aws:organizations::111111111111:ou/o-exampleorgid/ou-examplerootid111-exampleouid111',
+            Name: 'NotSuspended',
+          },
+        ],
+      });
 
     // accounts in NotSuspended OU
     orgClientMock
-    .on(ListAccountsForParentCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+some-other-account@aws.superluminar.io',
-          Id: '222222222222',
-          Name: 'example-two',
-        },
-      ]
-    });
+      .on(ListAccountsForParentCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+some-other-account@aws.superluminar.io',
+            Id: '222222222222',
+            Name: 'example-two',
+          },
+        ],
+      });
 
     const result = await handler(
       {
@@ -183,54 +182,54 @@ describe('generate-mail-address', () => {
     expect(orgClientMock).toHaveReceivedCommandTimes(ListRootsCommand, 1);
     expect(orgClientMock).toHaveReceivedCommandTimes(ListOrganizationalUnitsForParentCommand, 1);
     expect(orgClientMock).toHaveReceivedCommandTimes(ListAccountsForParentCommand, 0);
-  
+
   });
 
   it('generate new mail if account with same mail in suspended OU', async () => {
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+this-is-what-we-need@aws.superluminar.io',
-          Id: '333333333333',
-          Name: 'sbstjn-example',
-        },
-      ],
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+this-is-what-we-need@aws.superluminar.io',
+            Id: '333333333333',
+            Name: 'sbstjn-example',
+          },
+        ],
+      });
 
 
     orgClientMock
-    .on(ListRootsCommand)
-    .resolves({
-        Roots: [{'Id': 'r-ftrs'}] ,
-    });
+      .on(ListRootsCommand)
+      .resolves({
+        Roots: [{ Id: 'r-ftrs' }],
+      });
 
 
     orgClientMock
-    .on(ListOrganizationalUnitsForParentCommand)
-    .resolves({
-      OrganizationalUnits: [ 
-        { 
-          "Arn": "arn:aws:organizations::111111111111:ou/o-exampleorgid/ou-examplerootid111-exampleouid111",
-          "Name": "Suspended"
-        }
-      ]
-    });
+      .on(ListOrganizationalUnitsForParentCommand)
+      .resolves({
+        OrganizationalUnits: [
+          {
+            Arn: 'arn:aws:organizations::111111111111:ou/o-exampleorgid/ou-examplerootid111-exampleouid111',
+            Name: 'Suspended',
+          },
+        ],
+      });
 
- 
+
     orgClientMock
-    .on(ListAccountsForParentCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+this-is-what-we-need@aws.superluminar.io',
-          Id: '333333333333',
-          Name: 'sbstjn-example',
-        },
-      ]
-    });
+      .on(ListAccountsForParentCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+this-is-what-we-need@aws.superluminar.io',
+            Id: '333333333333',
+            Name: 'sbstjn-example',
+          },
+        ],
+      });
 
 
     const result = await handler(
@@ -255,45 +254,45 @@ describe('generate-mail-address', () => {
   it('returns email address for existing account: Suspended OU exists but no relevance', async () => {
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+this-is-what-we-need@aws.superluminar.io',
-          Id: '333333333333',
-          Name: 'example-one',
-        },
-      ],
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+this-is-what-we-need@aws.superluminar.io',
+            Id: '333333333333',
+            Name: 'example-one',
+          },
+        ],
+      });
 
     orgClientMock
-    .on(ListRootsCommand)
-    .resolves({
-        Roots: [{'Id': 'r-2ts2'}] ,
-    });
+      .on(ListRootsCommand)
+      .resolves({
+        Roots: [{ Id: 'r-2ts2' }],
+      });
 
     orgClientMock
-    .on(ListOrganizationalUnitsForParentCommand)
-    .resolves({
-      OrganizationalUnits: [ 
-        { 
-          "Arn": "arn:aws:organizations::111111111111:ou/o-exampleorgid/ou-examplerootid111-exampleouid111",
-          "Name": "Suspended"
-        }
-      ]
-    });
+      .on(ListOrganizationalUnitsForParentCommand)
+      .resolves({
+        OrganizationalUnits: [
+          {
+            Arn: 'arn:aws:organizations::111111111111:ou/o-exampleorgid/ou-examplerootid111-exampleouid111',
+            Name: 'Suspended',
+          },
+        ],
+      });
 
     orgClientMock
-    .on(ListAccountsForParentCommand)
-    .resolves({
-      Accounts: [
-        {
-          Email: 'root+some-other-account@aws.superluminar.io',
-          Id: '222222222222',
-          Name: 'example-two',
-        },
-      ]
-    });
+      .on(ListAccountsForParentCommand)
+      .resolves({
+        Accounts: [
+          {
+            Email: 'root+some-other-account@aws.superluminar.io',
+            Id: '222222222222',
+            Name: 'example-two',
+          },
+        ],
+      });
 
     const result = await handler(
       {
@@ -310,24 +309,24 @@ describe('generate-mail-address', () => {
     expect(orgClientMock).toHaveReceivedCommandTimes(ListRootsCommand, 1);
     expect(orgClientMock).toHaveReceivedCommandTimes(ListOrganizationalUnitsForParentCommand, 1);
     expect(orgClientMock).toHaveReceivedCommandTimes(ListAccountsForParentCommand, 1);
-  
+
   });
 
   it('cannot generate email address for long domain names', async () => {
 
 
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: []
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [],
+      });
 
 
     orgClientMock
-    .on(ListRootsCommand)
-    .resolves({
-        Roots: [{'Id': 'r-2ts2'}] ,
-    });
+      .on(ListRootsCommand)
+      .resolves({
+        Roots: [{ Id: 'r-2ts2' }],
+      });
 
     const result = handler(
       {
@@ -346,10 +345,10 @@ describe('generate-mail-address', () => {
 
   it('cannot generate email address if no domain is provided', async () => {
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: []
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [],
+      });
 
     const result = handler(
       {
@@ -366,10 +365,10 @@ describe('generate-mail-address', () => {
 
   it('cannot generate email address if no name is provided', async () => {
     orgClientMock
-    .on(ListAccountsCommand)
-    .resolves({
-      Accounts: []
-    });
+      .on(ListAccountsCommand)
+      .resolves({
+        Accounts: [],
+      });
 
     const result = handler(
       {
