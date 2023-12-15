@@ -8,7 +8,7 @@ customizations:
         organizationalUnits:
           - Security
       runOrder: 1
-      template: ./cloudformation/iam-access-analyzer.yaml
+      template: /cloudformation/iam-access-analyzer.yaml
       terminationProtection: false
   cloudFormationStackSets: []
   serviceCatalogPortfolios: []

@@ -1,5 +1,7 @@
 import { CodeCommit, SSM } from 'aws-sdk';
 import Fs from 'fs';
+import Path from 'path';
+import * as Handlebars from 'handlebars';
 
 const codecommit = new CodeCommit();
 const ssm = new SSM();
@@ -31,8 +33,22 @@ export async function handler(event: any, _context: any) {
     return;
   }
 
+  const AWS_REGION = process.env.AWS_REGION;
+  const AUDIT_ACCOUNT_EMAIL = process.env.AUDIT_ACCOUNT_EMAIL;
+  console.log('adding variables to customizations.yaml');
+  await addVariablesToCustomizations(AWS_REGION);
+  await addVariablesToSecurity(AWS_REGION);
+  await addVariablesToGlobal(AWS_REGION, AUDIT_ACCOUNT_EMAIL);
+
+  // TODO copy all files to /tmp then modify them and create bulk upload
+  console.log('getting files to upload');
+  const scpFiles = await getStaticFiles('/service-control-policies');
+  const iamFiles = await getStaticFiles('/iam-policies');
+  const remainingFiles = await getRemainingFiles();
+  const filesToUpload = scpFiles.concat(iamFiles).concat(remainingFiles);
+
   console.log('making inital commit');
-  await makeInitalCommit();
+  await makeInitalCommit(filesToUpload);
 
   console.log('setting initial commit ssm parameter');
   const params = {
@@ -48,19 +64,16 @@ export async function handler(event: any, _context: any) {
     .promise();
 }
 
-async function makeInitalCommit() {
+async function makeInitalCommit(files: PutFileEntry[]) {
   const branchInfo = await codecommit.getBranch({ branchName: BRANCH_NAME, repositoryName: REPOSITORY_NAME }).promise();
   const commitId = branchInfo.branch!.commitId;
-
-  // TODO get current files from codecommit
-  // do changes to files
 
   const params = {
     branchName: BRANCH_NAME,
     repositoryName: REPOSITORY_NAME,
     commitMessage: 'inital configuration',
     parentCommitId: commitId,
-    putFiles: getFilesToUpload(),
+    putFiles: files,
   };
   await codecommit
     .createCommit(params, function (err, data) {
@@ -70,28 +83,57 @@ async function makeInitalCommit() {
     .promise();
 }
 
-function getFilesToUpload() {
-  // TODO dynamically get files from config directory
+interface PutFileEntry {
+  filePath: string;
+  fileContent: Buffer;
+}
+
+async function getStaticFiles(path: string) {
+  let filesToUpload = [];
+
+  const PATH_CODECOMMIT = path;
+  const PATH_LAMBDA = `.${PATH_CODECOMMIT}`;
+
+  const files = Fs.readdirSync(PATH_LAMBDA, { withFileTypes: true });
+  files.forEach((file) => {
+    if (file.isFile()) {
+      const filePath = Path.join(PATH_LAMBDA, file.name);
+      const fileDict = {
+        filePath: Path.join(PATH_CODECOMMIT, file.name),
+        fileContent: getBufferFromFile(filePath),
+      };
+      filesToUpload.push(fileDict);
+    }
+  });
+
+  return filesToUpload;
+}
+
+async function getRemainingFiles() {
   let filesToUpload = [
     {
-      filePath: '/service-control-policies/superwerker-sandbox-scp.json',
-      fileContent: getBufferFromFile('./service-control-policies/superwerker-sandbox-scp.json'),
-    },
-    {
       filePath: '/cloudformation/iam-access-analyzer.yaml',
-      fileContent: getBufferFromFile('./iam-access-analyzer.yaml'),
+      fileContent: getBufferFromFile('./cloudformation/iam-access-analyzer.yaml'),
     },
     {
-      filePath: '/security-config.yaml',
-      fileContent: getBufferFromFile('./security-config.yaml'),
+      filePath: '/iam-config.yaml',
+      fileContent: getBufferFromFile('./iam-config.yaml'),
     },
     {
       filePath: '/organization-config.yaml',
       fileContent: getBufferFromFile('./organization-config.yaml'),
     },
     {
+      filePath: '/global-config.yaml',
+      fileContent: getBufferFromFile('/tmp/global-config.yaml'),
+    },
+    {
       filePath: '/customizations-config.yaml',
-      fileContent: getBufferFromFile('./customizations-config.yaml'),
+      fileContent: getBufferFromFile('/tmp/customizations-config.yaml'),
+    },
+    {
+      filePath: '/security-config.yaml',
+      fileContent: getBufferFromFile('/tmp/security-config.yaml'),
     },
   ];
   return filesToUpload;
@@ -102,8 +144,22 @@ function getBufferFromFile(filePath: string) {
 }
 
 function addVariablesToCustomizations(region: string) {
-  const source = Fs.readFileSync(`./config/manifest.yaml`).toString();
+  const source = Fs.readFileSync(`./customizations-config.yaml`).toString();
   const template = Handlebars.compile(source);
   const contents = template({ REGION: `${region}` });
-  Fs.writeFileSync(`/tmp/manifest.yaml`, contents);
+  Fs.writeFileSync(`/tmp/customizations-config.yaml`, contents);
+}
+
+function addVariablesToSecurity(region: string) {
+  const source = Fs.readFileSync(`./security-config.yaml`).toString();
+  const template = Handlebars.compile(source);
+  const contents = template({ REGION: `${region}` });
+  Fs.writeFileSync(`/tmp/security-config.yaml`, contents);
+}
+
+function addVariablesToGlobal(region: string, auditMail: string) {
+  const source = Fs.readFileSync(`./global-config.yaml`).toString();
+  const template = Handlebars.compile(source);
+  const contents = template({ REGION: `${region}`, AUDIT_MAIL: `${auditMail}` });
+  Fs.writeFileSync(`/tmp/global-config.yaml`, contents);
 }

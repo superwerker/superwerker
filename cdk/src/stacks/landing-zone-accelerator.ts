@@ -34,11 +34,6 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       notificationsTopic: notificationsTopic.topicArn,
     });
 
-    if (makeInitalCommit.value.toString() == 'Yes') {
-      this.createConfigureLandingZoneAcceleratorLambda(this, notificationsTopic);
-    }
-  }
-  createConfigureLandingZoneAcceleratorLambda(scope: Construct, notificationsTopic: Topic) {
     const mainConfigDirPath = path.join(__dirname, '..', 'functions', 'configure_landing_zone_accelerator', 'config', 'best-practices');
     const sharedCloudformationConfigDirPath = path.join(
       __dirname,
@@ -56,6 +51,14 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       'config',
       'service-control-policies',
     );
+    const sharedIamPoliciesDirPath = path.join(
+      __dirname,
+      '..',
+      'functions',
+      'configure_controltower_customizations',
+      'config',
+      'iam-policies',
+    );
 
     const configureLandingZoneAccelerator = new NodejsFunction(this, 'ConfigureLandingZoneAcceleratorFunction', {
       entry: path.join(__dirname, '..', 'functions', 'configure_landing_zone_accelerator', 'configure-landing-zone-accelerator.ts'),
@@ -63,13 +66,15 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       timeout: Duration.minutes(15),
       environment: {
         LZA_VERSION: LZA_VERSION,
+        AUDIT_ACCOUNT_EMAIL: auditAWSAccountEmail.valueAsString,
       },
       bundling: {
         commandHooks: {
           afterBundling: (inputDir: string, outputDir: string): string[] => [
             `cp -r ${mainConfigDirPath}/* ${outputDir}`,
-            `cp -r ${sharedCloudformationConfigDirPath}/ ${outputDir}`,
-            `cp -r ${sharedScpConfigDirPath}/ ${outputDir}`,
+            `cp -r ${sharedCloudformationConfigDirPath} ${outputDir}`,
+            `cp -r ${sharedScpConfigDirPath} ${outputDir}`,
+            `cp -r ${sharedIamPoliciesDirPath} ${outputDir}`,
           ],
           beforeBundling: (inputDir: string, outputDir: string): string[] => [],
           beforeInstall: (inputDir: string, outputDir: string): string[] => [],

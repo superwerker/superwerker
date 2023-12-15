@@ -1,5 +1,101 @@
 providers: []
-policySets: []
-roleSets: []
-groupSets: []
-userSets: []
+roleSets:
+  ##############################
+  # IAM Role for connecting to EC2s via Session Manager (SSM)
+  ##############################
+  - deploymentTargets:
+      organizationalUnits:
+        - Root # This role is created in all accounts
+    roles:
+      - name: EC2-Sessions-Manager-Role
+        instanceProfile: true
+        assumedBy:
+          - type: service
+            principal: ec2.amazonaws.com
+        policies:
+          awsManaged:
+            - AmazonSSMManagedInstanceCore
+            - CloudWatchAgentServerPolicy
+        boundaryPolicy: Default-Boundary-Policy
+policySets:
+  - deploymentTargets:
+      organizationalUnits:
+        - Root # This policy is created in all accounts
+    policies:
+      - name: Default-Boundary-Policy
+        policy: iam-policies/boundary-policy.json
+  - deploymentTargets:
+      accounts:
+        - Management # This policy is created only in management account
+    policies:
+      - name: IAM-User-Boundary-Policy
+        policy: iam-policies/iam-user-boundary-policy.json
+groupSets:
+  ##############################
+  # IAM Group for Break Glass Users
+  ##############################
+  - deploymentTargets:
+      accounts:
+        - Management
+    groups:
+      - name: BreakGlassAdmins
+        policies:
+          awsManaged:
+            - AdministratorAccess
+userSets:
+  ##############################
+  # Break Glass Users with Access to Management Account in case of emergency (e.g. SSO is down)
+  # See: https://docs.aws.amazon.com/whitepapers/latest/organizing-your-aws-environment/break-glass-access.html
+  ##############################
+  - deploymentTargets:
+      accounts:
+        - Management # This users are created only in management account
+    users:
+      - username: breakGlassUser01
+        group: BreakGlassAdmins
+        boundaryPolicy: IAM-User-Boundary-Policy
+      - username: breakGlassUser02
+        group: BreakGlassAdmins
+        boundaryPolicy: IAM-User-Boundary-Policy
+identityCenter:
+  name: IdentityCenter
+  ##############################
+  # Predefined permission sets
+  # See: https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetpredefined.html
+  ##############################
+  identityCenterPermissionSets:
+    - name: Billing
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/job-function/Billing
+      sessionDuration: 60
+    - name: DatabaseAdmin
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/job-function/DatabaseAdministrator
+      sessionDuration: 60
+    - name: DataScientist
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/job-function/DataScientist
+      sessionDuration: 60
+    - name: NetworkAdministrator
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/job-function/NetworkAdministrator
+      sessionDuration: 60
+    - name: SecurityAudit
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/SecurityAudit
+      sessionDuration: 60
+    - name: SupportUser
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/job-function/SupportUser
+      sessionDuration: 60
+    - name: SystemAdmin
+      policies:
+        awsManaged:
+          - arn:aws:iam::aws:policy/job-function/SystemAdministrator
+      sessionDuration: 60

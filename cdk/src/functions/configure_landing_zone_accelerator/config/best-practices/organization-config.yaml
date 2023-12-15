@@ -16,11 +16,12 @@ serviceControlPolicies:
   - name: superwerker-lza-baseline-scp
     description: >
       Baseline SCP for all accounts
-    policy: service-control-policies/superwerker-baseline-scp.json
+    policy: service-control-policies/superwerker-lza-baseline-scp.json
     type: customerManaged
     deploymentTargets:
       organizationalUnits:
         - Root
+  # Todo: attach to new OUs once they are created
   - name: superwerker-lza-guardrails-scp-1
     description: >
       Landingzone Accelerator GuardRails 1
@@ -30,10 +31,11 @@ serviceControlPolicies:
       organizationalUnits:
         - Sandbox
         - Security
+  # Todo: attach to new OUs once they are created
   - name: superwerker-lza-guardrails-scp-2
     description: >
       Landingzone Accelerator GuardRails 2
-    policy: service-control-policies/superwerker-lza-guardrails-scp1.json
+    policy: service-control-policies/superwerker-lza-guardrails-scp2.json
     type: customerManaged
     deploymentTargets:
       organizationalUnits:

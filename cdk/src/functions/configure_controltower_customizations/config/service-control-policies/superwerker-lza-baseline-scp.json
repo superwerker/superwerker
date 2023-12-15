@@ -2,7 +2,7 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "DenyOrganizationModification",
+      "Sid": "DenyOrgModification",
       "Effect": "Deny",
       "Action": ["organizations:LeaveOrganization", "organizations:DeleteOrganization"],
       "Resource": ["*"],

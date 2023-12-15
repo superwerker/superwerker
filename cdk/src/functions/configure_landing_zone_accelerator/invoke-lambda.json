@@ -1,0 +1,9 @@
+{
+  "Records": [
+    {
+      "Sns": {
+        "Message": "CREATE_COMPLETE"
+      }
+    }
+  ]
+}
