@@ -1,4 +1,4 @@
-homeRegion: &HOME_REGION { { REGION } }
+homeRegion: &HOME_REGION {{REGION}}
 centralSecurityServices:
   ##################################################################################################################
   # Based upon AWS Security Reference Architecture (AWS SRA),                                                      #
