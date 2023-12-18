@@ -29,7 +29,7 @@ module.exports = {
     [
       "jest-junit",
       {
-        "outputDirectory": "test-reports"
+        "outputDirectory": "<rootDir>/test-reports"
       }
     ]
   ],
