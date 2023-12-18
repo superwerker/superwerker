@@ -17,6 +17,7 @@ import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
+import { CfnOrganization } from 'aws-cdk-lib/aws-organizations';
 
 export interface SuperwerkerStackProps extends StackProps{
   readonly version?: string;
@@ -91,6 +92,13 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
+    const organisationCreate = new CfnParameter(this, 'ActivateOrganisationsService', {
+      type: 'String',
+      description: 'Activate AWS Organisations (should only be done once)',
+      allowedValues: ['Yes', 'No'],
+      default: 'Yes',
+    });
+
     /**
      * Core Components
      */
@@ -115,6 +123,13 @@ export class SuperwerkerStack extends Stack {
     (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
 
     // ControlTower
+    // create organisation based on parameter
+    const organisation = new CfnOrganization(this, 'Organization', {
+      featureSet: 'ALL'
+    });
+    organisation.cfnOptions.condition = new CfnCondition(this, 'OrganizationCondition',{
+      expression: Fn.conditionEquals(organisationCreate, 'Yes'),
+    })
     const controlTowerStack = new ControlTowerStack(this, 'ControlTower', {
       parameters: {
         AuditAWSAccountEmail: emailAudit.email,
