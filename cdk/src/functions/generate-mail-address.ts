@@ -1,132 +1,63 @@
 import { randomUUID } from 'crypto';
-// eslint-disable-next-line import/no-unresolved
+
+import {
+  OrganizationsClient,
+  paginateListAccounts,
+  AWSOrganizationsNotInUseException,
+  Account,
+  AccountStatus,
+} from '@aws-sdk/client-organizations';
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
-import AWS from 'aws-sdk';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_NAME = 'Name';
 export const ATTR_EMAIL = 'Email';
 
-const Organizations = new AWS.Organizations({ region: 'us-east-1' });
+const client = new OrganizationsClient({ region: 'us-east-1' });
+
 
 export interface HandlerResponse {
   email: string;
 }
 
-export interface TmpAccount {
-  id: string;
-  name: string;
-  email: string;
+
+async function getAccounts(): Promise<Account[]> {
+  const accounts: Account[] = [];
+
+
+  try {
+    const paginator = paginateListAccounts(
+      { client, pageSize: 20 }, {},
+    );
+
+    for await (const page of paginator) {
+      accounts.push(...page.Accounts!);
+    }
+  } catch (e) {
+    if (e instanceof AWSOrganizationsNotInUseException) {
+      return [];
+    }
+  }
+
+  return accounts;
+};
+
+export function generateEmail(domain: string): string {
+  const maxCharacters = 64;
+  const availableCharacters = maxCharacters - (domain.length + 1 + 5); // root+{uuid}@domain.tld
+  const id = randomUUID().substring(0, availableCharacters);
+
+  const email = `root+${id}@${domain}`;
+
+  if (email.length > 64) {
+    throw new Error('Unable to generate email address with more than 64 characters (Control Tower requirement)');
+  }
+
+  console.log('Created new email for account', email);
+  return email;
 }
 
-const getAccounts = async () => {
-  const data: TmpAccount[] = [];
-  let response;
-  try {
-    response = await Organizations.listAccounts({}).promise();
-  } catch (e) {
-    // @ts-ignore
-    if (e.code == 'AWSOrganizationsNotInUseException') {
-      return data;
-    }
-  }
 
-  const parseAccountResponse = (accounts: AWS.Organizations.Accounts) => {
-    accounts.forEach((account) => {
-      data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
-    });
-  };
-
-  if (response) {
-    parseAccountResponse(response.Accounts!);
-    while (response.NextToken) {
-      response = await Organizations.listAccounts({
-        NextToken: response.NextToken,
-        MaxResults: 20,
-      }).promise();
-
-      parseAccountResponse(response.Accounts!);
-    }
-  }
-
-  return data;
-};
-
-const getSuspendedAccounts = async () => {
-  const data: TmpAccount[] = [];
-
-  try {
-    await Organizations.listAccounts({}).promise();
-  } catch (e) {
-    // @ts-ignore
-    if (e.code == 'AWSOrganizationsNotInUseException') {
-      return data;
-    }
-  }
-
-  const root = await Organizations.listRoots({}).promise();
-  const rootId = root.Roots![0].Id;
-
-  let ouList: AWS.Organizations.OrganizationalUnits = [];
-  let ouResponse;
-  try {
-    ouResponse = await Organizations.listOrganizationalUnitsForParent({
-      ParentId: rootId!,
-    }).promise();
-  } catch (e) {
-    return data;
-  }
-
-  const parseOUResponse = (ous: AWS.Organizations.OrganizationalUnits) => {
-    ous.forEach((ou) => {
-      ouList.push(ou);
-    });
-  };
-
-  if (ouResponse) {
-    parseOUResponse(ouResponse.OrganizationalUnits!);
-    while (ouResponse.NextToken) {
-      ouResponse = await Organizations.listOrganizationalUnitsForParent({
-        ParentId: rootId!,
-        NextToken: ouResponse.NextToken,
-        MaxResults: 20,
-      }).promise();
-
-      parseOUResponse(ouResponse.OrganizationalUnits!);
-    }
-  }
-
-  const suspendedOU = ouList.filter(ou => ou.Name === 'Suspended');
-
-  if (suspendedOU.length < 1) {
-    return data;
-  }
-  const suspendedOUId = suspendedOU[0].Id;
-
-  let accountsResponse = await Organizations.listAccountsForParent({ ParentId: suspendedOUId! }).promise();
-
-  const parseAccountResponse = (accounts: AWS.Organizations.Accounts) => {
-    accounts.forEach((account) => {
-      data.push({ id: account.Id!, name: account.Name!, email: account.Email! });
-    });
-  };
-
-  if (accountsResponse) {
-    parseAccountResponse(accountsResponse.Accounts!);
-    while (accountsResponse.NextToken) {
-      accountsResponse = await Organizations.listAccountsForParent({
-        ParentId: suspendedOUId!,
-        NextToken: accountsResponse.NextToken,
-        MaxResults: 20,
-      }).promise();
-
-      parseAccountResponse(accountsResponse.Accounts!);
-    }
-  }
-
-  return data;
-};
-
-async function generateEmail(domain: string, name: string): Promise<string> {
+async function getEmail(domain: string, name: string): Promise<string> {
   if (!domain || domain === '') {
     throw new Error('Missing domain');
   }
@@ -140,60 +71,25 @@ async function generateEmail(domain: string, name: string): Promise<string> {
   // on the Control Tower stack.
   console.log('Checking to see if account exists in AWS Organizations...');
   const accounts = await getAccounts();
-  const suspendedAccounts = await getSuspendedAccounts();
-  let abortCreatingNewEmail = false;
-  let abortedEmail = '';
+  const activeAccounts = accounts.filter(account => account.Status == AccountStatus.ACTIVE);
 
-  accounts.forEach((account) => {
-    console.log('Checking account:', account);
-    abortedEmail = account.email;
-    if (account.name === name && account.email.endsWith(`@${domain}`)) {
-      console.log(`Found potential match for account ${account.id} called ${name} with email ${account.email}`);
-
-      console.log('Checking if account is suspended');
-      if (suspendedAccounts.length < 1) {
-        console.log('No suspended accounts found');
-        console.log('Aborting email creation');
-        abortCreatingNewEmail = true;
-      } else {
-        const acc = suspendedAccounts.find((suspendedAccount) => suspendedAccount.id === account.id);
-        if (acc) {
-          console.log('Account is suspended and can be ignored');
-          console.log('Continuing to create new email');
-        } else {
-          console.log('Account is not suspended');
-          console.log('Aborting email creation');
-          abortCreatingNewEmail = true;
-        }
-      }
-    }
-  });
-
-  if (abortCreatingNewEmail) {
-    console.log('Email creation aborted');
-    return abortedEmail;
+  const account = activeAccounts.find((acc) => acc.Name === name && acc.Email!.endsWith(`@${domain}`));
+  if (account) {
+    const email = account!.Email!;
+    console.log('Found account', email);
+    return email;
   }
 
-  const maxCharacters = 64;
-  const availableCharacters = maxCharacters - (domain.length + 1 + 5); // root+{uuid}@domain.tld
-  const id = randomUUID().substring(0, availableCharacters);
-
-  const email = `root+${id}@${domain}`;
-
-  if (email.length > 64) {
-    throw new Error('Unable to generate email address with less than 64 characters (Control Tower requirement)');
-  }
-
-  console.log('Created new email for account', email);
-  return email;
+  return generateEmail(domain);
 }
+
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
       console.log('Creating/updating email address for account');
-      const email = await generateEmail(event.ResourceProperties[PROP_DOMAIN], event.ResourceProperties[PROP_NAME]);
+      const email = await getEmail(event.ResourceProperties[PROP_DOMAIN], event.ResourceProperties[PROP_NAME]);
       return {
         PhysicalResourceId: `${event.ResourceProperties[PROP_NAME]}@${event.ResourceProperties[PROP_DOMAIN]}`,
         Data: {

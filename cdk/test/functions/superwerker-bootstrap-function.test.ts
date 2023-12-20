@@ -1,13 +1,14 @@
-const spySSMPutParameter = jest.fn();
-const spySSM = jest.fn(() => ({ putParameter: spySSMPutParameter }));
+import 'aws-sdk-client-mock-jest';
+import {
+  EventBridgeClient,
+  PutEventsCommand,
+} from '@aws-sdk/client-eventbridge';
+import {
+  SSMClient,
+  PutParameterCommand,
+} from '@aws-sdk/client-ssm';
+import { mockClient } from 'aws-sdk-client-mock';
 
-const spyEventBridgePutEvents = jest.fn();
-const spyEventBridge = jest.fn(() => ({ putEvents: spyEventBridgePutEvents }));
-
-jest.mock('aws-sdk', () => ({
-  SSM: spySSM,
-  EventBridge: spyEventBridge,
-}));
 
 const putSpy = jest.fn();
 
@@ -17,9 +18,16 @@ jest.mock('axios', () => ({
 
 import { handler } from '../../src/functions/superwerker-bootstrap-function';
 
+
+var ssmClientMock = mockClient(SSMClient);
+var eventBridgeClientMock = mockClient(EventBridgeClient);
+
+
 describe('superwerker bootstrap function', () => {
+
   beforeEach(() => {
-    jest.resetAllMocks();
+    ssmClientMock.reset();
+    eventBridgeClientMock.reset();
     process.env.SIGNAL_URL = 'test-url';
   });
 
@@ -28,16 +36,14 @@ describe('superwerker bootstrap function', () => {
   });
 
   it('puts parameters for each account and sends events', async () => {
-    spySSMPutParameter.mockImplementation(() => ({
-      promise() {
-        return Promise.resolve();
-      },
-    }));
-    spyEventBridgePutEvents.mockImplementation(() => ({
-      promise() {
-        return Promise.resolve();
-      },
-    }));
+
+    ssmClientMock
+      .on(PutParameterCommand)
+      .resolves({});
+
+    eventBridgeClientMock
+      .on(PutEventsCommand)
+      .resolves({});
 
     const event = {
       accounts: [{
@@ -53,14 +59,14 @@ describe('superwerker bootstrap function', () => {
       {},
     );
 
-    expect(spySSMPutParameter).toHaveBeenCalledTimes(event.accounts.length);
-    expect(spySSMPutParameter).toHaveBeenNthCalledWith(1, {
+    expect(ssmClientMock).toHaveReceivedCommandTimes(PutParameterCommand, event.accounts.length);
+    expect(ssmClientMock).toHaveReceivedNthCommandWith(1, PutParameterCommand, {
       Name: '/superwerker/account_id_testaccountname',
       Value: event.accounts[0].accountId,
       Overwrite: true,
       Type: 'String',
     });
-    expect(spySSMPutParameter).toHaveBeenNthCalledWith(2, {
+    expect(ssmClientMock).toHaveReceivedNthCommandWith(2, PutParameterCommand, {
       Name: '/superwerker/account_id_testaccountname2',
       Value: event.accounts[1].accountId,
       Overwrite: true,
@@ -74,8 +80,7 @@ describe('superwerker bootstrap function', () => {
       Data: 'Control Tower Setup completed',
     });
 
-    expect(spyEventBridgePutEvents).toHaveBeenCalledTimes(1);
-    expect(spyEventBridgePutEvents).toHaveBeenCalledWith({
+    expect(eventBridgeClientMock).toHaveReceivedCommandWith(PutEventsCommand, {
       Entries: [
         {
           DetailType: 'superwerker-event',

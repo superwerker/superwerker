@@ -7,8 +7,8 @@ test: activate test-dependencies
 
 venv:
 	echo $${SHELL}
-	python3 -m pip install virtualenv
-	-[ ! -d venv ] && python3 -m virtualenv venv
+	python3 -m pip install -qqq virtualenv
+	-[ ! -d venv ] && python3 -m virtualenv venv > /dev/null
 
 .PHONY: activate
 activate: venv
@@ -16,7 +16,7 @@ activate: venv
 	$(eval VENV := $(shell . venv/bin/activate; echo $$VIRTUAL_ENV))
 
 test-dependencies: activate
-	$(PYTHON) -m pip install -r requirements_dev.txt
+	$(PYTHON) -m pip install -qqq -r requirements_dev.txt
 
 .PHONY: clean
 clean:
