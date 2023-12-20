@@ -1,11 +1,11 @@
 import * as path from 'path';
 import { CustomResource, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
 import { ATTR_EMAIL, PROP_DOMAIN, PROP_NAME } from '../functions/generate-mail-address';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
 
 interface GenerateEmailAddressProps {
   /**
@@ -65,7 +65,7 @@ class GenerateEmailAddressProvider extends Construct {
               'organizations:ListAccounts',
               'organizations:ListAccountsForParent',
               'organizations:ListOrganizationalUnitsForParent',
-              'organizations:ListRoots'
+              'organizations:ListRoots',
 
             ],
           }),
