@@ -6,6 +6,7 @@ import {
   Stack,
   StackProps,
 } from 'aws-cdk-lib';
+import { CfnOrganization } from 'aws-cdk-lib/aws-organizations';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
@@ -17,7 +18,6 @@ import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
-import { CfnOrganization } from 'aws-cdk-lib/aws-organizations';
 
 export interface SuperwerkerStackProps extends StackProps{
   readonly version?: string;
@@ -125,11 +125,11 @@ export class SuperwerkerStack extends Stack {
     // ControlTower
     // create organisation based on parameter
     const organisation = new CfnOrganization(this, 'Organization', {
-      featureSet: 'ALL'
+      featureSet: 'ALL',
     });
-    organisation.cfnOptions.condition = new CfnCondition(this, 'OrganizationCondition',{
+    organisation.cfnOptions.condition = new CfnCondition(this, 'OrganizationCondition', {
       expression: Fn.conditionEquals(organisationCreate, 'Yes'),
-    })
+    });
     const controlTowerStack = new ControlTowerStack(this, 'ControlTower', {
       parameters: {
         AuditAWSAccountEmail: emailAudit.email,
