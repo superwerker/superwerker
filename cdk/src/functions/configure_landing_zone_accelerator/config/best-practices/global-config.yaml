@@ -1,4 +1,4 @@
-homeRegion: &HOME_REGION { { REGION } }
+homeRegion: &HOME_REGION {{REGION}}
 enabledRegions:
   - *HOME_REGION
 managementAccountAccessRole: AWSControlTowerExecution
