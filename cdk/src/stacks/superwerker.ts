@@ -1,18 +1,14 @@
-import { CfnCondition, CfnParameter, CfnRule, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
-import { GuardDutyStack } from './guardduty';
+import { ControlTowerCustomizationsStack } from './control-tower-customizations';
+import { LandingZoneAcceleratorStack } from './landing-zone-accelerator';
 import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
-import { SecurityHubStack } from './security-hub';
-import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
-import { ControlTowerCustomizationsStack } from './control-tower-customizations';
 import { addParameterToInterface } from '../utils/cfn-interface-parameters';
-import { LandingZoneAcceleratorStack } from './landing-zone-accelerator';
 
 export interface SuperwerkerStackProps extends StackProps {
   readonly version?: string;
@@ -73,23 +69,10 @@ export class SuperwerkerStack extends Stack {
     const lzaType = new CfnParameter(this, 'LandingzoneAcceleratorType', {
       type: 'String',
       description: 'Inital Landingzone Accelerator (LZA) configuration to roll out',
-      allowedValues: [
-        'Superwerker Best Practices',
-        'Superwerker Finance Practices',
-        'Superwerker Education Practices',
-        'Superwerker Healthcare Practices',
-        'Superwerker Public Sector Practices',
-      ],
+      allowedValues: ['Superwerker Best Practices'],
       default: 'Superwerker Best Practices',
     });
     lzaType.overrideLogicalId('LandingzoneAcceleratorType');
-
-    const makeInitalCommit = new CfnParameter(this, 'makeInitalCommit', {
-      type: 'String',
-      description: 'Make inital commit to repo that configures landingzone features, else installs Pipeline with barebone configuration',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
-    });
 
     // const includeBudget = new CfnParameter(this, 'IncludeBudget', {
     //   type: 'String',
@@ -165,6 +148,7 @@ export class SuperwerkerStack extends Stack {
     });
     (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
 
+    // Budget
     const budgetStack = new BudgetStack(this, 'BudgetAlarm', {});
     (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('BudgetAlarm');
 
@@ -187,11 +171,7 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeControlTowerCustomizations, 'Yes'),
     });
     controlTowerCustomizationsCondition.overrideLogicalId('IncludeControlTowerCustomizations');
-    const controlTowerCustomizationsStack = new ControlTowerCustomizationsStack(this, 'ControlTowerCustomizationsStack', {
-      parameters: {
-        makeInitalCommit: makeInitalCommit.value.toString(),
-      },
-    });
+    const controlTowerCustomizationsStack = new ControlTowerCustomizationsStack(this, 'ControlTowerCustomizationsStack', {});
     (controlTowerCustomizationsStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTowerCustomizationsStack');
     (controlTowerCustomizationsStack.node.defaultChild as CfnStack).cfnOptions.condition = controlTowerCustomizationsCondition;
 
@@ -204,7 +184,6 @@ export class SuperwerkerStack extends Stack {
       parameters: {
         AuditAWSAccountEmail: emailAudit.email,
         LogArchiveAWSAccountEmail: emailLogArchive.email,
-        makeInitalCommit: makeInitalCommit.value.toString(),
       },
     });
     (landingzoneAcceleratorStack.node.defaultChild as CfnStack).overrideLogicalId('LandingzoneAcceleratorStack');
@@ -303,14 +282,6 @@ export class SuperwerkerStack extends Stack {
       groupLabel: pipelineLabel,
       parameter: lzaType,
       parameterLabel: 'Landingzone Accelerator (LZA) Configuration',
-      scope: this,
-    }).valueAsString;
-
-    const advancedOptions = 'Advanced Options';
-    addParameterToInterface({
-      groupLabel: advancedOptions,
-      parameter: makeInitalCommit,
-      parameterLabel: 'Make Inital Commit to Repo',
       scope: this,
     }).valueAsString;
   }

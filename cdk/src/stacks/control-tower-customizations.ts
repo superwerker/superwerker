@@ -1,12 +1,12 @@
-import { Arn, CfnParameter, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { InstallControltowerCustomizations } from '../constructs/install-controltower-customizations';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import path from 'path';
-import { CfnFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Arn, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { CfnFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Topic } from 'aws-cdk-lib/aws-sns';
 import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { Construct } from 'constructs';
+import { InstallControltowerCustomizations } from '../constructs/install-controltower-customizations';
 
 const CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME = 'custom-control-tower-configuration';
 const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = '/superwerker/initial-ct-customizations-done';
@@ -14,10 +14,6 @@ const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = '/superwerker/initial-ct-
 export class ControlTowerCustomizationsStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-
-    const makeInitalCommit = new CfnParameter(this, 'makeInitalCommit', {
-      type: 'String',
-    });
 
     const notificationsTopic = new Topic(this, 'NotifyControlTowerCustomizationsStackUpdates');
 
@@ -33,20 +29,21 @@ export class ControlTowerCustomizationsStack extends NestedStack {
       runtime: Runtime.NODEJS_16_X,
       timeout: Duration.minutes(15),
       environment: {
-        MAKE_INITIAL_COMMIT: makeInitalCommit.valueAsString,
         CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
       },
       bundling: {
         commandHooks: {
-          afterBundling: (inputDir: string, outputDir: string): string[] => [`cp -r ${configDirPath} ${outputDir}`],
-          beforeBundling: (inputDir: string, outputDir: string): string[] => [],
-          beforeInstall: (inputDir: string, outputDir: string): string[] => [],
+          afterBundling: (_inputDir: string, outputDir: string): string[] => [`cp -r ${configDirPath} ${outputDir}`],
+          beforeBundling: (_inputDir: string, _outputDir: string): string[] => [],
+          beforeInstall: (_inputDir: string, _outputDir: string): string[] => [],
         },
       },
     });
+    (configureControlTowerCustomizations.node.defaultChild as CfnFunction).overrideLogicalId('ConfigureControlTowerCustomizationsFunction');
+
     notificationsTopic.addSubscription(new LambdaSubscription(configureControlTowerCustomizations));
 
-    (configureControlTowerCustomizations.node.defaultChild as CfnFunction).overrideLogicalId('ConfigureControlTowerCustomizationsFunction');
+    // TODO minimize permissions
     configureControlTowerCustomizations.addToRolePolicy(
       new PolicyStatement({
         actions: ['ssm:PutParameter', 'ssm:GetParameter'],

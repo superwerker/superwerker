@@ -1,11 +1,11 @@
-import { Arn, CfnParameter, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import path from 'path';
-import { CfnFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Arn, CfnParameter, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { CfnFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Topic } from 'aws-cdk-lib/aws-sns';
 import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
+import { Construct } from 'constructs';
 import { InstallLandingZoneAccelerator } from '../constructs/install-landing-zone-accelerator';
 
 const LZA_REPO_NAME = 'landing-zone-accelerator';
@@ -19,9 +19,6 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       type: 'String',
     });
     const auditAWSAccountEmail = new CfnParameter(this, 'AuditAWSAccountEmail', {
-      type: 'String',
-    });
-    const makeInitalCommit = new CfnParameter(this, 'makeInitalCommit', {
       type: 'String',
     });
 
@@ -70,20 +67,22 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       },
       bundling: {
         commandHooks: {
-          afterBundling: (inputDir: string, outputDir: string): string[] => [
+          afterBundling: (_inputDir: string, outputDir: string): string[] => [
             `cp -r ${mainConfigDirPath}/* ${outputDir}`,
             `cp -r ${sharedCloudformationConfigDirPath} ${outputDir}`,
             `cp -r ${sharedScpConfigDirPath} ${outputDir}`,
             `cp -r ${sharedIamPoliciesDirPath} ${outputDir}`,
           ],
-          beforeBundling: (inputDir: string, outputDir: string): string[] => [],
-          beforeInstall: (inputDir: string, outputDir: string): string[] => [],
+          beforeBundling: (_inputDir: string, _outputDir: string): string[] => [],
+          beforeInstall: (_inputDir: string, _outputDir: string): string[] => [],
         },
       },
     });
+    (configureLandingZoneAccelerator.node.defaultChild as CfnFunction).overrideLogicalId('ConfigureLandingZoneAcceleratorFunction');
+
     notificationsTopic.addSubscription(new LambdaSubscription(configureLandingZoneAccelerator));
 
-    (configureLandingZoneAccelerator.node.defaultChild as CfnFunction).overrideLogicalId('ConfigureLandingZoneAcceleratorFunction');
+    // TODO minimize permissions
     configureLandingZoneAccelerator.addToRolePolicy(
       new PolicyStatement({
         actions: ['ssm:PutParameter', 'ssm:GetParameter'],

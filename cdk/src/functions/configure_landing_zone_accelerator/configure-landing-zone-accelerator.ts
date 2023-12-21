@@ -1,6 +1,6 @@
-import { CodeCommit, SSM } from 'aws-sdk';
 import Fs from 'fs';
 import Path from 'path';
+import { CodeCommit, SSM } from 'aws-sdk';
 import * as Handlebars from 'handlebars';
 
 const codecommit = new CodeCommit();
@@ -36,9 +36,9 @@ export async function handler(event: any, _context: any) {
   const AWS_REGION = process.env.AWS_REGION;
   const AUDIT_ACCOUNT_EMAIL = process.env.AUDIT_ACCOUNT_EMAIL;
   console.log('adding variables to customizations.yaml');
-  await addVariablesToCustomizations(AWS_REGION);
-  await addVariablesToSecurity(AWS_REGION);
-  await addVariablesToGlobal(AWS_REGION, AUDIT_ACCOUNT_EMAIL);
+  await addVariablesToCustomizations(AWS_REGION!);
+  await addVariablesToSecurity(AWS_REGION!);
+  await addVariablesToGlobal(AWS_REGION!, AUDIT_ACCOUNT_EMAIL!);
 
   // TODO copy all files to /tmp then modify them and create bulk upload
   console.log('getting files to upload');
@@ -144,22 +144,22 @@ function getBufferFromFile(filePath: string) {
 }
 
 function addVariablesToCustomizations(region: string) {
-  const source = Fs.readFileSync(`./customizations-config.yaml`).toString();
+  const source = Fs.readFileSync('./customizations-config.yaml').toString();
   const template = Handlebars.compile(source);
   const contents = template({ REGION: `${region}` });
-  Fs.writeFileSync(`/tmp/customizations-config.yaml`, contents);
+  Fs.writeFileSync('/tmp/customizations-config.yaml', contents);
 }
 
 function addVariablesToSecurity(region: string) {
-  const source = Fs.readFileSync(`./security-config.yaml`).toString();
+  const source = Fs.readFileSync('./security-config.yaml').toString();
   const template = Handlebars.compile(source);
   const contents = template({ REGION: `${region}` });
-  Fs.writeFileSync(`/tmp/security-config.yaml`, contents);
+  Fs.writeFileSync('/tmp/security-config.yaml', contents);
 }
 
 function addVariablesToGlobal(region: string, auditMail: string) {
-  const source = Fs.readFileSync(`./global-config.yaml`).toString();
+  const source = Fs.readFileSync('./global-config.yaml').toString();
   const template = Handlebars.compile(source);
   const contents = template({ REGION: `${region}`, AUDIT_MAIL: `${auditMail}` });
-  Fs.writeFileSync(`/tmp/global-config.yaml`, contents);
+  Fs.writeFileSync('/tmp/global-config.yaml', contents);
 }
