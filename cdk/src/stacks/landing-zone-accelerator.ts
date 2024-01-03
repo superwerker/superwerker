@@ -10,6 +10,7 @@ import { InstallLandingZoneAccelerator } from '../constructs/install-landing-zon
 
 const LZA_REPO_NAME = 'landing-zone-accelerator';
 const LZA_VERSION = 'v1.5.2';
+const LZA_DONE_SSM_PARAMETER = '/superwerker/initial-lza-config-done';
 
 export class LandingZoneAcceleratorStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -29,6 +30,7 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
       auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
       notificationsTopic: notificationsTopic.topicArn,
+      ssmParameterName: LZA_DONE_SSM_PARAMETER,
     });
 
     const mainConfigDirPath = path.join(__dirname, '..', 'functions', 'configure_landing_zone_accelerator', 'config', 'best-practices');
@@ -59,8 +61,8 @@ export class LandingZoneAcceleratorStack extends NestedStack {
 
     const configureLandingZoneAccelerator = new NodejsFunction(this, 'ConfigureLandingZoneAcceleratorFunction', {
       entry: path.join(__dirname, '..', 'functions', 'configure_landing_zone_accelerator', 'configure-landing-zone-accelerator.ts'),
-      runtime: Runtime.NODEJS_16_X,
-      timeout: Duration.minutes(15),
+      runtime: Runtime.NODEJS_18_X,
+      timeout: Duration.minutes(5),
       environment: {
         LZA_VERSION: LZA_VERSION,
         AUDIT_ACCOUNT_EMAIL: auditAWSAccountEmail.valueAsString,
@@ -82,13 +84,6 @@ export class LandingZoneAcceleratorStack extends NestedStack {
 
     notificationsTopic.addSubscription(new LambdaSubscription(configureLandingZoneAccelerator));
 
-    // TODO minimize permissions
-    configureLandingZoneAccelerator.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['ssm:PutParameter', 'ssm:GetParameter'],
-        resources: ['*'],
-      }),
-    );
     configureLandingZoneAccelerator.addToRolePolicy(
       new PolicyStatement({
         actions: ['ssm:PutParameter', 'ssm:GetParameter'],
@@ -107,12 +102,6 @@ export class LandingZoneAcceleratorStack extends NestedStack {
     configureLandingZoneAccelerator.addToRolePolicy(
       new PolicyStatement({
         actions: ['codecommit:createCommit', 'codecommit:getBranch', 'codecommit:getRepository'],
-        resources: ['*'],
-      }),
-    );
-    configureLandingZoneAccelerator.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['codecommit:createCommit'],
         resources: [
           Arn.format(
             {

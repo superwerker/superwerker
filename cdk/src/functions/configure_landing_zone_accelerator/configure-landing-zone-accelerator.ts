@@ -1,11 +1,12 @@
 import Fs from 'fs';
 import Path from 'path';
-import { CodeCommit, SSM } from 'aws-sdk';
+import { CodeCommitClient, CreateCommitCommand, GetBranchCommand } from '@aws-sdk/client-codecommit';
+import { SSMClient, GetParameterCommand, PutParameterCommand, ParameterType } from '@aws-sdk/client-ssm';
 import * as Handlebars from 'handlebars';
 
-const codecommit = new CodeCommit();
-const ssm = new SSM();
-const SSM_PARAMETER = { Name: '/superwerker/initial-lza-config-done' };
+const codecommit = new CodeCommitClient();
+const ssm = new SSMClient();
+const SSM_PARAMETER = { Name: process.env.LZA_DONE_SSM_PARAMETER };
 
 const BRANCH_NAME = 'main';
 const REPOSITORY_NAME = 'aws-accelerator-config';
@@ -19,7 +20,8 @@ export async function handler(event: any, _context: any) {
 
   let lzaConfigured = true;
   try {
-    await ssm.getParameter(SSM_PARAMETER).promise();
+    const getParameterCommand = new GetParameterCommand(SSM_PARAMETER);
+    await ssm.send(getParameterCommand);
   } catch (err) {
     if (err) {
       lzaConfigured = false;
@@ -54,18 +56,15 @@ export async function handler(event: any, _context: any) {
   const params = {
     Name: SSM_PARAMETER.Name,
     Value: 'true',
-    Type: 'String',
+    Type: ParameterType.STRING,
   };
-  await ssm
-    .putParameter(params, function (err, data) {
-      if (err) console.log(err, err.stack);
-      else console.log(data);
-    })
-    .promise();
+  const putParameterCommand = new PutParameterCommand(params);
+  await ssm.send(putParameterCommand);
 }
 
 async function makeInitalCommit(files: PutFileEntry[]) {
-  const branchInfo = await codecommit.getBranch({ branchName: BRANCH_NAME, repositoryName: REPOSITORY_NAME }).promise();
+  const getBranchCommand = new GetBranchCommand({ branchName: BRANCH_NAME, repositoryName: REPOSITORY_NAME });
+  const branchInfo = await codecommit.send(getBranchCommand);
   const commitId = branchInfo.branch!.commitId;
 
   const params = {
@@ -75,12 +74,9 @@ async function makeInitalCommit(files: PutFileEntry[]) {
     parentCommitId: commitId,
     putFiles: files,
   };
-  await codecommit
-    .createCommit(params, function (err, data) {
-      if (err) console.log(err, err.stack);
-      else console.log(data);
-    })
-    .promise();
+
+  const createCommitCommand = new CreateCommitCommand(params);
+  await codecommit.send(createCommitCommand);
 }
 
 interface PutFileEntry {

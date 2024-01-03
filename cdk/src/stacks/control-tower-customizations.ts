@@ -8,6 +8,7 @@ import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 import { InstallControltowerCustomizations } from '../constructs/install-controltower-customizations';
 
+const CONTROLTOWER_CUSTOMIZATIONS_VERSION = '2.7.0';
 const CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME = 'custom-control-tower-configuration';
 const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = '/superwerker/initial-ct-customizations-done';
 
@@ -18,6 +19,7 @@ export class ControlTowerCustomizationsStack extends NestedStack {
     const notificationsTopic = new Topic(this, 'NotifyControlTowerCustomizationsStackUpdates');
 
     new InstallControltowerCustomizations(this, 'InstallControltowerCustomizations', {
+      controlTowerCustomizationsVersion: CONTROLTOWER_CUSTOMIZATIONS_VERSION,
       notificationsTopic: notificationsTopic.topicArn,
       ssmParameterName: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
     });
@@ -26,8 +28,8 @@ export class ControlTowerCustomizationsStack extends NestedStack {
 
     const configureControlTowerCustomizations = new NodejsFunction(this, 'ConfigureControlTowerCustomizationsFunction', {
       entry: path.join(__dirname, '..', 'functions', 'configure_controltower_customizations', 'configure-controltower-customizations.ts'),
-      runtime: Runtime.NODEJS_16_X,
-      timeout: Duration.minutes(15),
+      runtime: Runtime.NODEJS_18_X,
+      timeout: Duration.minutes(5),
       environment: {
         CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
       },
@@ -43,13 +45,6 @@ export class ControlTowerCustomizationsStack extends NestedStack {
 
     notificationsTopic.addSubscription(new LambdaSubscription(configureControlTowerCustomizations));
 
-    // TODO minimize permissions
-    configureControlTowerCustomizations.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['ssm:PutParameter', 'ssm:GetParameter'],
-        resources: ['*'],
-      }),
-    );
     configureControlTowerCustomizations.addToRolePolicy(
       new PolicyStatement({
         actions: ['ssm:PutParameter', 'ssm:GetParameter'],
@@ -65,15 +60,10 @@ export class ControlTowerCustomizationsStack extends NestedStack {
         ],
       }),
     );
+
     configureControlTowerCustomizations.addToRolePolicy(
       new PolicyStatement({
         actions: ['codecommit:createCommit', 'codecommit:getBranch', 'codecommit:getRepository'],
-        resources: ['*'],
-      }),
-    );
-    configureControlTowerCustomizations.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['codecommit:createCommit'],
         resources: [
           Arn.format(
             {

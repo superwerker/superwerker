@@ -1,12 +1,16 @@
 import * as path from 'path';
-import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
 
 interface InstallControltowerCustomizationsProps {
+  /**
+   * Version of the landing zone customizations to install
+   */
+  readonly controlTowerCustomizationsVersion: string;
   /**
    * SNS topic to notify about updates to the stack
    */
@@ -25,6 +29,7 @@ export class InstallControltowerCustomizations extends Construct {
       serviceToken: InstallControltowerCustomizationsProvider.getOrCreate(this),
       resourceType: 'Custom::InstallControltowerCustomizations',
       properties: {
+        CONTROLTOWER_CUSTOMIZATIONS_VERSION: props.controlTowerCustomizationsVersion,
         SNS_NOTIFICATIONS_ARN: props.notificationsTopic,
         CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER: props.ssmParameterName,
       },
@@ -66,7 +71,7 @@ class InstallControltowerCustomizationsProvider extends Construct {
     this.provider = new cr.Provider(this, 'install-controltower-customizations-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'install-controltower-customizations-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'install-controltower-customizations.ts'),
-        runtime: Runtime.NODEJS_16_X,
+        runtime: Runtime.NODEJS_18_X,
         role: fnRole,
         timeout: Duration.minutes(15),
       }),

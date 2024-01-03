@@ -1,12 +1,15 @@
-// eslint-disable-next-line import/no-unresolved
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
-import AWS from 'aws-sdk';
 import Fs from 'fs';
+import { CloudFormationClient, CreateStackCommand } from '@aws-sdk/client-cloudformation';
+import { OrganizationsClient, DescribeOrganizationCommand, DescribeAccountCommand } from '@aws-sdk/client-organizations';
+import { S3Client, CreateBucketCommand, PutObjectCommand, DeleteObjectCommand, DeleteBucketCommand } from '@aws-sdk/client-s3';
+import { SSMClient, DeleteParameterCommand } from '@aws-sdk/client-ssm';
+import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { downloadFile } from './utils/download-file';
 
-const s3 = new AWS.S3();
-const cloudformation = new AWS.CloudFormation();
-const organizations = new AWS.Organizations({ region: 'us-east-1' });
+const s3 = new S3Client();
+const cloudformation = new CloudFormationClient();
+const ssm = new SSMClient();
+const organizations = new OrganizationsClient({ region: 'us-east-1' });
 
 export interface HandlerResponse {
   email: string;
@@ -23,6 +26,7 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   const LOG_ARCHIVE_AWS_ACCOUNT_EMAIL = event.ResourceProperties.LOG_ARCHIVE_AWS_ACCOUNT_EMAIL;
   const AUDIT_AWS_ACCOUNT_EMAIL = event.ResourceProperties.AUDIT_AWS_ACCOUNT_EMAIL;
   const SNS_NOTIFICATIONS_ARN = event.ResourceProperties.SNS_NOTIFICATIONS_ARN;
+  const LZA_DONE_SSM_PARAMETER = event.ResourceProperties.LZA_DONE_SSM_PARAMETER;
 
   const CLOUDFORMATION_URL = `https://s3.amazonaws.com/solutions-reference/landing-zone-accelerator-on-aws/${LZA_VERSION}/AWSAccelerator-InstallerStack.template`;
   const STACK_NAME = 'landing-zone-accelerator';
@@ -32,71 +36,70 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
     case 'Create':
       console.log('Installing LZA');
 
-      const prefix = `/tmp`;
+      const prefix = '/tmp';
       const localFilePath = `${prefix}/${FILE_NAME}`;
 
       console.log('Downloading LZA Template');
       await downloadFile(CLOUDFORMATION_URL, localFilePath);
 
       console.log('Creating deployment S3 Bucket');
-      await s3
-        .createBucket({
-          Bucket: BUCKET_NAME,
-        })
-        .promise();
+      const createBucketCommand = new CreateBucketCommand({ Bucket: BUCKET_NAME });
+      await s3.send(createBucketCommand);
 
       console.log('Uploading LZA to S3');
-      await s3
-        .putObject({
-          Bucket: BUCKET_NAME,
-          Key: FILE_NAME,
-          Body: Fs.readFileSync(localFilePath),
-        })
-        .promise();
+      const putObjectCommand = new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: FILE_NAME,
+        Body: Fs.readFileSync(localFilePath),
+      });
+      await s3.send(putObjectCommand);
 
-      const orgInfo = await organizations.describeOrganization().promise();
-      const masterInfo = await organizations.describeAccount({ AccountId: orgInfo.Organization!.MasterAccountId }).promise();
+      const describeOrganizationCommand = new DescribeOrganizationCommand({});
+      const orgInfo = await organizations.send(describeOrganizationCommand);
+
+      const describeAccountCommand = new DescribeAccountCommand({ AccountId: orgInfo.Organization!.MasterAccountId });
+      const masterInfo = await organizations.send(describeAccountCommand);
+
       const masterMail = masterInfo.Account!.Email;
 
       await console.log('Creating LZA Stack');
-      await cloudformation
-        .createStack({
-          StackName: STACK_NAME,
-          TemplateURL: `https://s3.amazonaws.com/${BUCKET_NAME}/${FILE_NAME}`,
-          Capabilities: ['CAPABILITY_NAMED_IAM'],
-          NotificationARNs: [SNS_NOTIFICATIONS_ARN],
-          Parameters: [
-            {
-              ParameterKey: 'RepositorySource',
-              ParameterValue: 'github',
-            },
-            {
-              ParameterKey: 'EnableApprovalStage',
-              ParameterValue: 'No',
-            },
-            {
-              ParameterKey: 'ApprovalStageNotifyEmailList',
-              ParameterValue: 'no-email@needed.com',
-            },
-            {
-              ParameterKey: 'ManagementAccountEmail',
-              ParameterValue: masterMail.toString().toLowerCase(),
-            },
-            {
-              ParameterKey: 'LogArchiveAccountEmail',
-              ParameterValue: LOG_ARCHIVE_AWS_ACCOUNT_EMAIL.toString().toLowerCase(),
-            },
-            {
-              ParameterKey: 'AuditAccountEmail',
-              ParameterValue: AUDIT_AWS_ACCOUNT_EMAIL.toString().toLowerCase(),
-            },
-            {
-              ParameterKey: 'ControlTowerEnabled',
-              ParameterValue: 'Yes',
-            },
-          ],
-        })
-        .promise();
+      const command = new CreateStackCommand({
+        StackName: STACK_NAME,
+        TemplateURL: `https://s3.amazonaws.com/${BUCKET_NAME}/${FILE_NAME}`,
+        Capabilities: ['CAPABILITY_NAMED_IAM'],
+        NotificationARNs: [SNS_NOTIFICATIONS_ARN],
+        Parameters: [
+          {
+            ParameterKey: 'RepositorySource',
+            ParameterValue: 'github',
+          },
+          {
+            ParameterKey: 'EnableApprovalStage',
+            ParameterValue: 'No',
+          },
+          {
+            ParameterKey: 'ApprovalStageNotifyEmailList',
+            ParameterValue: 'no-email@needed.com',
+          },
+          {
+            ParameterKey: 'ManagementAccountEmail',
+            ParameterValue: masterMail!.toString().toLowerCase(),
+          },
+          {
+            ParameterKey: 'LogArchiveAccountEmail',
+            ParameterValue: LOG_ARCHIVE_AWS_ACCOUNT_EMAIL.toString().toLowerCase(),
+          },
+          {
+            ParameterKey: 'AuditAccountEmail',
+            ParameterValue: AUDIT_AWS_ACCOUNT_EMAIL.toString().toLowerCase(),
+          },
+          {
+            ParameterKey: 'ControlTowerEnabled',
+            ParameterValue: 'Yes',
+          },
+        ],
+      });
+      await cloudformation.send(command);
 
       return {
         Status: 'SUCCESS',
@@ -106,19 +109,33 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
       return {};
     case 'Delete':
       console.log('Delete LZA S3 file');
-      await s3
-        .deleteObject({
+      try {
+        const deleteObjectCommand = new DeleteObjectCommand({
           Bucket: BUCKET_NAME,
           Key: FILE_NAME,
-        })
-        .promise();
+        });
+        await s3.send(deleteObjectCommand);
+      } catch (err) {
+        console.log('LZA S3 file cloud not be deleted, maybe it was already deleted');
+      }
 
       console.log('Delete S3 Deployment Bucket');
-      await s3
-        .deleteBucket({
-          Bucket: BUCKET_NAME,
-        })
-        .promise();
+      try {
+        const deleteBucketCommand = new DeleteBucketCommand({ Bucket: BUCKET_NAME });
+        await s3.send(deleteBucketCommand);
+      } catch (err) {
+        console.log('LZA S3 Deployment Bucket could not be deleted, maybe it was already deleted');
+      }
+
+      try {
+        console.log('Delete SSM Parameter');
+        const deleteParameterCommand = new DeleteParameterCommand({
+          Name: LZA_DONE_SSM_PARAMETER,
+        });
+        await ssm.send(deleteParameterCommand);
+      } catch (err) {
+        console.log('SSM Parameter could not be deleted, maybe it was already deleted');
+      }
 
       // TODO LZA Installer
       // delete KMS Key

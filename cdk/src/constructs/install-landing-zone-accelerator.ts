@@ -1,10 +1,10 @@
 import * as path from 'path';
-import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
 
 interface InstallLandingZoneAcceleratorProps {
   /**
@@ -23,6 +23,10 @@ interface InstallLandingZoneAcceleratorProps {
    * SNS topic to notify about updates to the stack
    */
   readonly notificationsTopic: string;
+  /**
+   * SSM parameter storing if configuration is done
+   */
+  readonly ssmParameterName: string;
 }
 
 export class InstallLandingZoneAccelerator extends Construct {
@@ -37,6 +41,7 @@ export class InstallLandingZoneAccelerator extends Construct {
         LOG_ARCHIVE_AWS_ACCOUNT_EMAIL: props.logArchiveAwsAccountEmail,
         AUDIT_AWS_ACCOUNT_EMAIL: props.auditAwsAccountEmail,
         SNS_NOTIFICATIONS_ARN: props.notificationsTopic,
+        LZA_DONE_SSM_PARAMETER: props.ssmParameterName,
       },
     });
   }
@@ -75,7 +80,7 @@ class InstallLandingZoneAcceleratorProvider extends Construct {
     this.provider = new cr.Provider(this, 'install-landing-zone-accelerator-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'install-landing-zone-accelerator-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'install-landing-zone-accelerator.ts'),
-        runtime: Runtime.NODEJS_16_X,
+        runtime: Runtime.NODEJS_18_X,
         role: fnRole,
         timeout: Duration.minutes(15),
       }),
