@@ -11,6 +11,12 @@ const BRANCH_NAME = 'main';
 const REPOSITORY_NAME = 'aws-accelerator-config';
 
 export async function handler(event: any, _context: any) {
+  const snsMessage = event.Records[0].Sns.Message;
+  if (!snsMessage.includes('CREATE_COMPLETE')) {
+    console.log('stack is not in CREATE_COMPLETE state, nothing to do yet');
+    return;
+  }
+
   let lzaConfigured = true;
   try {
     await ssm.getParameter(SSM_PARAMETER).promise();
@@ -25,12 +31,6 @@ export async function handler(event: any, _context: any) {
     return;
   } else {
     console.log('LZA has not been configured yet, starting initial configuration.');
-  }
-
-  const snsMessage = event.Records[0].Sns.Message;
-  if (!snsMessage.includes('CREATE_COMPLETE')) {
-    console.log('stack is not in CREATE_COMPLETE state, nothing to do yet');
-    return;
   }
 
   const AWS_REGION = process.env.AWS_REGION;

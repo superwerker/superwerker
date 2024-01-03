@@ -72,7 +72,6 @@ export class SuperwerkerStack extends Stack {
       allowedValues: ['Superwerker Best Practices'],
       default: 'Superwerker Best Practices',
     });
-    lzaType.overrideLogicalId('LandingzoneAcceleratorType');
 
     // const includeBudget = new CfnParameter(this, 'IncludeBudget', {
     //   type: 'String',

@@ -11,6 +11,12 @@ const REPOSITORY_NAME = 'custom-control-tower-configuration';
 export async function handler(event: any, _context: any) {
   const AWS_REGION = process.env.AWS_REGION;
 
+  const snsMessage = event.Records[0].Sns.Message;
+  if (!snsMessage.includes('CREATE_COMPLETE')) {
+    console.log('stack is not in CREATE_COMPLETE state, nothing to do yet');
+    return;
+  }
+
   const SSM_PARAMETER = { Name: process.env.CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER };
   let customizationsConfigured = true;
   try {
@@ -26,12 +32,6 @@ export async function handler(event: any, _context: any) {
     return;
   } else {
     console.log('Control tower customizations have not been configured yet, starting initial configuration.');
-  }
-
-  const snsMessage = event.Records[0].Sns.Message;
-  if (!snsMessage.includes('CREATE_COMPLETE')) {
-    console.log('stack is not in CREATE_COMPLETE state, nothing to do yet');
-    return;
   }
 
   console.log('adding variables to manifest.yaml');
