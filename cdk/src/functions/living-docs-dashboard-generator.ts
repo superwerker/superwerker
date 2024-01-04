@@ -12,7 +12,7 @@ export async function handler(_event: any, _context: any) {
   const dnsNames = await ssm.getParameter({
     Name: '/superwerker/domain_name_servers',
   }).promise();
-  const dnsNamesArray = dnsNames.Parameter?.Value?.split(',')??[];
+  const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
   const isRootMailConfiguredBool = await isRootMailConfigured();
 
