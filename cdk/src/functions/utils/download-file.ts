@@ -1,5 +1,5 @@
-import Https from 'https';
 import Fs from 'fs';
+import Https from 'https';
 
 /**
  * Download a file from the given `url` into the `targetFile`.
@@ -10,7 +10,7 @@ import Fs from 'fs';
  * @returns {Promise<void>}
  */
 export async function downloadFile(url: string, targetFile: string) {
-  return await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     Https.get(url, (response) => {
       const code = response.statusCode ?? 0;
 

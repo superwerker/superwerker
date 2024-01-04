@@ -106,8 +106,7 @@ export class LandingZoneAcceleratorStack extends NestedStack {
           Arn.format(
             {
               service: 'codecommit',
-              resource: 'repository',
-              resourceName: LZA_REPO_NAME,
+              resource: LZA_REPO_NAME,
             },
             Stack.of(this),
           ),

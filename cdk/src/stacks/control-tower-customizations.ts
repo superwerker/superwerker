@@ -68,8 +68,7 @@ export class ControlTowerCustomizationsStack extends NestedStack {
           Arn.format(
             {
               service: 'codecommit',
-              resource: 'repository',
-              resourceName: CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME,
+              resource: CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME,
             },
             Stack.of(this),
           ),

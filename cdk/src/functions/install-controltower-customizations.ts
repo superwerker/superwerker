@@ -36,48 +36,22 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
 
       const prefix = '/tmp';
       const localFilePathZip = `${prefix}/${ZIP_NAME}.zip`;
-      const localFilePath = `${prefix}/${ZIP_NAME}/${FILE_NAME}`;
 
       console.log('Downloading newest Control Tower Customizations');
       await downloadFile(CLOUDFORMATION_URL, localFilePathZip);
 
       console.log('Unzipping Control Tower Customizations');
-      Fs.createReadStream(localFilePathZip).pipe(unzipper.Extract({ path: prefix }));
+      const zip = Fs.createReadStream(localFilePathZip).pipe(unzipper.Parse({ forceStream: true }));
 
-      console.log('Creating deployment S3 Bucket');
-      const createBucketCommand = new CreateBucketCommand({ Bucket: BUCKET_NAME });
-      await s3.send(createBucketCommand);
-
-      console.log('Uploading Control Tower Customizations to S3');
-      const putObjectCommand = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: FILE_NAME,
-        Body: Fs.readFileSync(localFilePath),
-      });
-      await s3.send(putObjectCommand);
-
-      console.log('Creating Control Tower Customizations Stack');
-      const command = new CreateStackCommand({
-        StackName: STACK_NAME,
-        TemplateURL: `https://s3.amazonaws.com/${BUCKET_NAME}/${FILE_NAME}`,
-        Capabilities: ['CAPABILITY_NAMED_IAM'],
-        NotificationARNs: [SNS_NOTIFICATIONS_ARN],
-        Parameters: [
-          {
-            ParameterKey: 'PipelineApprovalStage',
-            ParameterValue: 'No',
-          },
-          {
-            ParameterKey: 'PipelineApprovalEmail',
-            ParameterValue: 'no-email@needed.com',
-          },
-          {
-            ParameterKey: 'CodePipelineSource',
-            ParameterValue: 'AWS CodeCommit',
-          },
-        ],
-      });
-      await cloudformation.send(command);
+      for await (const entry of zip) {
+        if (entry.path === `${ZIP_NAME}/${FILE_NAME}`) {
+          await uploadToS3(BUCKET_NAME, entry, FILE_NAME);
+          await createStack(STACK_NAME, BUCKET_NAME, FILE_NAME);
+          break;
+        } else {
+          entry.autodrain();
+        }
+      }
 
       return {
         Status: 'SUCCESS',
@@ -118,5 +92,44 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
       return {
         Status: 'SUCCESS',
       };
+  }
+
+  async function uploadToS3(bucketName: string, body: string, s3fileName: string) {
+    console.log('Creating deployment S3 Bucket');
+    const createBucketCommand = new CreateBucketCommand({ Bucket: bucketName });
+    await s3.send(createBucketCommand);
+
+    console.log('Uploading file to S3');
+    const putObjectCommand = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: s3fileName,
+      Body: body,
+    });
+    await s3.send(putObjectCommand);
+  }
+
+  async function createStack(stackName: string, bucketName: string, fileName: string) {
+    console.log('Creating Stack');
+    const command = new CreateStackCommand({
+      StackName: stackName,
+      TemplateURL: `https://s3.amazonaws.com/${bucketName}/${fileName}`,
+      Capabilities: ['CAPABILITY_NAMED_IAM'],
+      NotificationARNs: [SNS_NOTIFICATIONS_ARN],
+      Parameters: [
+        {
+          ParameterKey: 'PipelineApprovalStage',
+          ParameterValue: 'No',
+        },
+        {
+          ParameterKey: 'PipelineApprovalEmail',
+          ParameterValue: 'no-email@needed.com',
+        },
+        {
+          ParameterKey: 'CodePipelineSource',
+          ParameterValue: 'AWS CodeCommit',
+        },
+      ],
+    });
+    await cloudformation.send(command);
   }
 }
