@@ -9,7 +9,7 @@ const ssm = new SSMClient();
 const SSM_PARAMETER = { Name: process.env.LZA_DONE_SSM_PARAMETER };
 
 const BRANCH_NAME = 'main';
-const REPOSITORY_NAME = 'aws-accelerator-config';
+const REPOSITORY_NAME = process.env.LZA_REPO_NAME;
 
 export async function handler(event: any, _context: any) {
   const snsMessage = event.Records[0].Sns.Message;
@@ -31,9 +31,9 @@ export async function handler(event: any, _context: any) {
   if (lzaConfigured) {
     console.log('LZA has been configured initially, nothing to do.');
     return;
-  } else {
-    console.log('LZA has not been configured yet, starting initial configuration.');
   }
+
+  console.log('LZA has not been configured yet, starting initial configuration.');
 
   const AWS_REGION = process.env.AWS_REGION;
   const AUDIT_ACCOUNT_EMAIL = process.env.AUDIT_ACCOUNT_EMAIL;

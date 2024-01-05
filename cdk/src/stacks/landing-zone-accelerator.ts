@@ -8,7 +8,7 @@ import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 import { InstallLandingZoneAccelerator } from '../constructs/install-landing-zone-accelerator';
 
-const LZA_REPO_NAME = 'landing-zone-accelerator';
+const LZA_REPO_NAME = 'aws-accelerator-config';
 const LZA_VERSION = 'v1.5.2';
 const LZA_DONE_SSM_PARAMETER = '/superwerker/initial-lza-config-done';
 
@@ -64,6 +64,7 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.minutes(5),
       environment: {
+        LZA_REPO_NAME: LZA_REPO_NAME,
         LZA_VERSION: LZA_VERSION,
         AUDIT_ACCOUNT_EMAIL: auditAWSAccountEmail.valueAsString,
       },

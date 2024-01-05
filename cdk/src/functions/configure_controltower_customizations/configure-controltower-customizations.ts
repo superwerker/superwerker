@@ -32,9 +32,9 @@ export async function handler(event: any, _context: any) {
   if (customizationsConfigured) {
     console.log('Control tower customizations have been configured initially, nothing to do.');
     return;
-  } else {
-    console.log('Control tower customizations have not been configured yet, starting initial configuration.');
   }
+
+  console.log('Control tower customizations have not been configured yet, starting initial configuration.');
 
   console.log('adding variables to manifest.yaml');
   await addVariablesToManifest(AWS_REGION!);

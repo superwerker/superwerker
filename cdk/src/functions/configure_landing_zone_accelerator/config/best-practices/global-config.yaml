@@ -10,7 +10,7 @@ snsTopics:
   topics:
     - name: Security
       emailAddresses:
-        - { { AUDIT_MAIL } } # TODO: auto subscribe to Accelerator Security Topic
+        - {{AUDIT_MAIL}} # TODO: auto subscribe to Accelerator Security Topic
 cdkOptions:
   centralizeBuckets: true
   useManagementAccessRole: true

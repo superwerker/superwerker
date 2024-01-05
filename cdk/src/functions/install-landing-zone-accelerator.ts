@@ -11,10 +11,6 @@ const cloudformation = new CloudFormationClient();
 const ssm = new SSMClient();
 const organizations = new OrganizationsClient({ region: 'us-east-1' });
 
-export interface HandlerResponse {
-  email: string;
-}
-
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   const stackId = event.StackId;
   const accountId = stackId.split(':')[4];

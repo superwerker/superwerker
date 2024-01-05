@@ -10,10 +10,6 @@ const s3 = new S3Client();
 const cloudformation = new CloudFormationClient();
 const ssm = new SSMClient();
 
-export interface HandlerResponse {
-  email: string;
-}
-
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   const stackId = event.StackId;
   const accountId = stackId.split(':')[4];
