@@ -1,10 +1,12 @@
+import Fs from 'fs';
 import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
-import Fs from 'fs';
 import * as Handlebars from 'handlebars';
 import * as yaml from 'yaml';
+import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
 
 export class ControlTowerStack extends NestedStack {
@@ -19,16 +21,29 @@ export class ControlTowerStack extends NestedStack {
     });
 
     const logArchiveAccount = new CfnAccount(this, 'LoggingAccount', {
-        accountName: 'Log Archive',
-        email: logArchiveAWSAccountEmail.valueAsString
-      }
-    )
+      accountName: 'Log Archive',
+      email: logArchiveAWSAccountEmail.valueAsString,
+    },
+    );
+
+    new StringParameter(this, 'LoggingAccountParameter', {
+      description: '(superwerker) account id of logarchive account',
+      parameterName: '/superwerker/account_id_logarchive',
+      stringValue: logArchiveAccount.attrAccountId,
+    });
+
 
     const auditAccount = new CfnAccount(this, 'AuditAccount', {
-        accountName: 'Audit',
-        email: auditAWSAccountEmail.valueAsString
-      }
-    )
+      accountName: 'Audit',
+      email: auditAWSAccountEmail.valueAsString,
+    },
+    );
+
+    new StringParameter(this, 'AuditAccountParameter', {
+      description: '(superwerker) account id of audit account',
+      parameterName: '/superwerker/account_id_audit',
+      stringValue: auditAccount.attrAccountId,
+    });
 
     const controlTowerAdminRole = new iam.Role(this, 'AWSControlTowerAdmin', {
       roleName: 'AWSControlTowerAdmin',
@@ -79,7 +94,7 @@ export class ControlTowerStack extends NestedStack {
         managedPolicies: [
           iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSConfigRoleForOrganizations'),
         ],
-      }
+      },
     );
 
     const controlTowerStackSetRole = new iam.Role(this, 'AWSControlTowerStackSetRole', {
@@ -101,10 +116,10 @@ export class ControlTowerStack extends NestedStack {
     });
 
 
-    const source = Fs.readFileSync(`./src/stacks/landing-zone-manifest.yaml`).toString();
+    const source = Fs.readFileSync('./src/stacks/landing-zone-manifest.yaml').toString();
     const template = Handlebars.compile(source);
-    const contents = template({ 
-      REGION: `${this.region}`, 
+    const contents = template({
+      REGION: `${this.region}`,
       LOG_ARCHIVE_ACCOUNT_ID: `${logArchiveAccount.attrAccountId}`,
       AUDIT_ACCOUNT_ID: `${auditAccount.attrAccountId}`,
     });
@@ -121,5 +136,8 @@ export class ControlTowerStack extends NestedStack {
     });
     landingZone.node.addDependency(controlTowerAdminRole, controlTowerStackSetRole, controlTowerCloudTrailRole, logArchiveAccount, auditAccount);
 
-   }
+    // create function to trigger enabling of features after landing zone has been installed
+    const superwerkerBootstrap = new SuperwerkerBootstrap(this, 'SuperwerkerBootstrap');
+    superwerkerBootstrap.node.addDependency(landingZone);
+  }
 }
