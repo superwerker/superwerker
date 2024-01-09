@@ -1,28 +1,20 @@
 import path from 'path';
 import { Arn, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { Rule } from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { CfnFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 import { InstallControltowerCustomizations } from '../constructs/install-controltower-customizations';
 
 const CONTROLTOWER_CUSTOMIZATIONS_VERSION = '2.7.0';
 const CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME = 'custom-control-tower-configuration';
-const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = '/superwerker/initial-ct-customizations-done';
 
 export class ControlTowerCustomizationsStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-
-    const notificationsTopic = new Topic(this, 'NotifyControlTowerCustomizationsStackUpdates');
-
-    new InstallControltowerCustomizations(this, 'InstallControltowerCustomizations', {
-      controlTowerCustomizationsVersion: CONTROLTOWER_CUSTOMIZATIONS_VERSION,
-      notificationsTopic: notificationsTopic.topicArn,
-      ssmParameterName: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
-    });
 
     const configDirPath = path.join(__dirname, '..', 'functions', 'configure_controltower_customizations', 'config');
 
@@ -30,9 +22,6 @@ export class ControlTowerCustomizationsStack extends NestedStack {
       entry: path.join(__dirname, '..', 'functions', 'configure_controltower_customizations', 'configure-controltower-customizations.ts'),
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.minutes(5),
-      environment: {
-        CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
-      },
       bundling: {
         commandHooks: {
           afterBundling: (_inputDir: string, outputDir: string): string[] => [`cp -r ${configDirPath} ${outputDir}`],
@@ -43,23 +32,22 @@ export class ControlTowerCustomizationsStack extends NestedStack {
     });
     (configureControlTowerCustomizations.node.defaultChild as CfnFunction).overrideLogicalId('ConfigureControlTowerCustomizationsFunction');
 
-    notificationsTopic.addSubscription(new LambdaSubscription(configureControlTowerCustomizations));
+    const rule = new Rule(this, 'codeCommitRule', {
+      eventPattern: {
+        source: ['aws.codecommit'],
+        detailType: ['AWS API Call via CloudTrail'],
+        detail: {
+          eventSource: ['codecommit.amazonaws.com'],
+          eventName: ['CreateRepository'],
+          requestParameters: {
+            repositoryName: [CONTROLTOWER_CUSTOMIZATIONS_REPO_NAME],
+          },
+        },
+      },
+    });
 
-    configureControlTowerCustomizations.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['ssm:PutParameter', 'ssm:GetParameter'],
-        resources: [
-          Arn.format(
-            {
-              service: 'ssm',
-              resource: 'parameter',
-              resourceName: 'superwerker*',
-            },
-            Stack.of(this),
-          ),
-        ],
-      }),
-    );
+    rule.addTarget(new LambdaFunction(configureControlTowerCustomizations));
+    targets.addLambdaPermission(rule, configureControlTowerCustomizations);
 
     configureControlTowerCustomizations.addToRolePolicy(
       new PolicyStatement({
@@ -75,5 +63,11 @@ export class ControlTowerCustomizationsStack extends NestedStack {
         ],
       }),
     );
+
+    const installControltowerCustomizations = new InstallControltowerCustomizations(this, 'InstallControltowerCustomizations', {
+      controlTowerCustomizationsVersion: CONTROLTOWER_CUSTOMIZATIONS_VERSION,
+    });
+    // this is needed to avoid the codeCommit repo being created before the lambda can be triggerd to do the initial commit
+    installControltowerCustomizations.node.addDependency(rule);
   }
 }

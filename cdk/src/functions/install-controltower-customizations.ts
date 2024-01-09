@@ -1,14 +1,12 @@
 import Fs from 'fs';
 import { CloudFormationClient, CreateStackCommand } from '@aws-sdk/client-cloudformation';
 import { S3Client, CreateBucketCommand, PutObjectCommand, DeleteObjectCommand, DeleteBucketCommand } from '@aws-sdk/client-s3';
-import { SSMClient, DeleteParameterCommand } from '@aws-sdk/client-ssm';
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import unzipper from 'unzipper';
 import { downloadFile } from './utils/download-file';
 
 const s3 = new S3Client();
 const cloudformation = new CloudFormationClient();
-const ssm = new SSMClient();
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   const stackId = event.StackId;
@@ -18,8 +16,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   const BUCKET_NAME = `superwerker-cfct-deployment-bucket-${accountId}-${region}`;
 
   const CONTROLTOWER_CUSTOMIZATIONS_VERSION = event.ResourceProperties.CONTROLTOWER_CUSTOMIZATIONS_VERSION;
-  const SNS_NOTIFICATIONS_ARN = event.ResourceProperties.SNS_NOTIFICATIONS_ARN;
-  const CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER = event.ResourceProperties.CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER;
 
   const CLOUDFORMATION_URL = `https://github.com/aws-solutions/aws-control-tower-customizations/archive/refs/tags/v${CONTROLTOWER_CUSTOMIZATIONS_VERSION}.zip`;
   const STACK_NAME = 'customizations-for-aws-control-tower';
@@ -75,16 +71,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
         console.log('Control Tower Customizations S3 Deployment Bucket could not be deleted, maybe it was already deleted');
       }
 
-      try {
-        console.log('Delete SSM Parameter');
-        const deleteParameterCommand = new DeleteParameterCommand({
-          Name: CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER,
-        });
-        await ssm.send(deleteParameterCommand);
-      } catch (err) {
-        console.log('SSM Parameter could not be deleted, maybe it was already deleted');
-      }
-
       return {
         Status: 'SUCCESS',
       };
@@ -106,11 +92,10 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
 
   async function createStack(stackName: string, bucketName: string, fileName: string) {
     console.log('Creating Stack');
-    const command = new CreateStackCommand({
+    const createStackCommand = new CreateStackCommand({
       StackName: stackName,
       TemplateURL: `https://s3.amazonaws.com/${bucketName}/${fileName}`,
       Capabilities: ['CAPABILITY_NAMED_IAM'],
-      NotificationARNs: [SNS_NOTIFICATIONS_ARN],
       Parameters: [
         {
           ParameterKey: 'PipelineApprovalStage',
@@ -126,6 +111,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
         },
       ],
     });
-    await cloudformation.send(command);
+    await cloudformation.send(createStackCommand);
   }
 }

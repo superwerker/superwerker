@@ -19,14 +19,6 @@ interface InstallLandingZoneAcceleratorProps {
    * Email of the log archive aws account
    */
   readonly logArchiveAwsAccountEmail: string;
-  /**
-   * SNS topic to notify about updates to the stack
-   */
-  readonly notificationsTopic: string;
-  /**
-   * SSM parameter storing if configuration is done
-   */
-  readonly ssmParameterName: string;
 }
 
 export class InstallLandingZoneAccelerator extends Construct {
@@ -40,8 +32,6 @@ export class InstallLandingZoneAccelerator extends Construct {
         LZA_VERSION: props.lzaVersion,
         LOG_ARCHIVE_AWS_ACCOUNT_EMAIL: props.logArchiveAwsAccountEmail,
         AUDIT_AWS_ACCOUNT_EMAIL: props.auditAwsAccountEmail,
-        SNS_NOTIFICATIONS_ARN: props.notificationsTopic,
-        LZA_DONE_SSM_PARAMETER: props.ssmParameterName,
       },
     });
   }

@@ -1,14 +1,17 @@
 import Fs from 'fs';
 import { CloudFormationClient, CreateStackCommand } from '@aws-sdk/client-cloudformation';
-import { OrganizationsClient, DescribeOrganizationCommand, DescribeAccountCommand } from '@aws-sdk/client-organizations';
+import {
+  OrganizationsClient,
+  DescribeOrganizationCommand,
+  DescribeAccountCommand,
+  CreateOrganizationalUnitCommand,
+} from '@aws-sdk/client-organizations';
 import { S3Client, CreateBucketCommand, PutObjectCommand, DeleteObjectCommand, DeleteBucketCommand } from '@aws-sdk/client-s3';
-import { SSMClient, DeleteParameterCommand } from '@aws-sdk/client-ssm';
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { downloadFile } from './utils/download-file';
 
 const s3 = new S3Client();
 const cloudformation = new CloudFormationClient();
-const ssm = new SSMClient();
 const organizations = new OrganizationsClient({ region: 'us-east-1' });
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
@@ -21,8 +24,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   const LZA_VERSION = event.ResourceProperties.LZA_VERSION;
   const LOG_ARCHIVE_AWS_ACCOUNT_EMAIL = event.ResourceProperties.LOG_ARCHIVE_AWS_ACCOUNT_EMAIL;
   const AUDIT_AWS_ACCOUNT_EMAIL = event.ResourceProperties.AUDIT_AWS_ACCOUNT_EMAIL;
-  const SNS_NOTIFICATIONS_ARN = event.ResourceProperties.SNS_NOTIFICATIONS_ARN;
-  const LZA_DONE_SSM_PARAMETER = event.ResourceProperties.LZA_DONE_SSM_PARAMETER;
 
   const CLOUDFORMATION_URL = `https://s3.amazonaws.com/solutions-reference/landing-zone-accelerator-on-aws/${LZA_VERSION}/AWSAccelerator-InstallerStack.template`;
   const STACK_NAME = 'landing-zone-accelerator';
@@ -52,18 +53,17 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
 
       const describeOrganizationCommand = new DescribeOrganizationCommand({});
       const orgInfo = await organizations.send(describeOrganizationCommand);
-
+      await createSuspendedOu(orgInfo.Organization!.Id!);
       const describeAccountCommand = new DescribeAccountCommand({ AccountId: orgInfo.Organization!.MasterAccountId });
       const masterInfo = await organizations.send(describeAccountCommand);
 
       const masterMail = masterInfo.Account!.Email;
 
       await console.log('Creating LZA Stack');
-      const command = new CreateStackCommand({
+      const createStackCommand = new CreateStackCommand({
         StackName: STACK_NAME,
         TemplateURL: `https://s3.amazonaws.com/${BUCKET_NAME}/${FILE_NAME}`,
         Capabilities: ['CAPABILITY_NAMED_IAM'],
-        NotificationARNs: [SNS_NOTIFICATIONS_ARN],
         Parameters: [
           {
             ParameterKey: 'RepositorySource',
@@ -95,7 +95,7 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
           },
         ],
       });
-      await cloudformation.send(command);
+      await cloudformation.send(createStackCommand);
 
       return {
         Status: 'SUCCESS',
@@ -123,33 +123,20 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
         console.log('LZA S3 Deployment Bucket could not be deleted, maybe it was already deleted');
       }
 
-      try {
-        console.log('Delete SSM Parameter');
-        const deleteParameterCommand = new DeleteParameterCommand({
-          Name: LZA_DONE_SSM_PARAMETER,
-        });
-        await ssm.send(deleteParameterCommand);
-      } catch (err) {
-        console.log('SSM Parameter could not be deleted, maybe it was already deleted');
-      }
-
-      // TODO LZA Installer
-      // delete KMS Key
-      // delete S3 Buckets
-      // delete Stack
-
-      // TODO LZA Pipeline
-      // delete Stack
-
-      // console.log('Deleting LZA Stack');
-      // await cloudformation
-      //   .deleteStack({
-      //     StackName: STACK_NAME,
-      //   })
-      //   .promise();
-
       return {
         Status: 'SUCCESS',
       };
+  }
+}
+async function createSuspendedOu(parentOuId: string) {
+  try {
+    const createOrganizationalUnitCommand = new CreateOrganizationalUnitCommand({
+      ParentId: parentOuId,
+      Name: 'Suspended',
+    });
+    await organizations.send(createOrganizationalUnitCommand);
+    return;
+  } catch (err) {
+    console.log('Suspended OU already exists, nothing to do');
   }
 }

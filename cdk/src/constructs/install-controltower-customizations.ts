@@ -11,14 +11,6 @@ interface InstallControltowerCustomizationsProps {
    * Version of the landing zone customizations to install
    */
   readonly controlTowerCustomizationsVersion: string;
-  /**
-   * SNS topic to notify about updates to the stack
-   */
-  readonly notificationsTopic: string;
-  /**
-   * SSM parameter storing if configuration is done
-   */
-  readonly ssmParameterName: string;
 }
 
 export class InstallControltowerCustomizations extends Construct {
@@ -30,8 +22,6 @@ export class InstallControltowerCustomizations extends Construct {
       resourceType: 'Custom::InstallControltowerCustomizations',
       properties: {
         CONTROLTOWER_CUSTOMIZATIONS_VERSION: props.controlTowerCustomizationsVersion,
-        SNS_NOTIFICATIONS_ARN: props.notificationsTopic,
-        CONTROLTOWER_CUSTOMIZATIONS_DONE_SSM_PARAMETER: props.ssmParameterName,
       },
     });
   }

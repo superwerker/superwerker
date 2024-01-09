@@ -1,42 +1,25 @@
 import Fs from 'fs';
 import Path from 'path';
 import { CodeCommitClient, CreateCommitCommand, GetBranchCommand } from '@aws-sdk/client-codecommit';
-import { SSMClient, GetParameterCommand, PutParameterCommand, ParameterType } from '@aws-sdk/client-ssm';
 import * as Handlebars from 'handlebars';
 
 const codecommit = new CodeCommitClient();
-const ssm = new SSMClient();
-const SSM_PARAMETER = { Name: process.env.LZA_DONE_SSM_PARAMETER };
 
 const BRANCH_NAME = 'main';
 const REPOSITORY_NAME = process.env.LZA_REPO_NAME;
 
 export async function handler(event: any, _context: any) {
-  const snsMessage = event.Records[0].Sns.Message;
-  if (!snsMessage.includes('CREATE_COMPLETE')) {
-    console.log('stack is not in CREATE_COMPLETE state, nothing to do yet');
+  const eventSource = event.detail?.eventSource;
+  const eventName = event.detail?.eventName;
+
+  if (eventSource !== 'codecommit.amazonaws.com' || eventName !== 'CreateRepository') {
+    console.log('event is not for codecommit repository creation, nothing to do');
     return;
   }
-
-  let lzaConfigured = true;
-  try {
-    const getParameterCommand = new GetParameterCommand(SSM_PARAMETER);
-    await ssm.send(getParameterCommand);
-  } catch (err) {
-    if (err) {
-      lzaConfigured = false;
-    }
-  }
-
-  if (lzaConfigured) {
-    console.log('LZA has been configured initially, nothing to do.');
-    return;
-  }
-
-  console.log('LZA has not been configured yet, starting initial configuration.');
 
   const AWS_REGION = process.env.AWS_REGION;
   const AUDIT_ACCOUNT_EMAIL = process.env.AUDIT_ACCOUNT_EMAIL;
+
   console.log('adding variables to customizations.yaml');
   await addVariablesToCustomizations(AWS_REGION!);
   await addVariablesToSecurity(AWS_REGION!);
@@ -51,15 +34,6 @@ export async function handler(event: any, _context: any) {
 
   console.log('making inital commit');
   await makeInitalCommit(filesToUpload);
-
-  console.log('setting initial commit ssm parameter');
-  const params = {
-    Name: SSM_PARAMETER.Name,
-    Value: 'true',
-    Type: ParameterType.STRING,
-  };
-  const putParameterCommand = new PutParameterCommand(params);
-  await ssm.send(putParameterCommand);
 }
 
 async function makeInitalCommit(files: PutFileEntry[]) {

@@ -1,16 +1,16 @@
 import path from 'path';
 import { Arn, CfnParameter, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { Rule } from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { CfnFunction, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Topic } from 'aws-cdk-lib/aws-sns';
-import { LambdaSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 import { InstallLandingZoneAccelerator } from '../constructs/install-landing-zone-accelerator';
 
 const LZA_REPO_NAME = 'aws-accelerator-config';
 const LZA_VERSION = 'v1.5.2';
-const LZA_DONE_SSM_PARAMETER = '/superwerker/initial-lza-config-done';
 
 export class LandingZoneAcceleratorStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -21,16 +21,6 @@ export class LandingZoneAcceleratorStack extends NestedStack {
     });
     const auditAWSAccountEmail = new CfnParameter(this, 'AuditAWSAccountEmail', {
       type: 'String',
-    });
-
-    const notificationsTopic = new Topic(this, 'NotifyLandingZoneAcceleratorInstallerStackUpdates');
-
-    new InstallLandingZoneAccelerator(this, 'InstallLandingZoneAccelerator', {
-      lzaVersion: LZA_VERSION,
-      logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
-      auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
-      notificationsTopic: notificationsTopic.topicArn,
-      ssmParameterName: LZA_DONE_SSM_PARAMETER,
     });
 
     const mainConfigDirPath = path.join(__dirname, '..', 'functions', 'configure_landing_zone_accelerator', 'config', 'best-practices');
@@ -83,23 +73,23 @@ export class LandingZoneAcceleratorStack extends NestedStack {
     });
     (configureLandingZoneAccelerator.node.defaultChild as CfnFunction).overrideLogicalId('ConfigureLandingZoneAcceleratorFunction');
 
-    notificationsTopic.addSubscription(new LambdaSubscription(configureLandingZoneAccelerator));
+    const rule = new Rule(this, 'codeCommitRule', {
+      eventPattern: {
+        source: ['aws.codecommit'],
+        detailType: ['AWS API Call via CloudTrail'],
+        detail: {
+          eventSource: ['codecommit.amazonaws.com'],
+          eventName: ['CreateRepository'],
+          requestParameters: {
+            repositoryName: [LZA_REPO_NAME],
+          },
+        },
+      },
+    });
 
-    configureLandingZoneAccelerator.addToRolePolicy(
-      new PolicyStatement({
-        actions: ['ssm:PutParameter', 'ssm:GetParameter'],
-        resources: [
-          Arn.format(
-            {
-              service: 'ssm',
-              resource: 'parameter',
-              resourceName: 'superwerker*',
-            },
-            Stack.of(this),
-          ),
-        ],
-      }),
-    );
+    rule.addTarget(new LambdaFunction(configureLandingZoneAccelerator));
+    targets.addLambdaPermission(rule, configureLandingZoneAccelerator);
+
     configureLandingZoneAccelerator.addToRolePolicy(
       new PolicyStatement({
         actions: ['codecommit:createCommit', 'codecommit:getBranch', 'codecommit:getRepository'],
@@ -114,5 +104,13 @@ export class LandingZoneAcceleratorStack extends NestedStack {
         ],
       }),
     );
+
+    const installLandingZoneAccelerator = new InstallLandingZoneAccelerator(this, 'InstallLandingZoneAccelerator', {
+      lzaVersion: LZA_VERSION,
+      logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
+      auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
+    });
+    // this is needed to avoid the codeCommit repo being created before the lambda can be triggerd to do the initial commit
+    installLandingZoneAccelerator.node.addDependency(rule);
   }
 }

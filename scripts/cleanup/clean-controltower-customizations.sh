@@ -31,7 +31,7 @@ aws codecommit delete-repository --repository-name $REPO_NAME
 
 echo "Emptying and deleting Buckets"
 
-for bucket in $(aws s3api list-buckets --query "Buckets[?starts_with(Name, 'aws-accelerator-')].Name" --output text); do
+for bucket in $(aws s3api list-buckets --query "Buckets[?starts_with(Name, 'custom-control-tower-configuration')].Name" --output text); do
 
     echo "Emptying bucket $bucket"
     aws s3 rm s3://"$bucket" --recursive
@@ -58,7 +58,7 @@ for bucket in $(aws s3api list-buckets --query "Buckets[?starts_with(Name, 'aws-
     aws s3api delete-bucket --bucket "$bucket"
 done
 
-for bucket in $(aws s3api list-buckets --query "Buckets[?starts_with(Name, 'cdk-accel-assets-')].Name" --output text); do
+for bucket in $(aws s3api list-buckets --query "Buckets[?starts_with(Name, 'customizations-for-aws-')].Name" --output text); do
 
     echo "Emptying bucket $bucket"
     aws s3 rm s3://"$bucket" --recursive
@@ -94,7 +94,7 @@ for STACK_SET in $STACK_SETS; do
 
     if [[ $ACCOUNTS ]]; then
         echo "Deleting Stack Set Instances for $STACK_SET"
-        OPERATION_ID=$(aws cloudformation delete-stack-instances --stack-set-name "$STACK_SET" --accounts "[\"${ACCOUNTS//$'\t'/\", \"}\"]" --regions "$AWS_DEFAULT_REGION" --retain-stacks --no-cli-pager --output text)
+        OPERATION_ID=$(aws cloudformation delete-stack-instances --stack-set-name "$STACK_SET" --accounts "[\"${ACCOUNTS//$'\t'/\", \"}\"]" --regions "$AWS_DEFAULT_REGION" --no-cli-pager --output text)
     fi
 
     echo "Deleting Stack Set $STACK_SET"
