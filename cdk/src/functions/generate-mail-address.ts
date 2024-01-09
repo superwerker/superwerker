@@ -6,6 +6,10 @@ import {
   AWSOrganizationsNotInUseException,
   Account,
   AccountStatus,
+  ListRootsCommand,
+  OrganizationalUnit,
+  paginateListOrganizationalUnitsForParent,
+  paginateListAccountsForParent,
 } from '@aws-sdk/client-organizations';
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 export const PROP_DOMAIN = 'Domain';
@@ -27,6 +31,51 @@ async function getAccounts(): Promise<Account[]> {
   try {
     const paginator = paginateListAccounts(
       { client, pageSize: 20 }, {},
+    );
+
+    for await (const page of paginator) {
+      accounts.push(...page.Accounts!);
+    }
+  } catch (e) {
+    if (e instanceof AWSOrganizationsNotInUseException) {
+      return [];
+    }
+  }
+
+  return accounts;
+};
+
+async function getSuspendedAccounts(): Promise<Account[]> {
+  const listRoots = new ListRootsCommand({});
+
+  let ouList: OrganizationalUnit[] = [];
+  try {
+    const root = await client.send(listRoots);
+    const rootId = root.Roots![0].Id;
+    const paginator = paginateListOrganizationalUnitsForParent(
+      { client, pageSize: 20 }, { ParentId: rootId! },
+    );
+
+    for await (const page of paginator) {
+      ouList.push(...page.OrganizationalUnits!);
+    }
+  } catch (e) {
+    if (e instanceof AWSOrganizationsNotInUseException) {
+      return [];
+    }
+  }
+
+  const suspendedOU = ouList.filter(ou => ou.Name === 'Suspended');
+
+  if (suspendedOU.length < 1) {
+    return [];
+  }
+  const suspendedOUId = suspendedOU[0].Id;
+
+  const accounts: Account[] = [];
+  try {
+    const paginator = paginateListAccountsForParent(
+      { client, pageSize: 20 }, { ParentId: suspendedOUId! },
     );
 
     for await (const page of paginator) {
@@ -67,11 +116,15 @@ async function getEmail(domain: string, name: string): Promise<string> {
   }
 
   // Check if we already generated an email for an account previously.
-  // We do this so that our function doesn't accidentally generates new mails, thus triggering a stack update
-  // on the Control Tower stack.
+  // We do this so that our function doesn't accidentally generates new mail addresses, thus triggering a stack update
+  // on the Control Tower stack or updating the root mail addresses of existing accounts.
   console.log('Checking to see if account exists in AWS Organizations...');
   const accounts = await getAccounts();
-  const activeAccounts = accounts.filter(account => account.Status == AccountStatus.ACTIVE);
+  const suspendedAccounts = await getSuspendedAccounts();
+
+  // account must be active and not in suspended OU
+  const activeAccounts = accounts.filter(account => account.Status == AccountStatus.ACTIVE)
+    .filter(account => !suspendedAccounts.find(suspended => suspended.Email === account.Email));
 
   const account = activeAccounts.find((acc) => acc.Name === name && acc.Email!.endsWith(`@${domain}`));
   if (account) {

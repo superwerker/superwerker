@@ -94,7 +94,7 @@ export class SuperwerkerStack extends Stack {
 
     const organisationCreate = new CfnParameter(this, 'ActivateOrganisationsService', {
       type: 'String',
-      description: 'Activate AWS Organisations (should only be done once)',
+      description: 'Activate AWS Organisations (should only be done once - set to NO if you previously installed superwerker)',
       allowedValues: ['Yes', 'No'],
       default: 'Yes',
     });
@@ -135,6 +135,7 @@ export class SuperwerkerStack extends Stack {
         AuditAWSAccountEmail: emailAudit.email,
         LogArchiveAWSAccountEmail: emailLogArchive.email,
       },
+      description: 'Sets up the landing zone with control tower.',
     });
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
 
