@@ -264,7 +264,7 @@ export class SuperwerkerStack extends Stack {
       scope: this,
     }).valueAsString;
 
-    const pipelineLabel = 'GitOps Pipeline Configuration (separate Stack managed by user afterwards)';
+    const pipelineLabel = 'GitOps Pipeline Configuration (Choose one: CfCT or LZA)';
     addParameterToInterface({
       groupLabel: pipelineLabel,
       parameter: includeControlTowerCustomizations,
