@@ -20,6 +20,32 @@
       "Effect": "Deny",
       "Action": ["iam:CreateAccessKey"],
       "Resource": ["arn:aws:iam::*:root"]
+    },
+    {
+      "Sid": "SWProtectBackup",
+      "Effect": "Deny",
+      "Action": [
+        "iam:AttachRolePolicy",
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:DeleteRolePermissionsBoundary",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePermissionsBoundary",
+        "iam:PutRolePolicy",
+        "iam:UpdateAssumeRolePolicy",
+        "iam:UpdateRole",
+        "iam:UpdateRoleDescription"
+      ],
+      "Resource": [
+        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+        "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
+      ],
+      "Condition": {
+        "ArnNotLike": {
+          "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+        }
+      }
     }
   ]
 }

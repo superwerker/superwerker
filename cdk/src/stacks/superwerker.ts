@@ -1,5 +1,6 @@
 import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
 import { ControlTowerCustomizationsStack } from './control-tower-customizations';
@@ -150,6 +151,11 @@ export class SuperwerkerStack extends Stack {
     // Budget
     const budgetStack = new BudgetStack(this, 'BudgetAlarm', {});
     (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('BudgetAlarm');
+
+    // Backup
+    const backupStack = new BackupStack(this, 'Backup', {});
+    backupStack.addDependency(controlTowerStack);
+    (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
 
     // // Notifications
     const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
