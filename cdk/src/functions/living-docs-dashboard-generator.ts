@@ -1,8 +1,9 @@
-import AWS from 'aws-sdk';
+import { CloudWatch } from '@aws-sdk/client-cloudwatch';
+import { SSM } from '@aws-sdk/client-ssm';
 import endent from 'endent';
 
-const ssm = new AWS.SSM();
-const cloudwatch = new AWS.CloudWatch();
+const ssm = new SSM();
+const cloudwatch = new CloudWatch();
 
 export async function handler(_event: any, _context: any) {
 
@@ -11,7 +12,7 @@ export async function handler(_event: any, _context: any) {
 
   const dnsNames = await ssm.getParameter({
     Name: '/superwerker/domain_name_servers',
-  }).promise();
+  });
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
   const isRootMailConfiguredBool = await isRootMailConfigured();
@@ -23,7 +24,7 @@ export async function handler(_event: any, _context: any) {
   await cloudwatch.putDashboard({
     DashboardName: 'superwerker',
     DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
-  }).promise();
+  });
 
 }
 
@@ -32,7 +33,7 @@ async function isRootMailConfigured() {
     AlarmNames: [
       'superwerker-RootMailReady',
     ],
-  }).promise();
+  });
   return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
 }
 
@@ -61,7 +62,7 @@ function escape_string (input: string) {
     .replace(/[\r]/g, '\\r')
     .replace(/[\t]/g, '\\t')
     .replace(/[\u0000-\u0019]+/g, '');
-};
+}
 
 function generateSuccesfulDnsConfigurationMessage(dnsDomain: string) {
   return endent`

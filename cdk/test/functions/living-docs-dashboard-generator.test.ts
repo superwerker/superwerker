@@ -1,5 +1,8 @@
-const spySSMGetParameter = jest.fn();
-const spySSM = jest.fn(() => ({ getParameter: spySSMGetParameter }));
+import { SSMClient,GetParameterCommand } from '@aws-sdk/client-ssm';
+import { mockClient } from 'aws-sdk-client-mock';
+import 'aws-sdk-client-mock-jest'
+
+const ssmClientMock = mockClient(SSMClient);
 
 const spyCloudWatchPutDashboard = jest.fn();
 const spyCloudWatchDescribeAlarms = jest.fn();
@@ -8,8 +11,7 @@ const spyCloudWatch = jest.fn(() => ({
     describeAlarms: spyCloudWatchDescribeAlarms 
     }));
 
-jest.mock('aws-sdk', () => ({
-  SSM: spySSM,
+jest.mock('@aws-sdk/client-cloudwatch', () => ({
   CloudWatch: spyCloudWatch,
 }));
 
@@ -18,6 +20,7 @@ import { handler } from '../../src/functions/living-docs-dashboard-generator';
 describe('living-docs-dashboard-generator', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    ssmClientMock.reset();
     process.env.SUPERWERKER_DOMAIN = 'example.com';
     process.env.AWS_REGION = 'us-east-1';
   });
@@ -29,23 +32,22 @@ describe('living-docs-dashboard-generator', () => {
 
   it('living-docs-dashboard-generator', async () => {
 
-    spySSMGetParameter.mockImplementation(() => ({
-      promise() {
-        return {
+    ssmClientMock
+    .on(GetParameterCommand)
+    .resolves( {
             "Parameter": {
                     "Name": "/superwerker/domain_name_servers",
                     "Type": "StringList",
                     "Value": "ns-1538.awsdns-00.co.uk,ns-925.awsdns-51.net,ns-1209.awsdns-23.org,ns-467.awsdns-58.com",
                     "Version": 1,
-                    "LastModifiedDate": "2023-03-16T17:00:14.535000+01:00",
+                    "LastModifiedDate": new Date("2023-03-16T17:00:14.535000+01:00"),
                     "ARN": "arn:aws:ssm:eu-central-1:067464808309:parameter/superwerker/domain_name_servers",
                     "DataType": "text"
             }
         }
-    }}));
+    );
 
-    spyCloudWatchDescribeAlarms.mockImplementation(() => ({
-        promise() {
+    spyCloudWatchDescribeAlarms.mockImplementation(() => {
           return {
             MetricAlarms: [
                   {
@@ -53,13 +55,7 @@ describe('living-docs-dashboard-generator', () => {
                   },
           ]
         }
-      }}));
-
-    spyCloudWatchPutDashboard.mockImplementation(() => ({
-        promise() {
-          return Promise.resolve();
-        },
-      }));
+      });
 
     const event = {};
 
@@ -68,8 +64,7 @@ describe('living-docs-dashboard-generator', () => {
       {},
     );
 
-    expect(spySSMGetParameter).toHaveBeenCalledTimes(1);
-    expect(spySSMGetParameter).toHaveBeenNthCalledWith(1, {
+    expect(ssmClientMock).toReceiveCommandWith(GetParameterCommand,{
         Name: '/superwerker/domain_name_servers'
     });
 
