@@ -171,6 +171,7 @@ export class SuperwerkerStack extends Stack {
     });
     controlTowerCustomizationsCondition.overrideLogicalId('IncludeControlTowerCustomizations');
     const controlTowerCustomizationsStack = new ControlTowerCustomizationsStack(this, 'ControlTowerCustomizationsStack', {});
+    controlTowerCustomizationsStack.addDependency(controlTowerStack);
     (controlTowerCustomizationsStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTowerCustomizationsStack');
     (controlTowerCustomizationsStack.node.defaultChild as CfnStack).cfnOptions.condition = controlTowerCustomizationsCondition;
 
@@ -185,6 +186,7 @@ export class SuperwerkerStack extends Stack {
         LogArchiveAWSAccountEmail: emailLogArchive.email,
       },
     });
+    landingzoneAcceleratorStack.addDependency(controlTowerStack);
     (landingzoneAcceleratorStack.node.defaultChild as CfnStack).overrideLogicalId('LandingzoneAcceleratorStack');
     (landingzoneAcceleratorStack.node.defaultChild as CfnStack).cfnOptions.condition = landingzoneAcceleratorCondition;
 
