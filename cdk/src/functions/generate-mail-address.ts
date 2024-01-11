@@ -12,9 +12,7 @@ export interface HandlerResponse {
 
 
 export function generateEmail(domain: string): string {
-  if (!domain || domain === '') {
-    throw new Error('Missing domain');
-  }
+
 
   const maxCharacters = 64;
   const availableCharacters = maxCharacters - (domain.length + 1 + 5); // root+{uuid}@domain.tld
@@ -35,10 +33,20 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
+      const domain = event.ResourceProperties[PROP_DOMAIN];
+      const accountName = event.ResourceProperties[PROP_NAME];
+      if (!domain || domain === '') {
+        throw new Error('Missing domain');
+      }
+
+      if (!accountName || accountName === '') {
+        throw new Error('Missing name');
+      }
+
       console.log('Creating/updating email address for account');
-      const email = await generateEmail(event.ResourceProperties[PROP_DOMAIN]);
+      const email = await generateEmail(domain);
       return {
-        PhysicalResourceId: `${event.ResourceProperties[PROP_NAME]}@${event.ResourceProperties[PROP_DOMAIN]}`,
+        PhysicalResourceId: `${accountName}@${domain}`,
         Data: {
           [ATTR_EMAIL]: email,
         },
