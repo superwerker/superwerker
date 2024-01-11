@@ -1,7 +1,7 @@
 import Fs from 'fs';
-import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam } from 'aws-cdk-lib';
+import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam, RemovalPolicy } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
-import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
+import { CfnAccount, CfnOrganization } from 'aws-cdk-lib/aws-organizations';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import * as Handlebars from 'handlebars';
@@ -20,31 +20,40 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
-    const logArchiveAccount = new CfnAccount(this, 'LoggingAccount', {
+    const organization = new CfnOrganization(this, 'Organization', {
+      featureSet: 'ALL',
+    });
+    organization.applyRemovalPolicy(RemovalPolicy.RETAIN);
+
+    const logArchiveAccount = new CfnAccount(this, 'LogArchiveAccount', {
       accountName: 'Log Archive',
       email: logArchiveAWSAccountEmail.valueAsString,
-    },
-    );
+    });
+    logArchiveAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
-    new StringParameter(this, 'LoggingAccountParameter', {
+    const logArchiveParam = new StringParameter(this, 'LogArchiveAccountParameter', {
       description: '(superwerker) account id of logarchive account',
       parameterName: '/superwerker/account_id_logarchive',
       stringValue: logArchiveAccount.attrAccountId,
     });
-
+    logArchiveParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const auditAccount = new CfnAccount(this, 'AuditAccount', {
       accountName: 'Audit',
       email: auditAWSAccountEmail.valueAsString,
-    },
-    );
+    });
+    auditAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
-    new StringParameter(this, 'AuditAccountParameter', {
+    const auditAccountParam = new StringParameter(this, 'AuditAccountParameter', {
       description: '(superwerker) account id of audit account',
       parameterName: '/superwerker/account_id_audit',
       stringValue: auditAccount.attrAccountId,
     });
+    auditAccountParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
+
+    // Roles and Policies required by Control Tower
+    // https://docs.aws.amazon.com/controltower/latest/userguide/lz-apis-cfn-setup.html
     const controlTowerAdminRole = new iam.Role(this, 'AWSControlTowerAdmin', {
       roleName: 'AWSControlTowerAdmin',
       assumedBy: new iam.ServicePrincipal('controltower.amazonaws.com'),
