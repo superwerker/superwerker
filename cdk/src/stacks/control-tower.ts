@@ -63,7 +63,7 @@ export class ControlTowerStack extends NestedStack {
       ],
     });
 
-    new iam.Policy(this, 'AWSControlTowerAdminPolicy', {
+    const controlTowerAdminPolicy = new iam.Policy(this, 'AWSControlTowerAdminPolicy', {
       policyName: 'AWSControlTowerAdminPolicy',
       statements: [
         new iam.PolicyStatement({
@@ -81,7 +81,7 @@ export class ControlTowerStack extends NestedStack {
       path: '/service-role/',
     });
 
-    new iam.Policy(this, 'AWSControlTowerCloudTrailRolePolicy', {
+    const controlTowerCloudTrailPolicy = new iam.Policy(this, 'AWSControlTowerCloudTrailRolePolicy', {
       policyName: 'AWSControlTowerCloudTrailRolePolicy',
       statements: [
         new iam.PolicyStatement({
@@ -93,7 +93,7 @@ export class ControlTowerStack extends NestedStack {
       roles: [controlTowerCloudTrailRole],
     });
 
-    new iam.Role(
+    const controlTowerConfigAggregatorRole = new iam.Role(
       this,
       'AWSControlTowerConfigAggregatorRoleForOrganizations',
       {
@@ -112,7 +112,7 @@ export class ControlTowerStack extends NestedStack {
       path: '/service-role/',
     });
 
-    new iam.Policy(this, 'AWSControlTowerStackSetRolePolicy', {
+    const controlTowerStackSetPolicy = new iam.Policy(this, 'AWSControlTowerStackSetRolePolicy', {
       policyName: 'AWSControlTowerStackSetRolePolicy',
       statements: [
         new iam.PolicyStatement({
@@ -143,7 +143,19 @@ export class ControlTowerStack extends NestedStack {
         value: 'superwerker',
       }],
     });
-    landingZone.node.addDependency(controlTowerAdminRole, controlTowerStackSetRole, controlTowerCloudTrailRole, logArchiveAccount, auditAccount);
+    landingZone.applyRemovalPolicy(RemovalPolicy.DESTROY);
+    landingZone.node.addDependency(
+      controlTowerAdminPolicy,
+      controlTowerAdminRole,
+      controlTowerStackSetPolicy,
+      controlTowerStackSetRole,
+      controlTowerCloudTrailPolicy,
+      controlTowerCloudTrailRole,
+      controlTowerConfigAggregatorRole,
+      logArchiveAccount,
+      auditAccount,
+      organization,
+    );
 
     // create function to trigger enabling of features after landing zone has been installed
     const superwerkerBootstrap = new SuperwerkerBootstrap(this, 'SuperwerkerBootstrap');

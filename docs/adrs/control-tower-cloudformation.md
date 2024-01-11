@@ -13,6 +13,6 @@ Since the official release by AWS of the Control Tower [Landing Zone APIs](https
 
 - Create & Destroy of Landing Zone is handled by Cloudformation allowing us to remove previous workarounds, such as using unoffical APIs 
 - We don't need to rely on a event from EventBridge when Control Tower Landing Zone setup is finished. This event was not reliable in the past (only triggered on initial install, not on subsequent installation within an account). Using Cloudformation we can use standard wait condition and dependencies to trigger additional features that rely on conpleted Landing Zone setup (such as Guardduty or Backup).
-- To update existing superwerker installations (v.0.16.1 and previous), [Cloudformation Import](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resource-import.html) needs to be used. This specifically applies to CfnOrganization, CfnAccount (LogArchive and Audit Account), as well as CfnLandingZone itself.
+- To update existing superwerker installations (v.0.17.2 and previous), [Cloudformation Import](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resource-import.html) needs to be used. This specifically applies to CfnOrganization, CfnAccount (LogArchive and Audit Account), as well as CfnLandingZone itself.
 - This enables a simplified automated testing setup without any wait conditions or pulling of statuses.
 - [Control Tower Updates](https://docs.aws.amazon.com/controltower/latest/userguide/release-notes.html) are enabled by superwerker cloudformation updates
