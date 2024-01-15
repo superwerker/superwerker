@@ -1,18 +1,19 @@
-import { CloudWatch } from '@aws-sdk/client-cloudwatch';
-import { SSM } from '@aws-sdk/client-ssm';
+import { CloudWatchClient, DescribeAlarmsCommand, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import endent from 'endent';
 
-const ssm = new SSM();
-const cloudwatch = new CloudWatch();
+const ssmClient = new SSMClient();
+const cloudwatchClient = new CloudWatchClient({});
+
 
 export async function handler(_event: any, _context: any) {
 
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
 
-  const dnsNames = await ssm.getParameter({
+  const dnsNames = await ssmClient.send(new GetParameterCommand({
     Name: '/superwerker/domain_name_servers',
-  });
+  }));
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
   const isRootMailConfiguredBool = await isRootMailConfigured();
@@ -21,19 +22,19 @@ export async function handler(_event: any, _context: any) {
   const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
   const finalDashboardMessageEscaped = escape_string(finalDashboardMessage);
 
-  await cloudwatch.putDashboard({
+  await cloudwatchClient.send(new PutDashboardCommand({
     DashboardName: 'superwerker',
     DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
-  });
+  }));
 
 }
 
 async function isRootMailConfigured() {
-  const rootMailReadyAlarm = await cloudwatch.describeAlarms({
+  const rootMailReadyAlarm = await cloudwatchClient.send(new DescribeAlarmsCommand({
     AlarmNames: [
       'superwerker-RootMailReady',
     ],
-  });
+  }));
   return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
 }
 

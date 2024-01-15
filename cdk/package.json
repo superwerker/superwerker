@@ -7,7 +7,6 @@
     "prepare": "cd .. && husky install cdk/.husky"
   },
   "devDependencies": {
-    "@aws-sdk/client-cloudwatch": "^3.485.0",
     "@commitlint/cli": "^17.4.2",
     "@commitlint/config-conventional": "^17.4.2",
     "@types/async-retry": "^1.4.5",
@@ -34,6 +33,7 @@
   },
   "dependencies": {
     "@aws-cdk/aws-lambda-python-alpha": "^2.66.1-alpha.0",
+    "@aws-sdk/client-cloudwatch": "^3.490.0",
     "@aws-sdk/client-eventbridge": "^3.470.0",
     "@aws-sdk/client-organizations": "^3.468.0",
     "@aws-sdk/client-ssm": "^3.470.0",
