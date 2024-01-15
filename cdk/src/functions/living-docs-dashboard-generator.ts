@@ -26,7 +26,6 @@ export async function handler(_event: any, _context: any) {
     DashboardName: 'superwerker',
     DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
   }));
-
 }
 
 async function isRootMailConfigured() {
