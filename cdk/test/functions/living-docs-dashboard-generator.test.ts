@@ -1,4 +1,4 @@
-import { CloudWatchClient, DescribeAlarmsCommand } from '@aws-sdk/client-cloudwatch';
+import { CloudWatchClient, DescribeAlarmsCommand, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
@@ -48,7 +48,11 @@ describe('living-docs-dashboard-generator', () => {
         ],
       },
       );
-    
+
+    cwClientMock
+      .on(PutDashboardCommand)
+      .resolves({});
+
     const event = {};
 
     await handler(
@@ -63,6 +67,11 @@ describe('living-docs-dashboard-generator', () => {
     expect(cwClientMock).toReceiveCommandWith(DescribeAlarmsCommand, {
       AlarmNames: ['superwerker-RootMailReady'],
     });
+
+    expect(cwClientMock).toReceiveCommandTimes(PutDashboardCommand, 1);
+
+    expect(cwClientMock).toReceiveCommandWith(PutDashboardCommand,
+      { DashboardName: 'superwerker', DashboardBody: expect.stringContaining('DNS configuration is set up correctly') });
   });
 });
 

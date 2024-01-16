@@ -6,3 +6,6 @@ tmp
 
 *.pyc
 tests/test-results.xml
+
+yarn.lock
+
