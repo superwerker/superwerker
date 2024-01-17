@@ -1,8 +1,9 @@
 import Fs from 'fs';
 import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam, RemovalPolicy } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
+import { CfnPolicy, CfnRole } from 'aws-cdk-lib/aws-iam';
 import { CfnAccount, CfnOrganization } from 'aws-cdk-lib/aws-organizations';
-import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import * as Handlebars from 'handlebars';
 import * as yaml from 'yaml';
@@ -29,26 +30,30 @@ export class ControlTowerStack extends NestedStack {
       accountName: 'Log Archive',
       email: logArchiveAWSAccountEmail.valueAsString,
     });
+    logArchiveAccount.node.addDependency(organization);
     logArchiveAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
-    const logArchiveParam = new StringParameter(this, 'LogArchiveAccountParameter', {
+    const logArchiveParam = new ssm.StringParameter(this, 'LogArchiveAccountParameter', {
       description: '(superwerker) account id of logarchive account',
       parameterName: '/superwerker/account_id_logarchive',
       stringValue: logArchiveAccount.attrAccountId,
     });
+    (logArchiveParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('LogArchiveAccountParameter');
     logArchiveParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const auditAccount = new CfnAccount(this, 'AuditAccount', {
       accountName: 'Audit',
       email: auditAWSAccountEmail.valueAsString,
     });
+    auditAccount.node.addDependency(organization);
     auditAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
-    const auditAccountParam = new StringParameter(this, 'AuditAccountParameter', {
+    const auditAccountParam = new ssm.StringParameter(this, 'AuditAccountParameter', {
       description: '(superwerker) account id of audit account',
       parameterName: '/superwerker/account_id_audit',
       stringValue: auditAccount.attrAccountId,
     });
+    (auditAccountParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('AuditAccountParameter');
     auditAccountParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
 
@@ -62,6 +67,8 @@ export class ControlTowerStack extends NestedStack {
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerServiceRolePolicy'),
       ],
     });
+    (controlTowerAdminRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerAdmin');
+    controlTowerAdminRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerAdminPolicy = new iam.Policy(this, 'AWSControlTowerAdminPolicy', {
       policyName: 'AWSControlTowerAdminPolicy',
@@ -74,12 +81,16 @@ export class ControlTowerStack extends NestedStack {
       ],
       roles: [controlTowerAdminRole],
     });
+    (controlTowerAdminPolicy.node.defaultChild as CfnPolicy).overrideLogicalId('AWSControlTowerAdminPolicy');
+    controlTowerAdminPolicy.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerCloudTrailRole = new iam.Role(this, 'AWSControlTowerCloudTrailRole', {
       roleName: 'AWSControlTowerCloudTrailRole',
       assumedBy: new iam.ServicePrincipal('cloudtrail.amazonaws.com'),
       path: '/service-role/',
     });
+    (controlTowerCloudTrailRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerCloudTrailRole');
+    controlTowerCloudTrailRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerCloudTrailPolicy = new iam.Policy(this, 'AWSControlTowerCloudTrailRolePolicy', {
       policyName: 'AWSControlTowerCloudTrailRolePolicy',
@@ -92,6 +103,8 @@ export class ControlTowerStack extends NestedStack {
       ],
       roles: [controlTowerCloudTrailRole],
     });
+    (controlTowerCloudTrailPolicy.node.defaultChild as CfnPolicy).overrideLogicalId('AWSControlTowerCloudTrailRolePolicy');
+    controlTowerCloudTrailPolicy.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerConfigAggregatorRole = new iam.Role(
       this,
@@ -105,12 +118,17 @@ export class ControlTowerStack extends NestedStack {
         ],
       },
     );
+    (controlTowerConfigAggregatorRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerConfigAggregatorRoleForOrganizations');
+    controlTowerConfigAggregatorRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerStackSetRole = new iam.Role(this, 'AWSControlTowerStackSetRole', {
       roleName: 'AWSControlTowerStackSetRole',
       assumedBy: new iam.ServicePrincipal('cloudformation.amazonaws.com'),
       path: '/service-role/',
     });
+
+    (controlTowerStackSetRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerStackSetRole');
+    controlTowerStackSetRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerStackSetPolicy = new iam.Policy(this, 'AWSControlTowerStackSetRolePolicy', {
       policyName: 'AWSControlTowerStackSetRolePolicy',
@@ -123,6 +141,8 @@ export class ControlTowerStack extends NestedStack {
       ],
       roles: [controlTowerStackSetRole],
     });
+    (controlTowerStackSetPolicy.node.defaultChild as CfnPolicy).overrideLogicalId('AWSControlTowerStackSetRolePolicy');
+    controlTowerStackSetPolicy.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
 
     const source = Fs.readFileSync('./src/stacks/landing-zone-manifest.yaml').toString();
