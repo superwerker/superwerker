@@ -1,7 +1,7 @@
 import Fs from 'fs';
 import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam, RemovalPolicy } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
-import { CfnPolicy, CfnRole } from 'aws-cdk-lib/aws-iam';
+import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { CfnAccount, CfnOrganization } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
@@ -66,45 +66,39 @@ export class ControlTowerStack extends NestedStack {
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerServiceRolePolicy'),
       ],
+      inlinePolicies: {
+        AWSControlTowerAdminPolicy: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: ['ec2:DescribeAvailabilityZones'],
+              resources: ['*'],
+            }),
+          ],
+        }),
+      },
     });
     (controlTowerAdminRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerAdmin');
     controlTowerAdminRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
-    const controlTowerAdminPolicy = new iam.Policy(this, 'AWSControlTowerAdminPolicy', {
-      policyName: 'AWSControlTowerAdminPolicy',
-      statements: [
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: ['ec2:DescribeAvailabilityZones'],
-          resources: ['*'],
-        }),
-      ],
-      roles: [controlTowerAdminRole],
-    });
-    (controlTowerAdminPolicy.node.defaultChild as CfnPolicy).overrideLogicalId('AWSControlTowerAdminPolicy');
-    controlTowerAdminPolicy.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerCloudTrailRole = new iam.Role(this, 'AWSControlTowerCloudTrailRole', {
       roleName: 'AWSControlTowerCloudTrailRole',
       assumedBy: new iam.ServicePrincipal('cloudtrail.amazonaws.com'),
       path: '/service-role/',
+      inlinePolicies: {
+        AWSControlTowerCloudTrailRolePolicy: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+              resources: ['arn:aws:logs:*:*:log-group:aws-controltower/CloudTrailLogs:*'],
+            }),
+          ],
+        }),
+      },
     });
     (controlTowerCloudTrailRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerCloudTrailRole');
     controlTowerCloudTrailRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
-    const controlTowerCloudTrailPolicy = new iam.Policy(this, 'AWSControlTowerCloudTrailRolePolicy', {
-      policyName: 'AWSControlTowerCloudTrailRolePolicy',
-      statements: [
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
-          resources: ['arn:aws:logs:*:*:log-group:aws-controltower/CloudTrailLogs:*'],
-        }),
-      ],
-      roles: [controlTowerCloudTrailRole],
-    });
-    (controlTowerCloudTrailPolicy.node.defaultChild as CfnPolicy).overrideLogicalId('AWSControlTowerCloudTrailRolePolicy');
-    controlTowerCloudTrailPolicy.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerConfigAggregatorRole = new iam.Role(
       this,
@@ -125,25 +119,20 @@ export class ControlTowerStack extends NestedStack {
       roleName: 'AWSControlTowerStackSetRole',
       assumedBy: new iam.ServicePrincipal('cloudformation.amazonaws.com'),
       path: '/service-role/',
+      inlinePolicies: {
+        AWSControlTowerStackSetRolePolicy: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: ['sts:AssumeRole'],
+              resources: ['arn:aws:iam::*:role/AWSControlTowerExecution'],
+            }),
+          ],
+        }),
+      },
     });
-
     (controlTowerStackSetRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerStackSetRole');
     controlTowerStackSetRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
-    const controlTowerStackSetPolicy = new iam.Policy(this, 'AWSControlTowerStackSetRolePolicy', {
-      policyName: 'AWSControlTowerStackSetRolePolicy',
-      statements: [
-        new iam.PolicyStatement({
-          effect: iam.Effect.ALLOW,
-          actions: ['sts:AssumeRole'],
-          resources: ['arn:aws:iam::*:role/AWSControlTowerExecution'],
-        }),
-      ],
-      roles: [controlTowerStackSetRole],
-    });
-    (controlTowerStackSetPolicy.node.defaultChild as CfnPolicy).overrideLogicalId('AWSControlTowerStackSetRolePolicy');
-    controlTowerStackSetPolicy.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
 
     const source = Fs.readFileSync('./src/stacks/landing-zone-manifest.yaml').toString();
     const template = Handlebars.compile(source);
@@ -165,11 +154,8 @@ export class ControlTowerStack extends NestedStack {
     });
     landingZone.applyRemovalPolicy(RemovalPolicy.DESTROY);
     landingZone.node.addDependency(
-      controlTowerAdminPolicy,
       controlTowerAdminRole,
-      controlTowerStackSetPolicy,
       controlTowerStackSetRole,
-      controlTowerCloudTrailPolicy,
       controlTowerCloudTrailRole,
       controlTowerConfigAggregatorRole,
       logArchiveAccount,
