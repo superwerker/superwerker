@@ -5,14 +5,15 @@ import endent from 'endent';
 const ssmClient = new SSMClient();
 const cloudwatchClient = new CloudWatchClient({});
 
-
 export async function handler(_event: any, _context: any) {
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
 
-  const dnsNames = await ssmClient.send(new GetParameterCommand({
-    Name: '/superwerker/domain_name_servers',
-  }));
+  const dnsNames = await ssmClient.send(
+    new GetParameterCommand({
+      Name: '/superwerker/domain_name_servers',
+    }),
+  );
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
   const isRootMailConfiguredBool = await isRootMailConfigured();
@@ -21,18 +22,20 @@ export async function handler(_event: any, _context: any) {
   const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
   const finalDashboardMessageEscaped = escape_string(finalDashboardMessage);
 
-  await cloudwatchClient.send(new PutDashboardCommand({
-    DashboardName: 'superwerker',
-    DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
-  }));
+  await cloudwatchClient.send(
+    new PutDashboardCommand({
+      DashboardName: 'superwerker',
+      DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
+    }),
+  );
 }
 
 async function isRootMailConfigured() {
-  const rootMailReadyAlarm = await cloudwatchClient.send(new DescribeAlarmsCommand({
-    AlarmNames: [
-      'superwerker-RootMailReady',
-    ],
-  }));
+  const rootMailReadyAlarm = await cloudwatchClient.send(
+    new DescribeAlarmsCommand({
+      AlarmNames: ['superwerker-RootMailReady'],
+    }),
+  );
   return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
 }
 
@@ -116,7 +119,16 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   - For finishing the setup please go to [IAM](/iam/home?region=${region}#/users) and set a new password & MFA for the users \`breakGlassUser01\` and \`breakGlassUser02\`
 
   &nbsp;
-  ## Features
+  ## What now? Standard operating procedures
+
+  - Create AWS accounts for each of your workloads (as email use \`root+<random_suffix>@${dnsDomain}\`)
+    - Basic: via the [Control Tower Account Factory](/controltower/home/accountfactory/createAccount?region=${region})
+    - Advanced: configured inside the LZA repo in the \`accounts-config.yaml\`
+  - Check [OpsCenter for incoming events and messages](/systems-manager/opsitems?region=${region}#list_ops_items_filters=Status:Equal:Open_InProgress&activeTab=OPS_ITEMS)
+  - Exclude resources from being backed-up by changing the \`superwerker:backup\` tag to \`none\`
+
+  &nbsp;
+  ## Feature overview
 
   &nbsp;
   ### Basic
@@ -135,15 +147,6 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   - **Operational tasks**: please see the offical docs for common [admin tasks](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/performing-administrator-tasks.html)
 
   - **Update process**: the LZA is provided as a seperate stack so its lifecycle can be managed independently. For updating visit the offical [AWS docs](https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/update-the-solution.html)
-
-  &nbsp;
-  ## What now? Standard operating procedures
-
-  - Create AWS accounts for each of your workloads (as email use \`root+<random_suffix>@${dnsDomain}\`)
-    - Basic: via the [Control Tower Account Factory](/controltower/home/accountfactory/createAccount?region=${region})
-    - Advanced: configured inside the LZA repo in the \`accounts-config.yaml\`
-  - Check [OpsCenter for incoming events and messages](/systems-manager/opsitems?region=${region}#list_ops_items_filters=Status:Equal:Open_InProgress&activeTab=OPS_ITEMS)
-  - Exclude resources from being backed-up by changing the \`superwerker:backup\` tag to \`none\`
 
   &nbsp;
   ## Help and more information

@@ -54,14 +54,14 @@ export class SuperwerkerStack extends Stack {
     const includeLZA = new CfnParameter(this, 'LandingzoneAccelerator', {
       type: 'String',
       description:
-        'Deploy GitOps Pipeline that rolls out advanced features. REQUIRES creation of Github Token, please see https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html#create-a-github-personal-access-token-and-store-in-secrets-manager',
+        'Deploy pipeline that rolls out advanced features. REQUIRES creation of Github Token, please see https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html#create-a-github-personal-access-token-and-store-in-secrets-manager',
       allowedValues: ['Yes', 'No'],
       default: 'Yes',
     });
 
     const lzaType = new CfnParameter(this, 'LandingzoneAcceleratorType', {
       type: 'String',
-      description: 'Inital Landingzone Accelerator (LZA) configuration to roll out',
+      description: 'Inital config to roll out. Features can be enabled and disabled by modifying the config afterwards.',
       allowedValues: ['Superwerker Best Practices'],
       default: 'Superwerker Best Practices',
     });
@@ -114,7 +114,7 @@ export class SuperwerkerStack extends Stack {
     backupStack.addDependency(controlTowerStack);
     (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
 
-    // // Notifications
+    // Notifications
     const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
       expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
     });
@@ -175,7 +175,7 @@ export class SuperwerkerStack extends Stack {
     addParameterToInterface({
       groupLabel: advancedLabel,
       parameter: includeLZA,
-      parameterLabel: 'Sophisticated: Landingzone Accelerator (LZA)',
+      parameterLabel: 'GitOps Pipeline',
       scope: this,
     }).valueAsString;
     addParameterToInterface({
