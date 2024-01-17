@@ -10,7 +10,7 @@ import { Construct } from 'constructs';
 import { InstallLandingZoneAccelerator } from '../constructs/install-landing-zone-accelerator';
 
 const LZA_REPO_NAME = 'aws-accelerator-config';
-const LZA_VERSION = 'v1.5.2';
+const LZA_VERSION = 'v1.6.0';
 
 export class LandingZoneAcceleratorStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
