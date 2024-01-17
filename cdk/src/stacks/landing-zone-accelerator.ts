@@ -28,24 +28,24 @@ export class LandingZoneAcceleratorStack extends NestedStack {
       __dirname,
       '..',
       'functions',
-      'configure_controltower_customizations',
-      'config',
+      'configure_landing_zone_accelerator',
+      'shared',
       'cloudformation',
     );
     const sharedScpConfigDirPath = path.join(
       __dirname,
       '..',
       'functions',
-      'configure_controltower_customizations',
-      'config',
+      'configure_landing_zone_accelerator',
+      'shared',
       'service-control-policies',
     );
     const sharedIamPoliciesDirPath = path.join(
       __dirname,
       '..',
       'functions',
-      'configure_controltower_customizations',
-      'config',
+      'configure_landing_zone_accelerator',
+      'shared',
       'iam-policies',
     );
 

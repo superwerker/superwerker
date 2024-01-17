@@ -3,7 +3,6 @@ import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
-import { ControlTowerCustomizationsStack } from './control-tower-customizations';
 import { LandingZoneAcceleratorStack } from './landing-zone-accelerator';
 import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
@@ -52,19 +51,12 @@ export class SuperwerkerStack extends Stack {
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
 
-    const includeControlTowerCustomizations = new CfnParameter(this, 'ControlTowerCustomizations', {
-      type: 'String',
-      description: 'Roll out Control Tower customizations on top of Superwerker',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
-    });
-
     const includeLZA = new CfnParameter(this, 'LandingzoneAccelerator', {
       type: 'String',
       description:
-        'Roll out Landingzone Accelerator (LZA) on top of Superwerker. REQUIRES creation of Github Token, please see https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html#create-a-github-personal-access-token-and-store-in-secrets-manager',
+        'Deploy GitOps Pipeline that rolls out advanced features. REQUIRES creation of Github Token, please see https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html#create-a-github-personal-access-token-and-store-in-secrets-manager',
       allowedValues: ['Yes', 'No'],
-      default: 'No',
+      default: 'Yes',
     });
 
     const lzaType = new CfnParameter(this, 'LandingzoneAcceleratorType', {
@@ -73,41 +65,6 @@ export class SuperwerkerStack extends Stack {
       allowedValues: ['Superwerker Best Practices'],
       default: 'Superwerker Best Practices',
     });
-
-    // const includeBudget = new CfnParameter(this, 'IncludeBudget', {
-    //   type: 'String',
-    //   description: 'Enable AWS Budgets alarm for monthly AWS spending',
-    //   allowedValues: ['Yes', 'No'],
-    //   default: 'Yes',
-    // });
-
-    // const includeGuardDuty = new CfnParameter(this, 'IncludeGuardDuty', {
-    //   type: 'String',
-    //   description: 'Enable Amazon GuardDuty',
-    //   allowedValues: ['Yes', 'No'],
-    //   default: 'Yes',
-    // });
-
-    // const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
-    //   type: 'String',
-    //   description: 'Enable AWS Security Hub',
-    //   allowedValues: ['Yes', 'No'],
-    //   default: 'Yes',
-    // });
-
-    // const includeBackup = new CfnParameter(this, 'IncludeBackup', {
-    //   type: 'String',
-    //   description: 'Enable automated backups',
-    //   allowedValues: ['Yes', 'No'],
-    //   default: 'Yes',
-    // });
-
-    // const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
-    //   type: 'String',
-    //   description: 'Enable service control policies in AWS organizations',
-    //   allowedValues: ['Yes', 'No'],
-    //   default: 'Yes',
-    // });
 
     /**
      * Core Components
@@ -171,15 +128,9 @@ export class SuperwerkerStack extends Stack {
     (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
     (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
 
-    // ControlTowerCustomizations
-    const controlTowerCustomizationsCondition = new CfnCondition(this, 'IncludeControlTowerCustomizationsCondition', {
-      expression: Fn.conditionEquals(includeControlTowerCustomizations, 'Yes'),
-    });
-    controlTowerCustomizationsCondition.overrideLogicalId('IncludeControlTowerCustomizations');
-    const controlTowerCustomizationsStack = new ControlTowerCustomizationsStack(this, 'ControlTowerCustomizationsStack', {});
-    controlTowerCustomizationsStack.addDependency(controlTowerStack);
-    (controlTowerCustomizationsStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTowerCustomizationsStack');
-    (controlTowerCustomizationsStack.node.defaultChild as CfnStack).cfnOptions.condition = controlTowerCustomizationsCondition;
+    /**
+     * Advanced Components
+     */
 
     // LandingzoneAccelerator
     const landingzoneAcceleratorCondition = new CfnCondition(this, 'IncludeLandingzoneAcceleratorCondition', {
@@ -196,99 +147,41 @@ export class SuperwerkerStack extends Stack {
     (landingzoneAcceleratorStack.node.defaultChild as CfnStack).overrideLogicalId('LandingzoneAcceleratorStack');
     (landingzoneAcceleratorStack.node.defaultChild as CfnStack).cfnOptions.condition = landingzoneAcceleratorCondition;
 
-    // // Backup
-    // const backupCondition = new CfnCondition(this, 'IncludeBackupCondition', {
-    //   expression: Fn.conditionEquals(includeBackup, 'Yes'),
-    // });
-    // backupCondition.overrideLogicalId('IncludeBackup');
-    // const backupStack = new BackupStack(this, 'Backup', {});
-    // backupStack.addDependency(controlTowerStack);
-    // (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
-    // (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
-
-    // // Budgets
-    // const budgetCondition = new CfnCondition(this, 'IncludeBudgetCondition', {
-    //   expression: Fn.conditionEquals(includeBudget, 'Yes'),
-    // });
-    // budgetCondition.overrideLogicalId('IncludeBudget');
-    // const budgetStack = new BudgetStack(this, 'Budget', {});
-    // (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('Budget');
-    // (budgetStack.node.defaultChild as CfnStack).cfnOptions.condition = budgetCondition;
-
-    // // GuardDuty
-    // const guardDutyCondition = new CfnCondition(this, 'IncludeGuardDutyCondition', {
-    //   expression: Fn.conditionEquals(includeGuardDuty, 'Yes'),
-    // });
-    // guardDutyCondition.overrideLogicalId('IncludeGuardDuty');
-    // const guardDutyStack = new GuardDutyStack(this, 'GuardDuty', {});
-    // (guardDutyStack.node.defaultChild as CfnStack).overrideLogicalId('GuardDuty');
-    // (guardDutyStack.node.defaultChild as CfnStack).cfnOptions.condition = guardDutyCondition;
-
-    // // SecurityHub
-    // const securityHubCondition = new CfnCondition(this, 'IncludeSecurityHubCondition', {
-    //   expression: Fn.conditionEquals(includeSecurityHub, 'Yes'),
-    // });
-    // securityHubCondition.overrideLogicalId('IncludeSecurityHub');
-    // const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
-    // (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
-    // (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
-
-    // // ServiceControlPolicies
-    // const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
-    //   expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
-    // });
-    // serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    // const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
-    //   parameters: {
-    //     IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
-    //     IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
-    //   },
-    // });
-    // serviceControlPoliciesStack.addDependency(controlTowerStack);
-    // (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    // (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
-
     // /**
     //  * labels and groups
     //  */
 
-    const coreLzLabel = 'Landingzone Core Configuration';
+    const basicLabel = 'Basic Configuration';
     addParameterToInterface({
-      groupLabel: coreLzLabel,
+      groupLabel: basicLabel,
       parameter: domain,
       parameterLabel: 'Domain',
       scope: this,
     }).valueAsString;
     addParameterToInterface({
-      groupLabel: coreLzLabel,
+      groupLabel: basicLabel,
       parameter: subdomain,
       parameterLabel: 'Subdomain',
       scope: this,
     }).valueAsString;
     addParameterToInterface({
-      groupLabel: coreLzLabel,
+      groupLabel: basicLabel,
       parameter: notificationsMail,
       parameterLabel: 'Notifications Mail',
       scope: this,
     }).valueAsString;
 
-    const pipelineLabel = 'GitOps Pipeline Configuration (Choose one: CfCT or LZA)';
+    const advancedLabel = 'Advanced Configuration';
     addParameterToInterface({
-      groupLabel: pipelineLabel,
-      parameter: includeControlTowerCustomizations,
-      parameterLabel: 'Simple: Control Tower Customizations (CfCT)',
-      scope: this,
-    }).valueAsString;
-    addParameterToInterface({
-      groupLabel: pipelineLabel,
+      groupLabel: advancedLabel,
       parameter: includeLZA,
       parameterLabel: 'Sophisticated: Landingzone Accelerator (LZA)',
       scope: this,
     }).valueAsString;
     addParameterToInterface({
-      groupLabel: pipelineLabel,
+      groupLabel: advancedLabel,
       parameter: lzaType,
-      parameterLabel: 'Landingzone Accelerator (LZA) Configuration',
+      parameterLabel: 'Inital Configuration',
       scope: this,
     }).valueAsString;
   }
