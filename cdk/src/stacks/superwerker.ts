@@ -1,24 +1,16 @@
-import {
-  CfnCondition,
-  CfnParameter,
-  CfnStack,
-  Fn,
-  Stack,
-  StackProps,
-} from 'aws-cdk-lib';
+import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
-import { GuardDutyStack } from './guardduty';
+import { LandingZoneAcceleratorStack } from './landing-zone-accelerator';
 import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
 import { RootmailStack } from './rootmail';
-import { SecurityHubStack } from './security-hub';
-import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
+import { addParameterToInterface } from '../utils/cfn-interface-parameters';
 
-export interface SuperwerkerStackProps extends StackProps{
+export interface SuperwerkerStackProps extends StackProps {
   readonly version?: string;
 }
 
@@ -40,55 +32,38 @@ export class SuperwerkerStack extends Stack {
 
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
-      description: 'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description:
+        'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
     });
 
     const subdomain = new CfnParameter(this, 'Subdomain', {
       type: 'String',
-      description: 'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description:
+        'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: 'aws',
     });
 
     const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
       type: 'String',
-      description: 'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description:
+        'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: '',
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
 
-    const includeBudget = new CfnParameter(this, 'IncludeBudget', {
+    const includeLZA = new CfnParameter(this, 'LandingzoneAccelerator', {
       type: 'String',
-      description: 'Enable AWS Budgets alarm for monthly AWS spending',
+      description:
+        'Deploy GitOps Pipeline that rolls out advanced features. REQUIRES creation of Github Token, please see https://docs.aws.amazon.com/solutions/latest/landing-zone-accelerator-on-aws/prerequisites.html#create-a-github-personal-access-token-and-store-in-secrets-manager',
       allowedValues: ['Yes', 'No'],
       default: 'Yes',
     });
 
-    const includeGuardDuty = new CfnParameter(this, 'IncludeGuardDuty', {
+    const lzaType = new CfnParameter(this, 'LandingzoneAcceleratorType', {
       type: 'String',
-      description: 'Enable Amazon GuardDuty',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
-    });
-
-    const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
-      type: 'String',
-      description: 'Enable AWS Security Hub',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
-    });
-
-    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
-      type: 'String',
-      description: 'Enable automated backups',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
-    });
-
-    const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
-      type: 'String',
-      description: 'Enable service control policies in AWS organizations',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+      description: 'Inital Landingzone Accelerator (LZA) configuration to roll out',
+      allowedValues: ['Superwerker Best Practices'],
+      default: 'Superwerker Best Practices',
     });
 
     /**
@@ -98,7 +73,6 @@ export class SuperwerkerStack extends Stack {
       domain: `${subdomain.value}.${domain.value}`,
       name: `${SuperwerkerStack.AUDIT_ACCOUNT}`,
     });
-
 
     const emailLogArchive = new GenerateEmailAddress(this, 'GeneratedLogArchiveAWSAccountEmail', {
       domain: `${subdomain.value}.${domain.value}`,
@@ -131,39 +105,16 @@ export class SuperwerkerStack extends Stack {
     });
     (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
 
-    /**
-     * optional components
-     */
+    // Budget
+    const budgetStack = new BudgetStack(this, 'BudgetAlarm', {});
+    (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('BudgetAlarm');
 
     // Backup
-    const backupCondition = new CfnCondition(this, 'IncludeBackupCondition', {
-      expression: Fn.conditionEquals(includeBackup, 'Yes'),
-    });
-    backupCondition.overrideLogicalId('IncludeBackup');
     const backupStack = new BackupStack(this, 'Backup', {});
     backupStack.addDependency(controlTowerStack);
     (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
-    (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
 
-    // Budgets
-    const budgetCondition = new CfnCondition(this, 'IncludeBudgetCondition', {
-      expression: Fn.conditionEquals(includeBudget, 'Yes'),
-    });
-    budgetCondition.overrideLogicalId('IncludeBudget');
-    const budgetStack = new BudgetStack(this, 'Budget', {});
-    (budgetStack.node.defaultChild as CfnStack).overrideLogicalId('Budget');
-    (budgetStack.node.defaultChild as CfnStack).cfnOptions.condition = budgetCondition;
-
-    // GuardDuty
-    const guardDutyCondition = new CfnCondition(this, 'IncludeGuardDutyCondition', {
-      expression: Fn.conditionEquals(includeGuardDuty, 'Yes'),
-    });
-    guardDutyCondition.overrideLogicalId('IncludeGuardDuty');
-    const guardDutyStack = new GuardDutyStack(this, 'GuardDuty', {});
-    (guardDutyStack.node.defaultChild as CfnStack).overrideLogicalId('GuardDuty');
-    (guardDutyStack.node.defaultChild as CfnStack).cfnOptions.condition = guardDutyCondition;
-
-    // Notifications
+    // // Notifications
     const notificationsCondition = new CfnCondition(this, 'IncludeNotificationsCondition', {
       expression: Fn.conditionNot(Fn.conditionEquals(notificationsMail, '')),
     });
@@ -177,30 +128,61 @@ export class SuperwerkerStack extends Stack {
     (notificationsStack.node.defaultChild as CfnStack).overrideLogicalId('Notifications');
     (notificationsStack.node.defaultChild as CfnStack).cfnOptions.condition = notificationsCondition;
 
-    // SecurityHub
-    const securityHubCondition = new CfnCondition(this, 'IncludeSecurityHubCondition', {
-      expression: Fn.conditionEquals(includeSecurityHub, 'Yes'),
-    });
-    securityHubCondition.overrideLogicalId('IncludeSecurityHub');
-    const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
-    (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
-    (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
+    /**
+     * Advanced Components
+     */
 
-    // ServiceControlPolicies
-    const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
-      expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
+    // LandingzoneAccelerator
+    const landingzoneAcceleratorCondition = new CfnCondition(this, 'IncludeLandingzoneAcceleratorCondition', {
+      expression: Fn.conditionEquals(includeLZA, 'Yes'),
     });
-    serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
+    landingzoneAcceleratorCondition.overrideLogicalId('IncludeLandingzoneAccelerator');
+    const landingzoneAcceleratorStack = new LandingZoneAcceleratorStack(this, 'LandingzoneAcceleratorStack', {
       parameters: {
-        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
-        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
+        AuditAWSAccountEmail: emailAudit.email,
+        LogArchiveAWSAccountEmail: emailLogArchive.email,
       },
     });
-    serviceControlPoliciesStack.addDependency(controlTowerStack);
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+    landingzoneAcceleratorStack.addDependency(controlTowerStack);
+    (landingzoneAcceleratorStack.node.defaultChild as CfnStack).overrideLogicalId('LandingzoneAcceleratorStack');
+    (landingzoneAcceleratorStack.node.defaultChild as CfnStack).cfnOptions.condition = landingzoneAcceleratorCondition;
 
+    // /**
+    //  * labels and groups
+    //  */
 
+    const basicLabel = 'Basic Configuration';
+    addParameterToInterface({
+      groupLabel: basicLabel,
+      parameter: domain,
+      parameterLabel: 'Domain',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: basicLabel,
+      parameter: subdomain,
+      parameterLabel: 'Subdomain',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: basicLabel,
+      parameter: notificationsMail,
+      parameterLabel: 'Notifications Mail',
+      scope: this,
+    }).valueAsString;
+
+    const advancedLabel = 'Advanced Configuration';
+    addParameterToInterface({
+      groupLabel: advancedLabel,
+      parameter: includeLZA,
+      parameterLabel: 'Sophisticated: Landingzone Accelerator (LZA)',
+      scope: this,
+    }).valueAsString;
+    addParameterToInterface({
+      groupLabel: advancedLabel,
+      parameter: lzaType,
+      parameterLabel: 'Inital Configuration',
+      scope: this,
+    }).valueAsString;
   }
 }
