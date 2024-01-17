@@ -1,11 +1,10 @@
 import 'aws-sdk-client-mock-jest';
 import { ListAccountsCommand, OrganizationsClient, AWSOrganizationsNotInUseException } from '@aws-sdk/client-organizations';
-import { Client } from '@aws-sdk/client-organizations';
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { mockClient } from 'aws-sdk-client-mock';
 import { handler, generateEmail } from '../../src/functions/generate-mail-address';
 
-var orgClientMock = mockClient(OrganizationsClient as unknown as Client);
+var orgClientMock = mockClient(OrganizationsClient);
 
 describe('generate-mail-address', () => {
   beforeEach(() => {
