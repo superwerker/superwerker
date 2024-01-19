@@ -38,6 +38,7 @@ STACK_DRIFT=`aws cloudformation detect-stack-drift --stack-name ${ControlTowerSt
 aws cloudformation describe-stack-resource-drifts --stack-name ${ControlTowerStackName}
 ```
 5. Run the superwerker update on the main stack to upgrade to your desired version.
+6. Check for any drifts in the stack and potentially correct them. The landing zone itself also has a drift detection and you might consider running a "reset" or "repair" operation.
 
 <details name="resources">
   <summary>Resources to import example</summary>
