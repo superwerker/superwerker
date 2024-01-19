@@ -1,23 +1,28 @@
 # Upgrading existing superwerker installation from 0.17.2
 
-Since Control Tower is managed by Cloudformation starting from version 0.18.0 (also see [ADR](../adrs/control-tower-cloudformation.md)) all existing resources (Organisation, Security Accounts, Roles, etc.) need to be imported. Follow these update instruction prior to do a superwerker update on an existing installation <0.17.2.
+Since Control Tower is managed by Cloudformation starting from version v1.0.0 (also see [ADR](../adrs/control-tower-cloudformation.md)) all existing resources (Organisation, Security Accounts, Roles, etc.) need to be imported. Please follow these instructions prior to updating your superwerker installation <0.17.2.
 
 ## Upgrade instructions
 
-1. Get the existing template that was used for the current installation from the nested stack superwerker-ControlTower either from the console or from the CLI.
-1. Add the ressources to the template within the `Resources` section of the template. Either synthesize the [control tower stack](../../cdk/src/stacks/control-tower.ts) resources (copy all resources except any custom ones) yourself or copy from [below](#resources-to-add)
-1. Store the file in an S3 bucket and copy the S3 HTTPS URL.
-1. Run the following shell commands (for example in cloudshell) while replacing `<s3pathtoupdatedtemplate>` pointing to your new template url and `<controltowerstackname>` with the name of your nested Control Tower Stack. The script assumes that the OU which contains the log archive and audit account is called "Security". 
+**DISCLAIMER**: The ControlTower import mechanism assumes that the AWS Organisation structure is the same after the initial superwerker installation. This means there are two Organisation Units (OUs) called `Security` and `Sandbox`. Inside the `Security` OU there are two Accounts called `Audit` and `Log Archive`. If you renamed any of these resourcers you must update the template manually (shell script and landingzone manifest). The good news: in case something breaks you can just create a new change set and execute it.
+
+1. Go to your superwerker installation and copy the Cloudformation template for the superwerker-ControlTower nested Stack. Either from the console or from the CLI.
+1. Create a new file with the template you copied.
+1. Add the new ControlTower resources to the template within the `Resources` section of the template. Either synthesize the [control tower stack](../../cdk/src/stacks/control-tower.ts) resources (copy all resources except any custom ones) yourself or copy from [below](#resources-to-import-example)
+1. Store the file in an S3 bucket and copy the S3 Object URL (HTTPs one).
+1. Run the following shell commands (for example in cloudshell) while replacing `<s3pathtoupdatedtemplate>` pointing to your new template url and `<controltowerstackname>` with the name of your nested Control Tower Stack. 
+
+
 ```shell
-UpdatedTemplateUrl=s3://cf-templates-1rtsrc0sqmzlh-eu-central-1/stack_update.json
+UpdatedTemplateUrl=<s3pathtoupdatedtemplate>
 ControlTowerStackName=<controltowerstackname>
 ROOT_ID=$(aws organizations list-roots | jq -r '.Roots | .[] | .Id')
 SECURITY_ID=$(aws organizations list-organizational-units-for-parent --parent-id $ROOT_ID | jq -r '.OrganizationalUnits | .[] | select(.Name=="Security") | .Id')
 export OrganizationId=`aws organizations describe-organization --query "Organization.Id" --output text`
-export AuditAccountId=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name=="Audit") | .Id'`
-export AuditAccountEmail=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name=="Audit") | .Email'`
-export LogArchiveAccountId=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name=="Log Archive") | .Id'`
-export LogArchiveAccountEmail=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name=="Log Archive") | .Email'`
+export AuditAccountId=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="audit") | .Id'`
+export AuditAccountEmail=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="audit") | .Email'`
+export LogArchiveAccountId=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="log archive") | .Id'`
+export LogArchiveAccountEmail=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="log archive") | .Email'`
 export LandingZoneId=`aws controltower list-landing-zones --query "landingZones[0].arn" --output text`
 export AuditAccountParameterName="/superwerker/account_id_audit"
 export LogArchiveAccountParameterName="/superwerker/account_id_logarchive"
@@ -40,12 +45,14 @@ aws cloudformation describe-stack-resource-drifts --stack-name ${ControlTowerSta
 5. Run the superwerker update on the main stack to upgrade to your desired version.
 6. Check for any drifts in the stack and potentially correct them. The landing zone itself also has a drift detection and you might consider running a "reset" or "repair" operation.
 
+## Resources to import example
+
 <details name="resources">
-  <summary>Resources to import example</summary>
+  <summary>expand example</summary>
   
   These resources need to be added to the existing control tower template and then uploaded to S3. Disclaimer: Control Tower only allows to install the latest version. Consider upgrading to the latest version in the template below.
 
-  ### Resources to Add
+  ### Resources to add
   ```json
 "Organization": {
    "Type": "AWS::Organizations::Organization",
