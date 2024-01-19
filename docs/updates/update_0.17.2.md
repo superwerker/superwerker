@@ -10,39 +10,38 @@ Since Control Tower is managed by Cloudformation starting from version v1.0.0 (a
 1. Create a new file with the template you copied.
 1. Add the new ControlTower resources to the template within the `Resources` section of the template. Either synthesize the [control tower stack](../../cdk/src/stacks/control-tower.ts) resources (copy all resources except any custom ones) yourself or copy from [below](#resources-to-import-example)
 1. Store the file in an S3 bucket and copy the S3 Object URL (HTTPs one).
-1. Run the following shell commands (for example in cloudshell) while replacing `<s3pathtoupdatedtemplate>` pointing to your new template url and `<controltowerstackname>` with the name of your nested Control Tower Stack. 
+1. Run the following shell commands (for example in cloudshell) while replacing `<S3_PATH_TO_TEMPLATE>` pointing to your new template url and `<CONTROLTOWER_NESTED_STACK_NAME>` with the name of your nested Control Tower Stack. 
 
 
 ```shell
-UpdatedTemplateUrl=<s3pathtoupdatedtemplate>
-ControlTowerStackName=<controltowerstackname>
-ROOT_ID=$(aws organizations list-roots | jq -r '.Roots | .[] | .Id')
-SECURITY_ID=$(aws organizations list-organizational-units-for-parent --parent-id $ROOT_ID | jq -r '.OrganizationalUnits | .[] | select(.Name=="Security") | .Id')
-export OrganizationId=`aws organizations describe-organization --query "Organization.Id" --output text`
-export AuditAccountId=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="audit") | .Id'`
-export AuditAccountEmail=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="audit") | .Email'`
-export LogArchiveAccountId=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="log archive") | .Id'`
-export LogArchiveAccountEmail=`aws organizations list-accounts-for-parent --parent-id $SECURITY_ID | jq -r '.Accounts | .[] | select(.Name | ascii_downcase =="log archive") | .Email'`
-export LandingZoneId=`aws controltower list-landing-zones --query "landingZones[0].arn" --output text`
-export AuditAccountParameterName="/superwerker/account_id_audit"
-export LogArchiveAccountParameterName="/superwerker/account_id_logarchive"
+UPDATED_CONTROLTOWER_NESTED_STACK_TEMPLATE=<S3_PATH_TO_TEMPLATE>
+CONTROLTOWER_NESTED_STACK_NAME=<CONTROLTOWER_NESTED_STACK_NAME>
+export ORG_ID=$(aws organizations describe-organization --query "Organization.Id" --output text)
+export LZ_ID=$(aws controltower list-landing-zones --query "landingZones[0].arn" --output text)
+export LZ_MANIFEST=$(aws controltower get-landing-zone --landing-zone-id ${LZ_ID} --no-cli-pager)
+export AUDIT_ACCOUNT_ID=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.securityRoles.accountId')
+export AUDIT_ACCOUNT_MAIL=$(aws organizations describe-account --account-id $AUDIT_ACCOUNT_ID | jq -r '.Account.Email')
+export LOG_ARCHIVE_ACCOUNT_ID=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.centralizedLogging.accountId')
+export LOG_ARCHIVE_ACCOUNT_MAIL=$(aws organizations describe-account --account-id $LOG_ARCHIVE_ACCOUNT_ID | jq -r '.Account.Email')
+export AUDIT_ACCOUNT_SSM_PARAMETER="/superwerker/account_id_audit"
+export LOG_ARCHIVE_ACCOUNT_SSM_PARAMETER="/superwerker/account_id_logarchive"
 
 #create change set
-aws cloudformation create-change-set --stack-name ${ControlTowerStackName} --change-set-name ImportChangeSet --change-set-type IMPORT --resources-to-import "[{\"ResourceType\":\"AWS::Organizations::Organization\",\"LogicalResourceId\":\"Organization\",\"ResourceIdentifier\":{\"Id\":\"${OrganizationId}\"}}, {\"ResourceType\":\"AWS::Organizations::Account\",\"LogicalResourceId\":\"AuditAccount\",\"ResourceIdentifier\":{\"AccountId\":\"${AuditAccountId}\"}}, {\"ResourceType\":\"AWS::Organizations::Account\",\"LogicalResourceId\":\"LogArchiveAccount\",\"ResourceIdentifier\":{\"AccountId\":\"${LogArchiveAccountId}\"}}, {\"ResourceType\":\"AWS::ControlTower::LandingZone\",\"LogicalResourceId\":\"LandingZone\",\"ResourceIdentifier\":{\"LandingZoneIdentifier\":\"${LandingZoneId}\"}},{\"ResourceType\":\"AWS::SSM::Parameter\",\"LogicalResourceId\":\"AuditAccountParameter\",\"ResourceIdentifier\":{\"Name\":\"${AuditAccountParameterName}\"}}, {\"ResourceType\":\"AWS::SSM::Parameter\",\"LogicalResourceId\":\"LogArchiveAccountParameter\",\"ResourceIdentifier\":{\"Name\":\"${LogArchiveAccountParameterName}\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerCloudTrailRole\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerCloudTrailRole\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerAdmin\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerAdmin\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerConfigAggregatorRoleForOrganizations\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerConfigAggregatorRoleForOrganizations\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerStackSetRole\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerStackSetRole\"}}]" --parameter ParameterKey=LogArchiveAWSAccountEmail,ParameterValue=${LogArchiveAccountEmail} ParameterKey=AuditAWSAccountEmail,ParameterValue=${AuditAccountEmail} --capabilities "CAPABILITY_NAMED_IAM" --template-url ${UpdatedTemplateUrl}
+aws cloudformation create-change-set --stack-name ${CONTROLTOWER_NESTED_STACK_NAME} --change-set-name ImportChangeSet --change-set-type IMPORT --resources-to-import "[{\"ResourceType\":\"AWS::Organizations::Organization\",\"LogicalResourceId\":\"Organization\",\"ResourceIdentifier\":{\"Id\":\"${ORG_ID}\"}}, {\"ResourceType\":\"AWS::Organizations::Account\",\"LogicalResourceId\":\"AuditAccount\",\"ResourceIdentifier\":{\"AccountId\":\"${AUDIT_ACCOUNT_ID}\"}}, {\"ResourceType\":\"AWS::Organizations::Account\",\"LogicalResourceId\":\"LogArchiveAccount\",\"ResourceIdentifier\":{\"AccountId\":\"${LOG_ARCHIVE_ACCOUNT_ID}\"}}, {\"ResourceType\":\"AWS::ControlTower::LandingZone\",\"LogicalResourceId\":\"LandingZone\",\"ResourceIdentifier\":{\"LandingZoneIdentifier\":\"${LZ_ID}\"}},{\"ResourceType\":\"AWS::SSM::Parameter\",\"LogicalResourceId\":\"AuditAccountParameter\",\"ResourceIdentifier\":{\"Name\":\"${AUDIT_ACCOUNT_SSM_PARAMETER}\"}}, {\"ResourceType\":\"AWS::SSM::Parameter\",\"LogicalResourceId\":\"LogArchiveAccountParameter\",\"ResourceIdentifier\":{\"Name\":\"${LOG_ARCHIVE_ACCOUNT_SSM_PARAMETER}\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerCloudTrailRole\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerCloudTrailRole\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerAdmin\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerAdmin\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerConfigAggregatorRoleForOrganizations\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerConfigAggregatorRoleForOrganizations\"}}, {\"ResourceType\":\"AWS::IAM::Role\",\"LogicalResourceId\":\"AWSControlTowerStackSetRole\",\"ResourceIdentifier\":{\"RoleName\":\"AWSControlTowerStackSetRole\"}}]" --parameter ParameterKey=LogArchiveAWSAccountEmail,ParameterValue=${LOG_ARCHIVE_ACCOUNT_MAIL} ParameterKey=AuditAWSAccountEmail,ParameterValue=${AUDIT_ACCOUNT_MAIL} --capabilities "CAPABILITY_NAMED_IAM" --template-url ${UPDATED_CONTROLTOWER_NESTED_STACK_TEMPLATE}
 
 # verify everything works as it should
-aws cloudformation describe-change-set --change-set-name ImportChangeSet --stack-name ${ControlTowerStackName}
+aws cloudformation describe-change-set --change-set-name ImportChangeSet --stack-name ${CONTROLTOWER_NESTED_STACK_NAME}
 
 # execute the actual import
-aws cloudformation execute-change-set --change-set-name ImportChangeSet --stack-name ${ControlTowerStackName}
+aws cloudformation execute-change-set --change-set-name ImportChangeSet --stack-name ${CONTROLTOWER_NESTED_STACK_NAME}
 
 # after importing, check if there any drifts
 # don't worry too much as we are updating anyways in the next step
-STACK_DRIFT=`aws cloudformation detect-stack-drift --stack-name ${ControlTowerStackName} --query "StackDriftDetectionId"`
+STACK_DRIFT=`aws cloudformation detect-stack-drift --stack-name ${CONTROLTOWER_NESTED_STACK_NAME} --query "StackDriftDetectionId"`
 
-aws cloudformation describe-stack-resource-drifts --stack-name ${ControlTowerStackName}
+aws cloudformation describe-stack-resource-drifts --stack-name ${CONTROLTOWER_NESTED_STACK_NAME}
 ```
-5. Run the superwerker update on the main stack to upgrade to your desired version.
+5. Update the main superwerker Stack to upgrade to your desired version.
 6. Check for any drifts in the stack and potentially correct them. The landing zone itself also has a drift detection and you might consider running a "reset" or "repair" operation.
 
 ## Resources to import example
