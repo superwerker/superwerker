@@ -1,34 +1,8 @@
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
-import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
-import axios from 'axios';
-
-
-const ssmClient = new SSMClient();
 const eventBridgeClient = new EventBridgeClient();
 
-export async function handler(event: any, _context: any) {
-  for (const account of event.accounts) {
-    const name = `/superwerker/account_id_${(account.accountName as string).toLowerCase().replace(/ /g, '')}`;
-
-
-    const putParameterCommand = new PutParameterCommand({
-      Name: name,
-      Value: account.accountId,
-      Overwrite: true,
-      Type: 'String',
-    });
-
-    await ssmClient.send(putParameterCommand);
-  };
-
-  // signal cloudformation stack that control tower setup is complete
-  await axios.put(process.env.SIGNAL_URL!, {
-    Status: 'SUCCESS',
-    Reason: 'Control Tower Setup completed',
-    UniqueId: 'doesthisreallyhavetobeunique',
-    Data: 'Control Tower Setup completed',
-  });
+export async function bootstap() {
 
   // signal Control Tower Landing Zone Setup/Update has finished
   const putEventsCommand = new PutEventsCommand({
@@ -45,6 +19,18 @@ export async function handler(event: any, _context: any) {
     ],
   });
 
-  await eventBridgeClient.send(putEventsCommand);
+  const response = await eventBridgeClient.send(putEventsCommand);
+  return response;
+}
 
+export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+  switch (event.RequestType) {
+    case 'Create':
+      console.log('Triggering enablement of superwerker features...');
+      return bootstap();
+    case 'Delete':
+    case 'Update':
+      console.log('Stack is being deleted or updated, doing nothing');
+      return {};
+  }
 }
