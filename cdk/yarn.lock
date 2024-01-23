@@ -2790,10 +2790,17 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.yarnpkg.com/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz#92f95616501069d07d10edb2fc37d3e1c65123b7"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
+<<<<<<< HEAD
 aws-cdk-lib@^2.96.2:
   version "2.121.1"
   resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.121.1.tgz#c4c5029a916fdbc9ae8ed4fd39264143d6326322"
   integrity sha512-wrOHDDQqVuH2tRTH7p2LaMPVI3V2bqr8X//Qrhy+hOFA04u2MVetQYev+NgMXPjNzU9IGX2wy1Fs9Y/ntq2sQA==
+=======
+aws-cdk-lib@^2.115.0:
+  version "2.122.0"
+  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.122.0.tgz#6f8078e52e2cf3ce30be3196f32c8e76c7ae9f1b"
+  integrity sha512-NBUfYk/SialvKFsvBG/Ucd7lM+BID3Uy3EEOnIBbioDpnMotm5SDaU/RUm4APS4sxzQZX1DjduD5ZUFNHnEWhQ==
+>>>>>>> aff9d65 (build: updated package.json)
   dependencies:
     "@aws-cdk/asset-awscli-v1" "^2.2.201"
     "@aws-cdk/asset-kubectl-v20" "^2.1.2"
@@ -3145,10 +3152,17 @@ case@1.6.3:
   resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
+<<<<<<< HEAD
 cdk-assets@^2.96.2:
   version "2.96.2"
   resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.96.2.tgz#bafad67f908c3f3b2dca914fa7006485afd07a66"
   integrity sha512-sJ8CUpXv7PNa4m5DlOC1oNWkjb9KgGRbWCMVXtZNCw/x/4aVdTig3viN2aNrHeahkB2wOuDVXfV275RF/wguzw==
+=======
+cdk-assets@^2.115.0:
+  version "2.122.0"
+  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.122.0.tgz#fa23307a4fd44dbc4d6da11886066d50a2812e34"
+  integrity sha512-17QxcqudHpKqICSWoEHpGaBy+7b2ZIRncxulQANcDC8BvhfAUwErAu+aNt3EfGcTz/uBCTR2PHDJlX6YkxQRoA==
+>>>>>>> aff9d65 (build: updated package.json)
   dependencies:
     "@aws-cdk/cloud-assembly-schema" "2.96.2"
     "@aws-cdk/cx-api" "2.96.2"
