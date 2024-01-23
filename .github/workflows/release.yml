@@ -37,10 +37,11 @@ jobs:
       if: steps.semantic.outputs.new_release_published == 'true'
       run: |
         pip install cfn-flip
-        npm install -g aws-cdk
+        yarn install -g aws-cdk
         yarn
         yarn test
         yarn synth
+        cat cdk.out/SuperwerkerStack.assets.json
         yarn publish-assets
         cfn-flip cdk.out/SuperwerkerStack.template.json cdk.out/superwerker.template.yaml
         aws s3 cp cdk.out/superwerker.template.yaml s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
