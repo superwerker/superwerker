@@ -37,7 +37,7 @@ jobs:
       if: steps.semantic.outputs.new_release_published == 'true'
       run: |
         pip install cfn-flip
-        yarn install -g aws-cdk
+        yarn global add aws-cdk
         yarn
         yarn test
         yarn synth
