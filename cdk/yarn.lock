@@ -2826,7 +2826,7 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.yarnpkg.com/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz#92f95616501069d07d10edb2fc37d3e1c65123b7"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
-aws-cdk-lib@^2.96.2:
+aws-cdk-lib@^2.115.0:
   version "2.122.0"
   resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.122.0.tgz#6f8078e52e2cf3ce30be3196f32c8e76c7ae9f1b"
   integrity sha512-NBUfYk/SialvKFsvBG/Ucd7lM+BID3Uy3EEOnIBbioDpnMotm5SDaU/RUm4APS4sxzQZX1DjduD5ZUFNHnEWhQ==
@@ -3180,7 +3180,7 @@ case@1.6.3:
   resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
-cdk-assets@^2.96.2:
+cdk-assets@^2.115.0:
   version "2.122.0"
   resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.122.0.tgz#fa23307a4fd44dbc4d6da11886066d50a2812e34"
   integrity sha512-17QxcqudHpKqICSWoEHpGaBy+7b2ZIRncxulQANcDC8BvhfAUwErAu+aNt3EfGcTz/uBCTR2PHDJlX6YkxQRoA==
