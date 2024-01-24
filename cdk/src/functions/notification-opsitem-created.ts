@@ -9,8 +9,8 @@ export async function handler(_event:any, _context:any) {
   const request_parameters = _event.detail.requestParameters;
   const desc = request_parameters.description;
   const title = request_parameters.title;
-
   const url = `https://${region}.console.aws.amazon.com/systems-manager/opsitems/${id}`;
+  const topicARN = process.env.TOPIC_ARN;
 
   log({
     desc: desc,
@@ -27,7 +27,7 @@ export async function handler(_event:any, _context:any) {
   await snsClient.send(new PublishCommand({
     Message: message_body,
     Subject: message_title,
-    TopicArn: process.env.TOPIC_ARN,
+    TopicArn: topicARN, //process.env.TOPIC_ARN,
   }));
 }
 
