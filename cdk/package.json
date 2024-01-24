@@ -34,7 +34,9 @@
     "prettier": "^3.2.5",
     "ts-jest": "^29.0.5",
     "ts-node": "^10",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.4",
+    "aws-sdk-client-mock": "^3.0.1",
+    "aws-sdk-client-mock-jest": "^3.0.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js}": "yarn lint",
@@ -52,9 +54,6 @@
     "aws-cdk-lib": "^2.96.2",
 =======
     "aws-cdk-lib": "^2.115.0",
-    "aws-sdk-client-mock": "^3.0.1",
-    "aws-sdk-client-mock-jest": "^3.0.1",
->>>>>>> aff9d65 (build: updated package.json)
     "axios": "^1.2.3",
     "cdk-assets": "^2.115.0",
     "constructs": "^10.1.224",

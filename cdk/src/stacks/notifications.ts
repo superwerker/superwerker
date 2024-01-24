@@ -24,7 +24,7 @@ export class NotificationsStack extends NestedStack {
       entry: path.join(__dirname, '..', 'functions', 'notification-opsitem-created.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_18_X,
-      timeout: Duration.minutes(1),
+      timeout: Duration.seconds(30),
       environment: {
         TOPIC_ARN: notificationTopic.topicArn,
       },
