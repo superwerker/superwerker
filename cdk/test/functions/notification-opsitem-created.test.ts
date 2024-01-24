@@ -4,9 +4,11 @@ import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/notification-opsitem-created';
 
 const snsClientMock = mockClient(SNSClient);
-const ops_item_id = 'ops_item_id_123';
+const opsItemId = 'message_123';
 const title = 'test_message_title';
 const description = 'test_message_description';
+const region = 'us-east-1';
+const url = `https://${region}.console.aws.amazon.com/systems-manager/opsitems/${opsItemId}`;
 
 describe('notifications_opsitems', () => {
 
@@ -25,12 +27,14 @@ describe('notifications_opsitems', () => {
   it('notifications_opsitems_create', async () => {
     snsClientMock
       .on(PublishCommand)
-      .resolves({});
+      .resolves({
+        MessageId: 'Message_123',
+      });
 
     await handler({
       detail: {
         responseElements: {
-          opsItemId: ops_item_id,
+          OpsItemId: opsItemId,
         },
         requestParameters: {
           description: description,
@@ -40,5 +44,10 @@ describe('notifications_opsitems', () => {
     }, {});
 
     expect(snsClientMock).toReceiveCommandTimes(PublishCommand, 1);
+    expect(snsClientMock).toReceiveCommandWith(PublishCommand, {
+      Message: `${description}\n\n${url}`,
+      Subject: `New OpsItem: ${title}`,
+      TopicArn: process.env.TOPIC_ARN,
+    });
   });
 });
