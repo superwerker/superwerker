@@ -1,10 +1,13 @@
 {
-  "name": "superwerker-cdk-poc",
+  "name": "superwerker-cdk",
+  "engines": {
+     "node": "^18 || ^20" 
+  },
   "scripts": {
     "synth": "cdk synth --version-reporting false",
     "test": "make test && jest --silent",
     "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts",
-    "prepare": "cd .. && husky install cdk/.husky"
+    "prepare": "cd .. && husky cdk/.husky"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.6.0",

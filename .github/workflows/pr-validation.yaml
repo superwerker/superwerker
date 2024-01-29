@@ -58,7 +58,7 @@ jobs:
       - name: check commit messages
         if: ${{ (github.event_name != 'workflow_dispatch') && (github.ref != 'refs/heads/main') }}
         run: |
-          npm install
+          yarn install
           npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
         working-directory: cdk
 
