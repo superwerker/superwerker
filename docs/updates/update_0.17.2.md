@@ -1,20 +1,19 @@
 # Upgrading existing superwerker installation from 0.17.2
 
-Since Control Tower is managed by Cloudformation starting from version v1.0.0 (also see [ADR](../adrs/control-tower-cloudformation.md)) all existing resources (Organisation, Security Accounts, Roles, etc.) need to be imported. Please follow these instructions prior to updating your superwerker installation 0.17.2. If you are coming from a version lower version, you need to upgrade to to version 0.17.2 first before starting with these upgrade instructions.
+Since Control Tower is managed by Cloudformation starting from version v1.0.0 (also see [ADR](../adrs/control-tower-cloudformation.md)) all existing resources (Organisation, Security Accounts, Roles, etc.) need to be imported into the existing superwerker stack. Please follow these instructions prior to updating your superwerker installation. If you are coming from a lower version, you need to upgrade to version 0.17.2 first before starting with these upgrade instructions.
 
 ## Upgrade instructions
 
-**DISCLAIMER**: The ControlTower import mechanism assumes that the AWS Organisation structure is the same after the initial superwerker installation. This means there are two Organisation Units (OUs) called `Security` and `Sandbox`. Inside the `Security` OU there are two Accounts called `Audit` and `Log Archive`. If you renamed any of these resources you must update the template manually (shell script and landingzone manifest). The good news: in case something breaks you can just create a new change set and execute it. It is assumed that there is a S3 bucket in this account with prefix 'cf-templates'.
+**DISCLAIMER**: The ControlTower import mechanism assumes that the AWS Organisation structure is the same after the initial superwerker installation. This means there are two Organisation Units (OUs) called `Security` and `Sandbox`. Inside the `Security` OU there are two Accounts called `Audit` and `Log Archive`. Additionally, it is assumed that there is an S3 bucket in the account with the prefix `cf-templates`.
 
-1. Open the AWS console of the AWS master account where you installed superwerker. 
-1. Open The Cloudshell and then paste the following script
+1. Open the AWS console of the AWS management account where you installed superwerker
+2. Open Cloudshell and paste the following script
 
 ```shell
-
 SUPERWERKER_STACK=$(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackId' --output text)
 
 if [ -z "$SUPERWERKER_STACK" ]; then
-    echo "No stack with name superwerker found. Won't import."
+    echo "No stack with name superwerker found. Please override the SUPERWERKER_STACK environment variable if necessary"
 else
     echo "Found superwerker stack. Checking version..."
     SUPERWERKER_VERSION=$(aws cloudformation get-template --stack-name superwerker --query 'TemplateBody.Metadata.SuperwerkerVersion' --output text)
@@ -22,7 +21,7 @@ else
         echo "Superwerker version is not 0.17.2. Please update first to this version before attempting import."
     else
         echo "Found superwerker version 0.17.2. Fetching Control Tower Cloudformation Template..."
-        CONTROL_TOWER_STACK=$(aws cloudformation list-stacks --stack-status-filter "CREATE_COMPLETE" "IMPORT_ROLLBACK_COMPLETE" "UPDATE_COMPLETE" "IMPORT_COMPLETE" "ROLLBACK_COMPLETE" "UPDATE_ROLLBACK_COMPLETE" --query 'StackSummaries[?starts_with(StackName, `superwerker-ControlTower`)].StackName' --output text)
+        CONTROL_TOWER_STACK=$(aws cloudformation list-stacks --stack-status-filter "CREATE_COMPLETE" "IMPORT_ROLLBACK_COMPLETE" "UPDATE_COMPLETE" "IMPORT_COMPLETE" "ROLLBACK_COMPLETE" "UPDATE_ROLLBACK_COMPLETE" --query "StackSummaries[?starts_with(StackName, '${SUPERWERKER_STACK}-ControlTower')].StackName" --output text)
         echo "Fetching Control Tower Template..."
         aws cloudformation get-template --stack-name ${CONTROL_TOWER_STACK} --output json > control_tower_template.json
         echo "Creating resources_to_import.json"
@@ -30,9 +29,7 @@ else
         echo "Updating Control Tower Template"
         sed -i "/\"Resources\"/r resources_to_import.json" control_tower_template.json
 
-        # use aws s3 cli to get name of bucket starting with prefix cf_templates
         TEMPLATE_BUCKET=$(aws s3api list-buckets --query "Buckets[?starts_with(Name, 'cf-templates')].Name" --output text)
-       
 
         export ORG_ID=$(aws organizations describe-organization --query "Organization.Id" --output text)
         export LZ_ID=$(aws controltower list-landing-zones --query "landingZones[0].arn" --output text)
@@ -51,21 +48,23 @@ else
 fi
 ```
 
-1. After the change set has been create verify it
+3. After the change set has been created verify it
 ```shell
 aws cloudformation describe-change-set --change-set-name ImportChangeSet --stack-name ${CONTROL_TOWER_STACK}
 ```
 
-Execute the change set to import the resources.
+4. Execute the change set to import the resources
 ```shell
 aws cloudformation execute-change-set --change-set-name ImportChangeSet --stack-name ${CONTROL_TOWER_STACK}
 ```
 
-After the import is done detect any drifts between the stack and your infrastructure and correct if necessary. Please note that some drifts will get resolved after upating superwerker.
+5. After importing the control tower resources please update the main superwerker stack with the default [update procedure](https://github.com/superwerker/superwerker?tab=readme-ov-file#how-do-i-receive-updates)
+
+#
+
+Lastly, once the update is done you might check for any drifts between the stack and your infrastructure and correct if necessary.
 ```shell
 STACK_DRIFT=$(aws cloudformation detect-stack-drift --stack-name ${CONTROL_TOWER_STACK} --query "StackDriftDetectionId")
 
 aws cloudformation describe-stack-resource-drifts --stack-name ${CONTROL_TOWER_STACK}
 ```
-Then update the main superwerker Stack to upgrade to your desired version.
-Again check for any drifts in the stack and potentially correct them. The landing zone itself also has a drift detection and you might consider running a "reset" or "repair" operation.
