@@ -21,6 +21,22 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
+    const securityOuParam = new ssm.StringParameter(this, 'SecurityOUParameter', {
+      description: '(superwerker) name of security ou',
+      parameterName: '/superwerker/security_ou_name',
+      stringValue: 'Security',
+    });
+    (securityOuParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('SecurityOUParameter');
+    securityOuParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
+
+    const sandboxOuParam = new ssm.StringParameter(this, 'SandboxOUParameter', {
+      description: '(superwerker) name of sandbox ou',
+      parameterName: '/superwerker/sandbox_ou_name',
+      stringValue: 'Sandbox',
+    });
+    (sandboxOuParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('SandboxOUParameter');
+    sandboxOuParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
+
     const organization = new CfnOrganization(this, 'Organization', {
       featureSet: 'ALL',
     });
@@ -138,6 +154,8 @@ export class ControlTowerStack extends NestedStack {
     const template = Handlebars.compile(source);
     const contents = template({
       REGION: `${this.region}`,
+      SECURITY_OU_NAME: `${securityOuParam.stringValue}`,
+      SANDBOX_OU_NAME: `${sandboxOuParam.stringValue}`,
       LOG_ARCHIVE_ACCOUNT_ID: `${logArchiveAccount.attrAccountId}`,
       AUDIT_ACCOUNT_ID: `${auditAccount.attrAccountId}`,
     });

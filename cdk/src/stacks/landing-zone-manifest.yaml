@@ -3,9 +3,9 @@ governedRegions:
 
 organizationStructure:
   security:
-    name: Security
+    name: {{SECURITY_OU_NAME}}
   sandbox:
-    name: Sandbox
+    name: {{SANDBOX_OU_NAME}}
 
 centralizedLogging:
   accountId: "{{LOG_ARCHIVE_ACCOUNT_ID}}"
