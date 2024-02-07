@@ -4,7 +4,7 @@ Since Control Tower is managed by Cloudformation starting from version v1.0.0 (a
 
 ## Upgrade instructions
 
-**DISCLAIMER**: The ControlTower import mechanism assumes that the AWS Organisation structure is the same after the initial superwerker installation. This means there are two Organisation Units (OUs) called `Security` and `Sandbox`. Inside the `Security` OU there are two Accounts called `Audit` and `Log Archive`. Additionally, it is assumed that there is an S3 bucket in the account with the prefix `cf-templates`.
+**DISCLAIMER**: The ControlTower import mechanism assumes that the AWS Organisation structure is the same after the initial superwerker installation. This means there are two Organisation Units (OUs) called `Security` and `Sandbox`. Inside the `Security` OU there are two Accounts called `Audit` and `Log Archive`. Also note that the landing zone version in the script is fixed to **version 3.3**. If this causes issues during import it needs to be changed.
 
 1. Open the AWS console of the AWS management account where you installed superwerker
 2. Open Cloudshell and paste the following script
