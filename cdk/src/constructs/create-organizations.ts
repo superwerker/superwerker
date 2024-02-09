@@ -1,18 +1,29 @@
 import * as path from 'path';
-import { CustomResource, Stack } from 'aws-cdk-lib';
+import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
+interface CreateOrganizationsProps {
+  readonly orgCreatedSignal: string;
+  readonly securityOuSsmParameter: string;
+  readonly sandboxOuSsmParameter: string;
+}
+
 export class CreateOrganizations extends Construct {
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: CreateOrganizationsProps) {
     super(scope, id);
 
     new CustomResource(this, 'Resource', {
       serviceToken: CreateOrganizationsProvider.getOrCreate(this),
       resourceType: 'Custom::CreateOrganizations',
+      properties: {
+        SIGNAL_URL: props.orgCreatedSignal,
+        SECURITY_OU_SSM_PARAMETER: props.securityOuSsmParameter,
+        SANDBOX_OU_SSM_PARAMETER: props.sandboxOuSsmParameter,
+      },
     });
   }
 }
@@ -37,10 +48,24 @@ class CreateOrganizationsProvider extends Construct {
       onEventHandler: new lambda.NodejsFunction(this, 'create-organizations-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'create-organizations.ts'),
         runtime: Runtime.NODEJS_16_X,
+        timeout: Duration.seconds(60),
         initialPolicy: [
           new iam.PolicyStatement({
-            resources: ['*'],
+            actions: ['ssm:PutParameter'],
+            resources: ['arn:aws:ssm:*:*:parameter/superwerker/*'],
+          }),
+          new iam.PolicyStatement({
             actions: ['organizations:CreateOrganization'],
+            resources: ['*'],
+          }),
+          new iam.PolicyStatement({
+            actions: ['iam:CreateServiceLinkedRole'],
+            resources: ['arn:aws:iam::*:role/aws-service-role/organizations.amazonaws.com/AWSServiceRoleForOrganizations*'],
+            conditions: {
+              StringEquals: {
+                'iam:AWSServiceName': 'organizations.amazonaws.com',
+              },
+            },
           }),
         ],
       }),

@@ -1,10 +1,5 @@
 import 'aws-sdk-client-mock-jest';
-import {
-  OrganizationsClient,
-  CreateOrganizationCommand,
-  DescribeOrganizationCommand,
-  AlreadyInOrganizationException,
-} from '@aws-sdk/client-organizations';
+import { OrganizationsClient, CreateOrganizationCommand } from '@aws-sdk/client-organizations';
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { mockClient } from 'aws-sdk-client-mock';
 import { handler } from '../../src/functions/create-organizations';
@@ -25,36 +20,19 @@ describe('create organizations function', () => {
 
     const response = await handler({
       RequestType: 'Create',
+      ResourceProperties: {
+        SIGNAL_URL: 'https://example.com',
+      },
     } as unknown as OnEventRequest);
+    console.log(response);
 
     expect(response).toMatchObject({ PhysicalResourceId: 'org-id' });
 
     expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
-    expect(organizationsClientMock).not.toHaveReceivedCommand(DescribeOrganizationCommand);
   });
 
   it('fetch organization if it already exist', async () => {
-    organizationsClientMock.on(CreateOrganizationCommand).rejects(new AlreadyInOrganizationException({} as any));
-
-    organizationsClientMock.on(DescribeOrganizationCommand).resolves({
-      Organization: {
-        Id: 'existing-id',
-      },
-    });
-
-    const response = await handler({
-      RequestType: 'Create',
-    } as unknown as OnEventRequest);
-    expect(response).toMatchObject({ PhysicalResourceId: 'existing-id' });
-
-    expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
-    expect(organizationsClientMock).toHaveReceivedCommand(DescribeOrganizationCommand);
-  });
-
-  it('all fails', async () => {
-    organizationsClientMock.on(CreateOrganizationCommand).rejects(new AlreadyInOrganizationException({} as any));
-
-    organizationsClientMock.on(DescribeOrganizationCommand).rejects();
+    organizationsClientMock.on(CreateOrganizationCommand).rejects();
 
     const response = await handler({
       RequestType: 'Create',
@@ -62,7 +40,6 @@ describe('create organizations function', () => {
     expect(response).toMatchObject({ PhysicalResourceId: 'undefined' });
 
     expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
-    expect(organizationsClientMock).toHaveReceivedCommand(DescribeOrganizationCommand);
   });
 
   it('Custom Resource Update', async () => {

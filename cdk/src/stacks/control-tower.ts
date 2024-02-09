@@ -1,5 +1,13 @@
 import Fs from 'fs';
-import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam, RemovalPolicy } from 'aws-cdk-lib';
+import {
+  CfnParameter,
+  NestedStack,
+  NestedStackProps,
+  aws_iam as iam,
+  RemovalPolicy,
+  CfnWaitConditionHandle,
+  CfnWaitCondition,
+} from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
@@ -14,6 +22,9 @@ export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
+    const securityOuSsmParameter = '/superwerker/security_ou_name';
+    const sandboxOuSsmParameter = '/superwerker/sandbox_ou_name';
+
     const logArchiveAWSAccountEmail = new CfnParameter(this, 'LogArchiveAWSAccountEmail', {
       type: 'String',
     });
@@ -21,30 +32,23 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
-    const securityOuParam = new ssm.StringParameter(this, 'SecurityOUParameter', {
-      description: '(superwerker) name of security ou',
-      parameterName: '/superwerker/security_ou_name',
-      stringValue: 'Security',
-    });
-    (securityOuParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('SecurityOUParameter');
-    securityOuParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
-    const sandboxOuParam = new ssm.StringParameter(this, 'SandboxOUParameter', {
-      description: '(superwerker) name of sandbox ou',
-      parameterName: '/superwerker/sandbox_ou_name',
-      stringValue: 'Sandbox',
-    });
-    (sandboxOuParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('SandboxOUParameter');
-    sandboxOuParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
-
     // create function to create organizations if not already created
-    const createOrganizations = new CreateOrganizations(this, 'CreateOrganizations');
+    const organisationCreatedReadyHandle = new CfnWaitConditionHandle(this, 'organisationCreatedReadyHandle');
+    const orgWaitCondition = new CfnWaitCondition(this, 'organisationCreatedWaitCondtion', {
+      handle: organisationCreatedReadyHandle.ref,
+      timeout: '300', // fail after 5 minutes of no signal
+    });
+    new CreateOrganizations(this, 'CreateOrganizations', {
+      orgCreatedSignal: organisationCreatedReadyHandle.ref,
+      securityOuSsmParameter: securityOuSsmParameter,
+      sandboxOuSsmParameter: sandboxOuSsmParameter,
+    });
 
     const logArchiveAccount = new CfnAccount(this, 'LogArchiveAccount', {
       accountName: 'Log Archive',
       email: logArchiveAWSAccountEmail.valueAsString,
     });
-    logArchiveAccount.node.addDependency(createOrganizations);
+    logArchiveAccount.node.addDependency(orgWaitCondition);
     logArchiveAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     const logArchiveParam = new ssm.StringParameter(this, 'LogArchiveAccountParameter', {
@@ -59,7 +63,7 @@ export class ControlTowerStack extends NestedStack {
       accountName: 'Audit',
       email: auditAWSAccountEmail.valueAsString,
     });
-    auditAccount.node.addDependency(createOrganizations);
+    auditAccount.node.addDependency(orgWaitCondition);
     auditAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     const auditAccountParam = new ssm.StringParameter(this, 'AuditAccountParameter', {
@@ -145,8 +149,18 @@ export class ControlTowerStack extends NestedStack {
     const template = Handlebars.compile(source);
     const contents = template({
       REGION: `${this.region}`,
-      SECURITY_OU_NAME: `${securityOuParam.stringValue}`,
-      SANDBOX_OU_NAME: `${sandboxOuParam.stringValue}`,
+      SECURITY_OU_NAME: `${
+        ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
+          parameterName: securityOuSsmParameter,
+          forceDynamicReference: true,
+        }).stringValue
+      }`,
+      SANDBOX_OU_NAME: `${
+        ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
+          parameterName: sandboxOuSsmParameter,
+          forceDynamicReference: true,
+        }).stringValue
+      }`,
       LOG_ARCHIVE_ACCOUNT_ID: `${logArchiveAccount.attrAccountId}`,
       AUDIT_ACCOUNT_ID: `${auditAccount.attrAccountId}`,
     });
@@ -171,10 +185,10 @@ export class ControlTowerStack extends NestedStack {
       controlTowerConfigAggregatorRole,
       logArchiveAccount,
       auditAccount,
-      createOrganizations,
+      orgWaitCondition,
     );
 
-    // create function to trigger enabling of features after landing zone has been installed
+    //create function to trigger enabling of features after landing zone has been installed
     const superwerkerBootstrap = new SuperwerkerBootstrap(this, 'SuperwerkerBootstrap');
     superwerkerBootstrap.node.addDependency(landingZone);
   }
