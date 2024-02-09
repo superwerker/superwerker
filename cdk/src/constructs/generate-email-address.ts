@@ -44,7 +44,7 @@ class GenerateEmailAddressProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
     const id = 'superwerker.generate-email-address-provider';
-    const x = (Node.of(stack).tryFindChild(id) as GenerateEmailAddressProvider) || new GenerateEmailAddressProvider(stack, id);
+    const x = (stack.node.tryFindChild(id) as GenerateEmailAddressProvider) || new GenerateEmailAddressProvider(stack, id);
     return x.provider.serviceToken;
   }
 

@@ -2,11 +2,12 @@ import Fs from 'fs';
 import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam, RemovalPolicy } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
-import { CfnAccount, CfnOrganization } from 'aws-cdk-lib/aws-organizations';
+import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import * as Handlebars from 'handlebars';
 import * as yaml from 'yaml';
+import { CreateOrganizations } from '../constructs/create-organizations';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
 export class ControlTowerStack extends NestedStack {
@@ -36,16 +37,14 @@ export class ControlTowerStack extends NestedStack {
     (sandboxOuParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('SandboxOUParameter');
     sandboxOuParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-    const organization = new CfnOrganization(this, 'Organization', {
-      featureSet: 'ALL',
-    });
-    organization.applyRemovalPolicy(RemovalPolicy.RETAIN);
+    // create function to create organizations if not already created
+    const createOrganizations = new CreateOrganizations(this, 'CreateOrganizations');
 
     const logArchiveAccount = new CfnAccount(this, 'LogArchiveAccount', {
       accountName: 'Log Archive',
       email: logArchiveAWSAccountEmail.valueAsString,
     });
-    logArchiveAccount.node.addDependency(organization);
+    logArchiveAccount.node.addDependency(createOrganizations);
     logArchiveAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     const logArchiveParam = new ssm.StringParameter(this, 'LogArchiveAccountParameter', {
@@ -60,7 +59,7 @@ export class ControlTowerStack extends NestedStack {
       accountName: 'Audit',
       email: auditAWSAccountEmail.valueAsString,
     });
-    auditAccount.node.addDependency(organization);
+    auditAccount.node.addDependency(createOrganizations);
     auditAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     const auditAccountParam = new ssm.StringParameter(this, 'AuditAccountParameter', {
