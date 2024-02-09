@@ -20,13 +20,10 @@ const REGIONS = [
   'us-west-2',
 ];
 
-const REGIONS_DEV = [
-  'eu-central-1',
-];
+const REGIONS_DEV = ['eu-central-1'];
 
 const retries = 20;
 const regions = process.env.NODE_ENV != 'development' ? REGIONS : REGIONS_DEV;
-
 
 // Publish assets into all regional buckets
 // e.g. superwerker-assets-eu-central-1 etc.
@@ -35,21 +32,25 @@ const main = async () => {
   for (const region of regions) {
     const command = `AWS_REGION=${region} yarn cdk-assets publish -p ${assetManifestPath}`;
     console.log(command);
-    await retry(async (_, attempt) => {
-      console.log(`Attempt ${attempt} of ${retries} in region ${region}`);
-      const execResult = await execSync(command);
-      console.log(execResult.toString());
-    }, {
-      retries: retries,
-      factor: 2,
-      minTimeout: 1000,
-      maxTimeout: 30000,
-    });
+    await retry(
+      async (_, attempt) => {
+        console.log(`Attempt ${attempt} of ${retries} in region ${region}`);
+        const execResult = await execSync(command);
+        console.log(execResult.toString());
+      },
+      {
+        retries: retries,
+        factor: 2,
+        minTimeout: 1000,
+        maxTimeout: 30000,
+      },
+    );
   }
 };
 
 // top level await madness
-(async () => { await main(); })().catch(e => {
+(async () => {
+  await main();
+})().catch((e) => {
   console.log(e);
 });
-

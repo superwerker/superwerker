@@ -7,7 +7,6 @@ import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 import { ATTR_EMAIL } from '../functions/generate-mail-address';
 
-
 export class SuperwerkerBootstrap extends Construct {
   public readonly email: string;
   constructor(scope: Construct, id: string) {
@@ -23,14 +22,13 @@ export class SuperwerkerBootstrap extends Construct {
 }
 
 class SuperwerkerBootstrapProvider extends Construct {
-
   /**
    * Returns the singleton provider.
    */
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
     const id = 'superwerker.superwerker-bootstrap-provider';
-    const x = stack.node.tryFindChild(id) as SuperwerkerBootstrapProvider || new SuperwerkerBootstrapProvider(stack, id);
+    const x = (stack.node.tryFindChild(id) as SuperwerkerBootstrapProvider) || new SuperwerkerBootstrapProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -45,17 +43,17 @@ class SuperwerkerBootstrapProvider extends Construct {
         runtime: Runtime.NODEJS_16_X,
         initialPolicy: [
           new iam.PolicyStatement({
-            resources: [Arn.format(
-              {
-                service: 'events',
-                resource: 'event-bus',
-                resourceName: 'default',
-              },
-              Stack.of(this),
-            )],
-            actions: [
-              'events:PutEvents',
+            resources: [
+              Arn.format(
+                {
+                  service: 'events',
+                  resource: 'event-bus',
+                  resourceName: 'default',
+                },
+                Stack.of(this),
+              ),
             ],
+            actions: ['events:PutEvents'],
           }),
         ],
       }),
