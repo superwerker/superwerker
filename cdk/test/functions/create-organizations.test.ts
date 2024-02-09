@@ -30,12 +30,11 @@ describe('create organizations function', () => {
     expect(response).toMatchObject({ PhysicalResourceId: 'org-id' });
 
     expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
+    expect(organizationsClientMock).not.toHaveReceivedCommand(DescribeOrganizationCommand);
   });
 
   it('fetch organization if it already exist', async () => {
-    organizationsClientMock
-      .on(CreateOrganizationCommand)
-      .rejects(new AlreadyInOrganizationException({ $metadata: { httpStatusCode: 400 }, message: 'Already in organization' }));
+    organizationsClientMock.on(CreateOrganizationCommand).rejects(new AlreadyInOrganizationException({} as any));
 
     organizationsClientMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
@@ -46,8 +45,21 @@ describe('create organizations function', () => {
     const response = await handler({
       RequestType: 'Create',
     } as unknown as OnEventRequest);
-
     expect(response).toMatchObject({ PhysicalResourceId: 'existing-id' });
+
+    expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
+    expect(organizationsClientMock).toHaveReceivedCommand(DescribeOrganizationCommand);
+  });
+
+  it('all fails', async () => {
+    organizationsClientMock.on(CreateOrganizationCommand).rejects(new AlreadyInOrganizationException({} as any));
+
+    organizationsClientMock.on(DescribeOrganizationCommand).rejects();
+
+    const response = await handler({
+      RequestType: 'Create',
+    } as unknown as OnEventRequest);
+    expect(response).toMatchObject({ PhysicalResourceId: 'undefined' });
 
     expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
     expect(organizationsClientMock).toHaveReceivedCommand(DescribeOrganizationCommand);
