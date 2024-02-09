@@ -38,14 +38,13 @@ export class GenerateEmailAddress extends Construct {
 }
 
 class GenerateEmailAddressProvider extends Construct {
-
   /**
    * Returns the singleton provider.
    */
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
     const id = 'superwerker.generate-email-address-provider';
-    const x = Node.of(stack).tryFindChild(id) as GenerateEmailAddressProvider || new GenerateEmailAddressProvider(stack, id);
+    const x = (Node.of(stack).tryFindChild(id) as GenerateEmailAddressProvider) || new GenerateEmailAddressProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -66,7 +65,6 @@ class GenerateEmailAddressProvider extends Construct {
               'organizations:ListAccountsForParent',
               'organizations:ListOrganizationalUnitsForParent',
               'organizations:ListRoots',
-
             ],
           }),
         ],

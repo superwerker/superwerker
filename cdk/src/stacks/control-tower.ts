@@ -9,7 +9,6 @@ import * as Handlebars from 'handlebars';
 import * as yaml from 'yaml';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
-
 export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
@@ -72,16 +71,13 @@ export class ControlTowerStack extends NestedStack {
     (auditAccountParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('AuditAccountParameter');
     auditAccountParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-
     // Roles and Policies required by Control Tower
     // https://docs.aws.amazon.com/controltower/latest/userguide/lz-apis-cfn-setup.html
     const controlTowerAdminRole = new iam.Role(this, 'AWSControlTowerAdmin', {
       roleName: 'AWSControlTowerAdmin',
       assumedBy: new iam.ServicePrincipal('controltower.amazonaws.com'),
       path: '/service-role/',
-      managedPolicies: [
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerServiceRolePolicy'),
-      ],
+      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerServiceRolePolicy')],
       inlinePolicies: {
         AWSControlTowerAdminPolicy: new iam.PolicyDocument({
           statements: [
@@ -116,19 +112,15 @@ export class ControlTowerStack extends NestedStack {
     (controlTowerCloudTrailRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerCloudTrailRole');
     controlTowerCloudTrailRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-    const controlTowerConfigAggregatorRole = new iam.Role(
-      this,
+    const controlTowerConfigAggregatorRole = new iam.Role(this, 'AWSControlTowerConfigAggregatorRoleForOrganizations', {
+      roleName: 'AWSControlTowerConfigAggregatorRoleForOrganizations',
+      assumedBy: new iam.ServicePrincipal('config.amazonaws.com'),
+      path: '/service-role/',
+      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSConfigRoleForOrganizations')],
+    });
+    (controlTowerConfigAggregatorRole.node.defaultChild as CfnRole).overrideLogicalId(
       'AWSControlTowerConfigAggregatorRoleForOrganizations',
-      {
-        roleName: 'AWSControlTowerConfigAggregatorRoleForOrganizations',
-        assumedBy: new iam.ServicePrincipal('config.amazonaws.com'),
-        path: '/service-role/',
-        managedPolicies: [
-          iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSConfigRoleForOrganizations'),
-        ],
-      },
     );
-    (controlTowerConfigAggregatorRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerConfigAggregatorRoleForOrganizations');
     controlTowerConfigAggregatorRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerStackSetRole = new iam.Role(this, 'AWSControlTowerStackSetRole', {
@@ -165,10 +157,12 @@ export class ControlTowerStack extends NestedStack {
     const landingZone = new CfnLandingZone(this, 'LandingZone', {
       manifest: manifest,
       version: '3.3',
-      tags: [{
-        key: 'name',
-        value: 'superwerker',
-      }],
+      tags: [
+        {
+          key: 'name',
+          value: 'superwerker',
+        },
+      ],
     });
     landingZone.applyRemovalPolicy(RemovalPolicy.DESTROY);
     landingZone.node.addDependency(
