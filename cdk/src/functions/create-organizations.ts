@@ -9,7 +9,7 @@ import {
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 
 export async function createOrganizations(): Promise<CreateOrganizationCommandOutput | DescribeOrganizationCommandOutput> {
-  const client = new OrganizationsClient({});
+  const client = new OrganizationsClient({ region: 'us-east-1' });
   const command = new CreateOrganizationCommand({ FeatureSet: 'ALL' });
   let response;
   try {

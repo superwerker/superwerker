@@ -2,8 +2,8 @@ import 'aws-sdk-client-mock-jest';
 import {
   OrganizationsClient,
   CreateOrganizationCommand,
-  AlreadyInOrganizationException,
   DescribeOrganizationCommand,
+  AlreadyInOrganizationException,
 } from '@aws-sdk/client-organizations';
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -33,7 +33,10 @@ describe('create organizations function', () => {
   });
 
   it('fetch organization if it already exist', async () => {
-    organizationsClientMock.on(CreateOrganizationCommand).rejects(new AlreadyInOrganizationException({} as any));
+    organizationsClientMock
+      .on(CreateOrganizationCommand)
+      .rejects(new AlreadyInOrganizationException({ $metadata: { httpStatusCode: 400 }, message: 'Already in organization' }));
+
     organizationsClientMock.on(DescribeOrganizationCommand).resolves({
       Organization: {
         Id: 'existing-id',

@@ -171,7 +171,7 @@ export class ControlTowerStack extends NestedStack {
       controlTowerConfigAggregatorRole,
       logArchiveAccount,
       auditAccount,
-      organization,
+      createOrganizations,
     );
 
     // create function to trigger enabling of features after landing zone has been installed
