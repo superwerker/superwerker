@@ -72,6 +72,8 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
       try {
         await createSsmParameter(ssmClient, sandboxOuSsmParameterName, 'Sandbox');
       } catch (e) {
+        // since duplicate no need to test additionally
+        /* istanbul ignore next */
         if (e instanceof ParameterAlreadyExists) {
           console.log(parameterExistsMessage);
         } else {
@@ -81,7 +83,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
 
       // signal cloudformation stack that control tower setup is complete
       console.log('Signaling cloudformation stack', cfnSignal);
-      await new Promise((resolve) => setTimeout(resolve, 30000));
       await axios.put(cfnSignal, {
         Status: 'SUCCESS',
         Reason: 'Organization creation completed',
