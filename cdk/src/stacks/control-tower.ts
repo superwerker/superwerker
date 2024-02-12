@@ -1,4 +1,3 @@
-import Fs from 'fs';
 import {
   CfnParameter,
   NestedStack,
@@ -13,8 +12,6 @@ import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
-import * as Handlebars from 'handlebars';
-import * as yaml from 'yaml';
 import { CreateOrganizations } from '../constructs/create-organizations';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
@@ -22,6 +19,10 @@ export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
+    const controlTowerVersionParameter = '/superwerker/control_tower_version';
+    const controlTowerRegionsParameter = '/superwerker/control_tower_regions';
+    const bucketRetetionLoggingParameter = '/superwerker/bucket_retention_logging';
+    const bucketRetetionAccessLoggingParameter = '/superwerker/bucket_retention_access_logging';
     const securityOuSsmParameter = '/superwerker/security_ou_name';
     const sandboxOuSsmParameter = '/superwerker/sandbox_ou_name';
 
@@ -40,8 +41,12 @@ export class ControlTowerStack extends NestedStack {
     });
     new CreateOrganizations(this, 'CreateOrganizations', {
       orgCreatedSignal: organisationCreatedReadyHandle.ref,
+      controlTowerVersionParameter: controlTowerVersionParameter,
+      controlTowerRegionsParameter: controlTowerRegionsParameter,
       securityOuSsmParameter: securityOuSsmParameter,
       sandboxOuSsmParameter: sandboxOuSsmParameter,
+      bucketRetetionLoggingParameter: bucketRetetionLoggingParameter,
+      bucketRetetionAccessLoggingParameter: bucketRetetionAccessLoggingParameter,
     });
 
     const logArchiveAccount = new CfnAccount(this, 'LogArchiveAccount', {
@@ -145,34 +150,73 @@ export class ControlTowerStack extends NestedStack {
     (controlTowerStackSetRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerStackSetRole');
     controlTowerStackSetRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-    const source = Fs.readFileSync('./src/stacks/landing-zone-manifest.yaml').toString();
-    const template = Handlebars.compile(source);
-    const contents = template({
-      REGION: `${this.region}`,
-      SECURITY_OU_NAME: `${
-        ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
-          parameterName: securityOuSsmParameter,
-          forceDynamicReference: true,
-        }).stringValue
-      }`,
-      SANDBOX_OU_NAME: `${
-        ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
-          parameterName: sandboxOuSsmParameter,
-          forceDynamicReference: true,
-        }).stringValue
-      }`,
-      LOG_ARCHIVE_ACCOUNT_ID: `${logArchiveAccount.attrAccountId}`,
-      AUDIT_ACCOUNT_ID: `${auditAccount.attrAccountId}`,
-    });
+    const CONTROL_TOWER_VERSION = ssm.StringParameter.fromStringParameterAttributes(this, 'ControlTowerVersionParameterLookup', {
+      parameterName: controlTowerVersionParameter,
+      forceDynamicReference: true,
+    }).stringValue;
 
-    const manifest = yaml.parse(contents);
+    const REGIONS = ssm.StringListParameter.fromListParameterAttributes(this, 'RegionsParameterLookup', {
+      parameterName: controlTowerRegionsParameter,
+    }).stringListValue;
+
+    const BUCKET_RETENTION_LOGGING = ssm.StringParameter.fromStringParameterAttributes(this, 'BucketRetetionLoggingParameterLookup', {
+      parameterName: bucketRetetionLoggingParameter,
+      forceDynamicReference: true,
+    }).stringValue;
+
+    const BUCKET_RETENTION_ACCESS_LOGGING = ssm.StringParameter.fromStringParameterAttributes(
+      this,
+      'BucketRetetionAccessLoggingParameterLookup',
+      {
+        parameterName: bucketRetetionAccessLoggingParameter,
+        forceDynamicReference: true,
+      },
+    ).stringValue;
+
+    const SECURITY_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
+      parameterName: securityOuSsmParameter,
+      forceDynamicReference: true,
+    }).stringValue;
+
+    const SANDBOX_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
+      parameterName: sandboxOuSsmParameter,
+      forceDynamicReference: true,
+    }).stringValue;
 
     const landingZone = new CfnLandingZone(this, 'LandingZone', {
-      manifest: manifest,
-      version: '3.3',
+      manifest: {
+        governedRegions: REGIONS,
+        organizationStructure: {
+          security: {
+            name: SECURITY_OU_NAME,
+          },
+          sandbox: {
+            name: SANDBOX_OU_NAME,
+          },
+        },
+        securityRoles: {
+          accountId: auditAccount.attrAccountId,
+        },
+        accessManagement: {
+          enabled: true,
+        },
+        centralizedLogging: {
+          accountId: logArchiveAccount.attrAccountId,
+          configurations: {
+            loggingBucket: {
+              retentionDays: BUCKET_RETENTION_LOGGING,
+            },
+            accessLoggingBucket: {
+              retentionDays: BUCKET_RETENTION_ACCESS_LOGGING,
+            },
+          },
+          enabled: true,
+        },
+      },
+      version: CONTROL_TOWER_VERSION,
       tags: [
         {
-          key: 'name',
+          key: 'Name',
           value: 'superwerker',
         },
       ],

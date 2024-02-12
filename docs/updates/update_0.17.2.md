@@ -4,8 +4,6 @@ Since Control Tower is managed by Cloudformation starting from version v1.0.0 (a
 
 ## Upgrade instructions
 
-**DISCLAIMER**: The Controltower version in the script is fixed to **version 3.3**. Please make sure to update your Controltower to version 3.3 first before running below script. You can update it under landingzone settings [here](https://console.aws.amazon.com/controltower/home/settings)
-
 1. Open the AWS console of the AWS management account where you installed superwerker
 2. Open Cloudshell and paste the following script
 
@@ -22,7 +20,25 @@ else
     if [ "$SUPERWERKER_VERSION" != "0.17.2" ]; then
         echo "Superwerker version is not 0.17.2. Please update first to this version before attempting import."
     else
-        echo "Found superwerker version 0.17.2. Fetching Control Tower Cloudformation Template..."
+        echo "Found superwerker version 0.17.2."
+        echo "Extracting current Control Tower Configuration"
+        export LZ_ID=$(aws controltower list-landing-zones --query "landingZones[0].arn" --output text)
+        export LZ_MANIFEST=$(aws controltower get-landing-zone --landing-zone-id ${LZ_ID} --no-cli-pager)
+        export CONTROL_TOWER_VERSION=$(echo $LZ_MANIFEST | jq -r '.landingZone.version')
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/control_tower_version" --value "${CONTROL_TOWER_VERSION}"
+        export CONTROL_TOWER_REGIONS=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.governedRegions | join(",")')
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/control_tower_regions" --value "${CONTROL_TOWER_REGIONS}"
+        export SECURITY_OU_NAME=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.organizationStructure.security.name')
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/security_ou_name" --value "${SECURITY_OU_NAME}"
+        export SANDBOX_OU_NAME=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.organizationStructure.sandbox.name')
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/sandbox_ou_name" --value "${SANDBOX_OU_NAME}"
+        export BUCKET_RETENTION_LOGGING=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.centralizedLogging.configurations.loggingBucket.retentionDays')
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/bucket_retention_logging" --value "${BUCKET_RETENTION_LOGGING}"
+        export BUCKET_RETENTION_ACCESS_LOGGING=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.centralizedLogging.configurations.accessLoggingBucket.retentionDays')
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/bucket_retention_access_logging" --value "${BUCKET_RETENTION_ACCESS_LOGGING}"
+        sleep 5
+
+        echo "Fetching Control Tower Cloudformation Template..."
         CONTROL_TOWER_STACK=$(aws cloudformation list-stacks --stack-status-filter "CREATE_COMPLETE" "IMPORT_ROLLBACK_COMPLETE" "UPDATE_COMPLETE" "IMPORT_COMPLETE" "ROLLBACK_COMPLETE" "UPDATE_ROLLBACK_COMPLETE" --query "StackSummaries[?starts_with(StackName, '${SUPERWERKER_STACK}-ControlTower')].StackName" --output text)
         echo "Fetching Control Tower Template..."
         aws cloudformation get-template --stack-name ${CONTROL_TOWER_STACK} --query 'TemplateBody' --output json > control_tower_template.json
@@ -32,13 +48,6 @@ else
         sed -i "/\"Resources\"/r resources_to_import.json" control_tower_template.json
 
         echo "Creating Change Set" 
-        export LZ_ID=$(aws controltower list-landing-zones --query "landingZones[0].arn" --output text)
-        export LZ_MANIFEST=$(aws controltower get-landing-zone --landing-zone-id ${LZ_ID} --no-cli-pager)
-        export SECURITY_OU_NAME=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.organizationStructure.security.name')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/security_ou_name" --value "${SECURITY_OU_NAME}" --no-cli-pager
-        export SANDBOX_OU_NAME=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.organizationStructure.sandbox.name')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/sandbox_ou_name" --value "${SANDBOX_OU_NAME}" --no-cli-pager
-        sleep 5
         export AUDIT_ACCOUNT_ID=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.securityRoles.accountId')
         export AUDIT_ACCOUNT_MAIL=$(aws cloudformation describe-stacks --stack-name ${CONTROL_TOWER_STACK} | jq -r '.Stacks | .[] | .Parameters[] |  select(.ParameterKey=="AuditAWSAccountEmail") | .ParameterValue')
         export LOG_ARCHIVE_ACCOUNT_ID=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.centralizedLogging.accountId')

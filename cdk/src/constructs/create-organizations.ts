@@ -8,8 +8,12 @@ import { Construct } from 'constructs';
 
 interface CreateOrganizationsProps {
   readonly orgCreatedSignal: string;
+  readonly controlTowerVersionParameter: string;
+  readonly controlTowerRegionsParameter: string;
   readonly securityOuSsmParameter: string;
   readonly sandboxOuSsmParameter: string;
+  readonly bucketRetetionLoggingParameter: string;
+  readonly bucketRetetionAccessLoggingParameter: string;
 }
 
 export class CreateOrganizations extends Construct {
@@ -21,8 +25,12 @@ export class CreateOrganizations extends Construct {
       resourceType: 'Custom::CreateOrganizations',
       properties: {
         SIGNAL_URL: props.orgCreatedSignal,
+        CONTROL_TOWER_VERSION: props.controlTowerVersionParameter,
+        CONTROL_TOWER_REGIONS: props.controlTowerRegionsParameter,
         SECURITY_OU_SSM_PARAMETER: props.securityOuSsmParameter,
         SANDBOX_OU_SSM_PARAMETER: props.sandboxOuSsmParameter,
+        BUCKET_RETENTION_LOGGING: props.bucketRetetionLoggingParameter,
+        BUCKET_RETENTION_ACCESS_LOGGING: props.bucketRetetionAccessLoggingParameter,
       },
     });
   }
