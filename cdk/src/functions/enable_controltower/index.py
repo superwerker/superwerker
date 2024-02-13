@@ -24,6 +24,9 @@ def handler(event, _):
         tower.deploy(
             logging_account_email=logging_account_email,
             security_account_email=audit_account_email,
+            core_ou_name='Core',
+            custom_ou_name='Sandbox',
+            regions=['eu-central-1', 'eu-west-1'],
             retries=50,
             wait=5
         )
