@@ -1,14 +1,18 @@
 import {
+  Arn,
   CfnParameter,
+  CfnWaitCondition,
+  CfnWaitConditionHandle,
   NestedStack,
   NestedStackProps,
-  aws_iam as iam,
   RemovalPolicy,
-  CfnWaitConditionHandle,
-  CfnWaitCondition,
+  Stack,
+  Tags,
+  aws_iam as iam,
 } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
+import * as kms from 'aws-cdk-lib/aws-kms';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
@@ -150,6 +154,72 @@ export class ControlTowerStack extends NestedStack {
     (controlTowerStackSetRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerStackSetRole');
     controlTowerStackSetRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
+    // Create KMS key for Control Tower
+    const controlTowerKmsKey = new kms.Key(this, 'AWSControlTowerKMSKey', {
+      description: 'KMS key used by AWS Control Tower',
+      enableKeyRotation: true,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    Tags.of(controlTowerKmsKey).add('Name', 'superwerker');
+    Tags.of(controlTowerKmsKey).add('Purpose', 'ControlTower');
+    controlTowerKmsKey.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: 'Allow Config to use KMS for encryption',
+        actions: ['kms:Decrypt', 'kms:GenerateDataKey'],
+        principals: [new iam.ServicePrincipal('config.amazonaws.com')],
+        resources: [
+          Arn.format(
+            {
+              service: 'kms',
+              resource: 'key',
+              resourceName: '*',
+            },
+            Stack.of(this),
+          ),
+        ],
+      }),
+    );
+    controlTowerKmsKey.addToResourcePolicy(
+      new iam.PolicyStatement({
+        sid: 'Allow CloudTrail to use KMS for encryption',
+        actions: ['kms:GenerateDataKey*', 'kms:Decrypt'],
+        principals: [new iam.ServicePrincipal('cloudtrail.amazonaws.com')],
+        resources: [
+          Arn.format(
+            {
+              service: 'kms',
+              resource: 'key',
+              resourceName: '*',
+            },
+            Stack.of(this),
+          ),
+        ],
+        conditions: {
+          StringEquals: {
+            'aws:SourceArn': Arn.format(
+              {
+                service: 'cloudtrail',
+                resource: 'trail',
+                resourceName: 'aws-controltower-BaselineCloudTrail',
+              },
+              Stack.of(this),
+            ),
+          },
+          StringLike: {
+            'kms:EncryptionContext:aws:cloudtrail:arn': Arn.format(
+              {
+                service: 'cloudtrail',
+                resource: 'trail',
+                region: '*',
+                resourceName: '*',
+              },
+              Stack.of(this),
+            ),
+          },
+        },
+      }),
+    );
+
     const CONTROL_TOWER_VERSION = ssm.StringParameter.fromStringParameterAttributes(this, 'ControlTowerVersionParameterLookup', {
       parameterName: controlTowerVersionParameter,
       forceDynamicReference: true,
@@ -211,6 +281,7 @@ export class ControlTowerStack extends NestedStack {
             },
           },
           enabled: true,
+          kmsKeyArn: controlTowerKmsKey.keyArn,
         },
       },
       version: CONTROL_TOWER_VERSION,
