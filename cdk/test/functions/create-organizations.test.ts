@@ -9,7 +9,7 @@ import { ParameterAlreadyExists, ParameterLimitExceeded, PutParameterCommand, SS
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import { mockClient } from 'aws-sdk-client-mock';
 import axios from 'axios';
-import { handler } from '../../src/functions/create-organizations';
+import { handler } from '../../src/functions/./prepare-account';
 
 const organizationsClientMock = mockClient(OrganizationsClient);
 const ssmClientMock = mockClient(SSMClient);
