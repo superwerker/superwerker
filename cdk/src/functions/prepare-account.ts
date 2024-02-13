@@ -43,6 +43,7 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
           throw new Error('Unexpected error while creating organization: ' + e);
         }
       }
+    case 'Update':
       console.log('Creating SSM parameters...');
       const ssmClient = new SSMClient();
       const parameterExistsMessage = 'SSM Parameter already exists, skipping creation';
@@ -116,7 +117,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
 
       return { PhysicalResourceId: physicalResourceId };
 
-    case 'Update':
     case 'Delete':
       console.log('received delete event, doing nothing');
       return {};

@@ -100,6 +100,12 @@ export class SuperwerkerStack extends Stack {
       name: `${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}`,
     });
 
+    // Prepare
+    const prepareStack = new Stack(this, 'Prepare', {
+      description: 'Prepares the AWS account for Superwerker.',
+    });
+    (prepareStack.node.defaultChild as CfnStack).overrideLogicalId('Prepare');
+
     // RootMail
     const rootMailStack = new RootmailStack(this, 'RootMail', {
       parameters: {
@@ -118,6 +124,7 @@ export class SuperwerkerStack extends Stack {
       description: 'Sets up the landing zone with control tower.',
     });
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
+    controlTowerStack.addDependency(prepareStack);
 
     // LivingDocumentation
     const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {

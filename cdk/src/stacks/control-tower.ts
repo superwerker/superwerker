@@ -1,35 +1,15 @@
-import {
-  Arn,
-  CfnParameter,
-  CfnWaitCondition,
-  CfnWaitConditionHandle,
-  NestedStack,
-  NestedStackProps,
-  RemovalPolicy,
-  Stack,
-  Tags,
-  aws_iam as iam,
-} from 'aws-cdk-lib';
+import { CfnParameter, NestedStack, NestedStackProps, RemovalPolicy, aws_iam as iam } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
-import * as kms from 'aws-cdk-lib/aws-kms';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
-import { PrepareAccount } from '../constructs/prepare-account';
+import { PrepareStack } from './prepare';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
 export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-
-    const controlTowerVersionParameter = '/superwerker/controltower/version';
-    const controlTowerRegionsParameter = '/superwerker/controltower/regions';
-    const controlTowerKmsKeyParameter = '/superwerker/controltower/kms_key';
-    const controlTowerSecurityOuSsmParameter = '/superwerker/controltower/security_ou_name';
-    const controlTowerSandboxOuSsmParameter = '/superwerker/controltower/sandbox_ou_name';
-    const controlTowerBucketRetetionLoggingParameter = '/superwerker/controltower/bucket_retention_logging';
-    const controlTowerBucketRetetionAccessLoggingParameter = '/superwerker/controltower/bucket_retention_access_logging';
 
     const logArchiveAWSAccountEmail = new CfnParameter(this, 'LogArchiveAWSAccountEmail', {
       type: 'String',
@@ -38,96 +18,10 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
-    // Create KMS key for Control Tower
-    const controlTowerKmsKey = new kms.Key(this, 'AWSControlTowerKMSKey', {
-      description: 'KMS key used by AWS Control Tower',
-      enableKeyRotation: true,
-      removalPolicy: RemovalPolicy.RETAIN,
-    });
-    Tags.of(controlTowerKmsKey).add('Name', 'superwerker-control-tower');
-    controlTowerKmsKey.addToResourcePolicy(
-      new iam.PolicyStatement({
-        sid: 'Allow Config to use KMS for encryption',
-        actions: ['kms:Decrypt', 'kms:GenerateDataKey'],
-        principals: [new iam.ServicePrincipal('config.amazonaws.com')],
-        resources: [
-          Arn.format(
-            {
-              service: 'kms',
-              resource: 'key',
-              resourceName: '*',
-            },
-            Stack.of(this),
-          ),
-        ],
-      }),
-    );
-    controlTowerKmsKey.addToResourcePolicy(
-      new iam.PolicyStatement({
-        sid: 'Allow CloudTrail to use KMS for encryption',
-        actions: ['kms:GenerateDataKey*', 'kms:Decrypt'],
-        principals: [new iam.ServicePrincipal('cloudtrail.amazonaws.com')],
-        resources: [
-          Arn.format(
-            {
-              service: 'kms',
-              resource: 'key',
-              resourceName: '*',
-            },
-            Stack.of(this),
-          ),
-        ],
-        conditions: {
-          StringEquals: {
-            'aws:SourceArn': Arn.format(
-              {
-                service: 'cloudtrail',
-                resource: 'trail',
-                resourceName: 'aws-controltower-BaselineCloudTrail',
-              },
-              Stack.of(this),
-            ),
-          },
-          StringLike: {
-            'kms:EncryptionContext:aws:cloudtrail:arn': Arn.format(
-              {
-                service: 'cloudtrail',
-                resource: 'trail',
-                region: '*',
-                resourceName: '*',
-              },
-              Stack.of(this),
-            ),
-          },
-        },
-      }),
-    );
-
-    // only waits on the first time the stack is created
-    const prepareAccountReadyHandle = new CfnWaitConditionHandle(this, 'prepareAccountReadyHandle');
-    const prepareAccountWaitCondition = new CfnWaitCondition(this, 'prepareAccountWaitCondtion', {
-      handle: prepareAccountReadyHandle.ref,
-      timeout: '300', // fail after 5 minutes of no signal
-    });
-
-    const prepareAccount = new PrepareAccount(this, 'CreateOrganizations', {
-      orgCreatedSignal: prepareAccountReadyHandle.ref,
-      controlTowerVersionParameter: controlTowerVersionParameter,
-      controlTowerRegionsParameter: controlTowerRegionsParameter,
-      controlTowerKmsKeyParameter: controlTowerKmsKeyParameter,
-      controlTowerKmsKeyArn: controlTowerKmsKey.keyArn,
-      controlTowerSecurityOuSsmParameter: controlTowerSecurityOuSsmParameter,
-      controlTowerSandboxOuSsmParameter: controlTowerSandboxOuSsmParameter,
-      controlTowerBucketRetetionLoggingParameter: controlTowerBucketRetetionLoggingParameter,
-      controlTowerBucketRetetionAccessLoggingParameter: controlTowerBucketRetetionAccessLoggingParameter,
-    });
-    prepareAccount.node.addDependency(controlTowerKmsKey);
-
     const logArchiveAccount = new CfnAccount(this, 'LogArchiveAccount', {
       accountName: 'Log Archive',
       email: logArchiveAWSAccountEmail.valueAsString,
     });
-    logArchiveAccount.node.addDependency(prepareAccountWaitCondition);
     logArchiveAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     // due to legacy reasons and dependencies these parameters are named diffrently and managed seperately
@@ -143,7 +37,6 @@ export class ControlTowerStack extends NestedStack {
       accountName: 'Audit',
       email: auditAWSAccountEmail.valueAsString,
     });
-    auditAccount.node.addDependency(prepareAccountWaitCondition);
     auditAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     const auditAccountParam = new ssm.StringParameter(this, 'AuditAccountParameter', {
@@ -226,20 +119,20 @@ export class ControlTowerStack extends NestedStack {
     controlTowerStackSetRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const ctVersion = ssm.StringParameter.fromStringParameterAttributes(this, 'ControlTowerVersionParameterLookup', {
-      parameterName: controlTowerVersionParameter,
+      parameterName: PrepareStack.controlTowerVersionParameter,
       forceDynamicReference: true,
     }).stringValue;
 
     const ctGovernedRegions = ssm.StringListParameter.fromListParameterAttributes(this, 'GovernedRegionsParameterLookup', {
-      parameterName: controlTowerRegionsParameter,
+      parameterName: PrepareStack.controlTowerRegionsParameter,
     }).stringListValue;
 
     const ctKmsKeyArn = ssm.StringParameter.fromStringParameterAttributes(this, 'KmsKeyParameterLookup', {
-      parameterName: controlTowerKmsKeyParameter,
+      parameterName: PrepareStack.controlTowerKmsKeyParameter,
     }).stringValue;
 
     const ctBucketRetetionLogging = ssm.StringParameter.fromStringParameterAttributes(this, 'BucketRetetionLoggingParameterLookup', {
-      parameterName: controlTowerBucketRetetionLoggingParameter,
+      parameterName: PrepareStack.controlTowerBucketRetetionLoggingParameter,
       forceDynamicReference: true,
     }).stringValue;
 
@@ -247,18 +140,18 @@ export class ControlTowerStack extends NestedStack {
       this,
       'BucketRetetionAccessLoggingParameterLookup',
       {
-        parameterName: controlTowerBucketRetetionAccessLoggingParameter,
+        parameterName: PrepareStack.controlTowerBucketRetetionAccessLoggingParameter,
         forceDynamicReference: true,
       },
     ).stringValue;
 
     const SECURITY_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
-      parameterName: controlTowerSecurityOuSsmParameter,
+      parameterName: PrepareStack.controlTowerSecurityOuSsmParameter,
       forceDynamicReference: true,
     }).stringValue;
 
     const SANDBOX_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
-      parameterName: controlTowerSandboxOuSsmParameter,
+      parameterName: PrepareStack.controlTowerSandboxOuSsmParameter,
       forceDynamicReference: true,
     }).stringValue;
 
@@ -309,8 +202,6 @@ export class ControlTowerStack extends NestedStack {
       controlTowerConfigAggregatorRole,
       logArchiveAccount,
       auditAccount,
-      controlTowerKmsKey,
-      prepareAccountWaitCondition,
     );
 
     //create function to trigger enabling of features after landing zone has been installed
