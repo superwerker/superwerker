@@ -25,6 +25,8 @@ export class PrepareAccount extends Construct {
     new CustomResource(this, 'Resource', {
       serviceToken: PrepareAccountProvider.getOrCreate(this),
       resourceType: 'Custom::PrepareAccount',
+
+      // Modify properies in case you want to enforce that the prepare stack is updated on every deployment & before the control tower stack
       properties: {
         SIGNAL_URL: props.orgCreatedSignal,
         CONTROL_TOWER_VERSION_PARAMETER: props.controlTowerVersionParameter,

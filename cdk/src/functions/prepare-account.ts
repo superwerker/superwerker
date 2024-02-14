@@ -31,6 +31,7 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   switch (event.RequestType) {
     // @ts-ignore
     case 'Create':
+    case 'Update':
       console.log('Creating organizations...');
       let physicalResourceId;
       try {
@@ -44,7 +45,7 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
           throw new Error('Unexpected error while creating organization: ' + e);
         }
       }
-    case 'Update':
+
       console.log('Creating SSM parameters...');
       const ssmClient = new SSMClient();
 
@@ -109,7 +110,6 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
       return { PhysicalResourceId: physicalResourceId };
 
     case 'Delete':
-      console.log('received delete event, doing nothing');
       return {};
   }
 }
