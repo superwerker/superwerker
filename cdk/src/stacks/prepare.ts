@@ -88,7 +88,7 @@ export class PrepareStack extends NestedStack {
       timeout: '300', // fail after 5 minutes of no signal
     });
 
-    const prepareAccount = new PrepareAccount(this, 'CreateOrganizations', {
+    const prepareAccount = new PrepareAccount(this, 'PrepareAccount', {
       orgCreatedSignal: prepareAccountReadyHandle.ref,
       controlTowerVersionParameter: PrepareStack.controlTowerVersionParameter,
       controlTowerRegionsParameter: PrepareStack.controlTowerRegionsParameter,

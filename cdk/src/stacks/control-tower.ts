@@ -181,9 +181,9 @@ export class ControlTowerStack extends NestedStack {
             accessLoggingBucket: {
               retentionDays: ctBucketRetetionAccessLogging,
             },
+            kmsKeyArn: ctKmsKeyArn,
           },
           enabled: true,
-          kmsKeyArn: ctKmsKeyArn,
         },
       },
       version: ctVersion,

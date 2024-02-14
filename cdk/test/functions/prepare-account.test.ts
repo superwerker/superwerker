@@ -35,6 +35,7 @@ describe('create organizations function', () => {
       RequestType: 'Create',
       ResourceProperties: {
         SIGNAL_URL: 'https://example.com',
+        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
       },
     } as unknown as OnEventRequest);
 
@@ -54,6 +55,7 @@ describe('create organizations function', () => {
       RequestType: 'Create',
       ResourceProperties: {
         SIGNAL_URL: 'https://example.com',
+        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
       },
     } as unknown as OnEventRequest);
 
@@ -72,6 +74,7 @@ describe('create organizations function', () => {
         RequestType: 'Create',
         ResourceProperties: {
           SIGNAL_URL: 'https://example.com',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
         },
       } as unknown as OnEventRequest);
     } catch (e) {
@@ -91,6 +94,7 @@ describe('create organizations function', () => {
       RequestType: 'Create',
       ResourceProperties: {
         SIGNAL_URL: 'https://example.com',
+        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
       },
     } as unknown as OnEventRequest);
 
@@ -115,6 +119,7 @@ describe('create organizations function', () => {
           SIGNAL_URL: 'https://example.com',
           SECURITY_OU_SSM_PARAMETER: 'Security',
           SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
         },
       } as unknown as OnEventRequest);
     } catch (e) {
