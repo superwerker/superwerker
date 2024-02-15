@@ -1,4 +1,4 @@
-import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnCondition, CfnParameter, CfnStack, Duration, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
@@ -52,6 +52,14 @@ export class SuperwerkerStack extends Stack {
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
 
+    const totalTimeToWireDNS = new CfnParameter(this, 'TotalTimeToWireDNS', {
+      type: 'Number',
+      description: 'Total time in MINUTES to wire the DNS.',
+      default: 120,
+      minValue: 5,
+      maxValue: 120,
+    });
+
     const includeBudget = new CfnParameter(this, 'IncludeBudget', {
       type: 'String',
       description: 'Enable AWS Budgets alarm for monthly AWS spending',
@@ -102,10 +110,9 @@ export class SuperwerkerStack extends Stack {
 
     // RootMail
     const rootMailStack = new RootmailStack(this, 'RootMail', {
-      parameters: {
-        Domain: domain.value.toString(),
-        Subdomain: subdomain.value.toString(),
-      },
+      domain: domain.valueAsString,
+      subdomain: subdomain.valueAsString,
+      totalTimeToWireDNS: Duration.minutes(totalTimeToWireDNS.valueAsNumber),
     });
     (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
 

@@ -10,42 +10,51 @@ import {
   Aspects,
   NestedStack,
   NestedStackProps,
-  CfnParameter,
 } from 'aws-cdk-lib';
 import { Construct, IConstruct } from 'constructs';
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 import { SESReceive } from '../constructs/rootmail-ses-receive';
 
+export interface RootmailProps extends NestedStackProps {
+  /**
+   * Domain used for root mail feature.
+   */
+  readonly domain: string;
+
+  /**
+   * Subdomain used for root mail feature.
+   *
+   * @default 'aws'
+   */
+  readonly subdomain?: string;
+
+  /**
+   * The total time to wait for the DNS records to be available/wired.
+   *
+   * @default Duration.hours(2)
+   */
+  readonly totalTimeToWireDNS?: Duration;
+
+  /**
+   * Whether to set all removal policies to DESTROY. This is useful for integration testing purposes.
+   *
+   * @default false
+   */
+  readonly setDestroyPolicyToAllResources?: boolean;
+}
+
 export class RootmailStack extends NestedStack {
   public readonly hostedZoneParameterName: string;
   public readonly emailBucket: s3.Bucket;
 
-  constructor(scope: Construct, id: string, props: NestedStackProps) {
+  constructor(scope: Construct, id: string, props: RootmailProps) {
     super(scope, id, props);
 
     this.hostedZoneParameterName = '/superwerker/domain_name_servers';
-    const setDestroyPolicyToAllResources = false; //TODO
-
-    // Parameters
-
-    const domain = new CfnParameter(this, 'Domain', {
-      type: 'String',
-      description: 'Domain used for root mail feature.',
-    });
-
-    const subdomain = new CfnParameter(this, 'Subdomain', {
-      type: 'String',
-      description: 'Subdomain used for root mail feature.',
-      default: 'aws',
-    });
-
-    const totalTimeToWireDNS = new CfnParameter(this, 'TotalTimeToWireDNS', {
-      type: 'Number',
-      description: 'Total time in MINUTES to wire the DNS.',
-      default: 120,
-      minValue: 5,
-      maxValue: 480,
-    });
+    const domain = props.domain;
+    const subdomain = props.subdomain ?? 'aws';
+    const totalTimeToWireDNS = Duration.hours(2); // TODO
+    const setDestroyPolicyToAllResources = props.setDestroyPolicyToAllResources ?? false; //TODO
 
     // Email bucket
 
@@ -68,16 +77,16 @@ export class RootmailStack extends NestedStack {
     });
 
     new HostedZoneDkim(this, 'HostedZoneDkim', {
-      domain: domain.valueAsString,
-      subdomain: subdomain.valueAsString,
+      domain: domain,
+      subdomain: subdomain,
       hostedZone: hostedZone,
       hostedZoneSSMParameter: hostedZoneSSMParameter,
-      totalTimeToWireDNS: Duration.minutes(totalTimeToWireDNS.valueAsNumber),
+      totalTimeToWireDNS: totalTimeToWireDNS,
     });
 
     new SESReceive(this, 'SESReceive', {
-      domain: domain.valueAsString,
-      subdomain: subdomain.valueAsString,
+      domain: domain,
+      subdomain: subdomain,
       emailbucket: this.emailBucket,
     });
 
