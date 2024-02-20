@@ -10,8 +10,8 @@ interface PrepareAccountProps {
   readonly orgCreatedSignal: string;
   readonly controlTowerVersionParameter: string;
   readonly controlTowerRegionsParameter: string;
-  readonly controlTowerKmsKeyParameter: string;
-  readonly controlTowerKmsKeyArn: string;
+  //readonly controlTowerKmsKeyParameter: string;
+  //readonly controlTowerKmsKeyArn: string;
   readonly controlTowerSecurityOuSsmParameter: string;
   readonly controlTowerSandboxOuSsmParameter: string;
   readonly controlTowerBucketRetetionLoggingParameter: string;
@@ -31,8 +31,8 @@ export class PrepareAccount extends Construct {
         SIGNAL_URL: props.orgCreatedSignal,
         CONTROL_TOWER_VERSION_PARAMETER: props.controlTowerVersionParameter,
         CONTROL_TOWER_REGIONS_PARAMETER: props.controlTowerRegionsParameter,
-        CONTROL_TOWER_KMS_KEY_PARAMETER: props.controlTowerKmsKeyParameter,
-        CONTROL_TOWER_KMS_KEY_ARN: props.controlTowerKmsKeyArn,
+        //CONTROL_TOWER_KMS_KEY_PARAMETER: props.controlTowerKmsKeyParameter,
+        //CONTROL_TOWER_KMS_KEY_ARN: props.controlTowerKmsKeyArn,
         CONTROL_TOWER_SECURITY_OU_PARAMETER: props.controlTowerSecurityOuSsmParameter,
         CONTROL_TOWER_SANDBOX_OU_PARAMETER: props.controlTowerSandboxOuSsmParameter,
         CONTROL_TOWER_BUCKET_RETENTION_LOGGING_PARAMETER: props.controlTowerBucketRetetionLoggingParameter,
