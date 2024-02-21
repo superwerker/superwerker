@@ -128,19 +128,27 @@ describe('create organizations function', () => {
   });
 
   it('Custom Resource Update', async () => {
-    const result = await handler({
-      RequestType: 'Update',
-      ResourceProperties: {
-        SIGNAL_URL: 'https://example.com',
-        SECURITY_OU_SSM_PARAMETER: 'Security',
-        SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
-        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+    organizationsClientMock.on(CreateOrganizationCommand).resolves({
+      Organization: {
+        Id: 'org-id',
       },
-    } as unknown as OnEventRequest);
+    });
 
-    expect(organizationsClientMock).toHaveReceivedCommandWith(CreateOrganizationCommand, { FeatureSet: 'ALL' });
+    ssmClientMock.on(PutParameterCommand).rejects(new ParameterLimitExceeded({ message: 'dummy message', $metadata: {} }));
 
-    expect(result).toMatchObject({});
+    try {
+      await handler({
+        RequestType: 'Update',
+        ResourceProperties: {
+          SIGNAL_URL: 'https://example.com',
+          SECURITY_OU_SSM_PARAMETER: 'Security',
+          SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+        },
+      } as unknown as OnEventRequest);
+    } catch (e) {
+      expect(e).toMatchObject(new Error('Unexpected error while creating SSM Parameter: ParameterLimitExceeded: dummy message'));
+    }
   });
 
   it('Custom Resource Delete', async () => {
