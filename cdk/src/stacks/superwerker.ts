@@ -6,6 +6,7 @@ import { ControlTowerStack } from './control-tower';
 import { GuardDutyStack } from './guardduty';
 import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
+import { PrepareStack } from './prepare';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
@@ -100,6 +101,12 @@ export class SuperwerkerStack extends Stack {
       name: `${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}`,
     });
 
+    // Prepare
+    const prepareStack = new PrepareStack(this, 'Prepare', {
+      description: 'Prepares the AWS account for Superwerker.',
+    });
+    (prepareStack.node.defaultChild as CfnStack).overrideLogicalId('Prepare');
+
     // RootMail
     const rootMailStack = new RootmailStack(this, 'RootMail', {
       parameters: {
@@ -118,6 +125,7 @@ export class SuperwerkerStack extends Stack {
       description: 'Sets up the landing zone with control tower.',
     });
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
+    controlTowerStack.addDependency(prepareStack);
 
     // LivingDocumentation
     const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
