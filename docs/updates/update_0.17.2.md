@@ -42,17 +42,17 @@ else
         export LZ_ID=$(aws controltower list-landing-zones --query "landingZones[0].arn" --output text)
         export LZ_MANIFEST=$(aws controltower get-landing-zone --landing-zone-id ${LZ_ID})
         export CONTROL_TOWER_VERSION=$(echo $LZ_MANIFEST | jq -r '.landingZone.version')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/version" --value "${CONTROL_TOWER_VERSION}"
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/version" --value "${CONTROL_TOWER_VERSION}" --description "(superwerker) Control Tower version"
         export CONTROL_TOWER_REGIONS=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.governedRegions | join(",")')
-        aws ssm put-parameter --type StringList --overwrite --name "/superwerker/controltower/regions" --value "${CONTROL_TOWER_REGIONS}"
+        aws ssm put-parameter --type StringList --overwrite --name "/superwerker/controltower/regions" --value "${CONTROL_TOWER_REGIONS}" --description "(superwerker) Control Tower governed regions"
         export SECURITY_OU_NAME=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.organizationStructure.security.name')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/security_ou_name" --value "${SECURITY_OU_NAME}"
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/security_ou_name" --value "${SECURITY_OU_NAME}" --description "(superwerker) Control Tower name of Security OU (cannot be changed after first install)"
         export SANDBOX_OU_NAME=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.organizationStructure.sandbox.name')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/sandbox_ou_name" --value "${SANDBOX_OU_NAME}"
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/sandbox_ou_name" --value "${SANDBOX_OU_NAME}" --description "(superwerker) Control Tower name of Sandbox OU (cannot be changed after first install)"
         export BUCKET_RETENTION_LOGGING=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.centralizedLogging.configurations.loggingBucket.retentionDays')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/bucket_retention_logging" --value "${BUCKET_RETENTION_LOGGING}"
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/bucket_retention_logging" --value "${BUCKET_RETENTION_LOGGING}" --description "(superwerker) Control Tower bucket retention for logging"
         export BUCKET_RETENTION_ACCESS_LOGGING=$(echo $LZ_MANIFEST | jq -r '.landingZone.manifest.centralizedLogging.configurations.accessLoggingBucket.retentionDays')
-        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/bucket_retention_access_logging" --value "${BUCKET_RETENTION_ACCESS_LOGGING}"
+        aws ssm put-parameter --type String --overwrite --name "/superwerker/controltower/bucket_retention_access_logging" --value "${BUCKET_RETENTION_ACCESS_LOGGING}" --description "(superwerker) Control Tower bucket retention for access logging"
         sleep 10
 
         echo "Fetching Control Tower Cloudformation Template..."

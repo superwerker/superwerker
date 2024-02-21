@@ -57,14 +57,14 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
         ssmClient,
         securityOuSsmParameterName,
         CT_SECURITY_OU_NAME,
-        `(superwerker) Control Tower name of ${CT_SECURITY_OU_NAME} OU (SHOULD NOT BE CHANGED AFTER FIRST INSTALL)`,
+        `(superwerker) Control Tower name of ${CT_SECURITY_OU_NAME} OU (cannot be changed after first install)`,
       );
 
       await createSsmParameter(
         ssmClient,
         sandboxOuSsmParameterName,
         CT_SANDBOX_OU_NAME,
-        `(superwerker) Control Tower name of ${CT_SANDBOX_OU_NAME} OU (SHOULD NOT BE CHANGED AFTER FIRST INSTALL)`,
+        `(superwerker) Control Tower name of ${CT_SANDBOX_OU_NAME} OU (cannot be changed after first install)`,
       );
 
       await createSsmParameter(ssmClient, controlTowerVersionParameterName, CT_VERSION, '(superwerker) Control Tower version');
