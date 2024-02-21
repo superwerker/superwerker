@@ -127,10 +127,10 @@ export class ControlTowerStack extends NestedStack {
       parameterName: PrepareStack.controlTowerRegionsParameter,
     }).stringListValue;
 
-    // const ctKmsKeyArn = ssm.StringParameter.fromStringParameterAttributes(this, 'KmsKeyParameterLookup', {
-    //   parameterName: PrepareStack.controlTowerKmsKeyParameter,
-    //   forceDynamicReference: true,
-    // }).stringValue;
+    const ctKmsKeyArn = ssm.StringParameter.fromStringParameterAttributes(this, 'KmsKeyParameterLookup', {
+      parameterName: PrepareStack.controlTowerKmsKeyParameter,
+      forceDynamicReference: true,
+    }).stringValue;
 
     const ctBucketRetetionLogging = ssm.StringParameter.fromStringParameterAttributes(this, 'BucketRetetionLoggingParameterLookup', {
       parameterName: PrepareStack.controlTowerBucketRetetionLoggingParameter,
@@ -182,7 +182,7 @@ export class ControlTowerStack extends NestedStack {
             accessLoggingBucket: {
               retentionDays: ctBucketRetetionAccessLogging,
             },
-            //kmsKeyArn: ctKmsKeyArn,
+            kmsKeyArn: ctKmsKeyArn,
           },
           enabled: true,
         },

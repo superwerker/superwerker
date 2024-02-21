@@ -21,8 +21,8 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
   const cfnSignal = event.ResourceProperties.SIGNAL_URL;
   const controlTowerVersionParameterName = event.ResourceProperties.CONTROL_TOWER_VERSION_PARAMETER;
   const controlTowerRegionsParameterName = event.ResourceProperties.CONTROL_TOWER_REGIONS_PARAMETER;
-  //const controlTowerKmsKeyParameterName = event.ResourceProperties.CONTROL_TOWER_KMS_KEY_PARAMETER;
-  //const controlTowerKmsKeyArn = event.ResourceProperties.CONTROL_TOWER_KMS_KEY_ARN;
+  const controlTowerKmsKeyParameterName = event.ResourceProperties.CONTROL_TOWER_KMS_KEY_PARAMETER;
+  const controlTowerKmsKeyArn = event.ResourceProperties.CONTROL_TOWER_KMS_KEY_ARN;
   const securityOuSsmParameterName = event.ResourceProperties.CONTROL_TOWER_SECURITY_OU_PARAMETER;
   const sandboxOuSsmParameterName = event.ResourceProperties.CONTROL_TOWER_SANDBOX_OU_PARAMETER;
   const bucketRetetionLoggingParameterName = event.ResourceProperties.CONTROL_TOWER_BUCKET_RETENTION_LOGGING_PARAMETER;
@@ -77,12 +77,12 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
         ParameterType.STRING_LIST,
       );
 
-      // await createSsmParameter(
-      //   ssmClient,
-      //   controlTowerKmsKeyParameterName,
-      //   controlTowerKmsKeyArn,
-      //   '(superwerker) Control Tower KMS key arn for log encryption',
-      // );
+      await createSsmParameter(
+        ssmClient,
+        controlTowerKmsKeyParameterName,
+        controlTowerKmsKeyArn,
+        '(superwerker) Control Tower KMS key arn for log encryption',
+      );
 
       await createSsmParameter(
         ssmClient,
