@@ -126,7 +126,6 @@ export class SuperwerkerStack extends Stack {
     });
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
     controlTowerStack.addDependency(prepareStack);
-    controlTowerStack.addDependency(rootMailStack);
 
     // LivingDocumentation
     const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
