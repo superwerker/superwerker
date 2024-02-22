@@ -53,9 +53,20 @@ jobs:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
 
+
+      - name: echo
+        run: |
+          echo $SUPERWERKER_DOMAIN >> secrets.txt
+        env:
+          SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
+
+
+      - name: Run tmate
+        uses: mxschmitt/action-tmate@v2
+
       - name: Deploy Superwerker
         run: |
-          echo $TT
+          
           aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter ParameterKey=Domain,ParameterValue=${SUPERWERKER_DOMAIN} ParameterKey=Subdomain,ParameterValue=${{ inputs.account }} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${{ inputs.account }}.${SUPERWERKER_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
