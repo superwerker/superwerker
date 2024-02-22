@@ -38,6 +38,7 @@ jobs:
         run: |
           aws sts get-caller-identity
           yarn global add aws-cdk
+          yarn install
           yarn test
           yarn synth
           yarn publish-assets
