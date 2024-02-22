@@ -55,8 +55,9 @@ jobs:
 
       - name: Deploy Superwerker
         run: |
-          aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter ParameterKey=Domain,ParameterValue=${{ secrets.SUPERWERKER_DOMAIN }} ParameterKey=Subdomain,ParameterValue=${{ inputs.account }} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${{ inputs.account }}.${{ secrets.SUPERWERKER_DOMAIN }} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager
+          aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter ParameterKey=Domain,ParameterValue=${{ env.SUPERWERKER_DOMAIN }} ParameterKey=Subdomain,ParameterValue=${{ inputs.account }} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${{ inputs.account }}.${{ env.SUPERWERKER_DOMAIN }} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
+          SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
         shell: bash
         working-directory: cdk
