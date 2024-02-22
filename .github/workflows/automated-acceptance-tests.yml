@@ -1,0 +1,62 @@
+name: Automated Acceptance Tests
+
+on:
+  workflow_dispatch: 
+    inputs:
+      account:
+        required: true
+        default: 'pipeline01'
+        type: choice
+        description: 'The account to deploy to'
+        options:
+          - pipeline01
+          - pipeline02
+
+permissions:
+  id-token: write
+  contents: write
+
+env:
+  AWS_DEFAULT_REGION: eu-central-1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.account }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
+
+      - name: Build Superwerker
+        run: |
+          aws sts get-caller-identity
+          yarn global add aws-cdk
+          yarn test
+          yarn synth
+          yarn publish-assets
+        env:
+          SUPERWERKER_VERSION: 0.0.0-AAC
+        shell: bash
+        working-directory: cdk
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
+
+      - name: Deploy Superwerker
+        run: |
+          aws sts get-caller-identity
+          aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter ParameterKey=Domain,ParameterValue=${{ secrets.SUPERWERKER_DOMAIN }} ParameterKey=Subdomain,ParameterValue=${{ inputs.account }} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${{ inputs.account }}.${{ secrets.SUPERWERKER_DOMAIN }} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager
+        env:
+          SUPERWERKER_VERSION: 0.0.0-AAC
+        shell: bash
+        working-directory: cdk
