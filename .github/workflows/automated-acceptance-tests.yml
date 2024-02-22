@@ -36,7 +36,6 @@ jobs:
 
       - name: Build Superwerker
         run: |
-          aws sts get-caller-identity
           yarn global add aws-cdk
           yarn install
           yarn test
@@ -44,6 +43,7 @@ jobs:
           yarn publish-assets
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
+          NODE_ENV: development
         shell: bash
         working-directory: cdk
 
@@ -55,7 +55,6 @@ jobs:
 
       - name: Deploy Superwerker
         run: |
-          aws sts get-caller-identity
           aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter ParameterKey=Domain,ParameterValue=${{ secrets.SUPERWERKER_DOMAIN }} ParameterKey=Subdomain,ParameterValue=${{ inputs.account }} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${{ inputs.account }}.${{ secrets.SUPERWERKER_DOMAIN }} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
