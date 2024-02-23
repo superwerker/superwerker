@@ -70,7 +70,7 @@ jobs:
 
       - name: Configure Subdomain Delegation
         run: |
-          while ! DOMAIN_NAME_SERVERS=aws ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text 2>/dev/null); do sleep 10; done
+          while ! DOMAIN_NAME_SERVERS=$(aws ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text 2>/dev/null); do sleep 10; done
           aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-pipeline02 --template-file ../tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=${DOMAIN_NAME_SERVERS} RootMailDomain=${SUPERWERKER_DOMAIN} RootMailSubdomain=${{ inputs.account }}
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
