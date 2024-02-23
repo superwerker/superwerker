@@ -55,8 +55,11 @@ jobs:
           role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
 
       - name: Deploy Superwerker
+        id: deploy-superwerker
         run: |
           nohup aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter-overrides Domain=${SUPERWERKER_DOMAIN} Subdomain=${{ inputs.account }} NotificationsMail=root+notifications@${{ inputs.account }}.${SUPERWERKER_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager &
+          while ! DOMAIN_NAME_SERVERS=$(aws ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text 2>/dev/null); do sleep 10; done
+          echo "DOMAIN_NAME_SERVERS=${DOMAIN_NAME_SERVERS}" >> "$GITHUB_OUTPUT"
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
           SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
@@ -68,17 +71,15 @@ jobs:
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
-       
-      - name: tmate
-        uses: mxschmitt/action-tmate@v3
+      
 
       - name: Configure Subdomain Delegation
         run: |
-          while ! DOMAIN_NAME_SERVERS=$(aws ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text 2>/dev/null); do sleep 10; done
           aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-pipeline02 --template-file ../tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=${DOMAIN_NAME_SERVERS} RootMailDomain=${SUPERWERKER_DOMAIN} RootMailSubdomain=${{ inputs.account }}
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
           SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
+          DOMAIN_NAME_SERVERS: ${{ steps.deploy-superwerker.outputs.DOMAIN_NAME_SERVERS }}
         shell: bash
         working-directory: cdk
 
