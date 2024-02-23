@@ -1,4 +1,5 @@
 name: Automated Acceptance Tests 
+run-name: Deploy to ${{ inputs.account }} by @${{ github.actor }}
 
 on:
   workflow_dispatch: 
@@ -32,7 +33,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
+          role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
 
       - name: Build Superwerker
         run: |
@@ -66,8 +67,8 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
-
+          role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
+       
       - name: tmate
         uses: mxschmitt/action-tmate@v3
 
