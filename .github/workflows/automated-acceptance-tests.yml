@@ -1,4 +1,4 @@
-name: Automated Acceptance Tests
+name: Automated Acceptance Tests 
 
 on:
   workflow_dispatch: 
@@ -67,6 +67,9 @@ jobs:
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
+
+      - name: tmate
+        uses: mxschmitt/action-tmate@v3
 
       - name: Configure Subdomain Delegation
         run: |
