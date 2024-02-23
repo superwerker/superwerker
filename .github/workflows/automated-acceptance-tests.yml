@@ -75,6 +75,7 @@ jobs:
 
       - name: Configure Subdomain Delegation
         run: |
+          echo "Configuring subdomain delegation to nameservers ${DOMAIN_NAME_SERVERS}..." 
           aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-pipeline02 --template-file ../tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=${DOMAIN_NAME_SERVERS} RootMailDomain=${SUPERWERKER_DOMAIN} RootMailSubdomain=${{ inputs.account }}
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
@@ -93,3 +94,23 @@ jobs:
         run: |
           aws cloudformation wait stack-create-complete --stack-name superwerker
         shell: bash
+
+  test:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.account }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assume Superwerker AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
+      
+      - name: Run Acceptance Tests
+        run: |
+          make test
+        shell: bash
+        working-directory: tests
