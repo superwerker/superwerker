@@ -8,4 +8,4 @@
 
 ## Reporting a Vulnerability
 
-If you found a serious vulnerability in [superwerker](https://github.com/superwerker/superwerker), please contact us at [info@superluminar.io](mailto:info@superluminar.io) prior to public disclosure.
+If you found a serious vulnerability in [superwerker](https://github.com/superwerker/superwerker), please contact us at [info@superwerker.cloud](mailto:info@superwerker.cloud) prior to public disclosure.
