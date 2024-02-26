@@ -94,10 +94,11 @@ jobs:
         run: |
           aws cloudformation wait stack-create-complete --stack-name superwerker
         shell: bash
-
+      
   test:
     runs-on: ubuntu-latest
     environment: ${{ inputs.account }}
+    needs: build_and_deploy
 
     steps:
       - name: Checkout
