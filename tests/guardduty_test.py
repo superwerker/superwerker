@@ -1,8 +1,6 @@
-import os
-import unittest
 import boto3
-import json
 import botocore
+import pytest
 
 events = boto3.client('events')
 guardduty = boto3.client('guardduty')
@@ -11,90 +9,79 @@ ssm = boto3.client('ssm')
 sts = boto3.client('sts')
 
 
-class GuardDutyTest(unittest.TestCase):
+@pytest.fixture(scope="module")
+def management_account_id():
+    return sts.get_caller_identity()['Account']
 
-    @classmethod
-    def get_management_account_id(cls):
-        return sts.get_caller_identity()['Account']
+@pytest.fixture(scope="module")
+def audit_account_id():
+    return ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
 
-    @classmethod
-    def get_audit_account_id(cls):
-        return ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
+@pytest.fixture(scope="module")
+def log_archive_account_id():
+    return ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
 
-    @classmethod
-    def get_log_archive_account_id(cls):
-        return ssm.get_parameter(Name='/superwerker/account_id_logarchive')['Parameter']['Value']
+def control_tower_exection_role_session(account_id):
+    account_creds = sts.assume_role(
+        RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
+        RoleSessionName='superwerkertest'
+    )['Credentials']
+    return boto3.session.Session(
+        aws_access_key_id=account_creds['AccessKeyId'],
+        aws_secret_access_key=account_creds['SecretAccessKey'],
+        aws_session_token=account_creds['SessionToken']
+    )
 
-    @classmethod
-    def get_enrolled_account_id(cls):
-        account_factory_account_id = os.environ['ACCOUNT_FACTORY_ACCOUNT_ID']
-        return account_factory_account_id
+def test_guardduty_enabled_with_delegated_admin_in_core_and_enrolled_accounts(audit_account_id, log_archive_account_id, management_account_id):
+    audit_account = control_tower_exection_role_session(account_id=audit_account_id)
+    guardduty_audit_account = audit_account.client('guardduty')
 
-    # TODO: split up into two tests (probably needs more advanced testing system)
-    def test_guardduty_enabled_with_delegated_admin_in_core_and_enrolled_accounts(self):
-        audit_account = self.control_tower_exection_role_session(account_id=self.get_audit_account_id())
+    detector_id = guardduty_audit_account.list_detectors()['DetectorIds'][0]
+    members = guardduty_audit_account.list_members(DetectorId=detector_id, OnlyAssociated='true')['Members']
 
-        guardduty_audit_account = audit_account.client('guardduty')
+    actual_members = [a['AccountId'] for a in members if a['RelationshipStatus'] == 'Enabled']
 
-        detector_id = guardduty_audit_account.list_detectors()['DetectorIds'][0]
-        members = guardduty_audit_account.list_members(DetectorId=detector_id, OnlyAssociated='true')['Members']
+    expected_members = [
+        log_archive_account_id,
+        management_account_id,
+    ]
 
-        actual_members = [a['AccountId'] for a in members if a['RelationshipStatus'] == 'Enabled']
+    assert expected_members == actual_members
 
-        expected_members = [
-            self.get_log_archive_account_id(),
-            self.get_management_account_id(),
-            self.get_enrolled_account_id()
-        ]
+def test_guardduty_cannot_be_disabled_in_member_account(log_archive_account_id):
 
-        self.assertCountEqual(expected_members, actual_members)
+    # use log archive as sample member
+    log_archive_account = control_tower_exection_role_session(account_id=log_archive_account_id)
+    scp_test_session_guardduty = log_archive_account.client('guardduty')
+    detector_id = scp_test_session_guardduty.list_detectors()['DetectorIds'][0]
 
-    def test_guardduty_cannot_be_disabled_in_member_account(self):
+    # assert that guardduty delegated admin forbids deleting the detector
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        scp_test_session_guardduty.delete_detector(DetectorId=detector_id)
+    assert 'An error occurred (BadRequestException) when calling the DeleteDetector operation: The request is rejected because an invalid or out-of-range value is specified as an input parameter.' in str(exception.value)
 
-        # use log archive as sample member
-        log_archive_account = self.control_tower_exection_role_session(self.get_log_archive_account_id())
-        scp_test_session_guardduty = log_archive_account.client('guardduty')
-        detector_id = scp_test_session_guardduty.list_detectors()['DetectorIds'][0]
+    # assert that membership cannot be cancelled
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        scp_test_session_guardduty.disassociate_from_master_account(DetectorId=detector_id)
+    assert 'An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because an invalid or out-of-range value is specified as an input parameter.' in str(exception.value)
 
-        # assert that guardduty delegated admin forbids deleting the detector
-        with self.assertRaises(botocore.exceptions.ClientError) as exception:
-            scp_test_session_guardduty.delete_detector(DetectorId=detector_id)
-        self.assertEqual('An error occurred (BadRequestException) when calling the DeleteDetector operation: The request is rejected because an invalid or out-of-range value is specified as an input parameter.', str(exception.exception))
 
-        # assert that membership cannot be cancelled
-        with self.assertRaises(botocore.exceptions.ClientError) as exception:
-            scp_test_session_guardduty.disassociate_from_master_account(DetectorId=detector_id)
-        self.assertEqual('An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because an invalid or out-of-range value is specified as an input parameter.', str(exception.exception))
+def test_guardduty_s3_protection_enabled_for_org_members(audit_account_id):
+    audit_account = control_tower_exection_role_session(account_id=audit_account_id)
+    guardduty_audit = audit_account.client('guardduty')
+    detector_id = guardduty_audit.list_detectors()['DetectorIds'][0]
+    gd_org_config = guardduty_audit.describe_organization_configuration(DetectorId=detector_id)
+    assert gd_org_config['AutoEnable'] == True
+    assert gd_org_config['DataSources']['S3Logs']['AutoEnable'] == True
 
-    def test_guardduty_s3_protection_enabled_for_org_members(self):
-        audit_account = self.control_tower_exection_role_session(self.get_audit_account_id())
-        guardduty_audit = audit_account.client('guardduty')
-        detector_id = guardduty_audit.list_detectors()['DetectorIds'][0]
-        gd_org_config = guardduty_audit.describe_organization_configuration(DetectorId=detector_id)
-        self.assertTrue(gd_org_config['AutoEnable'])
-        self.assertTrue(gd_org_config['DataSources']['S3Logs']['AutoEnable'])
+def test_guardduty_s3_protection_enabled_for_existing_accounts(log_archive_account_id):
+    detector_management = guardduty.get_detector(DetectorId=(
+        guardduty.list_detectors()['DetectorIds'][0]))
+    assert 'ENABLED' == detector_management['DataSources']['S3Logs']['Status']
 
-    def test_guardduty_s3_protection_enabled_for_existing_accounts(self):
-        detector_management = guardduty.get_detector(DetectorId=(
-            guardduty.list_detectors()['DetectorIds'][0]))
-        self.assertEqual('ENABLED', detector_management['DataSources']['S3Logs']['Status'])
-
-        log_archive_account = self.control_tower_exection_role_session(self.get_log_archive_account_id())
-        guardduty_log_archive = log_archive_account.client('guardduty')
-        detector_log_archive = guardduty_log_archive.get_detector(DetectorId=(
-            guardduty_log_archive.list_detectors()['DetectorIds'][0]))
-
-        self.assertEqual('ENABLED', detector_log_archive['DataSources']['S3Logs']['Status'])
-
-    @classmethod
-    def control_tower_exection_role_session(cls, account_id):
-        account_creds = sts.assume_role(
-            RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
-            RoleSessionName='superwerkertest'
-        )['Credentials']
-        return boto3.session.Session(
-            aws_access_key_id=account_creds['AccessKeyId'],
-            aws_secret_access_key=account_creds['SecretAccessKey'],
-            aws_session_token=account_creds['SessionToken']
-        )
+    log_archive_account = control_tower_exection_role_session(account_id=log_archive_account_id)
+    guardduty_log_archive = log_archive_account.client('guardduty')
+    detector_log_archive = guardduty_log_archive.get_detector(DetectorId=(
+        guardduty_log_archive.list_detectors()['DetectorIds'][0]))
+    assert 'ENABLED' == detector_log_archive['DataSources']['S3Logs']['Status']
 
