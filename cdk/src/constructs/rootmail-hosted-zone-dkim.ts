@@ -1,4 +1,4 @@
-import { Fn, Duration, aws_route53 as r53, aws_ssm as ssm, Stack } from 'aws-cdk-lib';
+import { Fn, Duration, aws_route53 as r53, aws_ssm as ssm } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { HostedZoneDKIMPropagation } from './rootmail-hosted-zone-dkim-propagation';
 import { HostedZoneDKIMAndVerificationRecords } from './rootmail-hosted-zone-dkim-verification-records';
@@ -25,6 +25,11 @@ export interface HostedZoneDkimProps {
    * The Hosted Zone SSM Parameter Name for the NS records.
    */
   readonly hostedZoneSSMParameter: ssm.StringListParameter;
+
+  /**
+   * The SSM Parameter for DNS propagation status.
+   */
+  readonly propagationParameter: ssm.StringParameter;
 
   /**
    * The total time to wait for the DNS records to be available/wired.
@@ -82,7 +87,7 @@ export class HostedZoneDkim extends Construct {
       values: [
         {
           priority: 10,
-          hostName: `inbound-smtp.${Stack.of(this).region}.amazonaws.com`,
+          hostName: 'inbound-smtp.eu-west-1.amazonaws.com', // hardcoded for backward compatibility
         },
       ],
       deleteExisting: false,
@@ -102,6 +107,7 @@ export class HostedZoneDkim extends Construct {
     // 3: trigger SES DKIM propagation polling
     new HostedZoneDKIMPropagation(this, 'HostedZoneDKIMPropagation', {
       domain: `${subdomain}.${domain}`,
+      propagationParameter: props.propagationParameter,
     });
   }
 }

@@ -2,8 +2,10 @@
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import * as AWS from 'aws-sdk';
 export const PROP_DOMAIN = 'Domain';
+export const PROP_PARAM_NAME = 'PropagationParamName';
 
-const SES = new AWS.SES();
+const SES = new AWS.SES({ region: 'eu-west-1' });
+const SSM = new AWS.SSM();
 
 export interface IsCompleteHandlerResponse {
   IsComplete: boolean;
@@ -11,10 +13,14 @@ export interface IsCompleteHandlerResponse {
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<IsCompleteHandlerResponse> {
   const domain = event.ResourceProperties[PROP_DOMAIN];
+  const propagationParamName = event.ResourceProperties[PROP_PARAM_NAME];
 
   switch (event.RequestType) {
     case 'Create':
-      const isReady = await internalHandler(domain);
+      const isReady = await internalHandler(domain, propagationParamName);
+      if (isReady) {
+        await SSM.putParameter({ Name: propagationParamName, Value: 'done', Overwrite: true }).promise();
+      }
       return { IsComplete: isReady };
     case 'Update':
     case 'Delete':
@@ -28,7 +34,7 @@ function log(msg: any) {
   console.log(JSON.stringify(msg));
 }
 
-async function internalHandler(domain: string): Promise<boolean> {
+async function internalHandler(domain: string, propagationParamName: string): Promise<boolean> {
   log({
     domain: domain,
     level: 'debug',
@@ -57,5 +63,6 @@ async function internalHandler(domain: string): Promise<boolean> {
     return false;
   }
   log('forwarding enabled');
+
   return true;
 }

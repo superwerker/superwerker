@@ -1,13 +1,14 @@
-import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda, aws_ssm as ssm } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
 import * as path from 'path';
-import { PROP_DOMAIN } from '../functions/hosted-zone-dkim-propagation.on-event-handler';
+import { PROP_DOMAIN, PROP_PARAM_NAME } from '../functions/hosted-zone-dkim-propagation.on-event-handler';
 
 export interface HostedZoneDKIMPropagationProps {
   readonly domain: string;
   readonly totalTimeToWireDNS?: Duration;
+  readonly propagationParameter: ssm.StringParameter;
 }
 
 export class HostedZoneDKIMPropagation extends Construct {
@@ -15,16 +16,21 @@ export class HostedZoneDKIMPropagation extends Construct {
     super(scope, id);
 
     new CustomResource(this, 'Resource', {
-      serviceToken: HostedZoneDKIMPropagationProvider.getOrCreate(this, { totalTimeToWireDNS: props.totalTimeToWireDNS }),
+      serviceToken: HostedZoneDKIMPropagationProvider.getOrCreate(this, {
+        totalTimeToWireDNS: props.totalTimeToWireDNS,
+        propagationParam: props.propagationParameter,
+      }),
       resourceType: 'Custom::HostedZoneDKIMPropagation',
       properties: {
         [PROP_DOMAIN]: props.domain,
+        [PROP_PARAM_NAME]: props.propagationParameter.parameterName,
       },
     });
   }
 }
 
 interface HostedZoneDKIMPropagationProviderProps {
+  readonly propagationParam: ssm.StringParameter;
   readonly totalTimeToWireDNS?: Duration;
 }
 
@@ -64,6 +70,15 @@ class HostedZoneDKIMPropagationProvider extends Construct {
         resources: ['*'],
       }),
     );
+
+    isCompleteHandlerFunc.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ssm:PutParameter'],
+        effect: iam.Effect.ALLOW,
+        resources: [props.propagationParam.parameterArn],
+      }),
+    );
+
     const onEventHandlerFunc = new NodejsFunction(this, 'on-event-handler', {
       entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-propagation.on-event-handler.ts'),
       runtime: lambda.Runtime.NODEJS_18_X,

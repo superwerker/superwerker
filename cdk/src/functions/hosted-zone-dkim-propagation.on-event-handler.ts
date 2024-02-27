@@ -1,6 +1,7 @@
 // eslint-disable-next-line import/no-unresolved
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 export const PROP_DOMAIN = 'Domain';
+export const PROP_PARAM_NAME = 'PropagationParamName';
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   switch (event.RequestType) {

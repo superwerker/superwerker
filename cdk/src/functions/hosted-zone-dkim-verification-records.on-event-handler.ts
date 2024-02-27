@@ -5,7 +5,7 @@ export const PROP_DOMAIN = 'Domain';
 export const ATTR_VERIFICATION_TOKEN = 'VerificationToken';
 export const ATTR_DKIM_TOKENS = 'DkimTokens';
 
-const SES = new AWS.SES();
+const SES = new AWS.SES({ region: 'eu-west-1' }); // hardcoded for backward  compatibility
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   const domain = event.ResourceProperties[PROP_DOMAIN];
