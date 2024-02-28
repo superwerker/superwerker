@@ -33,7 +33,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
+          role-to-assume: ${{ secrets.AWS_AAC_SUPERWERKER_RELEASE_ROLE }}
 
       - name: Build Superwerker
         run: |
@@ -70,13 +70,13 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
+          role-to-assume: ${{ secrets.AWS_AAC_SUPERWERKER_RELEASE_ROLE }}
       
 
       - name: Configure Subdomain Delegation
         run: |
           echo "Configuring subdomain delegation to nameservers ${DOMAIN_NAME_SERVERS}..." 
-          aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-pipeline02 --template-file ../tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=${DOMAIN_NAME_SERVERS} RootMailDomain=${SUPERWERKER_DOMAIN} RootMailSubdomain=${{ inputs.account }}
+          aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${{ inputs.account }} --template-file ../tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=${DOMAIN_NAME_SERVERS} RootMailDomain=${SUPERWERKER_DOMAIN} RootMailSubdomain=${{ inputs.account }}
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
           SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
