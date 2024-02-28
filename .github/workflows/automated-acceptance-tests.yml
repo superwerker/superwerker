@@ -110,7 +110,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_AAC_NS_ROLE }}
+          role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
       
       - name: Run Acceptance Tests
         run: |
