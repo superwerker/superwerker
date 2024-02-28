@@ -3,7 +3,7 @@ default: test
 .PHONY: test
 test: export VIRTUAL_ENV=$(VENV)
 test: activate test-dependencies
-	$(PYTHON) -m pytest .
+	$(PYTHON) -m pytest -v --junit-xml=test-results.xml .
 
 venv:
 	echo $${SHELL}
