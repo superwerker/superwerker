@@ -35,8 +35,8 @@ describe('notifications_opsitems', () => {
             OpsItemId: ops_item_id,
           },
           requestParameters: {
-            description: description,
-            title: title,
+            Description: description,
+            Title: title,
           },
         },
       },

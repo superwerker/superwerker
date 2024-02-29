@@ -7,18 +7,18 @@ export async function handler(event: any, _context: any) {
   const responseElements = event.detail.responseElements;
   const id = responseElements.OpsItemId;
   const requestParameters = event.detail.requestParameters;
-  const desc = requestParameters.description;
-  const title = requestParameters.title;
+  const desc = requestParameters.Description;
+  const title = requestParameters.Title;
   const url = `https://${region}.console.aws.amazon.com/systems-manager/opsitems/${id}`;
   const topicARN = process.env.TOPIC_ARN;
 
-  log({
-    desc: desc,
-    event: event,
+  console.log({
+    desc,
+    event,
     level: 'info',
     msg: 'Publishing new ops item event from CloudTrail to SNS',
-    title: title,
-    url: url,
+    title,
+    url,
   });
 
   const messageTitle = `New OpsItem: ${title}`;
@@ -31,8 +31,4 @@ export async function handler(event: any, _context: any) {
       TopicArn: topicARN, //process.env.TOPIC_ARN,
     }),
   );
-}
-
-function log(msg: any) {
-  console.log(JSON.stringify(msg));
 }
