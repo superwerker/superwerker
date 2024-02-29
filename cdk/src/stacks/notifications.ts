@@ -1,9 +1,19 @@
 import path from 'path';
-import { NestedStack, NestedStackProps, aws_events as events, aws_iam as iam, aws_lambda as lambda, aws_sns as sns, aws_sns_subscriptions as subscriptions, CfnOutput, CfnParameter, Duration } from 'aws-cdk-lib';
+import {
+  NestedStack,
+  NestedStackProps,
+  aws_events as events,
+  aws_iam as iam,
+  aws_lambda as lambda,
+  aws_sns as sns,
+  aws_sns_subscriptions as subscriptions,
+  CfnOutput,
+  CfnParameter,
+  Duration,
+} from 'aws-cdk-lib';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
-
 
 export class NotificationsStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {

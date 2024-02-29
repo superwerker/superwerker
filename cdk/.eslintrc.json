@@ -6,7 +6,8 @@
   "root": true,
   "plugins": [
     "@typescript-eslint",
-    "import"
+    "import",
+    "prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -15,7 +16,8 @@
     "project": "**/tsconfig.json"
   },
   "extends": [
-    "plugin:import/typescript"
+    "plugin:import/typescript",
+    "prettier"
   ],
   "settings": {
     "import/parsers": {
@@ -43,6 +45,7 @@
     "coverage"
   ],
   "rules": {
+    "prettier/prettier": 2,
     "indent": [
       "off"
     ],
