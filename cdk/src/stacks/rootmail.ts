@@ -11,106 +11,95 @@ import {
   NestedStack,
   NestedStackProps,
   Stack,
+  CfnParameter,
 } from 'aws-cdk-lib';
 import { Construct, IConstruct } from 'constructs';
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 import * as cdk from 'aws-cdk-lib';
 import Fs from 'fs';
-
-export interface RootmailProps extends NestedStackProps {
-  /**
-   * Domain used for root mail feature.
-   */
-  readonly domain: string;
-
-  /**
-   * Subdomain used for root mail feature.
-   *
-   * @default 'aws'
-   */
-  readonly subdomain?: string;
-
-  /**
-   * The total time to wait for the DNS records to be available/wired.
-   *
-   * @default Duration.hours(2)
-   */
-  readonly totalTimeToWireDNS?: Duration;
-
-  /**
-   * SSM Param name for DNS propagation status. Value is either "pending" or "done".
-   */
-  readonly propagationParamName: string;
-
-  /**
-   * SSM Param name for hosted zone NS servers
-   */
-  readonly hostedZoneParamName: string;
-
-  /**
-   * Whether to set all removal policies to DESTROY. This is useful for integration testing purposes.
-   *
-   * @default false
-   */
-  readonly setDestroyPolicyToAllResources?: boolean;
-}
+import { CfnRole } from 'aws-cdk-lib/aws-iam';
 
 export class RootmailStack extends NestedStack {
-  public readonly hostedZoneParameterName: string;
-  public readonly propagationParameterName: string;
   public readonly emailBucket: s3.Bucket;
-  public readonly domain: string;
-  public readonly subdomain: string;
+  public readonly setDestroyPolicyToAllResources: boolean;
 
-  constructor(scope: Construct, id: string, props: RootmailProps) {
+  constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    this.hostedZoneParameterName = props.hostedZoneParamName;
-    this.propagationParameterName = props.propagationParamName;
-    this.domain = props.domain;
-    this.subdomain = props.subdomain ?? 'aws';
-    const totalTimeToWireDNS = Duration.hours(2); // TODO
-    const setDestroyPolicyToAllResources = props.setDestroyPolicyToAllResources ?? false; //TODO
+    const domain = new CfnParameter(this, 'Domain', {
+      type: 'String',
+    });
+
+    const subdomain = new CfnParameter(this, 'Subdomain', {
+      type: 'String',
+      default: 'aws',
+    });
+
+    const totalTimeToWireDNS = new CfnParameter(this, 'TotalTimeToWireDNS', {
+      type: 'Number',
+      default: 120,
+      minValue: 5,
+      maxValue: 120,
+    });
+
+    const propagationParameterName = new CfnParameter(this, 'PropagationParameterName', {
+      type: 'String',
+      default: '/superwerker/propagation_status',
+    });
+
+    const hostedZoneParameterName = new CfnParameter(this, 'HostedZoneParameterName', {
+      type: 'String',
+      default: '/superwerker/domain_name_servers',
+    });
+
+    this.setDestroyPolicyToAllResources = true; //TODO
 
     // Email bucket
     this.emailBucket = new s3.Bucket(this, 'EmailBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
     });
+    (this.emailBucket.node.defaultChild as CfnResource).overrideLogicalId('EmailBucket');
 
     this.emailBucket.grantPut(new iam.ServicePrincipal('ses.amazonaws.com'), 'RootMail/*');
+    (this.emailBucket.policy?.node.defaultChild as CfnResource).overrideLogicalId('EmailBucketPolicy');
 
     // Hosted zone
     const hostedZone = new r53.HostedZone(this, 'HostedZone', {
-      zoneName: `${this.subdomain}.${this.domain}`,
+      zoneName: `${subdomain}.${domain}`,
     });
+    (hostedZone.node.defaultChild as CfnResource).overrideLogicalId('HostedZone');
 
     const hostedZoneSSMParameter = new ssm.StringListParameter(this, 'HostedZoneSSMParameter', {
-      parameterName: this.hostedZoneParameterName,
+      parameterName: hostedZoneParameterName.valueAsString,
       stringListValue: hostedZone.hostedZoneNameServers || [],
+      simpleName: false,
     });
+    (hostedZoneSSMParameter.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneSSMParameter');
 
     const propagationParameter = new ssm.StringParameter(this, 'PropagationParameter', {
-      parameterName: this.propagationParameterName,
+      parameterName: propagationParameterName.valueAsString,
       stringValue: 'pending',
+      simpleName: false,
     });
 
     new HostedZoneDkim(this, 'HostedZoneDkim', {
-      domain: this.domain,
-      subdomain: this.subdomain,
+      domain: domain.valueAsString,
+      subdomain: subdomain.valueAsString,
       hostedZone: hostedZone,
       hostedZoneSSMParameter: hostedZoneSSMParameter,
       propagationParameter: propagationParameter,
-      totalTimeToWireDNS: totalTimeToWireDNS,
+      totalTimeToWireDNS: Duration.minutes(totalTimeToWireDNS.valueAsNumber),
     });
 
-    const stackSetExecutionRole = new iam.Role(this, 'SESStackSetExecutionRole', {
+    const stackSetExecutionRole = new iam.Role(this, 'StackSetExecutionRole', {
       assumedBy: new iam.AccountPrincipal(Stack.of(this).account),
       path: '/',
       managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
     });
+    (stackSetExecutionRole.node.defaultChild as CfnRole).overrideLogicalId('StackSetExecutionRole');
 
-    const stackSetAdminRole = new iam.Role(this, 'SESStackSetAdminRole', {
+    const stackSetAdminRole = new iam.Role(this, 'StackSetAdministrationRole', {
       assumedBy: new iam.ServicePrincipal('cloudformation.amazonaws.com'),
       path: '/',
       inlinePolicies: {
@@ -124,10 +113,11 @@ export class RootmailStack extends NestedStack {
         }),
       },
     });
+    (stackSetAdminRole.node.defaultChild as CfnRole).overrideLogicalId('StackSetAdministrationRole');
 
-    new cdk.CfnStackSet(this, 'Rootmail-ReceiveStack', {
+    new cdk.CfnStackSet(this, 'SESReceiveStack', {
       permissionModel: 'SELF_MANAGED',
-      stackSetName: 'Rootmail-ReceiveStack',
+      stackSetName: 'SESReceiveStack',
       administrationRoleArn: stackSetAdminRole.roleArn,
       capabilities: ['CAPABILITY_IAM'],
       executionRoleName: stackSetExecutionRole.roleName,
@@ -140,15 +130,15 @@ export class RootmailStack extends NestedStack {
         },
       ],
       templateBody: cdk.Fn.sub(Fs.readFileSync('./src/stacks/rootmail-ses-receive-stackset.yaml').toString(), {
-        Domain: this.domain,
-        Subdomain: this.subdomain,
+        Domain: domain.valueAsString,
+        Subdomain: subdomain.valueAsString,
         EmailBucket: this.emailBucket.bucketName,
         EmailBucketArn: this.emailBucket.bucketArn,
       }),
     });
 
     // If Destroy Policy Aspect is present:
-    if (setDestroyPolicyToAllResources) {
+    if (this.setDestroyPolicyToAllResources) {
       Aspects.of(this).add(new ApplyDestroyPolicyAspect());
     }
   }

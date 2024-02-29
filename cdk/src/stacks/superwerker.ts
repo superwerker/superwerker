@@ -1,4 +1,4 @@
-import { CfnCondition, CfnParameter, CfnStack, Duration, Fn, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
@@ -112,11 +112,13 @@ export class SuperwerkerStack extends Stack {
 
     // RootMail
     const rootMailStack = new RootmailStack(this, 'RootMail', {
-      domain: domain.valueAsString,
-      subdomain: subdomain.valueAsString,
-      totalTimeToWireDNS: Duration.minutes(totalTimeToWireDNS.valueAsNumber),
-      propagationParamName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
-      hostedZoneParamName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
+      parameters: {
+        Domain: domain.valueAsString,
+        Subdomain: subdomain.valueAsString,
+        TotalTimeToWireDNS: totalTimeToWireDNS.valueAsString,
+        PropagationParameterName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
+        HostedZoneParameterName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
+      },
     });
     (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
 

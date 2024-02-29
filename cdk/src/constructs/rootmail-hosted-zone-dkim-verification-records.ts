@@ -1,4 +1,4 @@
-import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CfnResource, CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
@@ -22,11 +22,12 @@ export class HostedZoneDKIMAndVerificationRecords extends Construct {
 
     const resource = new CustomResource(this, 'Resource', {
       serviceToken: HostedZoneDKIMAndVerificationRecordsProvider.getOrCreate(this),
-      resourceType: 'Custom::HostedZoneDKIMAndVerificationRecords',
+      //  resourceType: 'Custom::HostedZoneDKIMAndVerificationRecords',
       properties: {
         [PROP_DOMAIN]: props.domain,
       },
     });
+    (resource.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDKIMAndVerificationRecords');
 
     this.verificationToken = resource.getAttString(ATTR_VERIFICATION_TOKEN);
     this.dkimTokens = resource.getAtt(ATTR_DKIM_TOKENS).toStringList();

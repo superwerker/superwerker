@@ -1,4 +1,4 @@
-import { Fn, Duration, aws_route53 as r53, aws_ssm as ssm } from 'aws-cdk-lib';
+import { Fn, Duration, aws_route53 as r53, aws_ssm as ssm, CfnResource } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { HostedZoneDKIMPropagation } from './rootmail-hosted-zone-dkim-propagation';
 import { HostedZoneDKIMAndVerificationRecords } from './rootmail-hosted-zone-dkim-verification-records';
@@ -44,8 +44,6 @@ export class HostedZoneDkim extends Construct {
     const domain = props.domain;
     const subdomain = props.subdomain ?? 'aws';
     const hostedZone = props.hostedZone;
-    // const hostedZoneSSMParameter = props.hostedZoneSSMParameter;
-    // const totalTimeToWireDNS = props.totalTimeToWireDNS;
 
     // 1: trigger SNS DKIM verification
     const hostedZoneDKIMAndVerificationRecords = new HostedZoneDKIMAndVerificationRecords(this, 'HostedZoneDKIMAndVerificationRecords', {
@@ -55,7 +53,7 @@ export class HostedZoneDkim extends Construct {
     const hostedZoneDKIMTokens = hostedZoneDKIMAndVerificationRecords.dkimTokens;
 
     // 2: set the records in the hosted zone
-    new r53.RecordSet(this, 'HostedZoneDKIMTokenRecord0', {
+    const tokenRecord0 = new r53.RecordSet(this, 'HostedZoneDKIMTokenRecord0', {
       deleteExisting: false,
       zone: hostedZone,
       target: r53.RecordTarget.fromValues(`${Fn.select(0, hostedZoneDKIMTokens)}.dkim.amazonses.com`),
@@ -63,8 +61,9 @@ export class HostedZoneDkim extends Construct {
       ttl: Duration.seconds(60),
       recordType: r53.RecordType.CNAME,
     });
+    (tokenRecord0.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDKIMTokenRecord0');
 
-    new r53.RecordSet(this, 'HostedZoneDKIMTokenRecord1', {
+    const tokenRecord1 = new r53.RecordSet(this, 'HostedZoneDKIMTokenRecord1', {
       deleteExisting: false,
       zone: hostedZone,
       target: r53.RecordTarget.fromValues(`${Fn.select(1, hostedZoneDKIMTokens)}.dkim.amazonses.com`),
@@ -72,8 +71,9 @@ export class HostedZoneDkim extends Construct {
       ttl: Duration.seconds(60),
       recordType: r53.RecordType.CNAME,
     });
+    (tokenRecord1.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDKIMTokenRecord1');
 
-    new r53.RecordSet(this, 'HostedZoneDKIMTokenRecord2', {
+    const tokenRecord2 = new r53.RecordSet(this, 'HostedZoneDKIMTokenRecord2', {
       deleteExisting: false,
       zone: hostedZone,
       target: r53.RecordTarget.fromValues(`${Fn.select(2, hostedZoneDKIMTokens)}.dkim.amazonses.com`),
@@ -81,8 +81,9 @@ export class HostedZoneDkim extends Construct {
       ttl: Duration.seconds(60),
       recordType: r53.RecordType.CNAME,
     });
+    (tokenRecord2.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDKIMTokenRecord2');
 
-    new r53.MxRecord(this, 'HostedZoneMXRecord', {
+    const mxRecord = new r53.MxRecord(this, 'HostedZoneMXRecord', {
       zone: hostedZone,
       values: [
         {
@@ -94,8 +95,9 @@ export class HostedZoneDkim extends Construct {
       recordName: `${subdomain}.${domain}`,
       ttl: Duration.seconds(60),
     });
+    (mxRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneMXRecord');
 
-    new r53.TxtRecord(this, 'HostedZoneVerificationTokenRecord', {
+    const verificationRecord = new r53.TxtRecord(this, 'HostedZoneVerificationTokenRecord', {
       zone: hostedZone,
       // Note: quotes by itself
       values: [hostedZoneDKIMAndVerificationRecords.verificationToken],
@@ -103,6 +105,7 @@ export class HostedZoneDkim extends Construct {
       recordName: `_amazonses.${subdomain}.${domain}`,
       ttl: Duration.seconds(60),
     });
+    (verificationRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneVerificationTokenRecord');
 
     // 3: trigger SES DKIM propagation polling
     new HostedZoneDKIMPropagation(this, 'HostedZoneDKIMPropagation', {
