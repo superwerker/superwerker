@@ -11,7 +11,6 @@ const region = 'us-east-1';
 const url = `https://${region}.console.aws.amazon.com/systems-manager/opsitems/${ops_item_id}`;
 
 describe('notifications_opsitems', () => {
-
   beforeEach(() => {
     jest.resetAllMocks();
     snsClientMock.reset();
@@ -25,23 +24,24 @@ describe('notifications_opsitems', () => {
   });
 
   it('notifications_opsitems_create', async () => {
-    snsClientMock
-      .on(PublishCommand)
-      .resolves({
-        MessageId: 'Message_123',
-      });
+    snsClientMock.on(PublishCommand).resolves({
+      MessageId: 'Message_123',
+    });
 
-    await handler({
-      detail: {
-        responseElements: {
-          OpsItemId: ops_item_id,
-        },
-        requestParameters: {
-          description: description,
-          title: title,
+    await handler(
+      {
+        detail: {
+          responseElements: {
+            OpsItemId: ops_item_id,
+          },
+          requestParameters: {
+            description: description,
+            title: title,
+          },
         },
       },
-    }, {});
+      {},
+    );
 
     expect(snsClientMock).toReceiveCommandTimes(PublishCommand, 1);
     expect(snsClientMock).toReceiveCommandWith(PublishCommand, {
