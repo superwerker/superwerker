@@ -1,4 +1,5 @@
-name: Automated Acceptance Tests
+name: Automated Acceptance Tests 
+run-name: Deploy to ${{ inputs.account }} by @${{ github.actor }}
 
 on:
   workflow_dispatch: 
@@ -20,7 +21,7 @@ env:
   AWS_DEFAULT_REGION: eu-central-1
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
     environment: ${{ inputs.account }}
 
@@ -28,35 +29,105 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Assume Superwerker AWS Role
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
+          role-to-assume: ${{ secrets.AWS_AAC_SUPERWERKER_RELEASE_ROLE }}
 
       - name: Build Superwerker
         run: |
-          aws sts get-caller-identity
           yarn global add aws-cdk
+          yarn install
           yarn test
           yarn synth
           yarn publish-assets
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
+          NODE_ENV: development
         shell: bash
         working-directory: cdk
 
-      - name: Configure AWS credentials
+      - name: Assume Pipeline AWS Role
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
 
       - name: Deploy Superwerker
+        id: deploy-superwerker
         run: |
-          aws sts get-caller-identity
-          aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter ParameterKey=Domain,ParameterValue=${{ secrets.SUPERWERKER_DOMAIN }} ParameterKey=Subdomain,ParameterValue=${{ inputs.account }} ParameterKey=NotificationsMail,ParameterValue=root+notifications@${{ inputs.account }}.${{ secrets.SUPERWERKER_DOMAIN }} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager
+          nohup aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter-overrides Domain=${SUPERWERKER_DOMAIN} Subdomain=${{ inputs.account }} NotificationsMail=root+notifications@${{ inputs.account }}.${SUPERWERKER_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager &
+          while ! DOMAIN_NAME_SERVERS=$(aws ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text 2>/dev/null); do sleep 10; done
+          echo "DOMAIN_NAME_SERVERS=${DOMAIN_NAME_SERVERS}" >> "$GITHUB_OUTPUT"
         env:
           SUPERWERKER_VERSION: 0.0.0-AAC
+          SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
         shell: bash
         working-directory: cdk
+
+      - name: Assume Superwerker AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_AAC_SUPERWERKER_RELEASE_ROLE }}
+      
+
+      - name: Configure Subdomain Delegation
+        run: |
+          echo "Configuring subdomain delegation to nameservers ${DOMAIN_NAME_SERVERS}..." 
+          aws cloudformation deploy --stack-name superwerker-pipeline-dns-wiring-${{ inputs.account }} --template-file ../tests/pipeline-dns-wiring.yaml --parameter-overrides RootMailDelegationTarget=${DOMAIN_NAME_SERVERS} RootMailDomain=${SUPERWERKER_DOMAIN} RootMailSubdomain=${{ inputs.account }}
+        env:
+          SUPERWERKER_VERSION: 0.0.0-AAC
+          SUPERWERKER_DOMAIN: ${{ secrets.SUPERWERKER_DOMAIN }}
+          DOMAIN_NAME_SERVERS: ${{ steps.deploy-superwerker.outputs.DOMAIN_NAME_SERVERS }}
+        shell: bash
+        working-directory: cdk
+
+      - name: Assume Pipeline AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
+
+      - name: Wait for Superwerker Deployment
+        run: |
+          # https://github.com/aws/aws-cli/issues/2887
+          aws cloudformation wait stack-create-complete --stack-name superwerker
+          aws cloudformation wait stack-update-complete --stack-name superwerker
+        shell: bash
+      
+  test:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.account }}
+    needs: build_and_deploy
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assume Superwerker AWS Role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
+      
+      - name: Run Acceptance Tests
+        run: |
+          make test
+        shell: bash
+        working-directory: tests
+
+      - name: Surface failing tests
+        if: always()
+        uses: pmeier/pytest-results-action@main
+        with:
+          path: ./tests/test-results.xml
+          summary: true
+          # (Optional) Select which results should be included in the report.
+          # Follows the same syntax as `pytest -r`
+          display-options: fEsX
+          # Fail the workflow if no JUnit XML was found.
+          fail-on-empty: true
+          # (Optional) Title of the test results section in the workflow summary
+          title: Test results
