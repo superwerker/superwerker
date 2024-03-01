@@ -9,6 +9,10 @@
 
 ![superwerker](/docs/images/splash.jpg)
 
+## Project state / Roadmap
+
+superwerker is stable and used in production by several customers. The roadmap is currently organized in [projects](https://github.com/superwerker/superwerker/projects).
+
 ## Installation guide
 
 [![Installation in a nutshell](https://i.vimeocdn.com/filter/overlay?src0=https%3A%2F%2Fi.vimeocdn.com%2Fvideo%2F1062388452_295x166.webp&src1=http%3A%2F%2Ff.vimeocdn.com%2Fp%2Fimages%2Fcrawler_play.png)](https://player.vimeo.com/video/513105990)
@@ -33,17 +37,18 @@ Installations instructions are available in the [superwerker guide](https://supe
     
 ## What's included in the setup?
 
-Superwerker configures the following AWS services and features in a fully automated way:
+In the initial release, superwerker configures the following AWS services and features in a fully automated way:
 
 1. [AWS Control Tower](https://aws.amazon.com/controltower/) and [AWS Single Sign-On](https://aws.amazon.com/single-sign-on/) as the basis for a future-proof multi-account setup
-2. [Amazon GuardDuty](https://aws.amazon.com/guardduty/) for automatic detection of possible threats breaches
-3. [AWS Security Hub](https://aws.amazon.com/security-hub) to ensure established security standards
-4. [AWS Backup](https://aws.amazon.com/backup/) for automated creation of backups
-5. [AWS Budget](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html) that is auto-adjusting for cost control
-6. [Service control policies](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html) to protect the infrastructure from intentional or unintentional mistakes
-7. [AWS Systems Manager](https://aws.amazon.com/systems-manager) OpsCenter/Items notification aggregation and incident response handling
-8. Secure mailboxes and service catalogue aliases for all root accounts
-9.  A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+1. [Amazon GuardDuty](https://aws.amazon.com/guardduty/) for automatic detection of possible threats breaches
+1. [AWS Security Hub](https://aws.amazon.com/security-hub) to ensure established security standards
+1. [AWS Backup](https://aws.amazon.com/backup/) for automated creation of backups
+1. Budget alarms for cost control
+1. Service control policies to protect the infrastructure from intentional or unintentional mistakes
+1. [AWS Systems Manager](https://aws.amazon.com/systems-manager) OpsCenter/Items notification aggregation and incident response handling
+1. Secure mailboxes and service catalogue aliases for all root accounts
+1. Feature flippers to gradually opt into functionality
+1. A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
 
 ### Say what again? (the non-technical what's included)
 
@@ -63,7 +68,7 @@ AWS provides all the building blocks. superwerker adds the wiring and `how to` s
 
 ## Help & Feedback
 
-- If you encounter problems using superwerker dont hesitate to create an [issue](https://github.com/superwerker/superwerker/issues)
+- Join our [mailing list](https://groups.google.com/forum/#!forum/superwerker/join)
 - Chat with us on the [#superwerker](https://og-aws.slack.com/archives/C01CQ34TC93) channel in the OG-AWS Slack ([invite link](http://slackhatesthe.cloud/)).
 
 ## FAQ
@@ -113,15 +118,19 @@ superwerker is primarily designed for new AWS set-ups and can be used if AWS Con
 
 ### Which regions is superwerker available in?
 
-Since superwerker uses AWS Control Tower as a basis, it is available in all regions where Control Tower is supported. Regions that are [not enabled by default](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-regions.html#manage-acct-regions-considerations) are currently not supported. 
+Since superwerker uses AWS Control Tower as a basis, it is available in all regions where Control Tower is supported.
 
 ### What is the difference compared to Control Tower/Landing Zone?
 
 AWS Control Tower and Landing Zone also use AWS fundamentally, but leave a lot of free scope. Building on AWS Control Tower, superwerker provides further guide rails and facilitates a quick-start with AWS even further.
 
+### What is the difference compared to AWS Proton, AWS Amplify or AWS Copilot, for example?
+
+AWS Proton, Amplify, and Copilot are tools for developing workloads. superwerker provides a secure AWS foundation in which these tools can be used.
+
 ### How can I expand superwerker?
 
-superwerker deliberately offers few parameters for adjustment. It has been designed to coexist with solutions like AWS Control Tower (+ Customizations) or with CloudFormation StackSets. These can be used to further customise the AWS set-up.
+superwerker deliberately offers few parameters for adjustment. It has been designed to coexist with solutions like AWS Control Tower (+ Customizations) or with CloudFormation StackSets. These can be used to customise the AWS set-up.
 
 ### If I no longer want to use superwerker, will my AWS set-up stop working?
 
@@ -143,6 +152,10 @@ superwerker always aims to build on AWS services and features. If a superwerker 
 
 Some of the infrastructure that superwerker sets up carries out changes to existing set-ups, for example Control Tower and Service Control Policies, which restrict services and regions. For this reason, we cannot rule out the possibility of impacting existing workloads. We will be happy to help you when evaluating this issue.
 
+### Can superwerker also handle network/VPC and workloads?
+
+superwerker is initially specialised in a basic AWS set-up. An extension to best practices in the network and workload area is planned. Please send us feedback/feature requests in our GitHub repository.
+
 ## Technical FAQ
 
 ### Why do I need a domain and subdomain
@@ -154,6 +167,8 @@ You must have the possibility to add an `NS` entry for `aws.example.com` in your
 ### What kind of Notifications are sent to the NotificationMail?
 
 At the moment, those are notifications about new OpsItems. Those OpsItems are created from the RootMail feature. So these notifications are about new created AWS accounts or requested password resets.
+
+In the future there might be more notifications, but nothing planned yet.
 
 ## Design decisions
 
@@ -168,7 +183,7 @@ In an ideal world this project would not have to exist.
 - use functionless / managed runtimes when possible
 - whenever the cost of a service or option (e.g. logging to S3 as opposed to logging to CloudWatch Logs) is negligible it will be added without opt-out
 
-Preferred services: CloudFormation, Systems Manager, Parameter Store, Lambda, CodePipeline / Build
+Preferred services: CloudFormation, Systems Manager Parameter Store / Automation, Lambda, CodePipeline / Build
 
 ### Tested code
 

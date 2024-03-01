@@ -12,42 +12,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: eu-central-1
-          role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: eu-central-1
+        role-to-assume: arn:aws:iam::824014778649:role/gh-actions-superwerker-release
 
-      - name: Bounce version and create git tags
-        uses: cycjimmy/semantic-release-action@v4
-        id: semantic
-        with:
-          semantic_version: 22.0.8
-          extra_plugins: |
-            @semantic-release/git@10.0.1
-            @semantic-release/changelog@6.0.3
-            conventional-changelog-conventionalcommits@v7.0.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Bounce version and create git tags
+      uses: cycjimmy/semantic-release-action@v4
+      id: semantic
+      with:
+        semantic_version: 22.0.8
+        extra_plugins: |
+          @semantic-release/git@10.0.1
+          @semantic-release/changelog@6.0.3
+          conventional-changelog-conventionalcommits@v7.0.2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and publish
-        if: steps.semantic.outputs.new_release_published == 'true'
-        run: |
-          pip install cfn-flip
-          yarn global add aws-cdk
-          yarn
-          yarn test
-          yarn synth
-          cat cdk.out/SuperwerkerStack.assets.json
-          yarn publish-assets
-          cfn-flip cdk.out/SuperwerkerStack.template.json cdk.out/superwerker.template.yaml
-          aws s3 cp cdk.out/superwerker.template.yaml s3://superwerker-release/${SUPERWERKER_VERSION}/templates/
-          aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-release/${SUPERWERKER_VERSION}/templates/
-        env:
-          SUPERWERKER_VERSION: ${{ steps.semantic.outputs.new_release_version }}
-          AWS_DEFAULT_REGION: eu-central-1
-        shell: bash
-        working-directory: cdk
+    - name: Build and publish
+      if: steps.semantic.outputs.new_release_published == 'true'
+      run: |
+        pip install cfn-flip
+        yarn global add aws-cdk
+        yarn
+        yarn test
+        yarn synth
+        cat cdk.out/SuperwerkerStack.assets.json
+        yarn publish-assets
+        cfn-flip cdk.out/SuperwerkerStack.template.json cdk.out/superwerker.template.yaml
+        aws s3 cp cdk.out/superwerker.template.yaml s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
+        aws s3 cp cdk.out/SuperwerkerStack.template.json s3://superwerker-releases/${SUPERWERKER_VERSION}/templates/
+      env:
+        SUPERWERKER_VERSION: ${{ steps.semantic.outputs.new_release_version }}
+        AWS_DEFAULT_REGION: eu-central-1
+      shell: bash
+      working-directory: cdk
+

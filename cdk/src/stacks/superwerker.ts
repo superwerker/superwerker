@@ -1,4 +1,11 @@
-import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
+import {
+  CfnCondition,
+  CfnParameter,
+  CfnStack,
+  Fn,
+  Stack,
+  StackProps,
+} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
 import { BudgetStack } from './budget';
@@ -6,13 +13,12 @@ import { ControlTowerStack } from './control-tower';
 import { GuardDutyStack } from './guardduty';
 import { LivingDocumentationStack } from './living-documentation';
 import { NotificationsStack } from './notifications';
-import { PrepareStack } from './prepare';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
 
-export interface SuperwerkerStackProps extends StackProps {
+export interface SuperwerkerStackProps extends StackProps{
   readonly version?: string;
 }
 
@@ -34,21 +40,18 @@ export class SuperwerkerStack extends Stack {
 
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
-      description:
-        'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description: 'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
     });
 
     const subdomain = new CfnParameter(this, 'Subdomain', {
       type: 'String',
-      description:
-        'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description: 'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: 'aws',
     });
 
     const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
       type: 'String',
-      description:
-        'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
+      description: 'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: '',
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
@@ -96,16 +99,11 @@ export class SuperwerkerStack extends Stack {
       name: `${SuperwerkerStack.AUDIT_ACCOUNT}`,
     });
 
+
     const emailLogArchive = new GenerateEmailAddress(this, 'GeneratedLogArchiveAWSAccountEmail', {
       domain: `${subdomain.value}.${domain.value}`,
       name: `${SuperwerkerStack.LOG_ARCHIVE_ACCOUNT}`,
     });
-
-    // Prepare
-    const prepareStack = new PrepareStack(this, 'Prepare', {
-      description: 'Prepares the AWS account for Superwerker.',
-    });
-    (prepareStack.node.defaultChild as CfnStack).overrideLogicalId('Prepare');
 
     // RootMail
     const rootMailStack = new RootmailStack(this, 'RootMail', {
@@ -125,7 +123,6 @@ export class SuperwerkerStack extends Stack {
       description: 'Sets up the landing zone with control tower.',
     });
     (controlTowerStack.node.defaultChild as CfnStack).overrideLogicalId('ControlTower');
-    controlTowerStack.addDependency(prepareStack);
 
     // LivingDocumentation
     const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
@@ -204,5 +201,7 @@ export class SuperwerkerStack extends Stack {
     serviceControlPoliciesStack.addDependency(controlTowerStack);
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+
+
   }
 }

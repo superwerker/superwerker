@@ -34,55 +34,58 @@ export class LivingDocumentationStack extends NestedStack {
     });
 
     const ssmParameterRead = new iam.PolicyStatement({
-      actions: ['ssm:GetParameters', 'ssm:GetParameter', 'ssm:GetParametersByPath'],
-      resources: [
-        Arn.format({
-          partition: this.partition,
-          service: 'ssm',
-          region: this.region,
-          account: this.account,
-          resource: 'parameter',
-          resourceName: 'superwerker/*',
-        }),
+      actions: [
+        'ssm:GetParameters',
+        'ssm:GetParameter',
+        'ssm:GetParametersByPath',
       ],
+      resources: [Arn.format({
+        partition: this.partition,
+        service: 'ssm',
+        region: this.region,
+        account: this.account,
+        resource: 'parameter',
+        resourceName: 'superwerker/*',
+      })],
       effect: iam.Effect.ALLOW,
     });
 
     const cloudwatchPutDashboard = new iam.PolicyStatement({
       actions: ['cloudwatch:PutDashboard'],
-      resources: [
-        Arn.format({
-          partition: this.partition,
-          service: 'cloudwatch',
-          region: '',
-          account: this.account,
-          resource: 'dashboard',
-          resourceName: 'superwerker',
-          arnFormat: ArnFormat.SLASH_RESOURCE_NAME, // which is the default
-        }),
-      ],
+      resources: [Arn.format({
+        partition: this.partition,
+        service: 'cloudwatch',
+        region: '',
+        account: this.account,
+        resource: 'dashboard',
+        resourceName: 'superwerker',
+        arnFormat: ArnFormat.SLASH_RESOURCE_NAME, // which is the default
+      })],
       effect: iam.Effect.ALLOW,
     });
 
     const cloudwatchDescribeAlarms = new iam.PolicyStatement({
       actions: ['cloudwatch:DescribeAlarms'],
-      resources: [
-        Arn.format({
-          partition: this.partition,
-          service: 'cloudwatch',
-          region: this.region,
-          account: this.account,
-          resource: 'alarm',
-          resourceName: 'superwerker-RootMailReady',
-          arnFormat: ArnFormat.COLON_RESOURCE_NAME,
-        }),
-      ],
+      resources: [Arn.format({
+        partition: this.partition,
+        service: 'cloudwatch',
+        region: this.region,
+        account: this.account,
+        resource: 'alarm',
+        resourceName: 'superwerker-RootMailReady',
+        arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+      })],
       effect: iam.Effect.ALLOW,
     });
 
     dashboardGeneratorFunction.role!.attachInlinePolicy(
       new iam.Policy(this, 'dashboard-generator-function', {
-        statements: [ssmParametersDescribe, ssmParameterRead, cloudwatchPutDashboard, cloudwatchDescribeAlarms],
+        statements: [
+          ssmParametersDescribe,
+          ssmParameterRead,
+          cloudwatchPutDashboard,
+          cloudwatchDescribeAlarms,
+        ],
       }),
     );
 

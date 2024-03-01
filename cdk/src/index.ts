@@ -8,7 +8,7 @@ const superwerkerVersion = process.env.SUPERWERKER_VERSION || '0.0.0-DEVELOPMENT
 new SuperwerkerStack(app, 'SuperwerkerStack', {
   version: superwerkerVersion,
   synthesizer: new CliCredentialsStackSynthesizer({
-    fileAssetsBucketName: 'superwerker-resources-${AWS::Region}',
+    fileAssetsBucketName: 'superwerker-assets-${AWS::Region}',
     bucketPrefix: `${superwerkerVersion}/`,
   }),
 });

@@ -17,119 +17,100 @@ export class GuardDutyStack extends NestedStack {
             type: 'String',
           },
         },
-        mainSteps: [
-          {
-            name: 'GetDetectorId',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'ListDetectors',
-            },
-            outputs: [
-              {
-                Name: 'DetectorId',
-                Selector: '$.DetectorIds[0]',
-              },
-            ],
+        mainSteps: [{
+          name: 'GetDetectorId',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'ListDetectors',
           },
-          {
-            name: 'ManagementAWSAccount',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'organizations',
-              Api: 'DescribeAccount',
+          outputs: [{
+            Name: 'DetectorId',
+            Selector: '$.DetectorIds[0]',
+          }],
+        }, {
+          name: 'ManagementAWSAccount',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'organizations',
+            Api: 'DescribeAccount',
+            AccountId: '{{ ManagementAWSAccountId }}',
+          },
+          outputs: [{
+            Name: 'EmailAddress',
+            Selector: '$.Account.Email',
+          }],
+        }, {
+          name: 'LogArchiveAWSAccount',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'organizations',
+            Api: 'DescribeAccount',
+            AccountId: '{{ LogArchiveAWSAccountId }}',
+          },
+          outputs: [{
+            Name: 'EmailAddress',
+            Selector: '$.Account.Email',
+          }],
+        }, {
+          name: 'CreateMembers',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'CreateMembers',
+            DetectorId: '{{ GetDetectorId.DetectorId }}',
+            AccountDetails: [{
               AccountId: '{{ ManagementAWSAccountId }}',
-            },
-            outputs: [
-              {
-                Name: 'EmailAddress',
-                Selector: '$.Account.Email',
-              },
-            ],
-          },
-          {
-            name: 'LogArchiveAWSAccount',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'organizations',
-              Api: 'DescribeAccount',
+              Email: '{{ ManagementAWSAccount.EmailAddress }}',
+            }, {
               AccountId: '{{ LogArchiveAWSAccountId }}',
-            },
-            outputs: [
-              {
-                Name: 'EmailAddress',
-                Selector: '$.Account.Email',
-              },
-            ],
+              Email: '{{ LogArchiveAWSAccount.EmailAddress }}',
+            }],
           },
-          {
-            name: 'CreateMembers',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'CreateMembers',
-              DetectorId: '{{ GetDetectorId.DetectorId }}',
-              AccountDetails: [
-                {
-                  AccountId: '{{ ManagementAWSAccountId }}',
-                  Email: '{{ ManagementAWSAccount.EmailAddress }}',
-                },
-                {
-                  AccountId: '{{ LogArchiveAWSAccountId }}',
-                  Email: '{{ LogArchiveAWSAccount.EmailAddress }}',
-                },
-              ],
-            },
+        }, {
+          name: 'EnableGuardDutyExistingAccounts',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'UpdateOrganizationConfiguration',
+            DetectorId: '{{ GetDetectorId.DetectorId }}',
+            AutoEnable: true,
           },
-          {
-            name: 'EnableGuardDutyExistingAccounts',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'UpdateOrganizationConfiguration',
-              DetectorId: '{{ GetDetectorId.DetectorId }}',
-              AutoEnable: true,
-            },
-          },
-        ],
+        }],
       },
     });
+
 
     const enableGuardDutyS3DataProtectionForOrganization = new ssm.CfnDocument(this, 'EnableGuardDutyS3DataProtectionForOrganization', {
       documentType: 'Automation',
       content: {
         schemaVersion: '0.3',
-        mainSteps: [
-          {
-            name: 'GetDetectorId',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'ListDetectors',
-            },
-            outputs: [
-              {
-                Name: 'DetectorId',
-                Selector: '$.DetectorIds[0]',
-              },
-            ],
+        mainSteps: [{
+          name: 'GetDetectorId',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'ListDetectors',
           },
-          {
-            name: 'EnableGuardDutyS3DataProtectionForOrganization',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'UpdateOrganizationConfiguration',
-              AutoEnable: true,
-              DetectorId: '{{ GetDetectorId.DetectorId }}',
-              DataSources: {
-                S3Logs: {
-                  AutoEnable: true,
-                },
+          outputs: [{
+            Name: 'DetectorId',
+            Selector: '$.DetectorIds[0]',
+          }],
+        }, {
+          name: 'EnableGuardDutyS3DataProtectionForOrganization',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'UpdateOrganizationConfiguration',
+            AutoEnable: true,
+            DetectorId: '{{ GetDetectorId.DetectorId }}',
+            DataSources: {
+              S3Logs: {
+                AutoEnable: true,
               },
             },
           },
-        ],
+        }],
       },
     });
 
@@ -159,22 +140,16 @@ export class GuardDutyStack extends NestedStack {
             new iam.PolicyStatement({
               actions: ['ssm:StartAutomationExecution'],
               resources: [
-                Arn.format(
-                  {
-                    service: 'ssm',
-                    resource: 'automation-definition',
-                    resourceName: `${enableGuardDutyExistingAccounts.ref}:*`,
-                  },
-                  Stack.of(this),
-                ),
-                Arn.format(
-                  {
-                    service: 'ssm',
-                    resource: 'automation-definition',
-                    resourceName: `${enableGuardDutyS3DataProtectionForOrganization.ref}:*`,
-                  },
-                  Stack.of(this),
-                ),
+                Arn.format({
+                  service: 'ssm',
+                  resource: 'automation-definition',
+                  resourceName: `${enableGuardDutyExistingAccounts.ref}:*`,
+                }, Stack.of(this)),
+                Arn.format({
+                  service: 'ssm',
+                  resource: 'automation-definition',
+                  resourceName: `${enableGuardDutyS3DataProtectionForOrganization.ref}:*`,
+                }, Stack.of(this)),
               ],
             }),
           ],
@@ -182,7 +157,9 @@ export class GuardDutyStack extends NestedStack {
         AllowCallCrossAccountAutomation: new iam.PolicyDocument({
           statements: [
             new iam.PolicyStatement({
-              actions: ['sts:AssumeRole'],
+              actions: [
+                'sts:AssumeRole',
+              ],
               resources: [
                 Arn.format({
                   partition: Stack.of(this).partition,
@@ -201,14 +178,11 @@ export class GuardDutyStack extends NestedStack {
             new iam.PolicyStatement({
               actions: ['ssm:GetParameters'],
               resources: [
-                Arn.format(
-                  {
-                    service: 'ssm',
-                    resource: 'parameter',
-                    resourceName: 'superwerker/*',
-                  },
-                  Stack.of(this),
-                ),
+                Arn.format({
+                  service: 'ssm',
+                  resource: 'parameter',
+                  resourceName: 'superwerker/*',
+                }, Stack.of(this)),
               ],
             }),
           ],
@@ -216,7 +190,9 @@ export class GuardDutyStack extends NestedStack {
         ServiceLinkedRole: new iam.PolicyDocument({
           statements: [
             new iam.PolicyStatement({
-              actions: ['iam:CreateServiceLinkedRole'],
+              actions: [
+                'iam:CreateServiceLinkedRole',
+              ],
               resources: [
                 Arn.format({
                   partition: Stack.of(this).partition,
@@ -235,6 +211,7 @@ export class GuardDutyStack extends NestedStack {
 
     (enableGuardDutyOrganizationsRole.node.defaultChild as iam.CfnRole).overrideLogicalId('EnableGuardDutyOrganizationsRole');
 
+
     const enableGuardDutyOrganizations = new ssm.CfnDocument(this, 'EnableGuardDutyOrganizations', {
       documentType: 'Automation',
       content: {
@@ -250,160 +227,153 @@ export class GuardDutyStack extends NestedStack {
             default: '{{ssm:/superwerker/account_id_logarchive}}',
           },
         },
-        mainSteps: [
-          {
-            name: 'CheckIfOrganizationAdminAccountIsAlReadyRegistered',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'ListOrganizationAdminAccounts',
-            },
-            outputs: [
-              {
-                Name: 'AdminAccountId',
-                Selector: '$.AdminAccounts[0].AdminAccountId',
-              },
-            ],
-            nextStep: 'EnableOrganizationAdminAccountChoice',
+        mainSteps: [{
+          name: 'CheckIfOrganizationAdminAccountIsAlReadyRegistered',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'ListOrganizationAdminAccounts',
           },
-          {
-            name: 'EnableOrganizationAdminAccountChoice',
-            action: 'aws:branch',
-            inputs: {
-              Choices: [
-                {
-                  NextStep: 'EnableGuardDutyInManagementAccount',
-                  Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}',
-                  StringEquals: '{{ AuditAccountId }}',
-                },
-              ],
-              Default: 'EnableOrganizationAdminAccount',
-            },
+          outputs: [{
+            Name: 'AdminAccountId',
+            Selector: '$.AdminAccounts[0].AdminAccountId',
+          }],
+          nextStep: 'EnableOrganizationAdminAccountChoice',
+        }, {
+          name: 'EnableOrganizationAdminAccountChoice',
+          action: 'aws:branch',
+          inputs: {
+            Choices: [{
+              NextStep: 'EnableGuardDutyInManagementAccount',
+              Variable: '{{ CheckIfOrganizationAdminAccountIsAlReadyRegistered.AdminAccountId }}',
+              StringEquals: '{{ AuditAccountId }}',
+            }],
+            Default: 'EnableOrganizationAdminAccount',
           },
-          {
-            name: 'EnableOrganizationAdminAccount',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'EnableOrganizationAdminAccount',
-              AdminAccountId: '{{ AuditAccountId }}',
-            },
+        }, {
+          name: 'EnableOrganizationAdminAccount',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'EnableOrganizationAdminAccount',
+            AdminAccountId: '{{ AuditAccountId }}',
           },
-          {
-            name: 'WaitForEnableOrganizationAdminAccount',
-            timeoutSeconds: '60',
-            action: 'aws:waitForAwsResourceProperty',
-            inputs: {
-              Service: 'organizations',
-              Api: 'ListDelegatedAdministrators',
-              ServicePrincipal: 'guardduty.amazonaws.com',
-              PropertySelector: '$.DelegatedAdministrators[0].Status',
-              DesiredValues: ['ACTIVE'],
-            },
-          },
-          {
-            name: 'EnableGuardDutyInManagementAccount',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'guardduty',
-              Api: 'CreateDetector',
-              Enable: true,
-            },
-          },
-          {
-            name: 'SleepEnableGuardDutyExistingAccounts', // GuardDuty Org Admin needs to settle first, give it some time',
-            action: 'aws:sleep',
-            inputs: {
-              Duration: 'PT120S',
-            },
-          },
-          {
-            name: 'EnableGuardDutyS3DataProtectionForOrganization',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'ssm',
-              Api: 'StartAutomationExecution',
-              DocumentName: enableGuardDutyS3DataProtectionForOrganization.ref,
-              TargetLocations: [
-                {
-                  ExecutionRoleName: 'AWSControlTowerExecution',
-                  Accounts: ['{{ AuditAccountId }}'],
-                  Regions: [Stack.of(this).region],
-                },
-              ],
-            },
-            outputs: [
-              {
-                Name: 'AutomationExecutionId',
-                Selector: '$.AutomationExecutionId',
-              },
+        }, {
+          name: 'WaitForEnableOrganizationAdminAccount',
+          timeoutSeconds: '60',
+          action: 'aws:waitForAwsResourceProperty',
+          inputs: {
+            Service: 'organizations',
+            Api: 'ListDelegatedAdministrators',
+            ServicePrincipal: 'guardduty.amazonaws.com',
+            PropertySelector: '$.DelegatedAdministrators[0].Status',
+            DesiredValues: [
+              'ACTIVE',
             ],
           },
-          {
-            name: 'WaitForEnableGuardDutyS3DataProtectionForOrganization',
-            timeoutSeconds: '60',
-            action: 'aws:waitForAwsResourceProperty',
-            inputs: {
-              Service: 'ssm',
-              Api: 'DescribeAutomationExecutions',
-              Filters: [
-                {
-                  Key: 'ExecutionId',
-                  Values: ['{{ EnableGuardDutyS3DataProtectionForOrganization.AutomationExecutionId }}'],
-                },
-              ],
-              PropertySelector: '$.AutomationExecutionMetadataList[0].AutomationExecutionStatus',
-              DesiredValues: ['Success'],
-            },
+        }, {
+          name: 'EnableGuardDutyInManagementAccount',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'guardduty',
+            Api: 'CreateDetector',
+            Enable: true,
           },
-          {
-            name: 'EnableGuardDutyExistingAccounts',
-            action: 'aws:executeAwsApi',
-            inputs: {
-              Service: 'ssm',
-              Api: 'StartAutomationExecution',
-              DocumentName: enableGuardDutyExistingAccounts.ref,
-              // DocumentName: !Ref EnableGuardDutyExistingAccounts
-              TargetLocations: [
-                {
-                  ExecutionRoleName: 'AWSControlTowerExecution',
-                  Accounts: ['{{ AuditAccountId }}'],
-                  Regions: [Stack.of(this).region],
-                },
+        }, {
+          name: 'SleepEnableGuardDutyExistingAccounts', // GuardDuty Org Admin needs to settle first, give it some time',
+          action: 'aws:sleep',
+          inputs: {
+            Duration: 'PT120S',
+          },
+        }, {
+          name: 'EnableGuardDutyS3DataProtectionForOrganization',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'ssm',
+            Api: 'StartAutomationExecution',
+            DocumentName: enableGuardDutyS3DataProtectionForOrganization.ref,
+            TargetLocations: [{
+              ExecutionRoleName: 'AWSControlTowerExecution',
+              Accounts: [
+                '{{ AuditAccountId }}',
               ],
-              Parameters: {
-                LogArchiveAWSAccountId: ['{{ LogArchiveAccountId }}'],
-                ManagementAWSAccountId: [
-                  Stack.of(this).account,
-                  // !Sub "${AWS::AccountId}"
-                ],
-              },
-            },
-            outputs: [
-              {
-                Name: 'AutomationExecutionId',
-                Selector: '$.AutomationExecutionId',
-              },
+              Regions: [
+                Stack.of(this).region,
+              ],
+            }],
+          },
+          outputs: [{
+            Name: 'AutomationExecutionId',
+            Selector: '$.AutomationExecutionId',
+          }],
+        }, {
+          name: 'WaitForEnableGuardDutyS3DataProtectionForOrganization',
+          timeoutSeconds: '60',
+          action: 'aws:waitForAwsResourceProperty',
+          inputs: {
+            Service: 'ssm',
+            Api: 'DescribeAutomationExecutions',
+            Filters: [{
+              Key: 'ExecutionId',
+              Values: [
+                '{{ EnableGuardDutyS3DataProtectionForOrganization.AutomationExecutionId }}',
+              ],
+            }],
+            PropertySelector: '$.AutomationExecutionMetadataList[0].AutomationExecutionStatus',
+            DesiredValues: [
+              'Success',
             ],
           },
-          {
-            name: 'WaitForEnableGuardDutyExistingAccounts',
-            timeoutSeconds: '60',
-            action: 'aws:waitForAwsResourceProperty',
-            inputs: {
-              Service: 'ssm',
-              Api: 'DescribeAutomationExecutions',
-              Filters: [
-                {
-                  Key: 'ExecutionId',
-                  Values: ['{{ EnableGuardDutyExistingAccounts.AutomationExecutionId }}'],
-                },
+        }, {
+          name: 'EnableGuardDutyExistingAccounts',
+          action: 'aws:executeAwsApi',
+          inputs: {
+            Service: 'ssm',
+            Api: 'StartAutomationExecution',
+            DocumentName: enableGuardDutyExistingAccounts.ref,
+            // DocumentName: !Ref EnableGuardDutyExistingAccounts
+            TargetLocations: [{
+              ExecutionRoleName: 'AWSControlTowerExecution',
+              Accounts: [
+                '{{ AuditAccountId }}',
               ],
-              PropertySelector: '$.AutomationExecutionMetadataList[0].AutomationExecutionStatus',
-              DesiredValues: ['Success'],
+              Regions: [
+                Stack.of(this).region,
+              ],
+            }],
+            Parameters: {
+              LogArchiveAWSAccountId: [
+                '{{ LogArchiveAccountId }}',
+              ],
+              ManagementAWSAccountId: [
+                Stack.of(this).account,
+              // !Sub "${AWS::AccountId}"
+              ],
             },
           },
-        ],
+          outputs: [{
+            Name: 'AutomationExecutionId',
+            Selector: '$.AutomationExecutionId',
+          }],
+        }, {
+          name: 'WaitForEnableGuardDutyExistingAccounts',
+          timeoutSeconds: '60',
+          action: 'aws:waitForAwsResourceProperty',
+          inputs: {
+            Service: 'ssm',
+            Api: 'DescribeAutomationExecutions',
+            Filters: [{
+              Key: 'ExecutionId',
+              Values: [
+                '{{ EnableGuardDutyExistingAccounts.AutomationExecutionId }}',
+              ],
+            }],
+            PropertySelector: '$.AutomationExecutionMetadataList[0].AutomationExecutionStatus',
+            DesiredValues: [
+              'Success',
+            ],
+          },
+        }],
       },
     });
 
@@ -413,46 +383,47 @@ export class GuardDutyStack extends NestedStack {
         AllowStartAutomationExecution: new iam.PolicyDocument({
           statements: [
             new iam.PolicyStatement({
-              actions: ['ssm:StartAutomationExecution'],
+              actions: [
+                'ssm:StartAutomationExecution',
+              ],
               resources: [
-                Arn.format(
-                  {
-                    service: 'ssm',
-                    resource: 'automation-definition',
-                    resourceName: `${enableGuardDutyOrganizations.ref}:*`,
-                  },
-                  Stack.of(this),
-                ),
+                Arn.format({
+                  service: 'ssm',
+                  resource: 'automation-definition',
+                  resourceName: `${enableGuardDutyOrganizations.ref}:*`,
+                }, Stack.of(this)),
               ],
             }),
+
           ],
         }),
       },
     });
     (ssmAutomationExecutionRoleforCWEvents.node.defaultChild as iam.CfnRole).overrideLogicalId('SSMAutomationExecutionRoleforCWEvents');
 
+
     const landingZoneSetupFinishedTrigger = new events.Rule(this, 'LandingZoneSetupFinishedTrigger', {
       eventPattern: {
-        source: ['superwerker'],
+        source: [
+          'superwerker',
+        ],
         detail: {
-          eventName: ['LandingZoneSetupOrUpdateFinished'],
+          eventName: [
+            'LandingZoneSetupOrUpdateFinished',
+          ],
         },
       },
     });
-    (landingZoneSetupFinishedTrigger.node.defaultChild as events.CfnRule).targets = [
-      {
-        arn: Arn.format(
-          {
-            service: 'ssm',
-            resource: 'automation-definition',
-            resourceName: `${enableGuardDutyOrganizations.ref}`,
-          },
-          Stack.of(this),
-        ),
-        id: 'EnableGuardDutyOrganizations',
-        roleArn: ssmAutomationExecutionRoleforCWEvents.roleArn,
-      },
-    ];
+    (landingZoneSetupFinishedTrigger.node.defaultChild as events.CfnRule).targets = [{
+      arn: Arn.format({
+        service: 'ssm',
+        resource: 'automation-definition',
+        resourceName: `${enableGuardDutyOrganizations.ref}`,
+      }, Stack.of(this)),
+      id: 'EnableGuardDutyOrganizations',
+      roleArn: ssmAutomationExecutionRoleforCWEvents.roleArn,
+    }];
     (landingZoneSetupFinishedTrigger.node.defaultChild as events.CfnRule).overrideLogicalId('LandingZoneSetupFinishedTrigger');
+
   }
 }

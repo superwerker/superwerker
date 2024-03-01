@@ -2,12 +2,7 @@ Resources:
   BootStrapBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'superwerker-resources-${AWS::Region}'
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        RestrictPublicBuckets: false
+      BucketName: !Sub 'superwerker-assets-${AWS::Region}'
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
   BootStrapBucketPolicy:
@@ -20,12 +15,12 @@ Resources:
           - Action: s3:GetObject
             Effect: Allow
             Principal:
-              AWS: '*'
+              AWS: "*"
             Resource:
               Fn::Join:
-                - ''
+                - ""
                 - - Fn::GetAtt:
                       - BootStrapBucket
                       - Arn
                   - /*
-        Version: '2012-10-17'
+        Version: "2012-10-17"

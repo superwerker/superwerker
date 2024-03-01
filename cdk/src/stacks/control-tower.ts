@@ -1,11 +1,14 @@
-import { CfnParameter, NestedStack, NestedStackProps, RemovalPolicy, aws_iam as iam } from 'aws-cdk-lib';
+import Fs from 'fs';
+import { CfnParameter, NestedStack, NestedStackProps, aws_iam as iam, RemovalPolicy } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
-import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
+import { CfnAccount, CfnOrganization } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
-import { PrepareStack } from './prepare';
+import * as Handlebars from 'handlebars';
+import * as yaml from 'yaml';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
+
 
 export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -18,13 +21,18 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
+    const organization = new CfnOrganization(this, 'Organization', {
+      featureSet: 'ALL',
+    });
+    organization.applyRemovalPolicy(RemovalPolicy.RETAIN);
+
     const logArchiveAccount = new CfnAccount(this, 'LogArchiveAccount', {
       accountName: 'Log Archive',
       email: logArchiveAWSAccountEmail.valueAsString,
     });
+    logArchiveAccount.node.addDependency(organization);
     logArchiveAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
-    // due to legacy reasons and dependencies these parameters are named diffrently and managed seperately
     const logArchiveParam = new ssm.StringParameter(this, 'LogArchiveAccountParameter', {
       description: '(superwerker) account id of logarchive account',
       parameterName: '/superwerker/account_id_logarchive',
@@ -37,6 +45,7 @@ export class ControlTowerStack extends NestedStack {
       accountName: 'Audit',
       email: auditAWSAccountEmail.valueAsString,
     });
+    auditAccount.node.addDependency(organization);
     auditAccount.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     const auditAccountParam = new ssm.StringParameter(this, 'AuditAccountParameter', {
@@ -47,13 +56,16 @@ export class ControlTowerStack extends NestedStack {
     (auditAccountParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('AuditAccountParameter');
     auditAccountParam.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
+
     // Roles and Policies required by Control Tower
     // https://docs.aws.amazon.com/controltower/latest/userguide/lz-apis-cfn-setup.html
     const controlTowerAdminRole = new iam.Role(this, 'AWSControlTowerAdmin', {
       roleName: 'AWSControlTowerAdmin',
       assumedBy: new iam.ServicePrincipal('controltower.amazonaws.com'),
       path: '/service-role/',
-      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerServiceRolePolicy')],
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerServiceRolePolicy'),
+      ],
       inlinePolicies: {
         AWSControlTowerAdminPolicy: new iam.PolicyDocument({
           statements: [
@@ -88,15 +100,19 @@ export class ControlTowerStack extends NestedStack {
     (controlTowerCloudTrailRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerCloudTrailRole');
     controlTowerCloudTrailRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-    const controlTowerConfigAggregatorRole = new iam.Role(this, 'AWSControlTowerConfigAggregatorRoleForOrganizations', {
-      roleName: 'AWSControlTowerConfigAggregatorRoleForOrganizations',
-      assumedBy: new iam.ServicePrincipal('config.amazonaws.com'),
-      path: '/service-role/',
-      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSConfigRoleForOrganizations')],
-    });
-    (controlTowerConfigAggregatorRole.node.defaultChild as CfnRole).overrideLogicalId(
+    const controlTowerConfigAggregatorRole = new iam.Role(
+      this,
       'AWSControlTowerConfigAggregatorRoleForOrganizations',
+      {
+        roleName: 'AWSControlTowerConfigAggregatorRoleForOrganizations',
+        assumedBy: new iam.ServicePrincipal('config.amazonaws.com'),
+        path: '/service-role/',
+        managedPolicies: [
+          iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSConfigRoleForOrganizations'),
+        ],
+      },
     );
+    (controlTowerConfigAggregatorRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerConfigAggregatorRoleForOrganizations');
     controlTowerConfigAggregatorRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
     const controlTowerStackSetRole = new iam.Role(this, 'AWSControlTowerStackSetRole', {
@@ -118,82 +134,23 @@ export class ControlTowerStack extends NestedStack {
     (controlTowerStackSetRole.node.defaultChild as CfnRole).overrideLogicalId('AWSControlTowerStackSetRole');
     controlTowerStackSetRole.applyRemovalPolicy(RemovalPolicy.DESTROY);
 
-    const ctVersion = ssm.StringParameter.fromStringParameterAttributes(this, 'ControlTowerVersionParameterLookup', {
-      parameterName: PrepareStack.controlTowerVersionParameter,
-      forceDynamicReference: true,
-    }).stringValue;
+    const source = Fs.readFileSync('./src/stacks/landing-zone-manifest.yaml').toString();
+    const template = Handlebars.compile(source);
+    const contents = template({
+      REGION: `${this.region}`,
+      LOG_ARCHIVE_ACCOUNT_ID: `${logArchiveAccount.attrAccountId}`,
+      AUDIT_ACCOUNT_ID: `${auditAccount.attrAccountId}`,
+    });
 
-    const ctGovernedRegions = ssm.StringListParameter.fromListParameterAttributes(this, 'GovernedRegionsParameterLookup', {
-      parameterName: PrepareStack.controlTowerRegionsParameter,
-    }).stringListValue;
-
-    // const ctKmsKeyArn = ssm.StringParameter.fromStringParameterAttributes(this, 'KmsKeyParameterLookup', {
-    //   parameterName: PrepareStack.controlTowerKmsKeyParameter,
-    //   forceDynamicReference: true,
-    // }).stringValue;
-
-    const ctBucketRetetionLogging = ssm.StringParameter.fromStringParameterAttributes(this, 'BucketRetetionLoggingParameterLookup', {
-      parameterName: PrepareStack.controlTowerBucketRetetionLoggingParameter,
-      forceDynamicReference: true,
-    }).stringValue;
-
-    const ctBucketRetetionAccessLogging = ssm.StringParameter.fromStringParameterAttributes(
-      this,
-      'BucketRetetionAccessLoggingParameterLookup',
-      {
-        parameterName: PrepareStack.controlTowerBucketRetetionAccessLoggingParameter,
-        forceDynamicReference: true,
-      },
-    ).stringValue;
-
-    const SECURITY_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
-      parameterName: PrepareStack.controlTowerSecurityOuSsmParameter,
-      forceDynamicReference: true,
-    }).stringValue;
-
-    const SANDBOX_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
-      parameterName: PrepareStack.controlTowerSandboxOuSsmParameter,
-      forceDynamicReference: true,
-    }).stringValue;
+    const manifest = yaml.parse(contents);
 
     const landingZone = new CfnLandingZone(this, 'LandingZone', {
-      manifest: {
-        governedRegions: ctGovernedRegions,
-        organizationStructure: {
-          security: {
-            name: SECURITY_OU_NAME,
-          },
-          sandbox: {
-            name: SANDBOX_OU_NAME,
-          },
-        },
-        securityRoles: {
-          accountId: auditAccount.attrAccountId,
-        },
-        accessManagement: {
-          enabled: true,
-        },
-        centralizedLogging: {
-          accountId: logArchiveAccount.attrAccountId,
-          configurations: {
-            loggingBucket: {
-              retentionDays: ctBucketRetetionLogging,
-            },
-            accessLoggingBucket: {
-              retentionDays: ctBucketRetetionAccessLogging,
-            },
-            //kmsKeyArn: ctKmsKeyArn,
-          },
-          enabled: true,
-        },
-      },
-      version: ctVersion,
-      tags: [
-        {
-          key: 'Name',
-          value: 'superwerker',
-        },
-      ],
+      manifest: manifest,
+      version: '3.3',
+      tags: [{
+        key: 'name',
+        value: 'superwerker',
+      }],
     });
     landingZone.applyRemovalPolicy(RemovalPolicy.DESTROY);
     landingZone.node.addDependency(
@@ -203,9 +160,10 @@ export class ControlTowerStack extends NestedStack {
       controlTowerConfigAggregatorRole,
       logArchiveAccount,
       auditAccount,
+      organization,
     );
 
-    //create function to trigger enabling of features after landing zone has been installed
+    // create function to trigger enabling of features after landing zone has been installed
     const superwerkerBootstrap = new SuperwerkerBootstrap(this, 'SuperwerkerBootstrap');
     superwerkerBootstrap.node.addDependency(landingZone);
   }

@@ -5,15 +5,15 @@ import endent from 'endent';
 const ssmClient = new SSMClient();
 const cloudwatchClient = new CloudWatchClient({});
 
+
 export async function handler(_event: any, _context: any) {
+
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
 
-  const dnsNames = await ssmClient.send(
-    new GetParameterCommand({
-      Name: '/superwerker/domain_name_servers',
-    }),
-  );
+  const dnsNames = await ssmClient.send(new GetParameterCommand({
+    Name: '/superwerker/domain_name_servers',
+  }));
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
   const isRootMailConfiguredBool = await isRootMailConfigured();
@@ -22,20 +22,18 @@ export async function handler(_event: any, _context: any) {
   const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
   const finalDashboardMessageEscaped = escape_string(finalDashboardMessage);
 
-  await cloudwatchClient.send(
-    new PutDashboardCommand({
-      DashboardName: 'superwerker',
-      DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
-    }),
-  );
+  await cloudwatchClient.send(new PutDashboardCommand({
+    DashboardName: 'superwerker',
+    DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
+  }));
 }
 
 async function isRootMailConfigured() {
-  const rootMailReadyAlarm = await cloudwatchClient.send(
-    new DescribeAlarmsCommand({
-      AlarmNames: ['superwerker-RootMailReady'],
-    }),
-  );
+  const rootMailReadyAlarm = await cloudwatchClient.send(new DescribeAlarmsCommand({
+    AlarmNames: [
+      'superwerker-RootMailReady',
+    ],
+  }));
   return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
 }
 
@@ -53,10 +51,10 @@ export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDo
   return dnsDelegationText;
 }
 
-function escape_string(input: string) {
+function escape_string (input: string) {
   return input
     .replace(/[\\]/g, '\\\\')
-    .replace(/[\"]/g, '\\"')
+    .replace(/[\"]/g, '\\\"')
     .replace(/[\/]/g, '\\/')
     .replace(/[\b]/g, '\\b')
     .replace(/[\f]/g, '\\f')
@@ -93,7 +91,7 @@ function generateDnsConfigurationRequiredMessage(dnsDomain: string, ns: string[]
 }
 
 export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDomain: string, region: string) {
-  const currentTime = new Date();
+  const currentTime=new Date();
   return endent`
   # [superwerker](https://github.com/superwerker/superwerker)
   &nbsp;

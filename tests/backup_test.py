@@ -1,213 +1,214 @@
+import os
+import unittest
 import boto3
 import uuid
 import botocore
 from retrying import retry
 import warnings
-import pytest
 
 sts = boto3.client('sts')
-ssm = boto3.client('ssm')
 
-@pytest.fixture(scope="module")
-def account_id():
-    return ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
 
-@pytest.fixture(scope="module")
-def control_tower_exection_role_session(account_id):
-    account_creds = sts.assume_role(
-        RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
-        RoleSessionName='superwerkertest'
-    )['Credentials']
-    return boto3.session.Session(
-        aws_access_key_id=account_creds['AccessKeyId'],
-        aws_secret_access_key=account_creds['SecretAccessKey'],
-        aws_session_token=account_creds['SessionToken']
-    )
+class BackupTest(unittest.TestCase):
 
-@pytest.fixture(scope="module")
-def ddb_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('dynamodb')
+    maxDiff = None
 
-@pytest.fixture(scope="module")
-def ec2_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('ec2')
+    # https://github.com/boto/boto3/issues/454
+    def setUp(self):
+        warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
-@pytest.fixture(scope="module")
-def rds_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('rds')
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ec2 = enrolled_account.client('ec2')
+        try:
+            ec2.create_default_vpc()
+        except:
+            # presumably already exists
+            pass
 
-@pytest.fixture(scope="module")
-def iam_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('iam')
+    def get_enrolled_account_id(cls):
+        account_factory_account_id = os.environ['ACCOUNT_FACTORY_ACCOUNT_ID']
+        return account_factory_account_id
 
-@pytest.fixture(scope="module")
-def config_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('config')
-
-@pytest.fixture
-def create_random_table(ddb_client):
-    table_name = uuid.uuid4().hex
-    ddb_client.create_table(
-        TableName=table_name,
-        KeySchema=[
-            {
-                'AttributeName': 'some_key',
-                'KeyType': 'HASH'
-            },
-        ],
-        AttributeDefinitions=[
-            {
-                'AttributeName': 'some_key',
-                'AttributeType': 'S'
-            },
-
-        ],
-        BillingMode='PAY_PER_REQUEST',
-    )
-    table = wait_for_table_available(ddb_client, table_name)
-    return table
-
-@pytest.fixture
-def random_ebs_volume_id(ec2_client):
-    result = ec2_client.create_volume(
-        AvailabilityZone=ec2_client.describe_availability_zones()['AvailabilityZones'][0]['ZoneName'],
-        Size=1
-    )
-    return result['VolumeId']
-
-@pytest.fixture
-def random_rds_instance_identifier(rds_client):
-    db_instance_identifier = 'db-{}'.format(uuid.uuid4().hex)
-
-    rds_client.create_db_instance(
-        DBInstanceIdentifier=db_instance_identifier,
-        DBInstanceClass='db.t2.micro',
-        Engine='mysql',
-        MasterUsername='arnonym',
-        MasterUserPassword=db_instance_identifier,
-        AllocatedStorage=20,
-    )
-    return db_instance_identifier
-
-@pytest.fixture
-def ddb_table(ddb_client, create_random_table):
-    yield create_random_table
-    ddb_client.delete_table(TableName=create_random_table['TableName'])
-
-@pytest.fixture
-def ebs_volume_id(ec2_client, random_ebs_volume_id):
-    yield random_ebs_volume_id
-    ec2_client.delete_volume(VolumeId=random_ebs_volume_id)
-
-@pytest.fixture
-def rds_instance(rds_client, random_rds_instance_identifier):
-    yield random_rds_instance_identifier
-    rds_client.delete_db_instance(DBInstanceIdentifier=random_rds_instance_identifier, SkipFinalSnapshot=True)
-
-# https://github.com/boto/boto3/issues/454
-@pytest.fixture(autouse=True)
-def default_vpc(ec2_client):
-    warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
-
-    try:
-        ec2_client.create_default_vpc()
-    except:
-        # presumably already exists
-        pass
-
-def test_cannot_change_dynamodb_backup_tags(ddb_client, ddb_table):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        ddb_client.tag_resource(
-            ResourceArn=ddb_table['TableArn'],
-            Tags=[{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}]
-        )
-    assert 'An error occurred (ValidationException) when calling the TagResource operation: One or more parameter values were invalid: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
-
-def test_can_change_dynamodb_backup_tags_to_none(ddb_client, ddb_table):
-    ddb_client.tag_resource(
-        ResourceArn=ddb_table['TableArn'],
-        Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
-    )
-
-@pytest.mark.skip(reason="this will take a long time to run")
-def test_untagged_dynamodb_gets_tagged_for_aws_backup_by_default(ddb_client, ddb_table):
-    actual_tags = wait_for_table_tags_to_appear(ddb_client, ddb_table)
-    expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
-    assert expected_tags == actual_tags
-
-@pytest.mark.skip(reason="this will take a long time to run")
-def test_untagged_ebs_gets_tagged_for_aws_backup_by_default(ec2_client, ebs_volume_id):
-    actual_tags = wait_for_ebs_tags_to_appear(ec2_client, ebs_volume_id)
-    expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
-    assert expected_tags == actual_tags
-
-def test_cannot_change_ebs_backup_tags(ec2_client, ebs_volume_id):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
-    assert 'An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
-
-def test_can_change_ebs_backup_tags_to_none(ec2_client, ebs_volume_id):
-    wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
-
-@pytest.mark.skip(reason="this will take a long time to run")
-def test_untagged_rds_instance_gets_tagged_for_aws_backup_by_default(rds_client, rds_instance):
-    actual_tags = wait_for_rds_instance_tags_to_appear(rds_client, rds_instance)
-    expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
-    assert expected_tags == actual_tags
-
-def test_cannot_delete_backup_service_role(iam_client, account_id):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        iam_client.delete_role(RoleName='AWSBackupDefaultServiceRole')
-    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy' in str(exception.value)
-
-def test_cannot_delete_backup_remediation_role(iam_client, account_id):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        iam_client.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
-    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy' in str(exception.value)
-
-def test_check_conformance_pack_status(config_client):
-    conformance_packs = config_client.describe_conformance_pack_status()
-    assert len(conformance_packs['ConformancePackStatusDetails']) == 1
-    assert 'OrgConformsPack-superwerker-backup-enforce' in conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackName']
-    assert conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackState'] == 'CREATE_COMPLETE'
-
-@retry(stop_max_delay=1800000, wait_fixed=20000)
-def wait_for_table_tags_to_appear(ddb, table):
-    actual_tags = ddb.list_tags_of_resource(ResourceArn=table['TableArn'])['Tags']
-    if len(actual_tags) == 0:
-        raise
-
-    return actual_tags
-
-@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
-def wait_for_create_tags(ec2, volume_id, tags):
-        ec2.create_tags(
-            Resources=[volume_id],
-            Tags=tags
+    @classmethod
+    def control_tower_exection_role_session(cls, account_id):
+        account_creds = sts.assume_role(
+            RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
+            RoleSessionName='superwerkertest'
+        )['Credentials']
+        return boto3.session.Session(
+            aws_access_key_id=account_creds['AccessKeyId'],
+            aws_secret_access_key=account_creds['SecretAccessKey'],
+            aws_session_token=account_creds['SessionToken']
         )
 
-@retry(stop_max_delay=1800000, wait_fixed=20000)
-def wait_for_ebs_tags_to_appear(ec2, volume_id):
-    actual_tags = ec2.describe_volumes(VolumeIds=[volume_id])['Volumes'][0]['Tags']
+    def test_untagged_dynamodb_gets_tagged_for_aws_backup_by_default(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
 
-    if len(actual_tags) == 0:
+        ddb = enrolled_account.client('dynamodb')
+
+        table = self.create_random_table(ddb)
+
+        actual_tags = self.wait_for_table_tags_to_appear(ddb, table)
+        expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
+
+        self.assertCountEqual(expected_tags, actual_tags)
+
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
+    def wait_for_table_tags_to_appear(self, ddb, table):
+        actual_tags = ddb.list_tags_of_resource(ResourceArn=table['TableArn'])['Tags']
+        if len(actual_tags) == 0:
             raise
 
-    return actual_tags
+        return actual_tags
 
-@retry(stop_max_delay=1800000, wait_fixed=20000)
-def wait_for_rds_instance_tags_to_appear(rds, rds_instance_id):
-    actual_tags = rds.describe_db_instances(DBInstanceIdentifier=rds_instance_id)['DBInstances'][0]['TagList']
+    def test_cannot_change_dynamodb_backup_tags(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ddb = enrolled_account.client('dynamodb')
+        table = self.create_random_table(ddb)
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            ddb.tag_resource(
+                ResourceArn=table['TableArn'],
+                Tags=[{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}]
+            )
+        self.assertEqual('An error occurred (ValidationException) when calling the TagResource operation: One or more parameter values were invalid: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.', str(exception.exception))
 
-    if len(actual_tags) == 0:
-        raise
+    def test_can_change_dynamodb_backup_tags_to_none(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ddb = enrolled_account.client('dynamodb')
+        table = self.create_random_table(ddb)
+        ddb.tag_resource(
+            ResourceArn=table['TableArn'],
+            Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
+        )
 
-    return actual_tags
+    def test_untagged_ebs_gets_tagged_for_aws_backup_by_default(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
 
-@retry(stop_max_delay=180000, wait_fixed=1000)
-def wait_for_table_available(ddb, table_name):
-    table = ddb.describe_table(TableName=table_name)['Table']
-    if table['TableStatus'] != 'ACTIVE':
-        raise 'table not ready yet'
-    return table
+        ec2 = enrolled_account.client('ec2')
 
+        volume_id = self.create_random_ebs(ec2)
+
+        actual_tags = self.wait_for_ebs_tags_to_appear(ec2, volume_id)
+        expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
+
+        self.assertCountEqual(expected_tags, actual_tags)
+
+    def test_cannot_change_ebs_backup_tags(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ec2 = enrolled_account.client('ec2')
+        volume_id = self.create_random_ebs(ec2)
+
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            self.wait_for_create_tags(ec2, volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
+        self.assertEqual('An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.', str(exception.exception))
+
+    def test_can_change_ebs_backup_tags_to_none(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        ec2 = enrolled_account.client('ec2')
+        volume_id = self.create_random_ebs(ec2)
+        self.wait_for_create_tags(ec2, volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
+
+    @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
+    def wait_for_create_tags(self, ec2, volume_id, tags):
+           ec2.create_tags(
+                Resources=[volume_id],
+                Tags=tags
+            )
+
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
+    def wait_for_ebs_tags_to_appear(self, ec2, volume_id):
+        actual_tags = ec2.describe_volumes(VolumeIds=[volume_id])['Volumes'][0]['Tags']
+
+        if len(actual_tags) == 0:
+                raise
+
+        return actual_tags
+
+    def test_untagged_rds_instance_gets_tagged_for_aws_backup_by_default(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+
+        rds = enrolled_account.client('rds')
+
+        rds_instance_id = self.create_random_rds_instance(rds)
+
+        actual_tags = self.wait_for_rds_instance_tags_to_appear(rds, rds_instance_id)
+        expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
+        self.assertCountEqual(expected_tags, actual_tags)
+
+    @retry(stop_max_delay=1800000, wait_fixed=20000)
+    def wait_for_rds_instance_tags_to_appear(self, rds, rds_instance_id):
+        actual_tags = rds.describe_db_instances(DBInstanceIdentifier=rds_instance_id)['DBInstances'][0]['TagList']
+
+        if len(actual_tags) == 0:
+            raise
+
+        return actual_tags
+
+    def test_cannot_delete_backup_service_role(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        iam = enrolled_account.client('iam')
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            iam.delete_role(RoleName='AWSBackupDefaultServiceRole')
+
+        self.assertEqual(f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{self.get_enrolled_account_id()}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy', str(exception.exception))
+
+    def test_cannot_delete_backup_remediation_role(self):
+        enrolled_account = self.control_tower_exection_role_session(self.get_enrolled_account_id())
+        iam = enrolled_account.client('iam')
+        with self.assertRaises(botocore.exceptions.ClientError) as exception:
+            iam.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
+
+        self.assertEqual(f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{self.get_enrolled_account_id()}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy', str(exception.exception))
+
+    @staticmethod
+    def create_random_table(ddb):
+        table_name = uuid.uuid4().hex
+        ddb.create_table(
+            TableName=table_name,
+            KeySchema=[
+                {
+                    'AttributeName': 'some_key',
+                    'KeyType': 'HASH'
+                },
+            ],
+            AttributeDefinitions=[
+                {
+                    'AttributeName': 'some_key',
+                    'AttributeType': 'S'
+                },
+
+            ],
+            BillingMode='PAY_PER_REQUEST',
+        )
+        table = BackupTest.wait_for_table_available(ddb, table_name)
+        return table
+
+    @staticmethod
+    @retry(stop_max_delay=180000, wait_fixed=1000)
+    def wait_for_table_available(ddb, table_name):
+        table = ddb.describe_table(TableName=table_name)['Table']
+        if table['TableStatus'] != 'ACTIVE':
+            raise 'table not ready yet'
+        return table
+
+    @staticmethod
+    def create_random_ebs(ec2):
+        result = ec2.create_volume(
+            AvailabilityZone=ec2.describe_availability_zones()['AvailabilityZones'][0]['ZoneName'],
+            Size=1
+        )
+        return result['VolumeId']
+
+    @staticmethod
+    def create_random_rds_instance(rds):
+        db_instance_identifier = 'db-{}'.format(uuid.uuid4().hex)
+
+        rds.create_db_instance(
+            DBInstanceIdentifier=db_instance_identifier,
+            DBInstanceClass='db.t2.micro',
+            Engine='mysql',
+            MasterUsername='arnonym',
+            MasterUserPassword=db_instance_identifier,
+            AllocatedStorage=20,
+        )
+        return db_instance_identifier
