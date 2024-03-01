@@ -3,17 +3,14 @@ import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge
 const eventBridgeClient = new EventBridgeClient();
 
 export async function bootstap() {
-
   // signal Control Tower Landing Zone Setup/Update has finished
   const putEventsCommand = new PutEventsCommand({
     Entries: [
       {
         DetailType: 'superwerker-event',
-        Detail: JSON.stringify(
-          {
-            eventName: 'LandingZoneSetupOrUpdateFinished',
-          },
-        ),
+        Detail: JSON.stringify({
+          eventName: 'LandingZoneSetupOrUpdateFinished',
+        }),
         Source: 'superwerker',
       },
     ],
