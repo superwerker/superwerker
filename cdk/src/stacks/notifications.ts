@@ -32,7 +32,7 @@ export class NotificationsStack extends NestedStack {
     const notificationOpsItemCreatedFn = new NodejsFunction(this, 'NotificationOpsItemCreated', {
       entry: path.join(__dirname, '..', 'functions', 'notification-opsitem-created.ts'),
       handler: 'handler',
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       timeout: Duration.seconds(30),
       environment: {
         TOPIC_ARN: notificationTopic.topicArn,
