@@ -94,7 +94,7 @@ jobs:
         run: |
           # https://github.com/aws/aws-cli/issues/2887
           yarn add --dev @cumulusds/aws-cloudformation-wait-ready
-          yarn aws-cloudformation-wait-ready --stack-name superwerker
+          yarn aws-cloudformation-wait-ready --region $AWS_DEFAULT_REGION --stack-name superwerker
         shell: bash
       
   test:
