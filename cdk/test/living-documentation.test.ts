@@ -12,7 +12,7 @@ export class UnderTestStack extends Stack {
     super(scope, id, props);
     this.inner = new LivingDocumentationStack(this, 'stack', {
       parameters: {
-        SuperwerkerDomain: `test.com`,
+        SuperwerkerDomain: 'test.com',
       },
     });
   }
@@ -50,7 +50,6 @@ describe('resources', () => {
     // Maybe like this: https://www.emgoto.com/jest-partial-match/
     // https://cdk-dev.slack.com/archives/C018XT6REKT/p1662017721195839
     // For now we just check that the logical id and the condition are the same
-
 
     // check that conditions match the original ones
     if (resourceProps.Condition) {
