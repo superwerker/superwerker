@@ -93,8 +93,8 @@ jobs:
       - name: Wait for Superwerker Deployment
         run: |
           # https://github.com/aws/aws-cli/issues/2887
-          aws cloudformation wait stack-create-complete --stack-name superwerker
-          aws cloudformation wait stack-update-complete --stack-name superwerker
+          yarn add --dev @cumulusds/aws-cloudformation-wait-ready
+          yarn aws-cloudformation-wait-ready --stack-name superwerker
         shell: bash
       
   test:
