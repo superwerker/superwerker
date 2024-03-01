@@ -61,7 +61,7 @@ class PrepareAccountProvider extends Construct {
     this.provider = new cr.Provider(this, 'prepare-account-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'prepare-account-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'prepare-account.ts'),
-        runtime: Runtime.NODEJS_20_X,
+        runtime: Runtime.NODEJS_16_X,
         timeout: Duration.seconds(60),
         initialPolicy: [
           new iam.PolicyStatement({
