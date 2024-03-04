@@ -95,6 +95,13 @@ jobs:
           # https://github.com/aws/aws-cli/issues/2887
           yarn add --dev @cumulusds/aws-cloudformation-wait-ready
           yarn aws-cloudformation-wait-ready --region $AWS_DEFAULT_REGION --stack-name superwerker
+          StackStatus=(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackStatus' --output text)
+          if [[ "$StackStatus" == "CREATE_COMPLETE" ]] || [[ "$StackStatus" == "UPDATE_COMPLETE" ]]; then
+            echo "Superwerker stack was successfully updated/created: StackStatus: $StackStatus"
+          else
+            echo "Superwerker stack failed to update/create: StackStatus: $StackStatus"
+            exit 1
+          fi
         shell: bash
       
   test:
