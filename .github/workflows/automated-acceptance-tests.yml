@@ -94,15 +94,15 @@ jobs:
         run: |
           # https://github.com/aws/aws-cli/issues/2887
           echo "Waiting for completion of stack..."
-          while ! [[ "$StackStatus" == *"_FAILED" ]] || [[ "$StackStatus" == *"_COMPLETE" ]]; do
+          while [[ ! "$STACK_STATUS" == *"_FAILED" ]] && [[ ! "$STACK_STATUS" == *"_COMPLETE" ]]; do
             sleep 1
-            StackStatus=$(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackStatus' --output text)
+            STACK_STATUS=$(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackStatus' --output text)
           done
 
-          if [[ "$StackStatus" == "CREATE_COMPLETE" ]] || [[ "$StackStatus" == "UPDATE_COMPLETE" ]]; then
-            echo "Superwerker stack was successfully updated/created: StackStatus: $StackStatus"
+          if [[ "$STACK_STATUS" == "CREATE_COMPLETE" ]] || [[ "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
+            echo "Superwerker stack was successfully updated/created: StackStatus: $STACK_STATUS"
           else
-            echo "Superwerker stack failed to update/create: StackStatus: $StackStatus"
+            echo "Superwerker stack failed to update/create: StackStatus: $STACK_STATUS"
             exit 1
           fi
         shell: bash
