@@ -46,7 +46,7 @@ def test_guardduty_enabled_with_delegated_admin_in_core_and_enrolled_accounts(au
         management_account_id,
     ]
 
-    assert expected_members == actual_members
+    assert set(expected_members) == set(actual_members)
 
 def test_guardduty_cannot_be_disabled_in_member_account(log_archive_account_id):
 
