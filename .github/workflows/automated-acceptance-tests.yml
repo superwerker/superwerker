@@ -93,9 +93,12 @@ jobs:
       - name: Wait for Superwerker Deployment
         run: |
           # https://github.com/aws/aws-cli/issues/2887
-          yarn add --dev @cumulusds/aws-cloudformation-wait-ready
-          yarn aws-cloudformation-wait-ready --region $AWS_DEFAULT_REGION --stack-name superwerker
-          StackStatus=(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackStatus' --output text)
+          echo "Waiting for completion of stack..."
+          while ! [[ "$StackStatus" == *"_FAILED" ]] || [[ "$StackStatus" == *"_COMPLETE" ]]; do
+            sleep 1
+            StackStatus=$(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackStatus' --output text)
+          done
+
           if [[ "$StackStatus" == "CREATE_COMPLETE" ]] || [[ "$StackStatus" == "UPDATE_COMPLETE" ]]; then
             echo "Superwerker stack was successfully updated/created: StackStatus: $StackStatus"
           else
