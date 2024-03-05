@@ -51,7 +51,6 @@ describe('resources', () => {
     // https://cdk-dev.slack.com/archives/C018XT6REKT/p1662017721195839
     // For now we just check that the logical id and the condition are the same
 
-
     // check that conditions match the original ones
     if (resourceProps.Condition) {
       expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Condition'], resourceProps.Condition);

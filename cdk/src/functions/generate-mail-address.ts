@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 
-
 import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_NAME = 'Name';
@@ -10,10 +9,7 @@ export interface HandlerResponse {
   email: string;
 }
 
-
 export function generateEmail(domain: string): string {
-
-
   const maxCharacters = 64;
   const availableCharacters = maxCharacters - (domain.length + 1 + 5); // root+{uuid}@domain.tld
   const id = randomUUID().substring(0, availableCharacters);
@@ -27,7 +23,6 @@ export function generateEmail(domain: string): string {
   console.log('Created new email for account', email);
   return email;
 }
-
 
 export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
   switch (event.RequestType) {

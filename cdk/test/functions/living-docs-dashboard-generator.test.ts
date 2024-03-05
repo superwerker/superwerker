@@ -23,42 +23,31 @@ describe('living-docs-dashboard-generator', () => {
   });
 
   it('living-docs-dashboard-generator', async () => {
-
-    ssmClientMock
-      .on(GetParameterCommand)
-      .resolves({
-        Parameter: {
-          Name: '/superwerker/domain_name_servers',
-          Type: 'StringList',
-          Value: 'ns-1538.awsdns-00.co.uk,ns-925.awsdns-51.net,ns-1209.awsdns-23.org,ns-467.awsdns-58.com',
-          Version: 1,
-          LastModifiedDate: new Date('2023-03-16T17:00:14.535000+01:00'),
-          ARN: 'arn:aws:ssm:eu-central-1:067464808309:parameter/superwerker/domain_name_servers',
-          DataType: 'text',
-        },
-      });
-
-    cwClientMock
-      .on(DescribeAlarmsCommand)
-      .resolves({
-        MetricAlarms: [
-          {
-            StateValue: 'OK',
-          },
-        ],
+    ssmClientMock.on(GetParameterCommand).resolves({
+      Parameter: {
+        Name: '/superwerker/domain_name_servers',
+        Type: 'StringList',
+        Value: 'ns-1538.awsdns-00.co.uk,ns-925.awsdns-51.net,ns-1209.awsdns-23.org,ns-467.awsdns-58.com',
+        Version: 1,
+        LastModifiedDate: new Date('2023-03-16T17:00:14.535000+01:00'),
+        ARN: 'arn:aws:ssm:eu-central-1:067464808309:parameter/superwerker/domain_name_servers',
+        DataType: 'text',
       },
-      );
+    });
 
-    cwClientMock
-      .on(PutDashboardCommand)
-      .resolves({});
+    cwClientMock.on(DescribeAlarmsCommand).resolves({
+      MetricAlarms: [
+        {
+          StateValue: 'OK',
+        },
+      ],
+    });
+
+    cwClientMock.on(PutDashboardCommand).resolves({});
 
     const event = {};
 
-    await handler(
-      event,
-      {},
-    );
+    await handler(event, {});
 
     expect(ssmClientMock).toReceiveCommandWith(GetParameterCommand, {
       Name: '/superwerker/domain_name_servers',
@@ -70,13 +59,14 @@ describe('living-docs-dashboard-generator', () => {
 
     expect(cwClientMock).toReceiveCommandTimes(PutDashboardCommand, 1);
 
-    expect(cwClientMock).toReceiveCommandWith(PutDashboardCommand,
-      { DashboardName: 'superwerker', DashboardBody: expect.stringContaining('DNS configuration is set up correctly') });
+    expect(cwClientMock).toReceiveCommandWith(PutDashboardCommand, {
+      DashboardName: 'superwerker',
+      DashboardBody: expect.stringContaining('DNS configuration is set up correctly'),
+    });
   });
 });
 
 describe('createDnsDelegationText', () => {
-
   it('dns ready', async () => {
     const result = await createDnsDelegationText(true, 'example.com', ['ns-record-1', 'ns-record-2']);
     expect(result).toContain('DNS configuration is set up correctly');
