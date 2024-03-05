@@ -27,7 +27,7 @@ export class HostedZoneDKIMAndVerificationRecords extends Construct {
         [PROP_DOMAIN]: props.domain,
       },
     });
-    (resource.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDKIMAndVerificationRecords');
+    (resource.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDKIMAndVerificationRecordsProvider');
 
     this.verificationToken = resource.getAttString(ATTR_VERIFICATION_TOKEN);
     this.dkimTokens = resource.getAtt(ATTR_DKIM_TOKENS).toStringList();
@@ -69,6 +69,7 @@ class HostedZoneDKIMAndVerificationRecordsProvider extends Construct {
     this.provider = new cr.Provider(this, 'hosted-zone-dkim-verification-records-provider', {
       onEventHandler: onEventHandlerFunc,
       logRetention: 3,
+      providerFunctionName: 'HostedZoneDKIMAndVerificationRecordsCustomResource',
     });
   }
 }

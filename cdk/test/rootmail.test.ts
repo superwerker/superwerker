@@ -43,6 +43,8 @@ describe('resources', () => {
     'RootMailReadyHandleWaitCondition',
     'RootMailReadyTrigger',
     'RootMailReadyHandle',
+    'HostedZoneDKIMAndVerificationRecordsCustomResource',
+    'HostedZoneDKIMAndVerificationRecords',
   ];
   for (const key in expectedResources) {
     if (removedKeys.includes(key)) {

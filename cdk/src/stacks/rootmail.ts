@@ -52,7 +52,7 @@ export class RootmailStack extends NestedStack {
       default: '/superwerker/domain_name_servers',
     });
 
-    this.setDestroyPolicyToAllResources = true; //TODO
+    this.setDestroyPolicyToAllResources = false; //TODO
 
     // Email bucket
     this.emailBucket = new s3.Bucket(this, 'EmailBucket', {
@@ -64,9 +64,16 @@ export class RootmailStack extends NestedStack {
     this.emailBucket.grantPut(new iam.ServicePrincipal('ses.amazonaws.com'), 'RootMail/*');
     (this.emailBucket.policy?.node.defaultChild as CfnResource).overrideLogicalId('EmailBucketPolicy');
 
+    // const hostedZoneName = cdk.Fn.sub('${subdomain}.${domain}', {
+    //   subdomain: subdomain.valueAsString,
+    //   domain: domain.valueAsString
+    // })
+
     // Hosted zone
     const hostedZone = new r53.HostedZone(this, 'HostedZone', {
-      zoneName: `${subdomain}.${domain}`,
+      zoneName: `${subdomain.valueAsString}.${domain.valueAsString}`,
+      comment: 'Created by superwerker',
+      addTrailingDot: false,
     });
     (hostedZone.node.defaultChild as CfnResource).overrideLogicalId('HostedZone');
 
@@ -117,7 +124,7 @@ export class RootmailStack extends NestedStack {
 
     new cdk.CfnStackSet(this, 'SESReceiveStack', {
       permissionModel: 'SELF_MANAGED',
-      stackSetName: 'SESReceiveStack',
+      stackSetName: Stack.of(this).stackName + '-ReceiveStack',
       administrationRoleArn: stackSetAdminRole.roleArn,
       capabilities: ['CAPABILITY_IAM'],
       executionRoleName: stackSetExecutionRole.roleName,
@@ -141,6 +148,8 @@ export class RootmailStack extends NestedStack {
     if (this.setDestroyPolicyToAllResources) {
       Aspects.of(this).add(new ApplyDestroyPolicyAspect());
     }
+
+    this.emailBucket.applyRemovalPolicy(RemovalPolicy.RETAIN);
   }
 }
 
