@@ -9,3 +9,7 @@ updates:
     directory: "cdk/"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "cdk/"
+    schedule:
+      interval: "weekly"
