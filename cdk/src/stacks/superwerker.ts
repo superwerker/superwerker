@@ -54,14 +54,6 @@ export class SuperwerkerStack extends Stack {
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
 
-    const totalTimeToWireDNS = new CfnParameter(this, 'TotalTimeToWireDNS', {
-      type: 'Number',
-      description: 'Total time in MINUTES to wire the DNS.',
-      default: 120,
-      minValue: 5,
-      maxValue: 120,
-    });
-
     const includeBudget = new CfnParameter(this, 'IncludeBudget', {
       type: 'String',
       description: 'Enable AWS Budgets alarm for monthly AWS spending',
@@ -115,7 +107,6 @@ export class SuperwerkerStack extends Stack {
       parameters: {
         Domain: domain.valueAsString,
         Subdomain: subdomain.valueAsString,
-        TotalTimeToWireDNS: totalTimeToWireDNS.valueAsString,
         PropagationParameterName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
         HostedZoneParameterName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
       },

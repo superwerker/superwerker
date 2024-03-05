@@ -5,15 +5,13 @@ import {
   aws_s3 as s3,
   aws_ssm as ssm,
   CfnResource,
-  IAspect,
   RemovalPolicy,
-  Aspects,
   NestedStack,
   NestedStackProps,
   Stack,
   CfnParameter,
 } from 'aws-cdk-lib';
-import { Construct, IConstruct } from 'constructs';
+import { Construct } from 'constructs';
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 import * as cdk from 'aws-cdk-lib';
 import Fs from 'fs';
@@ -21,7 +19,6 @@ import { CfnRole } from 'aws-cdk-lib/aws-iam';
 
 export class RootmailStack extends NestedStack {
   public readonly emailBucket: s3.Bucket;
-  public readonly setDestroyPolicyToAllResources: boolean;
 
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
@@ -37,9 +34,9 @@ export class RootmailStack extends NestedStack {
 
     const totalTimeToWireDNS = new CfnParameter(this, 'TotalTimeToWireDNS', {
       type: 'Number',
-      default: 120,
+      default: 480,
       minValue: 5,
-      maxValue: 120,
+      maxValue: 480, // 8 hours
     });
 
     const propagationParameterName = new CfnParameter(this, 'PropagationParameterName', {
@@ -52,22 +49,16 @@ export class RootmailStack extends NestedStack {
       default: '/superwerker/domain_name_servers',
     });
 
-    this.setDestroyPolicyToAllResources = false; //TODO
-
     // Email bucket
     this.emailBucket = new s3.Bucket(this, 'EmailBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
     });
     (this.emailBucket.node.defaultChild as CfnResource).overrideLogicalId('EmailBucket');
+    this.emailBucket.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     this.emailBucket.grantPut(new iam.ServicePrincipal('ses.amazonaws.com'), 'RootMail/*');
     (this.emailBucket.policy?.node.defaultChild as CfnResource).overrideLogicalId('EmailBucketPolicy');
-
-    // const hostedZoneName = cdk.Fn.sub('${subdomain}.${domain}', {
-    //   subdomain: subdomain.valueAsString,
-    //   domain: domain.valueAsString
-    // })
 
     // Hosted zone
     const hostedZone = new r53.HostedZone(this, 'HostedZone', {
@@ -143,25 +134,5 @@ export class RootmailStack extends NestedStack {
         EmailBucketArn: this.emailBucket.bucketArn,
       }),
     });
-
-    // If Destroy Policy Aspect is present:
-    if (this.setDestroyPolicyToAllResources) {
-      Aspects.of(this).add(new ApplyDestroyPolicyAspect());
-    }
-
-    this.emailBucket.applyRemovalPolicy(RemovalPolicy.RETAIN);
-  }
-}
-
-/**
- * Aspect for setting all removal policies to DESTROY
- *
- * TODO : do we want this?
- */
-class ApplyDestroyPolicyAspect implements IAspect {
-  public visit(node: IConstruct): void {
-    if (node instanceof CfnResource) {
-      node.applyRemovalPolicy(RemovalPolicy.DESTROY);
-    }
   }
 }

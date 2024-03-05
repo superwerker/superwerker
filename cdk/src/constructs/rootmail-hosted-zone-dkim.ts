@@ -42,7 +42,7 @@ export class HostedZoneDkim extends Construct {
     super(scope, id);
 
     const domain = props.domain;
-    const subdomain = props.subdomain ?? 'aws';
+    const subdomain = props.subdomain;
     const hostedZone = props.hostedZone;
 
     // 1: trigger SNS DKIM verification
