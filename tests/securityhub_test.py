@@ -45,7 +45,7 @@ def test_securityhub_enabled_with_delegated_admin_in_core_and_enrolled_accounts(
         log_archive_account_id,
     ]
 
-    assert expected_members == actual_members
+    assert set(expected_members) == set(actual_members)
 
 def test_security_hub_cannot_be_disabled_in_member_account(log_archive_account_id, management_account_id):
 
