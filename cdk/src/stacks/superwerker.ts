@@ -19,6 +19,8 @@ export interface SuperwerkerStackProps extends StackProps {
 export class SuperwerkerStack extends Stack {
   public static AUDIT_ACCOUNT = 'Audit';
   public static LOG_ARCHIVE_ACCOUNT = 'Log Archive';
+  public static HOSTEDZONE_PARAM_NAME = '/superwerker/domain_name_servers';
+  public static PROPAGATION_PARAM_NAME = '/superwerker/propagation_status';
 
   constructor(scope: Construct, id: string, props: SuperwerkerStackProps) {
     super(scope, id, props);
@@ -110,8 +112,10 @@ export class SuperwerkerStack extends Stack {
     // RootMail
     const rootMailStack = new RootmailStack(this, 'RootMail', {
       parameters: {
-        Domain: domain.value.toString(),
-        Subdomain: subdomain.value.toString(),
+        Domain: domain.valueAsString,
+        Subdomain: subdomain.valueAsString,
+        PropagationParameterName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
+        HostedZoneParameterName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
       },
     });
     (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');
@@ -131,6 +135,8 @@ export class SuperwerkerStack extends Stack {
     const livingDocumentationStack = new LivingDocumentationStack(this, 'LivingDocumentation', {
       parameters: {
         SuperwerkerDomain: `${subdomain.value.toString()}.${domain.value.toString()}`,
+        PropagationParamName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
+        HostedZoneParamName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
       },
     });
     (livingDocumentationStack.node.defaultChild as CfnStack).overrideLogicalId('LivingDocumentation');
