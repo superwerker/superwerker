@@ -1,4 +1,4 @@
-import { CloudWatchClient, DescribeAlarmsCommand, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
+import { CloudWatchClient, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
@@ -15,15 +15,19 @@ describe('living-docs-dashboard-generator', () => {
     cwClientMock.reset();
     process.env.SUPERWERKER_DOMAIN = 'example.com';
     process.env.AWS_REGION = 'us-east-1';
+    process.env.HOSTEDZONE_PARAM_NAME = '/superwerker/domain_name_servers';
+    process.env.PROPAGATION_PARAM_NAME = '/superwerker/propagation_status';
   });
 
   afterEach(() => {
     delete process.env.SUPERWERKER_DOMAIN;
     delete process.env.AWS_REGION;
+    delete process.env.HOSTEDZONE_PARAM_NAME;
+    delete process.env.PROPAGATION_PARAM_NAME;
   });
 
   it('living-docs-dashboard-generator', async () => {
-    ssmClientMock.on(GetParameterCommand).resolves({
+    ssmClientMock.on(GetParameterCommand, { Name: '/superwerker/domain_name_servers' }).resolves({
       Parameter: {
         Name: '/superwerker/domain_name_servers',
         Type: 'StringList',
@@ -35,12 +39,16 @@ describe('living-docs-dashboard-generator', () => {
       },
     });
 
-    cwClientMock.on(DescribeAlarmsCommand).resolves({
-      MetricAlarms: [
-        {
-          StateValue: 'OK',
-        },
-      ],
+    ssmClientMock.on(GetParameterCommand, { Name: '/superwerker/propagation_status' }).resolves({
+      Parameter: {
+        Name: '/superwerker/propagation_status',
+        Type: 'String',
+        Value: 'done',
+        Version: 2,
+        LastModifiedDate: new Date('2023-03-16T17:00:14.535000+01:00'),
+        ARN: 'arn:aws:ssm:eu-central-1:123123:parameter/superwerker/propagation_status',
+        DataType: 'text',
+      },
     });
 
     cwClientMock.on(PutDashboardCommand).resolves({});
@@ -53,8 +61,8 @@ describe('living-docs-dashboard-generator', () => {
       Name: '/superwerker/domain_name_servers',
     });
 
-    expect(cwClientMock).toReceiveCommandWith(DescribeAlarmsCommand, {
-      AlarmNames: ['superwerker-RootMailReady'],
+    expect(ssmClientMock).toReceiveCommandWith(GetParameterCommand, {
+      Name: '/superwerker/propagation_status',
     });
 
     expect(cwClientMock).toReceiveCommandTimes(PutDashboardCommand, 1);
