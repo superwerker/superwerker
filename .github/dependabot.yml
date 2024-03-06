@@ -10,6 +10,6 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "pip"
-    directory: "cdk/"
+    directory: "/"
     schedule:
       interval: "weekly"
