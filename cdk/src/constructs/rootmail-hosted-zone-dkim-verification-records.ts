@@ -22,7 +22,7 @@ export class HostedZoneDKIMAndVerificationRecords extends Construct {
 
     const resource = new CustomResource(this, 'Resource', {
       serviceToken: HostedZoneDKIMAndVerificationRecordsProvider.getOrCreate(this),
-      //  resourceType: 'Custom::HostedZoneDKIMAndVerificationRecords',
+      resourceType: 'Custom::HostedZoneDKIMAndVerificationRecords',
       properties: {
         [PROP_DOMAIN]: props.domain,
       },
@@ -54,7 +54,7 @@ class HostedZoneDKIMAndVerificationRecordsProvider extends Construct {
 
     const onEventHandlerFunc = new NodejsFunction(this, 'on-event-handler', {
       entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-verification-records.on-event-handler.ts'),
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       logRetention: 3,
       timeout: Duration.seconds(200),
     });

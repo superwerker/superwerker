@@ -62,7 +62,7 @@ describe('hosted-zone-dkim-verification-records.on-event-handler', () => {
     });
   });
 
-  it('deletes SES identity when receiving "delete" event', async () => {
+  it('does not delete SES identity when receiving "delete" event', async () => {
     sesClientMock.on(DeleteIdentityCommand, { Identity: 'aws.testdomain.com' }).resolves({});
 
     const event = {
@@ -82,9 +82,7 @@ describe('hosted-zone-dkim-verification-records.on-event-handler', () => {
 
     const result = await handler(event);
 
-    expect(sesClientMock).toReceiveCommandWith(DeleteIdentityCommand, {
-      Identity: 'aws.testdomain.com',
-    });
+    expect(sesClientMock).not.toHaveReceivedCommand(DeleteIdentityCommand);
 
     expect(result).toMatchObject({
       PhysicalResourceId: 'myPhysicalResourceId',

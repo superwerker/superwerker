@@ -58,7 +58,7 @@ export class RootmailStack extends NestedStack {
     this.emailBucket.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     this.emailBucket.grantPut(new iam.ServicePrincipal('ses.amazonaws.com'), 'RootMail/*');
-    (this.emailBucket.policy?.node.defaultChild as CfnResource).overrideLogicalId('EmailBucketPolicy');
+    (this.emailBucket.policy!.node.defaultChild as CfnResource).overrideLogicalId('EmailBucketPolicy');
 
     // Hosted zone
     const hostedZone = new r53.HostedZone(this, 'HostedZone', {
@@ -70,7 +70,7 @@ export class RootmailStack extends NestedStack {
 
     const hostedZoneSSMParameter = new ssm.StringListParameter(this, 'HostedZoneSSMParameter', {
       parameterName: hostedZoneParameterName.valueAsString,
-      stringListValue: hostedZone.hostedZoneNameServers || [],
+      stringListValue: hostedZone.hostedZoneNameServers!,
       simpleName: false,
     });
     (hostedZoneSSMParameter.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneSSMParameter');

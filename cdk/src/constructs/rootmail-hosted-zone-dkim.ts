@@ -44,6 +44,7 @@ export class HostedZoneDkim extends Construct {
     const domain = props.domain;
     const subdomain = props.subdomain;
     const hostedZone = props.hostedZone;
+    const smtpServer = 'inbound-smtp.eu-west-1.amazonaws.com'; // hardcoded for backward compatibility
 
     // 1: trigger SNS DKIM verification
     const hostedZoneDKIMAndVerificationRecords = new HostedZoneDKIMAndVerificationRecords(this, 'HostedZoneDKIMAndVerificationRecords', {
@@ -88,7 +89,7 @@ export class HostedZoneDkim extends Construct {
       values: [
         {
           priority: 10,
-          hostName: 'inbound-smtp.eu-west-1.amazonaws.com', // hardcoded for backward compatibility
+          hostName: smtpServer,
         },
       ],
       deleteExisting: false,
