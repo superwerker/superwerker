@@ -92,13 +92,19 @@ jobs:
 
       - name: Wait for Superwerker Deployment
         run: |
+          # check for existing change sets and execute them (might be caused by github actions not letting aws cli execute it)
+          CHANGE_SET_IDS=$(aws cloudformation list-change-sets --stack-name superwerker --query 'Summaries[?starts_with(ChangeSetName, `awscli-cloudformation-`)].ChangeSetId' --output text --no-cli-pager)
+          for CHANGE_SET_ID in $CHANGE_SET_IDS
+          do
+            echo "Change Set is already existing. Assuming it was not executed by previous step."
+            aws cloudformation execute-change-set --change-set-name ${CHANGE_SET_ID} --disable-rollback
+          done
           # https://github.com/aws/aws-cli/issues/2887
           echo "Waiting for completion of stack..."
           while [[ ! "$STACK_STATUS" == *"_FAILED" ]] && [[ ! "$STACK_STATUS" == *"_COMPLETE" ]]; do
             sleep 1
             STACK_STATUS=$(aws cloudformation describe-stacks --stack-name superwerker --query 'Stacks[0].StackStatus' --output text)
           done
-
           if [[ "$STACK_STATUS" == "CREATE_COMPLETE" ]] || [[ "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
             echo "Superwerker stack was successfully updated/created: StackStatus: $STACK_STATUS"
           else
