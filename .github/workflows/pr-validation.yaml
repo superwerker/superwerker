@@ -49,7 +49,7 @@ jobs:
       - name: set up node
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
       - name: check PR title
         if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: deepakputhraya/action-pr-title@master
@@ -58,7 +58,7 @@ jobs:
       - name: check commit messages
         if: ${{ (github.event_name != 'workflow_dispatch') && (github.ref != 'refs/heads/main') }}
         run: |
-          npm install
+          yarn install
           npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
         working-directory: cdk
 
@@ -71,7 +71,7 @@ jobs:
       - name: set up node
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
       - name: install dependencies
         run: yarn install
         working-directory: cdk

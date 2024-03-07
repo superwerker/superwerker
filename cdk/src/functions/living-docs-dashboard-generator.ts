@@ -1,4 +1,4 @@
-import { CloudWatchClient, DescribeAlarmsCommand, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
+import { CloudWatchClient, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import endent from 'endent';
 
@@ -8,15 +8,17 @@ const cloudwatchClient = new CloudWatchClient({});
 export async function handler(_event: any, _context: any) {
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
+  const hostedZoneParamName = process.env.HOSTEDZONE_PARAM_NAME;
+  const propagationParamName = process.env.PROPAGATION_PARAM_NAME;
 
   const dnsNames = await ssmClient.send(
     new GetParameterCommand({
-      Name: '/superwerker/domain_name_servers',
+      Name: hostedZoneParamName,
     }),
   );
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
-  const isRootMailConfiguredBool = await isRootMailConfigured();
+  const isRootMailConfiguredBool = await isRootMailConfigured(propagationParamName!);
 
   const dnsDelegationText = createDnsDelegationText(isRootMailConfiguredBool, dnsDomain!, dnsNamesArray);
   const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
@@ -30,13 +32,13 @@ export async function handler(_event: any, _context: any) {
   );
 }
 
-async function isRootMailConfigured() {
-  const rootMailReadyAlarm = await cloudwatchClient.send(
-    new DescribeAlarmsCommand({
-      AlarmNames: ['superwerker-RootMailReady'],
+async function isRootMailConfigured(propagationParamName: string) {
+  const ssmRes = await ssmClient.send(
+    new GetParameterCommand({
+      Name: propagationParamName,
     }),
   );
-  return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
+  return ssmRes.Parameter!.Value! === 'done';
 }
 
 export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDomain: string, dnsNames: string[]) {

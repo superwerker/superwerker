@@ -14,14 +14,24 @@ export class LivingDocumentationStack extends NestedStack {
       type: 'String',
     });
 
+    const hostedZoneParamName = new CfnParameter(this, 'HostedZoneParamName', {
+      type: 'String',
+    });
+
+    const propagationParamName = new CfnParameter(this, 'PropagationParamName', {
+      type: 'String',
+    });
+
     // DashboardGeneratorFunction
     const dashboardGeneratorFunction = new NodejsFunction(this, 'DashboardGeneratorFunction', {
       entry: path.join(__dirname, '..', 'functions', 'living-docs-dashboard-generator.ts'),
       handler: 'handler',
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_20_X,
       timeout: Duration.minutes(1),
       environment: {
         SUPERWERKER_DOMAIN: superwerkerDomain.valueAsString,
+        HOSTEDZONE_PARAM_NAME: hostedZoneParamName.valueAsString,
+        PROPAGATION_PARAM_NAME: propagationParamName.valueAsString,
       },
     });
 

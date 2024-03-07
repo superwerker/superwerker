@@ -1,6 +1,8 @@
 import path from 'path';
-import * as pythonLambda from '@aws-cdk/aws-lambda-python-alpha';
 import {
+  CfnOutput,
+  CfnParameter,
+  Duration,
   NestedStack,
   NestedStackProps,
   aws_events as events,
@@ -8,10 +10,9 @@ import {
   aws_lambda as lambda,
   aws_sns as sns,
   aws_sns_subscriptions as subscriptions,
-  CfnOutput,
-  CfnParameter,
 } from 'aws-cdk-lib';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
 export class NotificationsStack extends NestedStack {
@@ -28,14 +29,16 @@ export class NotificationsStack extends NestedStack {
     (notificationTopic.node.defaultChild as sns.CfnTopic).overrideLogicalId('NotificationTopic');
 
     // NotificationOpsItemCreated
-    const notificationOpsItemCreatedFn = new pythonLambda.PythonFunction(this, 'NotificationOpsItemCreated', {
-      entry: path.join(__dirname, '..', 'functions', 'notification_opsItem_created'),
+    const notificationOpsItemCreatedFn = new NodejsFunction(this, 'NotificationOpsItemCreated', {
+      entry: path.join(__dirname, '..', 'functions', 'notification-opsitem-created.ts'),
       handler: 'handler',
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: Duration.seconds(30),
       environment: {
         TOPIC_ARN: notificationTopic.topicArn,
       },
     });
+
     (notificationOpsItemCreatedFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('NotificationOpsItemCreated');
 
     const snsPublishMessagePolicy = new iam.PolicyStatement({
