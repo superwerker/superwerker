@@ -100,12 +100,16 @@ export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): 
 
       // signal cloudformation stack that control tower setup is complete
       console.log('Signaling cloudformation stack', cfnSignal);
-      await axios.put(cfnSignal, {
-        Status: 'SUCCESS',
-        Reason: 'Organization creation completed',
-        UniqueId: 'doesthisreallyhavetobeunique',
-        Data: 'Organization creation completed',
-      });
+      await axios
+        .put(cfnSignal, {
+          Status: 'SUCCESS',
+          Reason: 'Organization creation completed',
+          UniqueId: 'doesthisreallyhavetobeunique',
+          Data: 'Organization creation completed',
+        })
+        .catch(function (error) {
+          console.log('Error when sending cloudformation signal', error);
+        });
 
       return { PhysicalResourceId: physicalResourceId };
 
