@@ -96,8 +96,9 @@ jobs:
           CHANGE_SET_IDS=$(aws cloudformation list-change-sets --stack-name superwerker --query 'Summaries[?starts_with(ChangeSetName, `awscli-cloudformation-`)].ChangeSetId' --output text --no-cli-pager)
           for CHANGE_SET_ID in $CHANGE_SET_IDS
           do
-            echo "Change Set is already existing. Assuming it was not executed by previous step. Executing..."
+            echo "Change Set ${CHANGE_SET_ID} exists. Assuming it was not executed by previous step."
             aws cloudformation  wait change-set-create-complete --change-set-name ${CHANGE_SET_ID}
+            echo "Change Set ${CHANGE_SET_ID} is created. Executing..."
             aws cloudformation execute-change-set --change-set-name ${CHANGE_SET_ID} --disable-rollback
           done
           # https://github.com/aws/aws-cli/issues/2887
