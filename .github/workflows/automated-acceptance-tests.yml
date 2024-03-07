@@ -97,6 +97,7 @@ jobs:
           for CHANGE_SET_ID in $CHANGE_SET_IDS
           do
             echo "Change Set is already existing. Assuming it was not executed by previous step."
+            aws cloudformation  wait change-set-create-complete --change-set-name ${CHANGE_SET_ID}
             aws cloudformation execute-change-set --change-set-name ${CHANGE_SET_ID} --disable-rollback
           done
           # https://github.com/aws/aws-cli/issues/2887
