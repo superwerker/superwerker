@@ -1,4 +1,4 @@
-import { CloudWatchClient, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
+import { CloudWatchClient, DescribeAlarmsCommand, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import endent from 'endent';
 
@@ -8,17 +8,15 @@ const cloudwatchClient = new CloudWatchClient({});
 export async function handler(_event: any, _context: any) {
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
-  const hostedZoneParamName = process.env.HOSTEDZONE_PARAM_NAME;
-  const propagationParamName = process.env.PROPAGATION_PARAM_NAME;
 
   const dnsNames = await ssmClient.send(
     new GetParameterCommand({
-      Name: hostedZoneParamName,
+      Name: '/superwerker/domain_name_servers',
     }),
   );
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
-  const isRootMailConfiguredBool = await isRootMailConfigured(propagationParamName!);
+  const isRootMailConfiguredBool = await isRootMailConfigured();
 
   const dnsDelegationText = createDnsDelegationText(isRootMailConfiguredBool, dnsDomain!, dnsNamesArray);
   const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
@@ -32,13 +30,13 @@ export async function handler(_event: any, _context: any) {
   );
 }
 
-async function isRootMailConfigured(propagationParamName: string) {
-  const ssmRes = await ssmClient.send(
-    new GetParameterCommand({
-      Name: propagationParamName,
+async function isRootMailConfigured() {
+  const rootMailReadyAlarm = await cloudwatchClient.send(
+    new DescribeAlarmsCommand({
+      AlarmNames: ['superwerker-RootMailReady'],
     }),
   );
-  return ssmRes.Parameter!.Value! === 'done';
+  return rootMailReadyAlarm.MetricAlarms![0].StateValue === 'OK';
 }
 
 export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDomain: string, dnsNames: string[]) {
@@ -109,7 +107,7 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   ### SSO Setup
 
   - Check your e-mail inbox for \'Invitation to join AWS Single Sign-On\' and follow the setups to accept the invitation. After finishing, log in into AWS via the AWS SSO portal.
-  - [Configure AWS SSO with identity providers](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html), e.g. [Azure AD](https://controltower.aws-management.tools/aa/sso/azure_ad/), [Google Workspace](https://controltower.aws-management.tools/aa/sso/google/), [Okta](https://controltower.aws-management.tools/aa/sso/okta/), [OneLogin](https://controltower.aws-management.tools/aa/sso/onelogin/), to login to AWS with your existing login mechanisms.
+  - [Configure AWS SSO with identity providers](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html), e.g. [Azure AD](https://docs.aws.amazon.com/singlesignon/latest/userguide/gs-ad.html), [Google Workspace](https://docs.aws.amazon.com/singlesignon/latest/userguide/gs-gwp.html), [Okta](https://docs.aws.amazon.com/singlesignon/latest/userguide/gs-okta.html), [OneLogin](https://docs.aws.amazon.com/singlesignon/latest/userguide/onelogin-idp.html), [CyberArk](https://docs.aws.amazon.com/singlesignon/latest/userguide/cyberark-idp.html), login to AWS with your existing login mechanisms.
 
   &nbsp;
   ### Organizations Setup
@@ -133,7 +131,6 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   - [superwerker on GitHub](https://github.com/superwerker/superwerker)
   - [Architecture Decision Records](https://github.com/superwerker/superwerker/tree/main/docs/adrs)
   - [#superwerker](https://og-aws.slack.com/archives/C01CQ34TC93) Slack channel in [og-aws](http://slackhatesthe.cloud)
-  - [Mailing list](https://groups.google.com/forum/#!forum/superwerker/join)
 
   &nbsp;
 
