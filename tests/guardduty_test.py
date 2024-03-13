@@ -2,9 +2,7 @@ import boto3
 import botocore
 import pytest
 
-events = boto3.client('events')
 guardduty = boto3.client('guardduty')
-organizations = boto3.client('organizations')
 ssm = boto3.client('ssm')
 sts = boto3.client('sts')
 

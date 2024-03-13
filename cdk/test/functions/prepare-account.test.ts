@@ -127,6 +127,30 @@ describe('create organizations function', () => {
     }
   });
 
+  it('Return response when cloudformation wait condition signal request fails', async () => {
+    mockedAxios.put.mockImplementation(() => Promise.reject(403));
+
+    organizationsClientMock.on(CreateOrganizationCommand).resolves({
+      Organization: {
+        Id: 'org-id',
+      },
+    });
+
+    ssmClientMock.on(PutParameterCommand).rejects(new ParameterAlreadyExists({ message: 'dummy message', $metadata: {} }));
+
+    const response = await handler({
+      RequestType: 'Update',
+      ResourceProperties: {
+        SIGNAL_URL: 'https://example.com',
+        SECURITY_OU_SSM_PARAMETER: 'Security',
+        SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+      },
+    } as unknown as OnEventRequest);
+
+    expect(response).toMatchObject({ PhysicalResourceId: 'org-id' });
+  });
+
   it('Custom Resource Update', async () => {
     organizationsClientMock.on(CreateOrganizationCommand).resolves({
       Organization: {

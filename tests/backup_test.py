@@ -7,6 +7,7 @@ import pytest
 
 sts = boto3.client('sts')
 ssm = boto3.client('ssm')
+organizations = boto3.client('organizations')
 
 @pytest.fixture(scope="module")
 def account_id():
@@ -115,6 +116,69 @@ def default_vpc(ec2_client):
         # presumably already exists
         pass
 
+def test_cannot_delete_backup_service_role(iam_client, account_id):
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        iam_client.delete_role(RoleName='AWSBackupDefaultServiceRole')
+    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy' in str(exception.value)
+
+def test_cannot_delete_backup_remediation_role(iam_client, account_id):
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        iam_client.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
+    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy' in str(exception.value)
+
+def test_check_conformance_pack_status(config_client):
+    conformance_packs = config_client.describe_conformance_pack_status()
+    assert len(conformance_packs['ConformancePackStatusDetails']) == 1
+    assert 'OrgConformsPack-superwerker-backup-enforce' in conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackName']
+    assert conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackState'] == 'CREATE_COMPLETE'
+
+def test_check_tag_policy():
+    root_id = organizations.list_roots()['Roots'][0]['Id']
+    tag_policies = organizations.list_policies_for_target(TargetId=root_id,Filter="TAG_POLICY")['Policies']
+    assert len(tag_policies) == 1, "Expected exactly one tag policy"
+    tag_policy_id = tag_policies[0]['Id']
+    tag_policy=organizations.describe_policy(PolicyId=tag_policy_id)
+    assert tag_policy['Policy']['PolicySummary']['Description'] == 'superwerker - TagPolicy'
+    assert ''.join(tag_policy['Policy']['Content'].split()) == ''.join('''{
+    "tags": {
+        "superwerker:backup": {
+        "tag_value": {
+            "@@assign": [
+            "none",
+            "daily"
+            ]
+        },
+        "enforced_for": {
+            "@@assign": [
+            "dynamodb:table",
+            "ec2:volume"
+            ]
+        }
+        }
+    }
+    }'''.split()), "Policy content does not match expected content"
+
+def test_check_backup_policy():
+    root_id = organizations.list_roots()['Roots'][0]['Id']
+    root_id = organizations.list_roots()['Roots'][0]['Id']
+    backup_policies = organizations.list_policies_for_target(TargetId=root_id,Filter="BACKUP_POLICY")['Policies']
+    assert len(backup_policies) == 1, "Expected exactly one backup policy"
+    backup_policy_id = backup_policies[0]['Id']
+    backup_policy=organizations.describe_policy(PolicyId=backup_policy_id)
+    assert backup_policy['Policy']['PolicySummary']['Description'] == 'superwerker - BackupPolicy'
+
+# sometimes it can take some time before the attached tap policy takes effect, therefore we retry this test
+@pytest.mark.flaky(retries=3, delay=1)
+def test_cannot_change_ebs_backup_tags(ec2_client, ebs_volume_id):
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
+    assert 'An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
+
+def test_can_change_ebs_backup_tags_to_none(ec2_client, ebs_volume_id):
+    wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
+
+# sometimes it can take some time before the attached tap policy takes effect, therefore we retry this test
+@pytest.mark.flaky(retries=3, delay=1)
 def test_cannot_change_dynamodb_backup_tags(ddb_client, ddb_table):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
         ddb_client.tag_resource(
@@ -141,35 +205,12 @@ def test_untagged_ebs_gets_tagged_for_aws_backup_by_default(ec2_client, ebs_volu
     expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
     assert expected_tags == actual_tags
 
-def test_cannot_change_ebs_backup_tags(ec2_client, ebs_volume_id):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
-    assert 'An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
-
-def test_can_change_ebs_backup_tags_to_none(ec2_client, ebs_volume_id):
-    wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
-
 @pytest.mark.skip(reason="this will take a long time to run")
 def test_untagged_rds_instance_gets_tagged_for_aws_backup_by_default(rds_client, rds_instance):
     actual_tags = wait_for_rds_instance_tags_to_appear(rds_client, rds_instance)
     expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
     assert expected_tags == actual_tags
 
-def test_cannot_delete_backup_service_role(iam_client, account_id):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        iam_client.delete_role(RoleName='AWSBackupDefaultServiceRole')
-    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy' in str(exception.value)
-
-def test_cannot_delete_backup_remediation_role(iam_client, account_id):
-    with pytest.raises(botocore.exceptions.ClientError) as exception:
-        iam_client.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
-    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy' in str(exception.value)
-
-def test_check_conformance_pack_status(config_client):
-    conformance_packs = config_client.describe_conformance_pack_status()
-    assert len(conformance_packs['ConformancePackStatusDetails']) == 1
-    assert 'OrgConformsPack-superwerker-backup-enforce' in conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackName']
-    assert conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackState'] == 'CREATE_COMPLETE'
 
 @retry(stop_max_delay=1800000, wait_fixed=20000)
 def wait_for_table_tags_to_appear(ddb, table):
