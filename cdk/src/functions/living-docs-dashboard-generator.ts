@@ -109,7 +109,7 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   ### SSO Setup
 
   - Check your e-mail inbox for \'Invitation to join AWS Single Sign-On\' and follow the setups to accept the invitation. After finishing, log in into AWS via the AWS SSO portal.
-  - [Configure AWS SSO with identity providers](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html), e.g. [Azure AD](https://controltower.aws-management.tools/aa/sso/azure_ad/), [Google Workspace](https://controltower.aws-management.tools/aa/sso/google/), [Okta](https://controltower.aws-management.tools/aa/sso/okta/), [OneLogin](https://controltower.aws-management.tools/aa/sso/onelogin/), to login to AWS with your existing login mechanisms.
+  - [Configure AWS SSO with identity providers](https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-identity-source-idp.html), e.g. [Azure AD](https://docs.aws.amazon.com/singlesignon/latest/userguide/gs-ad.html), [Google Workspace](https://docs.aws.amazon.com/singlesignon/latest/userguide/gs-gwp.html), [Okta](https://docs.aws.amazon.com/singlesignon/latest/userguide/gs-okta.html), [OneLogin](https://docs.aws.amazon.com/singlesignon/latest/userguide/onelogin-idp.html), [CyberArk](https://docs.aws.amazon.com/singlesignon/latest/userguide/cyberark-idp.html), login to AWS with your existing login mechanisms.
 
   &nbsp;
   ### Organizations Setup
@@ -133,7 +133,6 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   - [superwerker on GitHub](https://github.com/superwerker/superwerker)
   - [Architecture Decision Records](https://github.com/superwerker/superwerker/tree/main/docs/adrs)
   - [#superwerker](https://og-aws.slack.com/archives/C01CQ34TC93) Slack channel in [og-aws](http://slackhatesthe.cloud)
-  - [Mailing list](https://groups.google.com/forum/#!forum/superwerker/join)
 
   &nbsp;
 
