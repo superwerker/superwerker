@@ -31,7 +31,7 @@ export class BudgetStack extends NestedStack {
       topics: [budgetNotificationTopic],
     });
 
-    const budgetAlarm = new cw.Alarm(this, 'Warning', {
+    const budgetAlarm = new cw.Alarm(this, 'BudgetAlarm', {
       comparisonOperator: cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
       alarmDescription: 'Superwerker default budget forecast exceed previous three months',
       evaluationPeriods: 1,

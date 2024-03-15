@@ -2,7 +2,6 @@ import * as path from 'path';
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
-import { BUNDLING_STACKS } from 'aws-cdk-lib/cx-api';
 import { Construct } from 'constructs';
 import { BudgetStack } from '../../src/stacks/budget';
 
@@ -23,28 +22,47 @@ export class OriginalStack extends Stack {
   }
 }
 
-const context = {
-  [BUNDLING_STACKS]: [],
-};
-
 describe('resources', () => {
-  const app = new App({ context });
+  const app = new App({});
+  const originalStack = new OriginalStack(app, 'original', {});
   const stack = new UnderTestStack(app, 'stack', {}).inner;
-  const template = Template.fromStack(stack);
+  const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: any } };
+  const underTestResources = Template.fromStack(stack).toJSON().Resources as { [key: string]: { [key: string]: any } };
 
-  it('Check if SNS topic resource is present', () => {
-    template.resourceCountIs('AWS::SNS::Topic', 1);
-  });
+  test('Test the original stack with the new stack for all the resources and properties', () => {
+    /* Compare each of the expected resources against that of the under test resources inside the nested loop.
+    Conditional check applied on the Type of the resource to avoid non-required comparisons.
+    */
+    for (const [resourceOriginal, resourcePropsOriginal] of Object.entries(expectedResources)) {
+      for (const [resourceUnderTest, resourcePropsUnderTest] of Object.entries(underTestResources)) {
+        //check if the current property type for both the resource maps (Expected and Under Test) are same.
+        if (resourcePropsOriginal.Type == resourcePropsUnderTest.Type) {
+          // check that conditions match the original ones
+          if (resourcePropsOriginal.Condition) {
+            expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty(
+              [resourceOriginal, 'Condition'],
+              resourcePropsOriginal.Condition,
+            );
+          }
 
-  it('Check if Cloudwatch Alarm is present', () => {
-    template.resourceCountIs('AWS::CloudWatch::Alarm', 1);
-  });
+          // check that dependsOn match the original ones
+          if (resourcePropsOriginal.DependsOn) {
+            expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty(
+              [resourceOriginal, 'DependsOn'],
+              resourcePropsOriginal.DependsOn,
+            );
+          }
 
-  it('Check if Budget Notification Policy is created', () => {
-    template.resourceCountIs('AWS::SNS::TopicPolicy', 1);
-  });
+          // check that parameters match the original ones
+          if (resourcePropsOriginal.Properties != null && resourcePropsOriginal.Properties.Parameters) {
+            for (const param of Object.keys(resourcePropsOriginal.Properties.Parameters)) {
+              expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resourceOriginal, 'Properties', 'Parameters', param]);
+            }
+          }
 
-  it('Check if Budget Report is created', () => {
-    template.resourceCountIs('AWS::Budgets::Budget', 1);
+          expect(resourceUnderTest).toContain(resourceOriginal);
+        }
+      }
+    }
   });
 });
