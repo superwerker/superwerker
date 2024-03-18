@@ -1,1 +1,2 @@
-curl -s https://api.regional-table.region-services.aws.a2z.com/index.json | grep -Eo "(controltower|sso):[a-z0-9-]+" | cut -d : -f 2 | sort | uniq -c | grep -E "  2 (.*)" | cut -c 5-
+# get list of regions that have both controltower and identity-center activated
+curl -s https://api.regional-table.region-services.aws.a2z.com/index.json | grep -Eo "(controltower|identity-center):[a-z0-9-]+" | cut -d : -f 2 | sort | uniq -c | grep -E "  2 (.*)" | cut -c 5-
