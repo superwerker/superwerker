@@ -8,15 +8,16 @@ import pytest
 sts = boto3.client('sts')
 ssm = boto3.client('ssm')
 organizations = boto3.client('organizations')
+config_client = boto3.client('config')
 
 @pytest.fixture(scope="module")
-def account_id():
+def audit_account_id():
     return ssm.get_parameter(Name='/superwerker/account_id_audit')['Parameter']['Value']
 
 @pytest.fixture(scope="module")
-def control_tower_exection_role_session(account_id):
+def audit_account_role(audit_account_id):
     account_creds = sts.assume_role(
-        RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(account_id),
+        RoleArn='arn:aws:iam::{}:role/AWSControlTowerExecution'.format(audit_account_id),
         RoleSessionName='superwerkertest'
     )['Credentials']
     return boto3.session.Session(
@@ -26,29 +27,29 @@ def control_tower_exection_role_session(account_id):
     )
 
 @pytest.fixture(scope="module")
-def ddb_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('dynamodb')
+def ddb_client_audit(audit_account_role):
+    return audit_account_role.client('dynamodb')
 
 @pytest.fixture(scope="module")
-def ec2_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('ec2')
+def ec2_client_audit(audit_account_role):
+    return audit_account_role.client('ec2')
 
 @pytest.fixture(scope="module")
-def rds_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('rds')
+def rds_client_audit(audit_account_role):
+    return audit_account_role.client('rds')
 
 @pytest.fixture(scope="module")
-def iam_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('iam')
+def iam_client_audit(audit_account_role):
+    return audit_account_role.client('iam')
 
 @pytest.fixture(scope="module")
-def config_client(control_tower_exection_role_session):
-    return control_tower_exection_role_session.client('config')
+def config_client_audit(audit_account_role):
+    return audit_account_role.client('config')
 
 @pytest.fixture
-def create_random_table(ddb_client):
+def create_random_table(ddb_client_audit):
     table_name = uuid.uuid4().hex
-    ddb_client.create_table(
+    ddb_client_audit.create_table(
         TableName=table_name,
         KeySchema=[
             {
@@ -65,22 +66,22 @@ def create_random_table(ddb_client):
         ],
         BillingMode='PAY_PER_REQUEST',
     )
-    table = wait_for_table_available(ddb_client, table_name)
+    table = wait_for_table_available(ddb_client_audit, table_name)
     return table
 
 @pytest.fixture
-def random_ebs_volume_id(ec2_client):
-    result = ec2_client.create_volume(
-        AvailabilityZone=ec2_client.describe_availability_zones()['AvailabilityZones'][0]['ZoneName'],
+def random_ebs_volume_id(ec2_client_audit):
+    result = ec2_client_audit.create_volume(
+        AvailabilityZone=ec2_client_audit.describe_availability_zones()['AvailabilityZones'][0]['ZoneName'],
         Size=1
     )
     return result['VolumeId']
 
 @pytest.fixture
-def random_rds_instance_identifier(rds_client):
+def random_rds_instance_identifier(rds_client_audit):
     db_instance_identifier = 'db-{}'.format(uuid.uuid4().hex)
 
-    rds_client.create_db_instance(
+    rds_client_audit.create_db_instance(
         DBInstanceIdentifier=db_instance_identifier,
         DBInstanceClass='db.t2.micro',
         Engine='mysql',
@@ -91,46 +92,53 @@ def random_rds_instance_identifier(rds_client):
     return db_instance_identifier
 
 @pytest.fixture
-def ddb_table(ddb_client, create_random_table):
+def ddb_table(ddb_client_audit, create_random_table):
     yield create_random_table
-    ddb_client.delete_table(TableName=create_random_table['TableName'])
+    ddb_client_audit.delete_table(TableName=create_random_table['TableName'])
 
 @pytest.fixture
-def ebs_volume_id(ec2_client, random_ebs_volume_id):
+def ebs_volume_id(ec2_client_audit, random_ebs_volume_id):
     yield random_ebs_volume_id
-    ec2_client.delete_volume(VolumeId=random_ebs_volume_id)
+    ec2_client_audit.delete_volume(VolumeId=random_ebs_volume_id)
 
 @pytest.fixture
-def rds_instance(rds_client, random_rds_instance_identifier):
+def rds_instance(rds_client_audit, random_rds_instance_identifier):
     yield random_rds_instance_identifier
-    rds_client.delete_db_instance(DBInstanceIdentifier=random_rds_instance_identifier, SkipFinalSnapshot=True)
+    rds_client_audit.delete_db_instance(DBInstanceIdentifier=random_rds_instance_identifier, SkipFinalSnapshot=True)
 
 # https://github.com/boto/boto3/issues/454
 @pytest.fixture(autouse=True)
-def default_vpc(ec2_client):
+def default_vpc(ec2_client_audit):
     warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
     try:
-        ec2_client.create_default_vpc()
+        ec2_client_audit.create_default_vpc()
     except:
         # presumably already exists
         pass
 
-def test_cannot_delete_backup_service_role(iam_client, account_id):
+def test_cannot_delete_backup_service_role(iam_client_audit, audit_account_id):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
-        iam_client.delete_role(RoleName='AWSBackupDefaultServiceRole')
-    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy' in str(exception.value)
+        iam_client_audit.delete_role(RoleName='AWSBackupDefaultServiceRole')
+    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{audit_account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role AWSBackupDefaultServiceRole with an explicit deny in a service control policy' in str(exception.value)
 
-def test_cannot_delete_backup_remediation_role(iam_client, account_id):
+def test_cannot_delete_backup_remediation_role(iam_client_audit, audit_account_id):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
-        iam_client.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
-    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy' in str(exception.value)
+        iam_client_audit.delete_role(RoleName='SuperwerkerBackupTagsEnforcementRemediationRole')
+    assert f'An error occurred (AccessDenied) when calling the DeleteRole operation: User: arn:aws:sts::{audit_account_id}:assumed-role/AWSControlTowerExecution/superwerkertest is not authorized to perform: iam:DeleteRole on resource: role SuperwerkerBackupTagsEnforcementRemediationRole with an explicit deny in a service control policy' in str(exception.value)
 
-def test_check_conformance_pack_status(config_client):
-    conformance_packs = config_client.describe_conformance_pack_status()
-    assert len(conformance_packs['ConformancePackStatusDetails']) == 1
-    assert 'OrgConformsPack-superwerker-backup-enforce' in conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackName']
-    assert conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackState'] == 'CREATE_COMPLETE'
+def test_check_conformance_pack_status(config_client_audit):
+    conformance_packs = config_client_audit.describe_conformance_pack_status()
+    assert len(conformance_packs['ConformancePackStatusDetails']) == 1, 'Expected exactly one conformance pack in audit account'
+    assert 'OrgConformsPack-superwerker-backup-enforce' in conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackName'], 'Conformance Pack name does not match expected prefix in audit account'
+    assert conformance_packs['ConformancePackStatusDetails'][0]['ConformancePackState'] == 'CREATE_COMPLETE', 'Conformance Pack is not created successfully in audit account'
+
+    org_conformance_packs = config_client.describe_organization_conformance_packs()
+    assert org_conformance_packs['OrganizationConformancePacks'][0]['OrganizationConformancePackName'] == 'superwerker-backup-enforce', 'Organization Conformance Pack name does not match expected name'
+
+    org_conformance_pack_statuses = config_client.describe_organization_conformance_pack_statuses()
+    assert org_conformance_pack_statuses['OrganizationConformancePackStatuses'][0]['Status'] == 'CREATE_SUCCESSFUL', 'Conformance Pack is not created successfully'
+    
 
 def test_check_tag_policy():
     root_id = organizations.list_roots()['Roots'][0]['Id']
@@ -156,7 +164,7 @@ def test_check_tag_policy():
         }
         }
     }
-    }'''.split()), "Policy content does not match expected content"
+    }'''.split()), 'Policy content does not match expected content'
 
 def test_check_backup_policy():
     root_id = organizations.list_roots()['Roots'][0]['Id']
@@ -169,45 +177,45 @@ def test_check_backup_policy():
 
 # sometimes it can take some time before the attached tap policy takes effect, therefore we retry this test
 @pytest.mark.flaky(retries=3, delay=1)
-def test_cannot_change_ebs_backup_tags(ec2_client, ebs_volume_id):
+def test_cannot_change_ebs_backup_tags(ec2_client_audit, ebs_volume_id):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
-        wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
+        wait_for_create_tags(ec2_client_audit, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
     assert 'An error occurred (TagPolicyViolation) when calling the CreateTags operation: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
 
-def test_can_change_ebs_backup_tags_to_none(ec2_client, ebs_volume_id):
-    wait_for_create_tags(ec2_client, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
+def test_can_change_ebs_backup_tags_to_none(ec2_client_audit, ebs_volume_id):
+    wait_for_create_tags(ec2_client_audit, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
 
 # sometimes it can take some time before the attached tap policy takes effect, therefore we retry this test
 @pytest.mark.flaky(retries=3, delay=1)
-def test_cannot_change_dynamodb_backup_tags(ddb_client, ddb_table):
+def test_cannot_change_dynamodb_backup_tags(ddb_client_audit, ddb_table):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
-        ddb_client.tag_resource(
+        ddb_client_audit.tag_resource(
             ResourceArn=ddb_table['TableArn'],
             Tags=[{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}]
         )
     assert 'An error occurred (ValidationException) when calling the TagResource operation: One or more parameter values were invalid: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
 
-def test_can_change_dynamodb_backup_tags_to_none(ddb_client, ddb_table):
-    ddb_client.tag_resource(
+def test_can_change_dynamodb_backup_tags_to_none(ddb_client_audit, ddb_table):
+    ddb_client_audit.tag_resource(
         ResourceArn=ddb_table['TableArn'],
         Tags=[{'Key': 'superwerker:backup', 'Value': 'none'}]
     )
 
 @pytest.mark.skip(reason="this will take a long time to run")
-def test_untagged_dynamodb_gets_tagged_for_aws_backup_by_default(ddb_client, ddb_table):
-    actual_tags = wait_for_table_tags_to_appear(ddb_client, ddb_table)
+def test_untagged_dynamodb_gets_tagged_for_aws_backup_by_default(ddb_client_audit, ddb_table):
+    actual_tags = wait_for_table_tags_to_appear(ddb_client_audit, ddb_table)
     expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
     assert expected_tags == actual_tags
 
 @pytest.mark.skip(reason="this will take a long time to run")
-def test_untagged_ebs_gets_tagged_for_aws_backup_by_default(ec2_client, ebs_volume_id):
-    actual_tags = wait_for_ebs_tags_to_appear(ec2_client, ebs_volume_id)
+def test_untagged_ebs_gets_tagged_for_aws_backup_by_default(ec2_client_audit, ebs_volume_id):
+    actual_tags = wait_for_ebs_tags_to_appear(ec2_client_audit, ebs_volume_id)
     expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
     assert expected_tags == actual_tags
 
 @pytest.mark.skip(reason="this will take a long time to run")
-def test_untagged_rds_instance_gets_tagged_for_aws_backup_by_default(rds_client, rds_instance):
-    actual_tags = wait_for_rds_instance_tags_to_appear(rds_client, rds_instance)
+def test_untagged_rds_instance_gets_tagged_for_aws_backup_by_default(rds_client_audit, rds_instance):
+    actual_tags = wait_for_rds_instance_tags_to_appear(rds_client_audit, rds_instance)
     expected_tags = [{'Key': 'superwerker:backup', 'Value': 'daily'}]
     assert expected_tags == actual_tags
 
