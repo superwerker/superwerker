@@ -33,7 +33,6 @@ def control_tower_exection_role_session(account_id):
         aws_session_token=account_creds['SessionToken']
     )
 
-# TODO: split up into two tests (probably needs more advanced testing system)
 def test_securityhub_enabled_with_delegated_admin_in_core_and_enrolled_accounts(audit_account_id, log_archive_account_id, management_account_id):
     audit_account = control_tower_exection_role_session(audit_account_id)
     security_hub_audit = audit_account.client('securityhub')
@@ -112,3 +111,18 @@ def wait_for_role_to_be_assumed(account_id):
                 RoleArn=f'arn:aws:iam::{account_id}:role/SuperWerkerScpTestRole',
                 RoleSessionName='SuperWerkerScpTest'
             )['Credentials']
+
+def test_security_hub_config_rules_exist(audit_account_id):
+    audit_account = control_tower_exection_role_session(audit_account_id)
+    config_audit = audit_account.client('config')
+
+    response_iterator = config_audit.get_paginator('describe_config_rules').paginate()
+    
+    security_hub_rules = []
+    for page in response_iterator:
+        for rule in page['ConfigRules']:
+            if rule['ConfigRuleName'].startswith('securityhub-'):
+                security_hub_rules.append(rule['ConfigRuleName'])
+
+    assert len(security_hub_rules) > 0, 'No Security Hub Config Rules found'
+           

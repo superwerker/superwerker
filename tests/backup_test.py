@@ -168,7 +168,6 @@ def test_check_tag_policy():
 
 def test_check_backup_policy():
     root_id = organizations.list_roots()['Roots'][0]['Id']
-    root_id = organizations.list_roots()['Roots'][0]['Id']
     backup_policies = organizations.list_policies_for_target(TargetId=root_id,Filter="BACKUP_POLICY")['Policies']
     assert len(backup_policies) == 1, "Expected exactly one backup policy"
     backup_policy_id = backup_policies[0]['Id']
