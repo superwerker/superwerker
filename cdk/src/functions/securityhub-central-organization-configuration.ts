@@ -1,15 +1,20 @@
 import { SecurityHub, UpdateOrganizationConfigurationCommand } from '@aws-sdk/client-securityhub';
+import { STS } from '@aws-sdk/client-sts';
+import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { throttlingBackOff } from '../utils/throttle';
 
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
-  // TODO switch to aduit account
+  const secHubCrossAccountRoleArn = event.ResourceProperties.role;
 
-  const securityHubClient = new SecurityHub();
+  const stsClient = new STS();
+  const securityHubClient = new SecurityHub({
+    credentials: await getCredsFromAssumeRole(stsClient, secHubCrossAccountRoleArn, 'SecurityHubCentralOrganizationConfiguration'),
+  });
 
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
-      console.log('Update Security Hub Organization Configuration tp CENTRAL');
+      console.log('Update Security Hub Organization Configuration to CENTRAL');
       try {
         await throttlingBackOff(() =>
           securityHubClient.send(

@@ -2,10 +2,17 @@ import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+export interface SecurityHubConfigurationPolicyAssociationProps {
+  /**
+   * Cross Account Role for configuring Security Hub in audit account
+   */
+  readonly secHubCrossAccountRoleArn: string;
+}
+
 export class SecurityHubConfigurationPolicyAssociation extends Construct {
   public readonly id: string;
 
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, props: SecurityHubConfigurationPolicyAssociationProps) {
     super(scope, id);
 
     const RESOURCE_TYPE = 'Custom::SecurityHubConfigurationPolicyAssociation';
@@ -40,6 +47,7 @@ export class SecurityHubConfigurationPolicyAssociation extends Construct {
       properties: {
         region: cdk.Stack.of(this).region,
         partition: cdk.Aws.PARTITION,
+        props: props.secHubCrossAccountRoleArn,
       },
     });
 

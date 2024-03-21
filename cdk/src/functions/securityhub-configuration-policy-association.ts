@@ -5,14 +5,18 @@ import {
   ListConfigurationPolicyAssociationsCommand,
   StartConfigurationPolicyDisassociationCommand,
 } from '@aws-sdk/client-securityhub';
+import { STS } from '@aws-sdk/client-sts';
+import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { throttlingBackOff } from '../utils/throttle';
 
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
   const region = event.ResourceProperties.region;
-  // TODO switch to Audit Account
+  const secHubCrossAccountRoleArn = event.ResourceProperties.role;
 
-  const securityHubClient = new SecurityHub();
-  const organizationsClient = new Organizations({ region: 'us-east-1' });
+  const stsClient = new STS();
+  const creds = await getCredsFromAssumeRole(stsClient, secHubCrossAccountRoleArn, 'SecurityHubConfigurationPolicyAssociation');
+  const securityHubClient = new SecurityHub({ credentials: creds });
+  const organizationsClient = new Organizations({ region: 'us-east-1', credentials: creds });
 
   const rootId = await getOrganisationRoot(organizationsClient);
 
