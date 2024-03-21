@@ -57,7 +57,7 @@ jobs:
       - name: Deploy Superwerker
         id: deploy-superwerker
         run: |
-          nohup aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter-overrides Domain=${SUPERWERKER_DOMAIN} Subdomain=${{ inputs.account }} NotificationsMail=root+notifications@${{ inputs.account }}.${SUPERWERKER_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --disable-rollback  --no-cli-pager &
+          nohup aws cloudformation deploy --stack-name superwerker --template-file ./cdk.out/SuperwerkerStack.template.json --parameter-overrides Domain=${SUPERWERKER_DOMAIN} Subdomain=${{ inputs.account }} NotificationsMail=root+notifications@${{ inputs.account }}.${SUPERWERKER_DOMAIN} --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM CAPABILITY_NAMED_IAM --no-cli-pager &
           while ! DOMAIN_NAME_SERVERS=$(aws ssm get-parameter --name /superwerker/domain_name_servers --query Parameter.Value --output text 2>/dev/null); do sleep 10; done
           echo "DOMAIN_NAME_SERVERS=${DOMAIN_NAME_SERVERS}" >> "$GITHUB_OUTPUT"
         env:
