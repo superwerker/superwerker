@@ -15,28 +15,28 @@ import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
-export interface SecurityHubOrganizationalAdminAccountProps {
+export interface SecurityHubOrganizationalAdminProps {
   /**
-   * Admin account id
+   * Delegated admin account id
    */
   readonly adminAccountId: string;
 }
 
-export class SecurityHubOrganizationAdminAccount extends Construct {
+export class SecurityHubOrganizationAdmin extends Construct {
   public readonly id: string;
 
-  constructor(scope: Construct, id: string, props: SecurityHubOrganizationalAdminAccountProps) {
+  constructor(scope: Construct, id: string, props: SecurityHubOrganizationalAdminProps) {
     super(scope, id);
 
-    const RESOURCE_TYPE = 'Custom::SecurityHubEnableOrganizationAdminAccount';
+    const RESOURCE_TYPE = 'Custom::SecurityHubEnableOrganizationAdmin';
 
     const provider = cdk.CustomResourceProvider.getOrCreateProvider(this, RESOURCE_TYPE, {
-      codeDirectory: path.join(__dirname, '..', 'functions', 'enable-securityhub'),
+      codeDirectory: path.join(__dirname, '..', 'functions', 'securityhub-enable-organization-admin.ts'),
       runtime: cdk.CustomResourceProviderRuntime.NODEJS_18_X,
       timeout: cdk.Duration.seconds(180),
       policyStatements: [
         {
-          Sid: 'SecurityHubEnableOrganizationAdminAccountTaskOrganizationActions',
+          Sid: 'SecurityHubEnableOrganizationAdminTaskOrganizationActions',
           Effect: 'Allow',
           Action: ['organizations:DescribeOrganization', 'organizations:ListAccounts', 'organizations:ListDelegatedAdministrators'],
           Resource: '*',
@@ -73,14 +73,13 @@ export class SecurityHubOrganizationAdminAccount extends Construct {
           },
         },
         {
-          Sid: 'SecurityHubEnableCentralConfigurationActions',
+          Sid: 'SecurityHubEnableOrganizationAdminAccountTaskSecurityHubActions',
           Effect: 'Allow',
           Action: [
             'securityhub:DisableOrganizationAdminAccount',
             'securityhub:EnableOrganizationAdminAccount',
             'securityhub:EnableSecurityHub',
             'securityhub:ListOrganizationAdminAccounts',
-            'securityhub:UpdateOrganizationConfiguration',
           ],
           Resource: '*',
         },
