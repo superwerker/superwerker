@@ -2,6 +2,7 @@ import boto3
 import pytest
 
 control_tower = boto3.client('controltower')
+cloudtrail = boto3.client('cloudtrail')
 ssm = boto3.client('ssm')
 sts = boto3.client('sts')
 
@@ -47,3 +48,20 @@ def test_control_tower_enabled(audit_account_id, log_archive_account_id, kms_key
     assert manifest['centralizedLogging']['configurations']['kmsKeyArn'] == kms_key_arn
 
 
+def test_cloudtrail_enabled(log_archive_account_id, kms_key_arn):
+
+    trails = cloudtrail.list_trails()
+
+    assert trails['Trails'], "No cloudtrail was created"
+
+    trail = cloudtrail.get_trail(Name=trails['Trails'][0]['TrailARN'])
+    assert trail['Trail']['Name'] == 'aws-controltower-BaselineCloudTrail', "Trail has unexpected name"
+    assert trail['Trail']['IsMultiRegionTrail'], "Trail is not multi region"
+    assert trail['Trail']['HomeRegion'] == 'eu-central-1', "Trail is not in correct region"
+    assert trail['Trail']['KmsKeyId'] == kms_key_arn
+    assert trail['Trail']['IsOrganizationTrail']
+    assert trail['Trail']['IncludeGlobalServiceEvents']
+    assert trail['Trail']['S3BucketName'] == f'aws-controltower-logs-{log_archive_account_id}-eu-central-1', "Trail is not logging to the correct bucket"
+
+    trail_status = cloudtrail.get_trail_status(Name=trails['Trails'][0]['TrailARN'])
+    assert trail_status['IsLogging'], "Trail status is not active"
