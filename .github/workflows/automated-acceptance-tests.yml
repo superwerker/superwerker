@@ -99,7 +99,7 @@ jobs:
             echo "Change Set ${CHANGE_SET_ID} exists. Waiting for its completion."
             aws cloudformation  wait change-set-create-complete --change-set-name ${CHANGE_SET_ID}
             echo "Change Set ${CHANGE_SET_ID} is created. Executing..."
-            aws cloudformation execute-change-set --change-set-name ${CHANGE_SET_ID} --disable-rollback 2>/dev/null || true
+            aws cloudformation execute-change-set --change-set-name ${CHANGE_SET_ID} 2>/dev/null || true
           done
           # https://github.com/aws/aws-cli/issues/2887
           echo "Waiting for completion of stack..."
