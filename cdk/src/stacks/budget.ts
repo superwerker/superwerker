@@ -18,15 +18,13 @@ export class BudgetStack extends NestedStack {
     const budgetNotificationTopic = new sns.Topic(this, 'BudgetNotification');
     (budgetNotificationTopic.node.defaultChild as CfnTopic).overrideLogicalId('BudgetNotification');
 
-    budgetNotificationTopic.grantPublish(new iam.ServicePrincipal('budget.amazonaws.com'));
-
     const snsTopicPolicy = new sns.TopicPolicy(this, 'BudgetNotificationPolicy', {
       policyDocument: new iam.PolicyDocument({
         statements: [
           new iam.PolicyStatement({
             actions: ['sns:Publish'],
             effect: iam.Effect.ALLOW,
-            principals: [new iam.ServicePrincipal('budget.amazonaws.com')],
+            principals: [new iam.ServicePrincipal('budgets.amazonaws.com')],
             resources: [budgetNotificationTopic.topicArn],
           }),
         ],
