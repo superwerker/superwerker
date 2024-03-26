@@ -1,95 +1,65 @@
-import Fs from 'fs';
-import { CfnStackSet, Fn, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-import { AccountPrincipal, ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { CfnParameter, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { SecurityHubCentralOrganizationConfiguration } from '../constructs/securityhub-central-organization-configuration';
-import { SecurityHubConfigurationPolicy } from '../constructs/securityhub-configuration-policy';
-import { SecurityHubConfigurationPolicyAssociation } from '../constructs/securityhub-configuration-policy-association';
 import { SecurityHubOrganizationAdmin } from '../constructs/securityhub-enable-organization-admin';
+import { SecurityHubStandards } from '../constructs/securityhub-enable-standards';
+import { SecurityHubMembers } from '../constructs/securityhub-members';
 import { SecurityHubRegionAggregation } from '../constructs/securityhub-region-aggregation';
 
-interface SecurityHubStackProps extends NestedStackProps {
-  delegatedSecurityAdminAccountId: string;
-}
-
 export class SecurityHubStack extends NestedStack {
-  constructor(scope: Construct, id: string, props: SecurityHubStackProps) {
+  constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const secHubCrossAccountRoleName = 'SecHubCrossAccountRole';
-    const secHubCrossAccountRoleArn = `arn:aws:iam::${props.delegatedSecurityAdminAccountId}:role/${secHubCrossAccountRoleName}`;
-
-    const stackSetExecutionRole = new Role(this, 'StackSetExecutionRole', {
-      assumedBy: new AccountPrincipal(Stack.of(this).account),
-      path: '/',
-      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
+    const auditAccountAccountId = new CfnParameter(this, 'AuditAccountAccountId', {
+      type: 'String',
     });
 
-    const stackSetAdminRole = new Role(this, 'StackSetAdministrationRole', {
-      assumedBy: new ServicePrincipal('cloudformation.amazonaws.com'),
-      path: '/',
-      inlinePolicies: {
-        AWSCloudFormationStackSetExecutionRole: new PolicyDocument({
-          statements: [
-            new PolicyStatement({
-              actions: ['sts:AssumeRole'],
-              resources: [stackSetExecutionRole.roleArn],
-            }),
-          ],
-        }),
-      },
-    });
-
-    const secHubIamRoleStackset = new CfnStackSet(this, 'SecHubIamRoleStackset', {
-      permissionModel: 'SELF_MANAGED',
-      stackSetName: 'SecHubIamRoleStackset',
-      administrationRoleArn: stackSetAdminRole.roleArn,
-      capabilities: ['CAPABILITY_IAM'],
-      executionRoleName: stackSetExecutionRole.roleName,
-      stackInstancesGroup: [
-        {
-          deploymentTargets: {
-            accounts: [props.delegatedSecurityAdminAccountId],
-          },
-          regions: [Stack.of(this).region],
-        },
-      ],
-      templateBody: Fn.sub(Fs.readFileSync('./src/stacks/security-hub-iam-role.yaml').toString(), {
-        RoleName: secHubCrossAccountRoleName,
-        ManagementAccountId: Stack.of(this).account,
-      }),
-    });
+    const secHubCrossAccountRoleName = 'OrganizationAccountAccessRole';
+    const secHubCrossAccountRoleArn = `arn:aws:iam::${auditAccountAccountId.valueAsString}:role/${secHubCrossAccountRoleName}`;
 
     // integrate Security Hub with AWS Organizations
     const securityHubOrganizationAdmin = new SecurityHubOrganizationAdmin(this, 'SecurityHubOrganizationAdmin', {
-      adminAccountId: props.delegatedSecurityAdminAccountId,
+      adminAccountId: auditAccountAccountId.valueAsString,
     });
-    securityHubOrganizationAdmin.node.addDependency(secHubIamRoleStackset);
+    securityHubOrganizationAdmin.id;
 
     // designate a home region for Security Hub finding aggregation (ALL REGIONS)
-    const securityHubRegionAggregation = new SecurityHubRegionAggregation(this, 'SecurityHubRegionAggregation');
-    securityHubOrganizationAdmin.node.addDependency(securityHubOrganizationAdmin);
+    const securityHubRegionAggregation = new SecurityHubRegionAggregation(this, 'SecurityHubRegionAggregation', {
+      secHubCrossAccountRoleArn: secHubCrossAccountRoleArn,
+      previousRef: securityHubOrganizationAdmin.id,
+    });
+
+    // make all accounts in the organization Security Hub members
+    const securityHubMembers = new SecurityHubMembers(this, 'SecurityHubMembers', {
+      secHubCrossAccountRoleArn: secHubCrossAccountRoleArn,
+      previousRef: securityHubRegionAggregation.id,
+    });
+
+    // enable Security Hub standards
+    new SecurityHubStandards(this, 'SecurityHubStandards', {
+      secHubCrossAccountRoleArn: secHubCrossAccountRoleArn,
+      previousRef: securityHubMembers.id,
+    });
 
     // enable Security Hub central configuration
-    const securityHubCentralOrganizationConfiguration = new SecurityHubCentralOrganizationConfiguration(
-      this,
-      'SecurityHubCentralOrganizationConfiguration',
-      { secHubCrossAccountRoleArn: secHubCrossAccountRoleArn },
-    );
-    securityHubCentralOrganizationConfiguration.node.addDependency(securityHubRegionAggregation);
+    // const securityHubCentralOrganizationConfiguration = new SecurityHubCentralOrganizationConfiguration(
+    //   this,
+    //   'SecurityHubCentralOrganizationConfiguration',
+    //   { secHubCrossAccountRoleArn: secHubCrossAccountRoleArn, secHubRegionAggregationRef: securityHubRegionAggregation.id },
+    // );
+    // securityHubCentralOrganizationConfiguration.node.addDependency(securityHubRegionAggregation);
 
-    // create/update Configuration Policy for Security Hub
-    const securityHubConfigurationPolicy = new SecurityHubConfigurationPolicy(this, 'SecurityHubConfigurationPolicy', {
-      secHubCrossAccountRoleArn: secHubCrossAccountRoleArn,
-    });
-    securityHubConfigurationPolicy.node.addDependency(securityHubCentralOrganizationConfiguration);
+    // // create/update Configuration Policy for Security Hub
+    // const securityHubConfigurationPolicy = new SecurityHubConfigurationPolicy(this, 'SecurityHubConfigurationPolicy', {
+    //   secHubCrossAccountRoleArn: secHubCrossAccountRoleArn,
+    // });
+    // securityHubConfigurationPolicy.node.addDependency(securityHubCentralOrganizationConfiguration);
 
-    // associate Configuration Policy with root OU
-    const securityHubConfigurationPolicyAssociation = new SecurityHubConfigurationPolicyAssociation(
-      this,
-      'SecurityHubConfigurationPolicyAssociation',
-      { secHubCrossAccountRoleArn: secHubCrossAccountRoleArn },
-    );
-    securityHubConfigurationPolicyAssociation.node.addDependency(securityHubConfigurationPolicy);
+    // // associate Configuration Policy with root OU
+    // const securityHubConfigurationPolicyAssociation = new SecurityHubConfigurationPolicyAssociation(
+    //   this,
+    //   'SecurityHubConfigurationPolicyAssociation',
+    //   { secHubCrossAccountRoleArn: secHubCrossAccountRoleArn },
+    // );
+    // securityHubConfigurationPolicyAssociation.node.addDependency(securityHubConfigurationPolicy);
   }
 }

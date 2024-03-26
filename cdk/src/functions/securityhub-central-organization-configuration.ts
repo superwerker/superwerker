@@ -27,7 +27,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
         );
       } catch (error) {
         console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to update Security Hub Organization Configuration to CENTRAL: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
 
@@ -45,7 +45,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
         );
       } catch (error) {
         console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to Security Hub Organization Configuration to LOCAL: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
   }

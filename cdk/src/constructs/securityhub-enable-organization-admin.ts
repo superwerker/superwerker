@@ -13,6 +13,11 @@
 
 import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
+import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
 export interface SecurityHubOrganizationalAdminProps {
@@ -30,65 +35,9 @@ export class SecurityHubOrganizationAdmin extends Construct {
 
     const RESOURCE_TYPE = 'Custom::SecurityHubEnableOrganizationAdmin';
 
-    const provider = cdk.CustomResourceProvider.getOrCreateProvider(this, RESOURCE_TYPE, {
-      codeDirectory: path.join(__dirname, '..', 'functions', 'securityhub-enable-organization-admin.ts'),
-      runtime: cdk.CustomResourceProviderRuntime.NODEJS_18_X,
-      timeout: cdk.Duration.seconds(180),
-      policyStatements: [
-        {
-          Sid: 'SecurityHubEnableOrganizationAdminTaskOrganizationActions',
-          Effect: 'Allow',
-          Action: ['organizations:DescribeOrganization', 'organizations:ListAccounts', 'organizations:ListDelegatedAdministrators'],
-          Resource: '*',
-        },
-        {
-          Effect: 'Allow',
-          Action: 'organizations:EnableAWSServiceAccess',
-          Resource: '*',
-          Condition: {
-            StringEquals: {
-              'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
-            },
-          },
-        },
-        {
-          Effect: 'Allow',
-          Action: ['organizations:RegisterDelegatedAdministrator', 'organizations:DeregisterDelegatedAdministrator'],
-          Resource: `arn:${cdk.Stack.of(this).partition}:organizations::*:account/o-*/*`,
-          Condition: {
-            StringEquals: {
-              'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
-            },
-          },
-        },
-        {
-          Sid: 'SecurityHubCreateMembersTaskIamAction',
-          Effect: 'Allow',
-          Action: ['iam:CreateServiceLinkedRole'],
-          Resource: '*',
-          Condition: {
-            StringLike: {
-              'iam:AWSServiceName': ['securityhub.amazonaws.com'],
-            },
-          },
-        },
-        {
-          Sid: 'SecurityHubEnableOrganizationAdminAccountTaskSecurityHubActions',
-          Effect: 'Allow',
-          Action: [
-            'securityhub:DisableOrganizationAdminAccount',
-            'securityhub:EnableOrganizationAdminAccount',
-            'securityhub:EnableSecurityHub',
-            'securityhub:ListOrganizationAdminAccounts',
-          ],
-          Resource: '*',
-        },
-      ],
-    });
-
-    const resource = new cdk.CustomResource(this, 'Resource', {
+    const resource = new CustomResource(this, 'Resource', {
+      serviceToken: SecurityHubOrganizationAdminProvider.getOrCreate(this),
       resourceType: RESOURCE_TYPE,
-      serviceToken: provider.serviceToken,
       properties: {
         region: cdk.Stack.of(this).region,
         adminAccountId: props.adminAccountId,
@@ -96,5 +45,76 @@ export class SecurityHubOrganizationAdmin extends Construct {
     });
 
     this.id = resource.ref;
+  }
+}
+
+class SecurityHubOrganizationAdminProvider extends Construct {
+  /**
+   * Returns the singleton provider.
+   */
+  public static getOrCreate(scope: Construct) {
+    const stack = Stack.of(scope);
+    const id = 'superwerker.SecurityHubOrganizationAdminProvider';
+    const x = (stack.node.tryFindChild(id) as SecurityHubOrganizationAdminProvider) || new SecurityHubOrganizationAdminProvider(stack, id);
+    return x.provider.serviceToken;
+  }
+
+  private readonly provider: cr.Provider;
+
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    this.provider = new cr.Provider(this, 'SecurityHubOrganizationAdminProvider', {
+      onEventHandler: new lambda.NodejsFunction(this, 'SecurityHubOrganizationAdminProvider-on-event', {
+        entry: path.join(__dirname, '..', 'functions', 'securityhub-enable-organization-admin.ts'),
+        runtime: Runtime.NODEJS_20_X,
+        timeout: Duration.seconds(180),
+        initialPolicy: [
+          new iam.PolicyStatement({
+            sid: 'SecurityHubEnableOrganizationAdminTaskOrganizationActions',
+            actions: ['organizations:DescribeOrganization', 'organizations:ListAccounts', 'organizations:ListDelegatedAdministrators'],
+            resources: ['*'],
+          }),
+          new iam.PolicyStatement({
+            actions: ['organizations:EnableAWSServiceAccess'],
+            resources: ['*'],
+            conditions: {
+              StringEquals: {
+                'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
+              },
+            },
+          }),
+          new iam.PolicyStatement({
+            actions: ['organizations:RegisterDelegatedAdministrator', 'organizations:DeregisterDelegatedAdministrator'],
+            resources: [`arn:${cdk.Stack.of(this).partition}:organizations::*:account/o-*/*`],
+            conditions: {
+              StringEquals: {
+                'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
+              },
+            },
+          }),
+          new iam.PolicyStatement({
+            sid: 'SecurityHubCreateMembersTaskIamAction',
+            actions: ['iam:CreateServiceLinkedRole'],
+            resources: ['*'],
+            conditions: {
+              StringEquals: {
+                'iam:AWSServiceName': 'securityhub.amazonaws.com',
+              },
+            },
+          }),
+          new iam.PolicyStatement({
+            sid: 'SecurityHubEnableOrganizationAdminAccountTaskSecurityHubActions',
+            actions: [
+              'securityhub:DisableOrganizationAdminAccount',
+              'securityhub:EnableOrganizationAdminAccount',
+              'securityhub:EnableSecurityHub',
+              'securityhub:ListOrganizationAdminAccounts',
+            ],
+            resources: ['*'],
+          }),
+        ],
+      }),
+    });
   }
 }

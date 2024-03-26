@@ -18,10 +18,17 @@ import {
   UpdateFindingAggregatorCommand,
   DeleteFindingAggregatorCommand,
 } from '@aws-sdk/client-securityhub';
+import { STS } from '@aws-sdk/client-sts';
+import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { throttlingBackOff } from '../utils/throttle';
 
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
-  const securityHubClient = new SecurityHub();
+  const secHubCrossAccountRoleArn = event.ResourceProperties.role;
+
+  const stsClient = new STS();
+  const securityHubClient = new SecurityHub({
+    credentials: await getCredsFromAssumeRole(stsClient, secHubCrossAccountRoleArn, 'SecurityHubRegionAggregation'),
+  });
 
   // check if existing finding aggregator exists
   const result = await throttlingBackOff(() => securityHubClient.send(new ListFindingAggregatorsCommand({})));
@@ -42,7 +49,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
           await throttlingBackOff(() => securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'ALL_REGIONS' })));
         } catch (error) {
           console.log(error);
-          return { Status: 'Failure', StatusCode: 400 };
+          throw new Error('Failed to create Finding Aggregator: ' + error);
         }
       }
       return { Status: 'Success', StatusCode: 200 };
@@ -59,7 +66,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
         );
       } catch (error) {
         console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to update Finding Aggregator: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
 
@@ -71,7 +78,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
         );
       } catch (error) {
         console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to delete Finding Aggregator: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
   }

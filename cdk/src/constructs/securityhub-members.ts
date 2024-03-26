@@ -19,7 +19,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
-interface SecurityHubRegionAggregationProps {
+interface SecurityHubMembersProps {
   /**
    * Cross Account Role for configuring Security Hub in audit account
    */
@@ -30,16 +30,16 @@ interface SecurityHubRegionAggregationProps {
   readonly previousRef: string;
 }
 
-export class SecurityHubRegionAggregation extends Construct {
+export class SecurityHubMembers extends Construct {
   public readonly id: string;
 
-  constructor(scope: Construct, id: string, props: SecurityHubRegionAggregationProps) {
+  constructor(scope: Construct, id: string, props: SecurityHubMembersProps) {
     super(scope, id);
 
-    const RESOURCE_TYPE = 'Custom::SecurityHubRegionAggregation';
+    const RESOURCE_TYPE = 'Custom::SecurityHubMembers';
 
     const resource = new CustomResource(this, 'Resource', {
-      serviceToken: SecurityHubRegionAggregationProvider.getOrCreate(this, props),
+      serviceToken: SecurityHubMembersProvider.getOrCreate(this, props),
       resourceType: RESOURCE_TYPE,
       properties: {
         role: props.secHubCrossAccountRoleArn,
@@ -51,38 +51,41 @@ export class SecurityHubRegionAggregation extends Construct {
   }
 }
 
-class SecurityHubRegionAggregationProvider extends Construct {
+class SecurityHubMembersProvider extends Construct {
   /**
    * Returns the singleton provider.
    */
-  public static getOrCreate(scope: Construct, props: SecurityHubRegionAggregationProps) {
+  public static getOrCreate(scope: Construct, props: SecurityHubMembersProps) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.SecurityHubRegionAggregationProvider';
-    const x =
-      (stack.node.tryFindChild(id) as SecurityHubRegionAggregationProvider) || new SecurityHubRegionAggregationProvider(stack, id, props);
+    const id = 'superwerker.SecurityHubMembersProvider';
+    const x = (stack.node.tryFindChild(id) as SecurityHubMembersProvider) || new SecurityHubMembersProvider(stack, id, props);
     return x.provider.serviceToken;
   }
 
   private readonly provider: cr.Provider;
 
-  constructor(scope: Construct, id: string, props: SecurityHubRegionAggregationProps) {
+  constructor(scope: Construct, id: string, props: SecurityHubMembersProps) {
     super(scope, id);
 
-    this.provider = new cr.Provider(this, 'SecurityHubRegionAggregationProvider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'SecurityHubRegionAggregationProvider-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'securityhub-region-aggregation.ts'),
+    this.provider = new cr.Provider(this, 'SecurityHubMembersProvider', {
+      onEventHandler: new lambda.NodejsFunction(this, 'SecurityHubMembersProvider-on-event', {
+        entry: path.join(__dirname, '..', 'functions', 'securityhub-members.ts'),
         runtime: Runtime.NODEJS_20_X,
         timeout: Duration.seconds(180),
         initialPolicy: [
           new iam.PolicyStatement({
+            sid: 'SecurityHubOrgAccess',
+            actions: ['organizations:ListAccounts'],
+            resources: ['*'],
+          }),
+          new iam.PolicyStatement({
             sid: 'SecurityHubModifyRegionAggregation',
             actions: [
-              'securityhub:CreateFindingAggregator',
-              'securityhub:UpdateFindingAggregator',
-              'securityhub:DeleteFindingAggregator',
-              'securityhub:ListFindingAggregators',
-              'securityhub:GetFindingAggregator',
-              'securityhub:DescribeHub',
+              'securityhub:CreateMembers',
+              'securityhub:UpdateOrganizationConfiguration',
+              'securityhub:ListMembers',
+              'securityhub:DeleteMembers',
+              'securityhub:DisassociateMembers',
             ],
             resources: ['*'],
           }),
