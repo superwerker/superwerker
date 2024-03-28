@@ -1,4 +1,4 @@
-import { SecurityHub, UpdateOrganizationConfigurationCommand } from '@aws-sdk/client-securityhub';
+import { SecurityHub, DescribeOrganizationConfigurationCommand, UpdateOrganizationConfigurationCommand } from '@aws-sdk/client-securityhub';
 import { STS } from '@aws-sdk/client-sts';
 import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { throttlingBackOff } from '../utils/throttle';
@@ -15,8 +15,13 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
     case 'Create':
     case 'Update':
       console.log('Update Security Hub Organization Configuration to CENTRAL');
-      try {
-        await throttlingBackOff(() =>
+
+      // The API is a bit flaky and sometimes works after multiple retries
+      // API returns 200 even if the configuration is not updated
+      // So we need to check the configuration after the update
+      let counter = 0;
+      while (counter < 5) {
+        const respone = await throttlingBackOff(() =>
           securityHubClient.send(
             new UpdateOrganizationConfigurationCommand({
               AutoEnable: false,
@@ -25,11 +30,17 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
             }),
           ),
         );
-      } catch (error) {
-        console.log(error);
-        throw new Error('Failed to update Security Hub Organization Configuration to CENTRAL: ' + error);
+        console.log(respone);
+        await new Promise((resolve) => setTimeout(resolve, 10000));
+
+        const organsiationConfig = await throttlingBackOff(() => securityHubClient.send(new DescribeOrganizationConfigurationCommand()));
+        if (organsiationConfig.OrganizationConfiguration?.ConfigurationType === 'CENTRAL') {
+          return { Status: 'Success', StatusCode: 200 };
+        }
+
+        counter++;
       }
-      return { Status: 'Success', StatusCode: 200 };
+      throw new Error('Failed to update Security Hub Organization Configuration to CENTRAL');
 
     case 'Delete':
       console.log('Reset Security Hub Organization Configuration to LOCAL');
@@ -44,8 +55,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
           ),
         );
       } catch (error) {
-        console.log(error);
-        throw new Error('Failed to Security Hub Organization Configuration to LOCAL: ' + error);
+        throw new Error('Failed to reset Security Hub Organization Configuration to LOCAL: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
   }

@@ -41,32 +41,34 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
     case 'Update':
       if (securityHubAdminAccount.status) {
         if (securityHubAdminAccount.accountId === adminAccountId) {
-          console.warn(
+          console.log(
             `SecurityHub admin account ${securityHubAdminAccount.accountId} is already an admin account as status is ${securityHubAdminAccount.status}, in ${region} region. No action needed`,
           );
         } else {
-          console.warn(
+          throw new Error(
             `SecurityHub delegated admin is already set to ${securityHubAdminAccount.accountId} account can not assign another delegated account`,
           );
         }
-      } else {
-        // Enable security hub in management account before creating delegation admin account
-        await enableSecurityHub(securityHubClient);
-        console.log(`Started enableOrganizationAdminAccount function in ${region} region for account ${adminAccountId}`);
-        let retries = 0;
-        while (retries < 10) {
-          await delay(retries ** 2 * 1000);
-          try {
-            await throttlingBackOff(() =>
-              securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: adminAccountId })),
-            );
-            break;
-          } catch (error) {
-            console.log(error);
-            retries = retries + 1;
-          }
+        return { Status: 'Success', StatusCode: 200 };
+      }
+
+      // Enable security hub in management account before creating delegation admin account
+      await enableSecurityHub(securityHubClient);
+      console.log(`Started enableOrganizationAdminAccount in ${region} region for account ${adminAccountId}`);
+      let retries = 0;
+      while (retries < 10) {
+        await delay(retries ** 2 * 1000);
+        try {
+          await throttlingBackOff(() =>
+            securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: adminAccountId })),
+          );
+          break;
+        } catch (error) {
+          console.log(error);
+          retries = retries + 1;
         }
       }
+
       return { Status: 'Success', StatusCode: 200 };
 
     case 'Delete':
@@ -92,7 +94,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
           }
         }
       } else {
-        console.warn(`SecurityHub delegation is not configured for account ${securityHubAdminAccount.accountId}, no action performed`);
+        console.info(`SecurityHub delegation is not configured for account ${securityHubAdminAccount.accountId}, no action performed`);
       }
       return { Status: 'Success', StatusCode: 200 };
   }
@@ -131,9 +133,9 @@ async function enableSecurityHub(securityHubClient: SecurityHub): Promise<Enable
     return await throttlingBackOff(() => securityHubClient.send(new EnableSecurityHubCommand({ EnableDefaultStandards: false })));
   } catch (e) {
     if (e instanceof ResourceConflictException) {
-      console.warn(e.name + ': ' + e.message);
+      console.info('SecurityHub already enabled, nothing to do');
       return;
     }
-    throw new Error(`SecurityHub enable issue error message - ${e}`);
+    throw new Error(`Enabling SecurityHub failed: ${e}`);
   }
 }

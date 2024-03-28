@@ -6,7 +6,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
-export interface SecurityHubCentralOrganizationConfigurationProps {
+export interface SecurityHubConfigurationPolicyAssociationProps {
   /**
    * Cross Account Role for configuring Security Hub in audit account
    */
@@ -17,16 +17,16 @@ export interface SecurityHubCentralOrganizationConfigurationProps {
   readonly previousRef: string;
 }
 
-export class SecurityHubCentralOrganizationConfiguration extends Construct {
+export class SecurityHubConfigurationPolicyAssociation extends Construct {
   public readonly id: string;
 
-  constructor(scope: Construct, id: string, props: SecurityHubCentralOrganizationConfigurationProps) {
+  constructor(scope: Construct, id: string, props: SecurityHubConfigurationPolicyAssociationProps) {
     super(scope, id);
 
-    const RESOURCE_TYPE = 'Custom::SecurityHubCentralOrganizationConfiguration';
+    const RESOURCE_TYPE = 'Custom::SecurityHubConfigurationPolicyAssociation';
 
     const resource = new CustomResource(this, 'Resource', {
-      serviceToken: SecurityHubCentralOrganizationConfigurationProvider.getOrCreate(this, props),
+      serviceToken: SecurityHubConfigurationPolicyAssociationProvider.getOrCreate(this, props),
       resourceType: RESOURCE_TYPE,
       properties: {
         role: props.secHubCrossAccountRoleArn,
@@ -38,33 +38,37 @@ export class SecurityHubCentralOrganizationConfiguration extends Construct {
   }
 }
 
-class SecurityHubCentralOrganizationConfigurationProvider extends Construct {
+class SecurityHubConfigurationPolicyAssociationProvider extends Construct {
   /**
    * Returns the singleton provider.
    */
-  public static getOrCreate(scope: Construct, props: SecurityHubCentralOrganizationConfigurationProps) {
+  public static getOrCreate(scope: Construct, props: SecurityHubConfigurationPolicyAssociationProps) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.SecurityHubCentralOrganizationConfigurationProvider';
+    const id = 'superwerker.SecurityHubConfigurationPolicyAssociationProvider';
     const x =
-      (stack.node.tryFindChild(id) as SecurityHubCentralOrganizationConfigurationProvider) ||
-      new SecurityHubCentralOrganizationConfigurationProvider(stack, id, props);
+      (stack.node.tryFindChild(id) as SecurityHubConfigurationPolicyAssociationProvider) ||
+      new SecurityHubConfigurationPolicyAssociationProvider(stack, id, props);
     return x.provider.serviceToken;
   }
 
   private readonly provider: cr.Provider;
 
-  constructor(scope: Construct, id: string, props: SecurityHubCentralOrganizationConfigurationProps) {
+  constructor(scope: Construct, id: string, props: SecurityHubConfigurationPolicyAssociationProps) {
     super(scope, id);
 
     this.provider = new cr.Provider(this, 'SecurityHubCentralOrganizationConfigurationProvider', {
       onEventHandler: new lambda.NodejsFunction(this, 'SecurityHubCentralOrganizationConfigurationProvider-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'securityhub-central-organization-configuration.ts'),
+        entry: path.join(__dirname, '..', 'functions', 'securityhub-configuration-policy-association.ts'),
         runtime: Runtime.NODEJS_20_X,
         timeout: Duration.seconds(180),
         initialPolicy: [
           new iam.PolicyStatement({
             sid: 'SecurityHubModifyConfiguration',
-            actions: ['securityhub:UpdateOrganizationConfigurationCommand'],
+            actions: [
+              'securityhub:ListConfigurationPolicies',
+              'securityhub:StartConfigurationPolicyAssociation',
+              'securityhub:StartConfigurationPolicyDisassociation',
+            ],
             resources: ['*'],
           }),
           new iam.PolicyStatement({

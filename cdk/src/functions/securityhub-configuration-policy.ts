@@ -10,24 +10,27 @@ import { STS } from '@aws-sdk/client-sts';
 import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { throttlingBackOff } from '../utils/throttle';
 
+export const SUPERWERKER_CONFIGRUATION_POLICY_NAME = 'superwerker-securityhub-configuration';
+
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
   const region = event.ResourceProperties.region;
   const secHubCrossAccountRoleArn = event.ResourceProperties.role;
+
+  // TODO make configurable via SSM parameter that user can override
 
   const stsClient = new STS();
   const creds = await getCredsFromAssumeRole(stsClient, secHubCrossAccountRoleArn, 'SecurityHubConfigurationPolicy');
   const securityHubClient = new SecurityHub({ credentials: creds });
 
-  const superwerkerConfigruationPolicyName = 'superwerker-configuration-policy';
-
   // check if superwerker configuration policy exists
-  const result = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
+  const listPoliciesResult = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
 
-  let superwerkerConfigurationPolicyArn = '';
-  if (result.ConfigurationPolicySummaries!.length > 0) {
-    for (const policy of result.ConfigurationPolicySummaries!) {
-      if (policy.Name === superwerkerConfigruationPolicyName) {
-        superwerkerConfigurationPolicyArn = policy.Arn!;
+  let superwerkerConfigurationPolicyId = '';
+  if (listPoliciesResult.ConfigurationPolicySummaries!.length > 0) {
+    console.log('List of policies:', listPoliciesResult.ConfigurationPolicySummaries);
+    for (const policy of listPoliciesResult.ConfigurationPolicySummaries!) {
+      if (policy.Name === SUPERWERKER_CONFIGRUATION_POLICY_NAME) {
+        superwerkerConfigurationPolicyId = policy.Id!;
       }
     }
   }
@@ -35,7 +38,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
   const enabledStandardIdentifiers = [`arn:aws:securityhub:${region}::standards/aws-foundational-security-best-practices/v/1.0.0`];
 
   const superwerkerConfigruationPolicy = {
-    Name: 'superwerker-securityhub-configuration',
+    Name: SUPERWERKER_CONFIGRUATION_POLICY_NAME,
     Description: 'superwerker securityhub configuration policy applied to all accounts in organisation',
     ConfigurationPolicy: {
       SecurityHub: {
@@ -47,7 +50,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
             'CloudFormation.1',
             'S3.11',
             'Macie.1',
-            'EC2.10',
+            //'EC2.10',
           ],
         },
       },
@@ -59,42 +62,40 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
 
   switch (event.RequestType) {
     case 'Create':
-      //don't try to create configuration policy if it exists
-      if (superwerkerConfigurationPolicyArn) {
-        console.log('Existing superwerker configuration policy found, skipping creation', superwerkerConfigurationPolicyArn);
-      } else {
-        console.log('Create superwerker configuration policy');
+    case 'Update':
+      if (superwerkerConfigurationPolicyId) {
+        console.log('Existing configuration policy found, updating policy', superwerkerConfigurationPolicyId);
         try {
-          await throttlingBackOff(() => securityHubClient.send(new CreateConfigurationPolicyCommand(superwerkerConfigruationPolicy)));
+          let superwerkerConfigruationPolicyUpdate: UpdateConfigurationPolicyCommandInput = {
+            ...superwerkerConfigruationPolicy,
+            Identifier: superwerkerConfigurationPolicyId,
+          };
+          await throttlingBackOff(() => securityHubClient.send(new UpdateConfigurationPolicyCommand(superwerkerConfigruationPolicyUpdate)));
         } catch (error) {
           console.log(error);
-          return { Status: 'Failure', StatusCode: 400 };
+          throw new Error('Failed to update Security Hub configuration policy: ' + error);
         }
+        return { Status: 'Success', StatusCode: 200 };
       }
-      return { Status: 'Success', StatusCode: 200 };
-    case 'Update':
-      console.log('Update superwerker configuration policy', superwerkerConfigurationPolicyArn);
+
+      console.log('Create new configuration policy');
       try {
-        let superwerkerConfigruationPolicyUpdate: UpdateConfigurationPolicyCommandInput = {
-          ...superwerkerConfigruationPolicy,
-          Identifier: superwerkerConfigurationPolicyArn,
-        };
-        await throttlingBackOff(() => securityHubClient.send(new UpdateConfigurationPolicyCommand(superwerkerConfigruationPolicyUpdate)));
+        await throttlingBackOff(() => securityHubClient.send(new CreateConfigurationPolicyCommand(superwerkerConfigruationPolicy)));
       } catch (error) {
         console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to create Security Hub configuration policy: ' + error);
       }
+
       return { Status: 'Success', StatusCode: 200 };
 
     case 'Delete':
-      console.log('Delete superwerker configuration policy', superwerkerConfigurationPolicyArn);
+      console.log('Delete configuration policy', superwerkerConfigurationPolicyId);
       try {
         await throttlingBackOff(() =>
-          securityHubClient.send(new DeleteConfigurationPolicyCommand({ Identifier: superwerkerConfigurationPolicyArn })),
+          securityHubClient.send(new DeleteConfigurationPolicyCommand({ Identifier: superwerkerConfigurationPolicyId })),
         );
       } catch (error) {
-        console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to delete Security Hub configuration policy: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
   }

@@ -25,6 +25,9 @@ import { throttlingBackOff } from '../utils/throttle';
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
   const secHubCrossAccountRoleArn = event.ResourceProperties.role;
 
+  // TODO get regions for controltower ssm parameter
+  const regions = ['eu-west-1']; // must not contain calling/home region
+
   const stsClient = new STS();
   const securityHubClient = new SecurityHub({
     credentials: await getCredsFromAssumeRole(stsClient, secHubCrossAccountRoleArn, 'SecurityHubRegionAggregation'),
@@ -40,44 +43,44 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
 
   switch (event.RequestType) {
     case 'Create':
-      //don't try to create finding aggregator if it exists
+    case 'Update':
       if (findingAggregatorArn) {
-        console.log('Existing Finding Aggregator found, skipping creation', findingAggregatorArn);
-      } else {
-        console.log('Enable Finding Aggreggation');
+        console.log('Existing Finding Aggregator found, updating', findingAggregatorArn);
         try {
-          await throttlingBackOff(() => securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'ALL_REGIONS' })));
+          await throttlingBackOff(() =>
+            securityHubClient.send(
+              new UpdateFindingAggregatorCommand({
+                FindingAggregatorArn: findingAggregatorArn,
+                RegionLinkingMode: 'SPECIFIED_REGIONS',
+                Regions: regions,
+              }),
+            ),
+          );
         } catch (error) {
           console.log(error);
-          throw new Error('Failed to create Finding Aggregator: ' + error);
+          throw new Error('Failed to update Finding Aggregator: ' + error);
         }
+        return { Status: 'Success', StatusCode: 200 };
       }
-      return { Status: 'Success', StatusCode: 200 };
-    case 'Update':
-      console.log('Update Finding Aggregator Arn', findingAggregatorArn);
+
+      console.log('Create new Finding Aggreggation');
       try {
         await throttlingBackOff(() =>
-          securityHubClient.send(
-            new UpdateFindingAggregatorCommand({
-              FindingAggregatorArn: findingAggregatorArn,
-              RegionLinkingMode: 'ALL_REGIONS',
-            }),
-          ),
+          securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'SPECIFIED_REGIONS', Regions: regions })),
         );
       } catch (error) {
         console.log(error);
-        throw new Error('Failed to update Finding Aggregator: ' + error);
+        throw new Error('Failed to create Finding Aggregator: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
 
     case 'Delete':
-      console.log('Delete Finding Aggregator Arn', findingAggregatorArn);
+      console.log('Delete Finding Aggregator Arn');
       try {
         await throttlingBackOff(() =>
           securityHubClient.send(new DeleteFindingAggregatorCommand({ FindingAggregatorArn: findingAggregatorArn })),
         );
       } catch (error) {
-        console.log(error);
         throw new Error('Failed to delete Finding Aggregator: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };

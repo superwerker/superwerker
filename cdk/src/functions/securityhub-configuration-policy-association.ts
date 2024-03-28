@@ -2,15 +2,15 @@ import { ListRootsCommand, Organizations } from '@aws-sdk/client-organizations';
 import {
   SecurityHub,
   StartConfigurationPolicyAssociationCommand,
-  ListConfigurationPolicyAssociationsCommand,
   StartConfigurationPolicyDisassociationCommand,
+  ListConfigurationPoliciesCommand,
 } from '@aws-sdk/client-securityhub';
 import { STS } from '@aws-sdk/client-sts';
+import { SUPERWERKER_CONFIGRUATION_POLICY_NAME } from './securityhub-configuration-policy';
 import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { throttlingBackOff } from '../utils/throttle';
 
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
-  const region = event.ResourceProperties.region;
   const secHubCrossAccountRoleArn = event.ResourceProperties.role;
 
   const stsClient = new STS();
@@ -19,62 +19,67 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
   const organizationsClient = new Organizations({ region: 'us-east-1', credentials: creds });
 
   const rootId = await getOrganisationRoot(organizationsClient);
+  console.log('RootId:', rootId);
 
-  // check if superwerker configuration policy exists
-  const result = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPolicyAssociationsCommand({})));
+  const listPoliciesResult = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
 
-  let configurationPolicyId = '';
-  if (result.ConfigurationPolicyAssociationSummaries!.length > 0) {
-    configurationPolicyId = result.ConfigurationPolicyAssociationSummaries![0].ConfigurationPolicyId!;
-
-    // TODO check if policy can be mapped to superwerker
-    for (const policy of result.ConfigurationPolicyAssociationSummaries!) {
-      console.log(policy);
+  let superwerkerConfigurationPolicyId = '';
+  if (listPoliciesResult.ConfigurationPolicySummaries!.length > 0) {
+    console.log('List of policies:', listPoliciesResult.ConfigurationPolicySummaries);
+    for (const policy of listPoliciesResult.ConfigurationPolicySummaries!) {
+      if (policy.Name === SUPERWERKER_CONFIGRUATION_POLICY_NAME) {
+        superwerkerConfigurationPolicyId = policy.Id!;
+      }
     }
   }
 
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
-      //don't try to associate configuration policy if its already associated
-      if (configurationPolicyId) {
-        console.log('Existing superwerker configuration policy association found, skipping association', configurationPolicyId);
-      } else {
-        console.log('Associate superwerker configuration policy');
-        try {
-          await throttlingBackOff(() =>
-            securityHubClient.send(
-              new StartConfigurationPolicyAssociationCommand({
-                ConfigurationPolicyIdentifier: configurationPolicyId,
-                Target: {
-                  RootId: rootId,
-                },
-              }),
-            ),
-          );
-        } catch (error) {
-          console.log(error);
-          return { Status: 'Failure', StatusCode: 400 };
-        }
+      if (superwerkerConfigurationPolicyId === '') {
+        throw new Error('Cannot associate configuration policy, superwerker configuration policy not found');
       }
-      return { Status: 'Success', StatusCode: 200 };
-    case 'Delete':
-      console.log('Dissasociate superwerker configuration policy', configurationPolicyId);
+
+      console.log('Associate superwerker configuration policy');
       try {
         await throttlingBackOff(() =>
           securityHubClient.send(
-            new StartConfigurationPolicyDisassociationCommand({ ConfigurationPolicyIdentifier: configurationPolicyId }),
+            new StartConfigurationPolicyAssociationCommand({
+              ConfigurationPolicyIdentifier: superwerkerConfigurationPolicyId,
+              Target: {
+                RootId: rootId,
+              },
+            }),
+          ),
+        );
+        // TODO if Suspended OU exists then set to SELF_MANAGED_SECURITY_HUB?
+      } catch (error) {
+        console.log(error);
+        throw new Error('Failed to associate configuration policy: ' + error);
+      }
+
+      return { Status: 'Success', StatusCode: 200 };
+    case 'Delete':
+      console.log('Dissasociate configuration policy', superwerkerConfigurationPolicyId);
+      try {
+        await throttlingBackOff(() =>
+          securityHubClient.send(
+            new StartConfigurationPolicyDisassociationCommand({
+              ConfigurationPolicyIdentifier: superwerkerConfigurationPolicyId,
+              Target: {
+                RootId: rootId,
+              },
+            }),
           ),
         );
       } catch (error) {
-        console.log(error);
-        return { Status: 'Failure', StatusCode: 400 };
+        throw new Error('Failed to dissasociate configuration policy: ' + error);
       }
       return { Status: 'Success', StatusCode: 200 };
   }
 }
 
-async function getOrganisationRoot(organizationsClient: Organizations): Promise<string> {
+async function getOrganisationRoot(organizationsClient: Organizations) {
   const response = await organizationsClient.send(new ListRootsCommand({}));
   if (response.Roots) {
     return response.Roots[0].Id!;
