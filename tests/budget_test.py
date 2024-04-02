@@ -10,7 +10,7 @@ sts = boto3.client('sts')
 @pytest.fixture
 def update_cw_alarm():
     base_alarm = cw_client.describe_alarms(
-        AlarmNamePrefix = 'BudgetStack'
+        AlarmNamePrefix = 'superwerker-Budget'
     )['MetricAlarms'][0]
     cw_client.set_alarm_state(
         AlarmName=base_alarm['AlarmName'],
@@ -27,25 +27,25 @@ def prepare_alarm(update_cw_alarm):
         StateValue='OK',
         StateReason='Testing',
     )
-    ssm.delete_ops_item(OpsItemId=get_ops_item_by_title("Cloudwatch alarm - 'Budget")['Entities'][0]['Id'])
+    ssm.delete_ops_item(OpsItemId=get_ops_item_by_title("Cloudwatch alarm - 'superwerker-Budget")['Entities'][0]['Id'])
     
 @pytest.fixture(scope="module")
 def management_account_id():
     return sts.get_caller_identity()['Account']
 
 def test_budget(prepare_alarm):
-    get_ops_item_by_title("Cloudwatch alarm - 'Budget")
+    get_ops_item_by_title("Cloudwatch alarm - 'superwerker-Budget")
 
-def test_alarms():
-    cw_alarm = cw_client.describe_alarms(AlarmNamePrefix = 'BudgetStack')['MetricAlarms'][0]
+def test_cloudwatch_alarm():
+    cw_alarm = cw_client.describe_alarms(AlarmNamePrefix = 'superwerker-Budget')['MetricAlarms'][0]
     assert cw_alarm['ActionsEnabled'], 'Actions are not enabled'
     assert cw_alarm['MetricName'] == 'NumberOfMessagesPublished', 'Metric Name is incorrect'
     assert cw_alarm['Threshold'] == 0, 'Check Threshold'
 
 def test_budget_alarm(management_account_id):
-    budget_alarm= budget.describe_budgets(AccountId=management_account_id)['Budgets'][0]
+    budget_alarm = budget.describe_budgets(AccountId=management_account_id)['Budgets'][0]
     assert budget_alarm['AutoAdjustData']['AutoAdjustType'] == 'HISTORICAL', 'Auto Adjust Data is not set correctly to HISTORICAL'
-    assert budget_alarm['AutoAdjustData']['HistoricalOptions']['BudgetAdjustmentPeriod'] == 1 , 'Budget Adjustment Period is incorrect'
+    assert budget_alarm['AutoAdjustData']['HistoricalOptions']['BudgetAdjustmentPeriod'] == 3 , 'Budget Adjustment Period is incorrect'
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=10000)
 def get_ops_item_by_title(title):
