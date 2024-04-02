@@ -15,7 +15,7 @@
     "@commitlint/cli": "^19.0.3",
     "@commitlint/config-conventional": "^19.0.3",
     "@types/async-retry": "^1.4.8",
-    "@types/aws-lambda": "^8.10.132",
+    "@types/aws-lambda": "^8.10.136",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.10",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
