@@ -192,13 +192,10 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeSecurityHub, 'Yes'),
     });
     securityHubCondition.overrideLogicalId('IncludeSecurityHub');
-    const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {
-      parameters: {
-        auditAccountAccountId: '111222333444',
-      },
-    });
+    const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
     (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
     (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
+    securityHubStack.addDependency(controlTowerStack);
 
     // ServiceControlPolicies
     const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {

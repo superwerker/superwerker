@@ -15,10 +15,6 @@ interface EnableSecurityHubProps {
    * Cross Account Role for configuring Security Hub in audit account
    */
   readonly secHubCrossAccountRoleArn: string;
-  /**
-   * Control Tower enabled regions
-   */
-  readonly ctGovernedRegions: string[];
 }
 
 export class EnableSecurityHub extends Construct {
@@ -36,7 +32,6 @@ export class EnableSecurityHub extends Construct {
         region: Stack.of(this).region,
         adminAccountId: props.adminAccountId,
         role: props.secHubCrossAccountRoleArn,
-        ctGovernedRegions: props.ctGovernedRegions,
       },
     });
 

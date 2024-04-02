@@ -14,8 +14,8 @@
 import {
   DeregisterDelegatedAdministratorCommand,
   EnableAWSServiceAccessCommandOutput,
+  ListAccountsCommand,
   ListDelegatedAdministratorsCommand,
-  ListRootsCommand,
   Organizations,
 } from '@aws-sdk/client-organizations';
 import {
@@ -30,28 +30,27 @@ import {
   EnableOrganizationAdminAccountCommand,
   DisableOrganizationAdminAccountCommand,
   UpdateOrganizationConfigurationCommand,
-  DescribeOrganizationConfigurationCommand,
-  ListConfigurationPoliciesCommand,
-  UpdateConfigurationPolicyCommandInput,
-  UpdateConfigurationPolicyCommand,
-  CreateConfigurationPolicyCommand,
-  DeleteConfigurationPolicyCommand,
-  StartConfigurationPolicyAssociationCommand,
-  StartConfigurationPolicyDisassociationCommand,
+  CreateMembersCommand,
+  ListMembersCommand,
+  DisassociateMembersCommand,
+  DeleteMembersCommand,
+  DescribeStandardsControlsCommandOutput,
+  DescribeStandardsControlsCommand,
+  GetEnabledStandardsCommand,
+  StandardsStatus,
+  DescribeStandardsCommand,
+  BatchEnableStandardsCommand,
+  BatchDisableStandardsCommand,
+  UpdateStandardsControlCommand,
 } from '@aws-sdk/client-securityhub';
 import { STS } from '@aws-sdk/client-sts';
 import { getCredsFromAssumeRole } from '../utils/assume-role';
 import { delay, throttlingBackOff } from '../utils/throttle';
 
-const SUPERWERKER_CONFIGRUATION_POLICY_NAME = 'superwerker-securityhub-configuration';
-
 export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
   const homeRegion = event.ResourceProperties.region;
   const adminAccountId = event.ResourceProperties.adminAccountId;
   const secHubCrossAccountRoleArn = event.ResourceProperties.role;
-  const ctGovernedRegions = event.ResourceProperties.ctGovernedRegions;
-  console.log('event:', event);
-  const additionalAggregationRegions = getAdditionalRegions(ctGovernedRegions, homeRegion);
 
   const organizationsClientManagementAccount = new Organizations({ region: 'us-east-1' });
   const securityHubClientManagementAccount = new SecurityHub();
@@ -63,263 +62,331 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
 
   switch (event.RequestType) {
     case 'Create':
-      await enableOrganisationAdmin(securityHubClientManagementAccount, adminAccountId, homeRegion);
-      await createFindingAggregator(securityHubClientAuditAccount, additionalAggregationRegions);
-      await enableCentralOrganizationConfiguration(securityHubClientAuditAccount);
-      await createConfigurationPolicy(securityHubClientAuditAccount, homeRegion);
-      await startConfigurationPolicyAssociation(securityHubClientAuditAccount, organizationsClientAuditAccount);
-      return { Status: 'Success', StatusCode: 200 };
     case 'Update':
-      // Updating some parts requires to delete and recreate configuration parts and brings LOTS of complexity with it
-      // e.g. changing aggregation regions requires to disable central configuration first, this however..
-      // requires to dissociate all polcies and delete all configuration first and afterwards re-create/associate everything again
-      console.log('Do nothing on update');
+      await enableOrganisationAdmin(securityHubClientManagementAccount, adminAccountId, homeRegion);
+      await createFindingAggregator(securityHubClientAuditAccount);
+      await createMembers(securityHubClientAuditAccount, organizationsClientAuditAccount);
+      await enableStandards(securityHubClientAuditAccount);
       return { Status: 'Success', StatusCode: 200 };
     case 'Delete':
-      await startConfigurationPolicyDissociation(securityHubClientAuditAccount, organizationsClientAuditAccount);
-      await deleteConfigurationPolicy(securityHubClientAuditAccount);
-      await disableCentralOrganizationConfiguration(securityHubClientAuditAccount);
+      await disableStandards(securityHubClientAuditAccount);
+      await deleteMembers(securityHubClientAuditAccount);
       await deleteFindingAggregator(securityHubClientAuditAccount);
       await disableOrganisationAdmin(securityHubClientManagementAccount, organizationsClientManagementAccount, adminAccountId, homeRegion);
       return { Status: 'Success', StatusCode: 200 };
   }
 }
 
-function getAdditionalRegions(ctGovernedRegions: string[], homeRegion: string): string[] {
-  let additionalRegions: string[] = ctGovernedRegions;
-  if (ctGovernedRegions.length < 1) {
-    throw new Error('Governed regions cannot be empty, must at least include home region');
-  }
-
-  if (ctGovernedRegions[0] !== homeRegion) {
-    throw new Error('Governed regions must include home region as first region');
-  }
-
-  if (ctGovernedRegions.length === 1) {
-    return [];
-  }
-
-  // remove first item in array (home region)
-  additionalRegions.shift();
-  return additionalRegions;
-}
-
-async function startConfigurationPolicyAssociation(securityHubClient: SecurityHub, organizationsClient: Organizations) {
-  const rootId = await getOrganisationRoot(organizationsClient);
-
-  const listPoliciesResult = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
-
-  let superwerkerConfigurationPolicyId = '';
-  if (listPoliciesResult.ConfigurationPolicySummaries!.length > 0) {
-    console.log('List of policies:', listPoliciesResult.ConfigurationPolicySummaries);
-    for (const policy of listPoliciesResult.ConfigurationPolicySummaries!) {
-      if (policy.Name === SUPERWERKER_CONFIGRUATION_POLICY_NAME) {
-        superwerkerConfigurationPolicyId = policy.Id!;
-      }
-    }
-  }
-
-  if (superwerkerConfigurationPolicyId === '') {
-    throw new Error('Cannot associate configuration policy, superwerker configuration policy not found');
-  }
-
-  console.log('Associate superwerker configuration policy');
-  try {
-    await throttlingBackOff(() =>
-      securityHubClient.send(
-        new StartConfigurationPolicyAssociationCommand({
-          ConfigurationPolicyIdentifier: superwerkerConfigurationPolicyId,
-          Target: {
-            RootId: rootId,
-          },
-        }),
-      ),
-    );
-    // TODO if Suspended OU exists then set to SELF_MANAGED_SECURITY_HUB?
-  } catch (error) {
-    console.log(error);
-    throw new Error('Failed to associate configuration policy: ' + error);
-  }
-}
-
-async function startConfigurationPolicyDissociation(securityHubClient: SecurityHub, organizationsClient: Organizations) {
-  const rootId = await getOrganisationRoot(organizationsClient);
-
-  const listPoliciesResult = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
-
-  let superwerkerConfigurationPolicyId = '';
-  if (listPoliciesResult.ConfigurationPolicySummaries!.length > 0) {
-    console.log('List of policies:', listPoliciesResult.ConfigurationPolicySummaries);
-    for (const policy of listPoliciesResult.ConfigurationPolicySummaries!) {
-      if (policy.Name === SUPERWERKER_CONFIGRUATION_POLICY_NAME) {
-        superwerkerConfigurationPolicyId = policy.Id!;
-      }
-    }
-  }
-
-  console.log('Dissasociate configuration policy', superwerkerConfigurationPolicyId);
-  if (superwerkerConfigurationPolicyId) {
-    try {
-      await throttlingBackOff(() =>
-        securityHubClient.send(
-          new StartConfigurationPolicyDisassociationCommand({
-            ConfigurationPolicyIdentifier: superwerkerConfigurationPolicyId,
-            Target: {
-              RootId: rootId,
-            },
-          }),
-        ),
-      );
-    } catch (error) {
-      throw new Error('Failed to dissasociate configuration policy: ' + error);
-    }
-  } else {
-    console.log('No configuration policy found, nothing to dissasociate');
-    return;
-  }
-}
-
-async function createConfigurationPolicy(securityHubClient: SecurityHub, region: string) {
-  const enabledStandardIdentifiers = [`arn:aws:securityhub:${region}::standards/aws-foundational-security-best-practices/v/1.0.0`];
-
-  const superwerkerConfigruationPolicy = {
-    Name: SUPERWERKER_CONFIGRUATION_POLICY_NAME,
-    Description: 'superwerker securityhub configuration policy applied to all accounts in organisation',
-    ConfigurationPolicy: {
-      SecurityHub: {
-        ServiceEnabled: true,
-        EnabledStandardIdentifiers: enabledStandardIdentifiers,
-        SecurityControlsConfiguration: {
-          DisabledSecurityControlIdentifiers: [
-            // all controls are enabled except the following
-            'CloudFormation.1',
-            'S3.11',
-            'Macie.1',
-            'EC2.10',
-          ],
-        },
-      },
-    },
-    Tags: {
-      Name: 'superwerker',
-    },
+async function enableStandards(securityHubClient: SecurityHub) {
+  const foundationalSecurityBestPractices = {
+    name: 'AWS Foundational Security Best Practices v1.0.0',
+    enable: true,
+    controlsToDisable: ['CloudFormation.1', 'S3.11', 'Macie.1', 'EC2.10'],
   };
-  const listPoliciesResult = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
+  const cisAwsFoundationsBenchmark = {
+    name: 'CIS AWS Foundations Benchmark v1.2.0',
+    enable: false,
+    controlsToDisable: [],
+  };
 
-  let superwerkerConfigurationPolicyId = '';
-  if (listPoliciesResult.ConfigurationPolicySummaries!.length > 0) {
-    console.log('List of policies:', listPoliciesResult.ConfigurationPolicySummaries);
-    for (const policy of listPoliciesResult.ConfigurationPolicySummaries!) {
-      if (policy.Name === SUPERWERKER_CONFIGRUATION_POLICY_NAME) {
-        superwerkerConfigurationPolicyId = policy.Id!;
+  const standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[] = [];
+  standardsToEnable.push(foundationalSecurityBestPractices);
+  standardsToEnable.push(cisAwsFoundationsBenchmark);
+
+  // Get AWS defined security standards name and ARN
+  const awsSecurityHubStandards: { [name: string]: string }[] = [];
+  let nextToken: string | undefined = undefined;
+  do {
+    const page = await throttlingBackOff(() => securityHubClient.send(new DescribeStandardsCommand({ NextToken: nextToken })));
+    for (const standard of page.Standards ?? []) {
+      if (standard.StandardsArn && standard.Name) {
+        const securityHubStandard: { [name: string]: string } = {};
+        securityHubStandard[standard.Name] = standard.StandardsArn;
+        awsSecurityHubStandards.push(securityHubStandard);
       }
     }
-  }
+    nextToken = page.NextToken;
+  } while (nextToken);
 
-  if (superwerkerConfigurationPolicyId) {
-    console.log('Existing configuration policy found, updating policy', superwerkerConfigurationPolicyId);
-    try {
-      let superwerkerConfigruationPolicyUpdate: UpdateConfigurationPolicyCommandInput = {
-        ...superwerkerConfigruationPolicy,
-        Identifier: superwerkerConfigurationPolicyId,
-      };
-      await throttlingBackOff(() => securityHubClient.send(new UpdateConfigurationPolicyCommand(superwerkerConfigruationPolicyUpdate)));
-    } catch (error) {
-      console.log(error);
-      throw new Error('Failed to update Security Hub configuration policy: ' + error);
-    }
-    return;
-  }
+  const standardsModificationList = await getStandardsModificationList(securityHubClient, standardsToEnable, awsSecurityHubStandards);
 
-  console.log('Create new configuration policy');
-  try {
-    await throttlingBackOff(() => securityHubClient.send(new CreateConfigurationPolicyCommand(superwerkerConfigruationPolicy)));
-  } catch (error) {
-    console.log(error);
-    throw new Error('Failed to create Security Hub configuration policy: ' + error);
-  }
-}
+  console.log('Enabling Standards');
 
-async function deleteConfigurationPolicy(securityHubClient: SecurityHub) {
-  const listPoliciesResult = await throttlingBackOff(() => securityHubClient.send(new ListConfigurationPoliciesCommand({})));
-
-  let superwerkerConfigurationPolicyId = '';
-  if (listPoliciesResult.ConfigurationPolicySummaries!.length > 0) {
-    console.log('List of policies:', listPoliciesResult.ConfigurationPolicySummaries);
-    for (const policy of listPoliciesResult.ConfigurationPolicySummaries!) {
-      if (policy.Name === SUPERWERKER_CONFIGRUATION_POLICY_NAME) {
-        superwerkerConfigurationPolicyId = policy.Id!;
-      }
-    }
-  }
-
-  console.log('Delete configuration policy', superwerkerConfigurationPolicyId);
-  if (superwerkerConfigurationPolicyId) {
-    try {
-      await throttlingBackOff(() =>
-        securityHubClient.send(new DeleteConfigurationPolicyCommand({ Identifier: superwerkerConfigurationPolicyId })),
-      );
-    } catch (error) {
-      throw new Error('Failed to delete Security Hub configuration policy: ' + error);
-    }
-  } else {
-    console.log('No configuration policy found, nothing to delete');
-  }
-}
-
-async function enableCentralOrganizationConfiguration(securityHubClient: SecurityHub) {
-  console.log('Update Security Hub Organization Configuration to CENTRAL');
-
-  // The API is a bit flaky and sometimes works after multiple retries
-  // API returns 200 even if the configuration is not updated
-  // So we need to check the configuration after the update
-  let counter = 0;
-  while (counter < 5) {
-    const respone = await throttlingBackOff(() =>
-      securityHubClient.send(
-        new UpdateOrganizationConfigurationCommand({
-          AutoEnable: false,
-          AutoEnableStandards: 'NONE',
-          OrganizationConfiguration: { ConfigurationType: 'CENTRAL' },
-        }),
-      ),
-    );
-    console.log(respone);
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-
-    const organsiationConfig = await throttlingBackOff(() => securityHubClient.send(new DescribeOrganizationConfigurationCommand()));
-    if (organsiationConfig.OrganizationConfiguration?.ConfigurationType === 'CENTRAL') {
-      return;
-    }
-
-    counter++;
-  }
-  throw new Error('Failed to update Security Hub Organization Configuration to CENTRAL');
-}
-
-async function disableCentralOrganizationConfiguration(securityHubClient: SecurityHub) {
-  console.log('Resetting Security Hub Organization Configuration to LOCAL');
-  try {
+  // When there are standards to be enable
+  if (standardsModificationList.toEnableStandardRequests.length > 0) {
+    console.log('To enable:');
+    console.log(standardsModificationList.toEnableStandardRequests);
     await throttlingBackOff(() =>
       securityHubClient.send(
-        new UpdateOrganizationConfigurationCommand({
-          AutoEnable: false,
-          AutoEnableStandards: 'NONE',
-          OrganizationConfiguration: { ConfigurationType: 'LOCAL' },
+        new BatchEnableStandardsCommand({ StandardsSubscriptionRequests: standardsModificationList.toEnableStandardRequests }),
+      ),
+    );
+  }
+
+  // When there are standards to be disable
+  if (standardsModificationList.toDisableStandardArns!.length > 0) {
+    console.log(`Disabling standard ${standardsModificationList.toDisableStandardArns!}`);
+    await throttlingBackOff(() =>
+      securityHubClient.send(
+        new BatchDisableStandardsCommand({ StandardsSubscriptionArns: standardsModificationList.toDisableStandardArns }),
+      ),
+    );
+  }
+
+  // get list of controls to modify
+  const controlsToModify = await getControlArnsToModify(securityHubClient, standardsToEnable, awsSecurityHubStandards);
+
+  // Enable standard controls
+  for (const controlArnToModify of controlsToModify.disableStandardControlArns) {
+    await throttlingBackOff(() =>
+      securityHubClient.send(
+        new UpdateStandardsControlCommand({
+          StandardsControlArn: controlArnToModify,
+          ControlStatus: 'DISABLED',
+          DisabledReason: 'Control disabled by superwerker',
         }),
       ),
     );
-  } catch (error) {
-    throw new Error('Failed to reset Security Hub Organization Configuration to LOCAL: ' + error);
+  }
+
+  // Disable standard controls
+  for (const controlArnToModify of controlsToModify.enableStandardControlArns) {
+    await throttlingBackOff(() =>
+      securityHubClient.send(new UpdateStandardsControlCommand({ StandardsControlArn: controlArnToModify, ControlStatus: 'ENABLED' })),
+    );
   }
 }
 
-async function createFindingAggregator(securityHubClient: SecurityHub, regions: string[]) {
-  // if (regions.length < 1) {
-  //   console.log('No regions to aggregate findings, skipping');
-  //   return;
-  // }
+async function disableStandards(securityHubClient: SecurityHub) {
+  const existingEnabledStandards = await getExistingEnabledStandards(securityHubClient);
+  const subscriptionArns: string[] = [];
+  existingEnabledStandards.forEach((standard) => {
+    subscriptionArns.push(standard.StandardsSubscriptionArn);
+  });
 
+  if (subscriptionArns.length > 0) {
+    console.log('Below listed standards disable during delete');
+    console.log(subscriptionArns);
+    await throttlingBackOff(() =>
+      securityHubClient.send(new BatchDisableStandardsCommand({ StandardsSubscriptionArns: subscriptionArns })),
+    );
+  }
+}
+
+async function getExistingEnabledStandards(securityHubClient: SecurityHub) {
+  const response = await throttlingBackOff(() => securityHubClient.send(new GetEnabledStandardsCommand({})));
+
+  // Get list of  existing enabled standards within securityhub
+  const existingEnabledStandardArns: {
+    StandardsArn: string;
+    StandardsInput: Record<string, string>;
+    StandardsStatus: StandardsStatus;
+    StandardsSubscriptionArn: string;
+  }[] = [];
+  response.StandardsSubscriptions!.forEach((item) => {
+    existingEnabledStandardArns.push({
+      StandardsArn: item.StandardsArn!,
+      StandardsInput: item.StandardsInput!,
+      StandardsStatus: item.StandardsStatus!,
+      StandardsSubscriptionArn: item.StandardsSubscriptionArn!,
+    });
+  });
+
+  return existingEnabledStandardArns;
+}
+
+/**
+ * Function to provide list of control arns for standards to be enable or disable
+ * @param securityHubClient
+ * @param standardsToEnable
+ * @param awsSecurityHubStandards
+ */
+async function getControlArnsToModify(
+  securityHubClient: SecurityHub,
+  standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
+  awsSecurityHubStandards: { [name: string]: string }[],
+): Promise<{ disableStandardControlArns: string[]; enableStandardControlArns: string[] }> {
+  const existingEnabledStandards = await getExistingEnabledStandards(securityHubClient);
+  const disableStandardControls: string[] = [];
+  const enableStandardControls: string[] = [];
+
+  let nextToken: string | undefined = undefined;
+  for (const inputStandard of standardsToEnable) {
+    console.log(`inputStandard: ${JSON.stringify(inputStandard)}`);
+    if (inputStandard.enable) {
+      for (const awsSecurityHubStandard of awsSecurityHubStandards) {
+        if (awsSecurityHubStandard[inputStandard.name]) {
+          console.log(`Standard Name: ${awsSecurityHubStandard[inputStandard.name]}`);
+          const existingEnabledStandard = existingEnabledStandards.find(
+            (item) => item.StandardsArn === awsSecurityHubStandard[inputStandard.name],
+          );
+          if (existingEnabledStandard) {
+            console.log(`Getting controls for ${existingEnabledStandard?.StandardsSubscriptionArn} subscription`);
+
+            const standardsControl = [];
+
+            do {
+              const page = await getDescribeStandardsControls(
+                securityHubClient,
+                existingEnabledStandard?.StandardsSubscriptionArn,
+                nextToken,
+              );
+              for (const control of page.Controls ?? []) {
+                standardsControl.push(control);
+              }
+              nextToken = page.NextToken;
+            } while (nextToken);
+
+            while (standardsControl.length === 0) {
+              console.warn(`Delaying standard control retrieval by 10000 ms for ${existingEnabledStandard?.StandardsSubscriptionArn}`);
+              await delay(10000);
+              console.warn(`Rechecking - Getting controls for ${existingEnabledStandard?.StandardsSubscriptionArn}`);
+              nextToken = undefined;
+              do {
+                const page = await getDescribeStandardsControls(
+                  securityHubClient,
+                  existingEnabledStandard?.StandardsSubscriptionArn,
+                  nextToken,
+                );
+                for (const control of page.Controls ?? []) {
+                  standardsControl.push(control);
+                }
+                nextToken = page.NextToken;
+              } while (nextToken);
+            }
+
+            console.log(`When control list available for ${existingEnabledStandard?.StandardsSubscriptionArn}`);
+            console.log(standardsControl);
+
+            for (const control of standardsControl) {
+              if (inputStandard.controlsToDisable?.includes(control.ControlId!)) {
+                console.log(control.ControlId!);
+                disableStandardControls.push(control.StandardsControlArn!);
+              } else {
+                if (control.ControlStatus == 'DISABLED') {
+                  console.log('following is disabled need to be enable now');
+                  console.log(control.ControlId!);
+                  enableStandardControls.push(control.StandardsControlArn!);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return { disableStandardControlArns: disableStandardControls, enableStandardControlArns: enableStandardControls };
+}
+
+/**
+ * Function to be executed before event specific action starts, this function makes the list of standards to enable or disable based on the input
+ * @param securityHubClient
+ * @param standardsToEnable
+ * @param awsSecurityHubStandards
+ */
+async function getStandardsModificationList(
+  securityHubClient: SecurityHub,
+  standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
+  awsSecurityHubStandards: { [name: string]: string }[],
+) {
+  const existingEnabledStandards = await getExistingEnabledStandards(securityHubClient);
+  const toEnableStandardRequests = [];
+  const toDisableStandardArns: string[] | undefined = [];
+
+  // if no standard provided to enable, then disable all existing enabled standards
+  if (!standardsToEnable || standardsToEnable.length === 0) {
+    for (const existingEnabledStandard of existingEnabledStandards) {
+      toDisableStandardArns.push(existingEnabledStandard?.StandardsSubscriptionArn);
+    }
+  }
+
+  // for each standard to enable, check if it is already enabled, if not then add it to enable list, else to disable list
+  for (const inputStandard of standardsToEnable) {
+    if (inputStandard.enable) {
+      for (const awsSecurityHubStandard of awsSecurityHubStandards) {
+        if (awsSecurityHubStandard[inputStandard.name]) {
+          const existingEnabledStandard = existingEnabledStandards.filter(
+            (item) => item.StandardsArn === awsSecurityHubStandard[inputStandard.name],
+          );
+          if (existingEnabledStandard.length === 0) {
+            toEnableStandardRequests.push({ StandardsArn: awsSecurityHubStandard[inputStandard.name] });
+          }
+        }
+      }
+    } else {
+      for (const awsSecurityHubStandard of awsSecurityHubStandards) {
+        if (awsSecurityHubStandard[inputStandard.name]) {
+          const existingEnabledStandard = existingEnabledStandards.find(
+            (item) => item.StandardsArn === awsSecurityHubStandard[inputStandard.name],
+          );
+
+          if (existingEnabledStandard) {
+            toDisableStandardArns.push(existingEnabledStandard?.StandardsSubscriptionArn);
+          }
+        }
+      }
+    }
+  }
+
+  return { toEnableStandardRequests: toEnableStandardRequests, toDisableStandardArns: toDisableStandardArns };
+}
+
+async function getDescribeStandardsControls(
+  securityHubClient: SecurityHub,
+  standardsSubscriptionArn: string,
+  nextToken?: string,
+): Promise<DescribeStandardsControlsCommandOutput> {
+  return throttlingBackOff(() =>
+    securityHubClient.send(
+      new DescribeStandardsControlsCommand({ StandardsSubscriptionArn: standardsSubscriptionArn, NextToken: nextToken }),
+    ),
+  );
+}
+
+async function createMembers(securityHubClient: SecurityHub, organizationsClient: Organizations) {
+  const allAccounts: { AccountId: string; Email: string | undefined }[] = [];
+  let nextToken: string | undefined = undefined;
+  do {
+    const page = await throttlingBackOff(() => organizationsClient.send(new ListAccountsCommand({ NextToken: nextToken })));
+    for (const account of page.Accounts ?? []) {
+      if (account.Status === 'ACTIVE') {
+        allAccounts.push({ AccountId: account.Id!, Email: account.Email });
+      }
+    }
+    nextToken = page.NextToken;
+  } while (nextToken);
+
+  console.log('Create Security Hub Members');
+
+  // initally invite all accounts to be members
+  await throttlingBackOff(() => securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })));
+
+  // for all accounts that are added later automatically enable security hub for them
+  await throttlingBackOff(() => securityHubClient.send(new UpdateOrganizationConfigurationCommand({ AutoEnable: true })));
+}
+
+async function deleteMembers(securityHubClient: SecurityHub) {
+  const existingMemberAccountIds: string[] = [];
+  let nextToken: string | undefined = undefined;
+  do {
+    const page = await throttlingBackOff(() => securityHubClient.send(new ListMembersCommand({ NextToken: nextToken })));
+    for (const member of page.Members ?? []) {
+      console.log(member);
+      existingMemberAccountIds.push(member.AccountId!);
+    }
+    nextToken = page.NextToken;
+  } while (nextToken);
+
+  if (existingMemberAccountIds.length > 0) {
+    console.log('Disassociate & Delete Security Hub Members');
+    await throttlingBackOff(() => securityHubClient.send(new DisassociateMembersCommand({ AccountIds: existingMemberAccountIds })));
+
+    await throttlingBackOff(() => securityHubClient.send(new DeleteMembersCommand({ AccountIds: existingMemberAccountIds })));
+  }
+}
+
+async function createFindingAggregator(securityHubClient: SecurityHub) {
   const result = await throttlingBackOff(() => securityHubClient.send(new ListFindingAggregatorsCommand({})));
   let findingAggregatorArn = '';
   if (result.FindingAggregators!.length > 0) {
@@ -476,12 +543,4 @@ async function enableSecurityHub(securityHubClient: SecurityHub): Promise<Enable
     }
     throw new Error(`Enabling SecurityHub failed: ${e}`);
   }
-}
-
-async function getOrganisationRoot(organizationsClient: Organizations) {
-  const response = await organizationsClient.send(new ListRootsCommand({}));
-  if (response.Roots) {
-    return response.Roots[0].Id!;
-  }
-  throw new Error('No root found in organization');
 }
