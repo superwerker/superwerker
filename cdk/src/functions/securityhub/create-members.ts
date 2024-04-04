@@ -22,44 +22,54 @@ import {
 } from '@aws-sdk/client-securityhub';
 import { throttlingBackOff } from '../utils/throttle';
 
-export async function createMembers(securityHubClient: SecurityHubClient, organizationsClient: OrganizationsClient) {
-  const allAccounts: { AccountId: string; Email: string | undefined }[] = [];
-  let nextToken: string | undefined = undefined;
-  do {
-    const page = await throttlingBackOff(() => organizationsClient.send(new ListAccountsCommand({ NextToken: nextToken })));
-    for (const account of page.Accounts ?? []) {
-      if (account.Status === 'ACTIVE') {
-        allAccounts.push({ AccountId: account.Id!, Email: account.Email });
+export class SecurityHubMemberMgmt {
+  organizationsClient: OrganizationsClient;
+  securityHubClient: SecurityHubClient;
+
+  constructor(organizationsClientAuditAccount: OrganizationsClient, securityHubClientAuditAccount: SecurityHubClient) {
+    this.organizationsClient = organizationsClientAuditAccount;
+    this.securityHubClient = securityHubClientAuditAccount;
+  }
+
+  async createMembers() {
+    const allAccounts: { AccountId: string; Email: string | undefined }[] = [];
+    let nextToken: string | undefined = undefined;
+    do {
+      const page = await throttlingBackOff(() => this.organizationsClient.send(new ListAccountsCommand({ NextToken: nextToken })));
+      for (const account of page.Accounts ?? []) {
+        if (account.Status === 'ACTIVE') {
+          allAccounts.push({ AccountId: account.Id!, Email: account.Email });
+        }
       }
+      nextToken = page.NextToken;
+    } while (nextToken);
+
+    console.log('Create Security Hub Members');
+
+    // initally invite all accounts to be members
+    await throttlingBackOff(() => this.securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })));
+
+    // for all accounts that are added later automatically enable security hub for them
+    await throttlingBackOff(() => this.securityHubClient.send(new UpdateOrganizationConfigurationCommand({ AutoEnable: true })));
+  }
+
+  async deleteMembers() {
+    const existingMemberAccountIds: string[] = [];
+    let nextToken: string | undefined = undefined;
+    do {
+      const page = await throttlingBackOff(() => this.securityHubClient.send(new ListMembersCommand({ NextToken: nextToken })));
+      for (const member of page.Members ?? []) {
+        console.log(member);
+        existingMemberAccountIds.push(member.AccountId!);
+      }
+      nextToken = page.NextToken;
+    } while (nextToken);
+
+    if (existingMemberAccountIds.length > 0) {
+      console.log('Disassociate & Delete Security Hub Members');
+      await throttlingBackOff(() => this.securityHubClient.send(new DisassociateMembersCommand({ AccountIds: existingMemberAccountIds })));
+
+      await throttlingBackOff(() => this.securityHubClient.send(new DeleteMembersCommand({ AccountIds: existingMemberAccountIds })));
     }
-    nextToken = page.NextToken;
-  } while (nextToken);
-
-  console.log('Create Security Hub Members');
-
-  // initally invite all accounts to be members
-  await throttlingBackOff(() => securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })));
-
-  // for all accounts that are added later automatically enable security hub for them
-  await throttlingBackOff(() => securityHubClient.send(new UpdateOrganizationConfigurationCommand({ AutoEnable: true })));
-}
-
-export async function deleteMembers(securityHubClient: SecurityHubClient) {
-  const existingMemberAccountIds: string[] = [];
-  let nextToken: string | undefined = undefined;
-  do {
-    const page = await throttlingBackOff(() => securityHubClient.send(new ListMembersCommand({ NextToken: nextToken })));
-    for (const member of page.Members ?? []) {
-      console.log(member);
-      existingMemberAccountIds.push(member.AccountId!);
-    }
-    nextToken = page.NextToken;
-  } while (nextToken);
-
-  if (existingMemberAccountIds.length > 0) {
-    console.log('Disassociate & Delete Security Hub Members');
-    await throttlingBackOff(() => securityHubClient.send(new DisassociateMembersCommand({ AccountIds: existingMemberAccountIds })));
-
-    await throttlingBackOff(() => securityHubClient.send(new DeleteMembersCommand({ AccountIds: existingMemberAccountIds })));
   }
 }

@@ -15,12 +15,12 @@ import {
   CreateFindingAggregatorCommand,
   DeleteFindingAggregatorCommand,
   ListFindingAggregatorsCommand,
-  SecurityHub,
+  SecurityHubClient,
   UpdateFindingAggregatorCommand,
 } from '@aws-sdk/client-securityhub';
 import { throttlingBackOff } from '../utils/throttle';
 
-export async function createFindingAggregator(securityHubClient: SecurityHub) {
+export async function createFindingAggregator(securityHubClient: SecurityHubClient) {
   const result = await throttlingBackOff(() => securityHubClient.send(new ListFindingAggregatorsCommand({})));
   let findingAggregatorArn = '';
   if (result.FindingAggregators!.length > 0) {
@@ -54,7 +54,7 @@ export async function createFindingAggregator(securityHubClient: SecurityHub) {
   }
 }
 
-export async function deleteFindingAggregator(securityHubClient: SecurityHub) {
+export async function deleteFindingAggregator(securityHubClient: SecurityHubClient) {
   const result = await throttlingBackOff(() => securityHubClient.send(new ListFindingAggregatorsCommand({})));
 
   let findingAggregatorArn = '';

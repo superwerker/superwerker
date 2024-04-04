@@ -18,14 +18,14 @@ import {
   DescribeStandardsControlsCommand,
   DescribeStandardsControlsCommandOutput,
   GetEnabledStandardsCommand,
-  SecurityHub,
+  SecurityHubClient,
   StandardsStatus,
   UpdateStandardsControlCommand,
 } from '@aws-sdk/client-securityhub';
 import { delay, throttlingBackOff } from '../utils/throttle';
 
 export async function enableStandards(
-  securityHubClient: SecurityHub,
+  securityHubClient: SecurityHubClient,
   standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
 ) {
   // Get AWS defined security standards name and ARN
@@ -92,7 +92,7 @@ export async function enableStandards(
   }
 }
 
-export async function disableStandards(securityHubClient: SecurityHub) {
+export async function disableStandards(securityHubClient: SecurityHubClient) {
   const existingEnabledStandards = await getExistingEnabledStandards(securityHubClient);
   const subscriptionArns: string[] = [];
   existingEnabledStandards.forEach((standard) => {
@@ -108,7 +108,7 @@ export async function disableStandards(securityHubClient: SecurityHub) {
   }
 }
 
-async function getExistingEnabledStandards(securityHubClient: SecurityHub) {
+async function getExistingEnabledStandards(securityHubClient: SecurityHubClient) {
   const response = await throttlingBackOff(() => securityHubClient.send(new GetEnabledStandardsCommand({})));
 
   // Get list of  existing enabled standards within securityhub
@@ -137,7 +137,7 @@ async function getExistingEnabledStandards(securityHubClient: SecurityHub) {
  * @param awsSecurityHubStandards
  */
 async function getControlArnsToModify(
-  securityHubClient: SecurityHub,
+  securityHubClient: SecurityHubClient,
   standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
   awsSecurityHubStandards: { [name: string]: string }[],
 ): Promise<{ disableStandardControlArns: string[]; enableStandardControlArns: string[] }> {
@@ -221,7 +221,7 @@ async function getControlArnsToModify(
  * @param awsSecurityHubStandards
  */
 async function getStandardsModificationList(
-  securityHubClient: SecurityHub,
+  securityHubClient: SecurityHubClient,
   standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
   awsSecurityHubStandards: { [name: string]: string }[],
 ) {
@@ -268,7 +268,7 @@ async function getStandardsModificationList(
 }
 
 async function getDescribeStandardsControls(
-  securityHubClient: SecurityHub,
+  securityHubClient: SecurityHubClient,
   standardsSubscriptionArn: string,
   nextToken?: string,
 ): Promise<DescribeStandardsControlsCommandOutput> {

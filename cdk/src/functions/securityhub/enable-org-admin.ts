@@ -15,7 +15,7 @@ import {
   DeregisterDelegatedAdministratorCommand,
   EnableAWSServiceAccessCommandOutput,
   ListDelegatedAdministratorsCommand,
-  Organizations,
+  OrganizationsClient,
 } from '@aws-sdk/client-organizations';
 import {
   DisableOrganizationAdminAccountCommand,
@@ -23,11 +23,11 @@ import {
   EnableSecurityHubCommand,
   ListOrganizationAdminAccountsCommand,
   ResourceConflictException,
-  SecurityHub,
+  SecurityHubClient,
 } from '@aws-sdk/client-securityhub';
 import { delay, throttlingBackOff } from '../utils/throttle';
 
-export async function enableOrganisationAdmin(securityHubClient: SecurityHub, adminAccountId: string, region: string) {
+export async function enableOrganisationAdmin(securityHubClient: SecurityHubClient, adminAccountId: string, region: string) {
   const securityHubAdminAccount = await getSecurityHubDelegatedAccount(securityHubClient, adminAccountId);
 
   if (securityHubAdminAccount.status) {
@@ -60,8 +60,8 @@ export async function enableOrganisationAdmin(securityHubClient: SecurityHub, ad
 }
 
 export async function disableOrganisationAdmin(
-  securityHubClient: SecurityHub,
-  organizationsClient: Organizations,
+  securityHubClient: SecurityHubClient,
+  organizationsClient: OrganizationsClient,
   adminAccountId: string,
   region: string,
 ) {
@@ -91,7 +91,7 @@ export async function disableOrganisationAdmin(
 }
 
 async function getSecurityHubDelegatedAccount(
-  securityHubClient: SecurityHub,
+  securityHubClient: SecurityHubClient,
   adminAccountId: string,
 ): Promise<{ accountId: string | undefined; status: string | undefined }> {
   const adminAccounts = [];
@@ -118,7 +118,7 @@ async function getSecurityHubDelegatedAccount(
   return { accountId: adminAccounts[0].AccountId, status: adminAccounts[0].Status };
 }
 
-async function enableSecurityHub(securityHubClient: SecurityHub): Promise<EnableAWSServiceAccessCommandOutput | undefined> {
+async function enableSecurityHub(securityHubClient: SecurityHubClient): Promise<EnableAWSServiceAccessCommandOutput | undefined> {
   try {
     return await throttlingBackOff(() => securityHubClient.send(new EnableSecurityHubCommand({ EnableDefaultStandards: false })));
   } catch (e) {
