@@ -15,6 +15,6 @@ export async function getCredsFromAssumeRole(stsClient: STS, roleArn: string, ro
     };
   } catch (error) {
     console.log(error);
-    throw new Error(`Failed to assume role ${roleArn}`);
+    throw new Error(`Failed to assume role ${roleArn}: ${error}`);
   }
 }
