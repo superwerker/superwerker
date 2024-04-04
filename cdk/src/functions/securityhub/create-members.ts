@@ -11,18 +11,18 @@
  *  and limitations under the License.
  */
 
-import { ListAccountsCommand, Organizations } from '@aws-sdk/client-organizations';
+import { ListAccountsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import {
   CreateMembersCommand,
   DeleteMembersCommand,
   DisassociateMembersCommand,
   ListMembersCommand,
-  SecurityHub,
+  SecurityHubClient,
   UpdateOrganizationConfigurationCommand,
 } from '@aws-sdk/client-securityhub';
 import { throttlingBackOff } from '../utils/throttle';
 
-export async function createMembers(securityHubClient: SecurityHub, organizationsClient: Organizations) {
+export async function createMembers(securityHubClient: SecurityHubClient, organizationsClient: OrganizationsClient) {
   const allAccounts: { AccountId: string; Email: string | undefined }[] = [];
   let nextToken: string | undefined = undefined;
   do {
@@ -44,7 +44,7 @@ export async function createMembers(securityHubClient: SecurityHub, organization
   await throttlingBackOff(() => securityHubClient.send(new UpdateOrganizationConfigurationCommand({ AutoEnable: true })));
 }
 
-export async function deleteMembers(securityHubClient: SecurityHub) {
+export async function deleteMembers(securityHubClient: SecurityHubClient) {
   const existingMemberAccountIds: string[] = [];
   let nextToken: string | undefined = undefined;
   do {
