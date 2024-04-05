@@ -27,105 +27,122 @@ import {
 } from '@aws-sdk/client-securityhub';
 import { delay, throttlingBackOff } from '../utils/throttle';
 
-export async function enableOrganisationAdmin(securityHubClient: SecurityHubClient, adminAccountId: string, region: string) {
-  const securityHubAdminAccount = await getSecurityHubDelegatedAccount(securityHubClient, adminAccountId);
+export class SecurityHubOrganizationMgmt {
+  private securityAdminAccountId: string;
+  private organizationsClient: OrganizationsClient;
+  private securityHubClient: SecurityHubClient;
 
-  if (securityHubAdminAccount.status) {
-    if (securityHubAdminAccount.accountId === adminAccountId) {
-      console.log(
-        `SecurityHub admin account ${securityHubAdminAccount.accountId} is already an admin account as status is ${securityHubAdminAccount.status}, in ${region} region. No action needed`,
-      );
-    } else {
-      throw new Error(
-        `SecurityHub delegated admin is already set to ${securityHubAdminAccount.accountId} account can not assign another delegated account`,
-      );
-    }
-    return;
+  constructor(
+    accountIdToMakeSecurityHubAdmin: string,
+    organizationsClientManagementAccount: OrganizationsClient,
+    securityHubClientManagementAccount: SecurityHubClient,
+  ) {
+    this.securityAdminAccountId = accountIdToMakeSecurityHubAdmin;
+    this.organizationsClient = organizationsClientManagementAccount;
+    this.securityHubClient = securityHubClientManagementAccount;
   }
 
-  // Enable security hub in management account before creating delegation admin account
-  await enableSecurityHub(securityHubClient);
-  console.log(`Started enableOrganizationAdminAccount in ${region} region for account ${adminAccountId}`);
-  let retries = 0;
-  while (retries < 10) {
-    await delay(retries ** 2 * 1000);
-    try {
-      await throttlingBackOff(() => securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: adminAccountId })));
-      break;
-    } catch (error) {
-      console.log(error);
-      retries = retries + 1;
-    }
-  }
-}
+  async enableOrganisationAdmin(region: string) {
+    const securityHubAdminAccount = await this.getSecurityHubDelegatedAccount();
 
-export async function disableOrganisationAdmin(
-  securityHubClient: SecurityHubClient,
-  organizationsClient: OrganizationsClient,
-  adminAccountId: string,
-  region: string,
-) {
-  const securityHubAdminAccount = await getSecurityHubDelegatedAccount(securityHubClient, adminAccountId);
-  if (securityHubAdminAccount.accountId) {
-    if (securityHubAdminAccount.accountId === adminAccountId) {
-      console.log(`Started disableOrganizationAdminAccount function in ${region} region for account ${adminAccountId}`);
-      await throttlingBackOff(() => securityHubClient.send(new DisableOrganizationAdminAccountCommand({ AdminAccountId: adminAccountId })));
-      const response = await throttlingBackOff(() =>
-        organizationsClient.send(new ListDelegatedAdministratorsCommand({ ServicePrincipal: 'securityhub.amazonaws.com' })),
-      );
-
-      if (response.DelegatedAdministrators!.length > 0) {
-        console.log(`Started deregisterDelegatedAdministrator function in ${region} region for account ${adminAccountId}`);
-        await throttlingBackOff(() =>
-          organizationsClient.send(
-            new DeregisterDelegatedAdministratorCommand({ AccountId: adminAccountId, ServicePrincipal: 'securityhub.amazonaws.com' }),
-          ),
+    if (securityHubAdminAccount.status) {
+      if (securityHubAdminAccount.accountId === this.securityAdminAccountId) {
+        console.log(
+          `SecurityHub admin account ${securityHubAdminAccount.accountId} is already an admin account as status is ${securityHubAdminAccount.status}, in ${region} region. No action needed`,
         );
       } else {
-        console.warn(`Account ${securityHubAdminAccount.accountId} is not registered as delegated administrator account`);
+        throw new Error(
+          `SecurityHub delegated admin is already set to ${securityHubAdminAccount.accountId} account can not assign another delegated account`,
+        );
       }
-    }
-  } else {
-    console.info(`SecurityHub delegation is not configured for account ${securityHubAdminAccount.accountId}, no action performed`);
-  }
-}
-
-async function getSecurityHubDelegatedAccount(
-  securityHubClient: SecurityHubClient,
-  adminAccountId: string,
-): Promise<{ accountId: string | undefined; status: string | undefined }> {
-  const adminAccounts = [];
-  let nextToken: string | undefined = undefined;
-  do {
-    const page = await throttlingBackOff(() => securityHubClient.send(new ListOrganizationAdminAccountsCommand({ NextToken: nextToken })));
-    for (const account of page.AdminAccounts ?? []) {
-      adminAccounts.push(account);
-    }
-    nextToken = page.NextToken;
-  } while (nextToken);
-
-  if (adminAccounts.length === 0) {
-    return { accountId: undefined, status: undefined };
-  }
-  if (adminAccounts.length > 1) {
-    throw new Error('Multiple admin accounts for SecurityHub in organization');
-  }
-
-  if (adminAccounts[0].AccountId === adminAccountId && adminAccounts[0].Status === 'DISABLE_IN_PROGRESS') {
-    throw new Error(`Admin account ${adminAccounts[0].AccountId} is in ${adminAccounts[0].Status}`);
-  }
-
-  return { accountId: adminAccounts[0].AccountId, status: adminAccounts[0].Status };
-}
-
-async function enableSecurityHub(securityHubClient: SecurityHubClient): Promise<EnableAWSServiceAccessCommandOutput | undefined> {
-  try {
-    return await throttlingBackOff(() => securityHubClient.send(new EnableSecurityHubCommand({ EnableDefaultStandards: false })));
-  } catch (e) {
-    if (e instanceof ResourceConflictException) {
-      console.info('SecurityHub already enabled, nothing to do');
       return;
     }
-    throw new Error(`Enabling SecurityHub failed: ${e}`);
+
+    // Enable security hub in management account before creating delegation admin account
+    await this.enableSecurityHub();
+    console.log(`Started enableOrganizationAdminAccount in ${region} region for account ${this.securityAdminAccountId}`);
+    let retries = 0;
+    while (retries < 10) {
+      await delay(retries ** 2 * 1000);
+      try {
+        await throttlingBackOff(() =>
+          this.securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: this.securityAdminAccountId })),
+        );
+        break;
+      } catch (error) {
+        console.log(error);
+        retries = retries + 1;
+      }
+    }
+  }
+
+  async disableOrganisationAdmin(region: string) {
+    const securityHubAdminAccount = await this.getSecurityHubDelegatedAccount();
+    if (securityHubAdminAccount.accountId) {
+      if (securityHubAdminAccount.accountId === this.securityAdminAccountId) {
+        console.log(`Started disableOrganizationAdminAccount function in ${region} region for account ${this.securityAdminAccountId}`);
+        await throttlingBackOff(() =>
+          this.securityHubClient.send(new DisableOrganizationAdminAccountCommand({ AdminAccountId: this.securityAdminAccountId })),
+        );
+        const response = await throttlingBackOff(() =>
+          this.organizationsClient.send(new ListDelegatedAdministratorsCommand({ ServicePrincipal: 'securityhub.amazonaws.com' })),
+        );
+
+        if (response.DelegatedAdministrators!.length > 0) {
+          console.log(`Started deregisterDelegatedAdministrator function in ${region} region for account ${this.securityAdminAccountId}`);
+          await throttlingBackOff(() =>
+            this.organizationsClient.send(
+              new DeregisterDelegatedAdministratorCommand({
+                AccountId: this.securityAdminAccountId,
+                ServicePrincipal: 'securityhub.amazonaws.com',
+              }),
+            ),
+          );
+        } else {
+          console.warn(`Account ${securityHubAdminAccount.accountId} is not registered as delegated administrator account`);
+        }
+      }
+    } else {
+      console.info(`SecurityHub delegation is not configured for account ${securityHubAdminAccount.accountId}, no action performed`);
+    }
+  }
+
+  private async getSecurityHubDelegatedAccount(): Promise<{ accountId: string | undefined; status: string | undefined }> {
+    const adminAccounts = [];
+    let nextToken: string | undefined = undefined;
+    do {
+      const page = await throttlingBackOff(() =>
+        this.securityHubClient.send(new ListOrganizationAdminAccountsCommand({ NextToken: nextToken })),
+      );
+      for (const account of page.AdminAccounts ?? []) {
+        adminAccounts.push(account);
+      }
+      nextToken = page.NextToken;
+    } while (nextToken);
+
+    if (adminAccounts.length === 0) {
+      return { accountId: undefined, status: undefined };
+    }
+    if (adminAccounts.length > 1) {
+      throw new Error('Multiple admin accounts for SecurityHub in organization');
+    }
+
+    if (adminAccounts[0].AccountId === this.securityAdminAccountId && adminAccounts[0].Status === 'DISABLE_IN_PROGRESS') {
+      throw new Error(`Admin account ${adminAccounts[0].AccountId} is in ${adminAccounts[0].Status}`);
+    }
+
+    return { accountId: adminAccounts[0].AccountId, status: adminAccounts[0].Status };
+  }
+
+  private async enableSecurityHub(): Promise<EnableAWSServiceAccessCommandOutput | undefined> {
+    try {
+      return await throttlingBackOff(() => this.securityHubClient.send(new EnableSecurityHubCommand({ EnableDefaultStandards: false })));
+    } catch (e) {
+      if (e instanceof ResourceConflictException) {
+        console.info('SecurityHub already enabled, nothing to do');
+        return;
+      }
+      throw new Error(`Enabling SecurityHub failed: ${e}`);
+    }
   }
 }

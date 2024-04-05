@@ -23,8 +23,8 @@ import {
 import { throttlingBackOff } from '../utils/throttle';
 
 export class SecurityHubMemberMgmt {
-  organizationsClient: OrganizationsClient;
-  securityHubClient: SecurityHubClient;
+  private organizationsClient: OrganizationsClient;
+  private securityHubClient: SecurityHubClient;
 
   constructor(organizationsClientAuditAccount: OrganizationsClient, securityHubClientAuditAccount: SecurityHubClient) {
     this.organizationsClient = organizationsClientAuditAccount;

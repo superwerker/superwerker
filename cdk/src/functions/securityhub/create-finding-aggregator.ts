@@ -20,58 +20,66 @@ import {
 } from '@aws-sdk/client-securityhub';
 import { throttlingBackOff } from '../utils/throttle';
 
-export async function createFindingAggregator(securityHubClient: SecurityHubClient) {
-  const result = await throttlingBackOff(() => securityHubClient.send(new ListFindingAggregatorsCommand({})));
-  let findingAggregatorArn = '';
-  if (result.FindingAggregators!.length > 0) {
-    findingAggregatorArn = result.FindingAggregators![0].FindingAggregatorArn!;
+export class SecurityHubAggregatorMgmt {
+  private securityHubClient: SecurityHubClient;
+
+  constructor(organizationsClientAuditAccount: SecurityHubClient) {
+    this.securityHubClient = organizationsClientAuditAccount;
   }
 
-  if (findingAggregatorArn) {
-    console.log('Existing Finding Aggregator found, updating', findingAggregatorArn);
+  async createFindingAggregator() {
+    const result = await throttlingBackOff(() => this.securityHubClient.send(new ListFindingAggregatorsCommand({})));
+    let findingAggregatorArn = '';
+    if (result.FindingAggregators!.length > 0) {
+      findingAggregatorArn = result.FindingAggregators![0].FindingAggregatorArn!;
+    }
+
+    if (findingAggregatorArn) {
+      console.log('Existing Finding Aggregator found, updating', findingAggregatorArn);
+      try {
+        await throttlingBackOff(() =>
+          this.securityHubClient.send(
+            new UpdateFindingAggregatorCommand({
+              FindingAggregatorArn: findingAggregatorArn,
+              RegionLinkingMode: 'ALL_REGIONS',
+            }),
+          ),
+        );
+      } catch (error) {
+        console.log(error);
+        throw new Error('Failed to update Finding Aggregator: ' + error);
+      }
+      return;
+    }
+
+    console.log('Create new Finding Aggreggation');
     try {
-      await throttlingBackOff(() =>
-        securityHubClient.send(
-          new UpdateFindingAggregatorCommand({
-            FindingAggregatorArn: findingAggregatorArn,
-            RegionLinkingMode: 'ALL_REGIONS',
-          }),
-        ),
-      );
+      await throttlingBackOff(() => this.securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'ALL_REGIONS' })));
     } catch (error) {
       console.log(error);
-      throw new Error('Failed to update Finding Aggregator: ' + error);
+      throw new Error('Failed to create Finding Aggregator: ' + error);
     }
-    return;
   }
 
-  console.log('Create new Finding Aggreggation');
-  try {
-    await throttlingBackOff(() => securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'ALL_REGIONS' })));
-  } catch (error) {
-    console.log(error);
-    throw new Error('Failed to create Finding Aggregator: ' + error);
-  }
-}
+  async deleteFindingAggregator() {
+    const result = await throttlingBackOff(() => this.securityHubClient.send(new ListFindingAggregatorsCommand({})));
 
-export async function deleteFindingAggregator(securityHubClient: SecurityHubClient) {
-  const result = await throttlingBackOff(() => securityHubClient.send(new ListFindingAggregatorsCommand({})));
-
-  let findingAggregatorArn = '';
-  if (result.FindingAggregators!.length > 0) {
-    findingAggregatorArn = result.FindingAggregators![0].FindingAggregatorArn!;
-  }
-
-  console.log('Delete Finding Aggregator Arn');
-  if (findingAggregatorArn) {
-    try {
-      await throttlingBackOff(() =>
-        securityHubClient.send(new DeleteFindingAggregatorCommand({ FindingAggregatorArn: findingAggregatorArn })),
-      );
-    } catch (error) {
-      throw new Error('Failed to delete Finding Aggregator: ' + error);
+    let findingAggregatorArn = '';
+    if (result.FindingAggregators!.length > 0) {
+      findingAggregatorArn = result.FindingAggregators![0].FindingAggregatorArn!;
     }
-  } else {
-    console.log('No Finding Aggregator found, nothing to delete');
+
+    console.log('Delete Finding Aggregator Arn');
+    if (findingAggregatorArn) {
+      try {
+        await throttlingBackOff(() =>
+          this.securityHubClient.send(new DeleteFindingAggregatorCommand({ FindingAggregatorArn: findingAggregatorArn })),
+        );
+      } catch (error) {
+        throw new Error('Failed to delete Finding Aggregator: ' + error);
+      }
+    } else {
+      console.log('No Finding Aggregator found, nothing to delete');
+    }
   }
 }

@@ -1,10 +1,10 @@
 import { OrganizationsClient } from '@aws-sdk/client-organizations';
 import { SecurityHubClient } from '@aws-sdk/client-securityhub';
 import { STS } from '@aws-sdk/client-sts';
-import { createFindingAggregator, deleteFindingAggregator } from './securityhub/create-finding-aggregator';
+import { SecurityHubAggregatorMgmt } from './securityhub/create-finding-aggregator';
 import { SecurityHubMemberMgmt } from './securityhub/create-members';
-import { disableOrganisationAdmin, enableOrganisationAdmin } from './securityhub/enable-org-admin';
-import { disableStandards, enableStandards } from './securityhub/enable-standards';
+import { SecurityHubOrganizationMgmt } from './securityhub/enable-org-admin';
+import { SecurityHubStandardsMgmt } from './securityhub/enable-standards';
 import { getCredsFromAssumeRole } from './utils/assume-role';
 
 const standardsToEnable = [
@@ -32,21 +32,29 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
   const creds = await getCredsFromAssumeRole(stsClient, secHubCrossAccountRoleArn, 'EnableSecurityHub');
   const organizationsClientAuditAccount = new OrganizationsClient({ region: 'us-east-1', credentials: creds });
   const securityHubClientAuditAccount = new SecurityHubClient({ credentials: creds });
+
+  const securityHubOrganizationMgmt = new SecurityHubOrganizationMgmt(
+    adminAccountId,
+    organizationsClientManagementAccount,
+    securityHubClientManagementAccount,
+  );
+  const securityHubAggregatorMgmt = new SecurityHubAggregatorMgmt(securityHubClientAuditAccount);
   const securityHubMemberMgmt = new SecurityHubMemberMgmt(organizationsClientAuditAccount, securityHubClientAuditAccount);
+  const securityHubStandardsMgmt = new SecurityHubStandardsMgmt(securityHubClientAuditAccount);
 
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
-      await enableOrganisationAdmin(securityHubClientManagementAccount, adminAccountId, homeRegion);
-      await createFindingAggregator(securityHubClientAuditAccount);
+      await securityHubOrganizationMgmt.enableOrganisationAdmin(homeRegion);
+      await securityHubAggregatorMgmt.createFindingAggregator();
       await securityHubMemberMgmt.createMembers();
-      await enableStandards(securityHubClientAuditAccount, standardsToEnable);
+      await securityHubStandardsMgmt.enableStandards(standardsToEnable);
       return { Status: 'Success', StatusCode: 200 };
     case 'Delete':
-      await disableStandards(securityHubClientAuditAccount);
+      await securityHubStandardsMgmt.disableStandards();
       await securityHubMemberMgmt.deleteMembers();
-      await deleteFindingAggregator(securityHubClientAuditAccount);
-      await disableOrganisationAdmin(securityHubClientManagementAccount, organizationsClientManagementAccount, adminAccountId, homeRegion);
+      await securityHubAggregatorMgmt.deleteFindingAggregator();
+      await securityHubOrganizationMgmt.disableOrganisationAdmin(homeRegion);
       return { Status: 'Success', StatusCode: 200 };
   }
 }
