@@ -22,13 +22,18 @@ import { throttlingBackOff } from '../utils/throttle';
 
 export class SecurityHubAggregatorMgmt {
   private securityHubClient: SecurityHubClient;
+  private regions: string[];
 
-  constructor(organizationsClientAuditAccount: SecurityHubClient) {
+  constructor(organizationsClientAuditAccount: SecurityHubClient, regions: string[]) {
     this.securityHubClient = organizationsClientAuditAccount;
+    this.regions = regions;
   }
 
   async createFindingAggregator() {
+    console.log('Linked Regions to aggregate findings in home region: ', this.regions);
+
     const result = await throttlingBackOff(() => this.securityHubClient.send(new ListFindingAggregatorsCommand({})));
+    console.log(result);
     let findingAggregatorArn = '';
     if (result.FindingAggregators!.length > 0) {
       findingAggregatorArn = result.FindingAggregators![0].FindingAggregatorArn!;
@@ -36,12 +41,20 @@ export class SecurityHubAggregatorMgmt {
 
     if (findingAggregatorArn) {
       console.log('Existing Finding Aggregator found, updating', findingAggregatorArn);
+
+      if (this.regions.length < 1) {
+        console.log('No region aggregation required, deleting Finding Aggregator');
+        await this.deleteFindingAggregator();
+        return;
+      }
+
       try {
         await throttlingBackOff(() =>
           this.securityHubClient.send(
             new UpdateFindingAggregatorCommand({
               FindingAggregatorArn: findingAggregatorArn,
-              RegionLinkingMode: 'ALL_REGIONS',
+              RegionLinkingMode: 'SPECIFIED_REGIONS',
+              Regions: this.regions,
             }),
           ),
         );
@@ -52,9 +65,16 @@ export class SecurityHubAggregatorMgmt {
       return;
     }
 
+    if (this.regions.length < 1) {
+      console.log('No region aggregation required, skipping creation of Finding Aggregator');
+      return;
+    }
+
     console.log('Create new Finding Aggreggation');
     try {
-      await throttlingBackOff(() => this.securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'ALL_REGIONS' })));
+      await throttlingBackOff(() =>
+        this.securityHubClient.send(new CreateFindingAggregatorCommand({ RegionLinkingMode: 'SPECIFIED_REGIONS', Regions: this.regions })),
+      );
     } catch (error) {
       console.log(error);
       throw new Error('Failed to create Finding Aggregator: ' + error);

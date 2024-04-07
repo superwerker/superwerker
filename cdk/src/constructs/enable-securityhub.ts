@@ -1,6 +1,9 @@
 import * as path from 'path';
 import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
+import { Rule } from 'aws-cdk-lib/aws-events';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
@@ -28,11 +31,6 @@ export class EnableSecurityHub extends Construct {
     const resource = new CustomResource(this, 'Resource', {
       serviceToken: EnableSecurityHubProvider.getOrCreate(this, props),
       resourceType: RESOURCE_TYPE,
-      properties: {
-        region: Stack.of(this).region,
-        adminAccountId: props.adminAccountId,
-        role: props.secHubCrossAccountRoleArn,
-      },
     });
 
     this.id = resource.ref;
@@ -55,57 +53,87 @@ class EnableSecurityHubProvider extends Construct {
   constructor(scope: Construct, id: string, props: EnableSecurityHubProps) {
     super(scope, id);
 
-    this.provider = new cr.Provider(this, 'EnableSecurityHubProvider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'EnableSecurityHubProvider-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'enable-securityhub.ts'),
-        runtime: Runtime.NODEJS_20_X,
-        timeout: Duration.seconds(180),
-        initialPolicy: [
-          new iam.PolicyStatement({
-            sid: 'SecurityHubEnableOrganizationAdminTaskOrganizationActions',
-            actions: ['organizations:DescribeOrganization', 'organizations:ListAccounts', 'organizations:ListDelegatedAdministrators'],
-            resources: ['*'],
-          }),
-          new iam.PolicyStatement({
-            actions: ['organizations:EnableAWSServiceAccess'],
-            resources: ['*'],
-            conditions: {
-              StringEquals: {
-                'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
-              },
+    const onEventLambda = new lambda.NodejsFunction(this, 'EnableSecurityHubProvider-on-event', {
+      entry: path.join(__dirname, '..', 'functions', 'enable-securityhub.ts'),
+      runtime: Runtime.NODEJS_20_X,
+      timeout: Duration.seconds(180),
+      environment: {
+        homeRegion: Stack.of(this).region,
+        adminAccountId: props.adminAccountId,
+        role: props.secHubCrossAccountRoleArn,
+      },
+      events: [],
+      initialPolicy: [
+        new iam.PolicyStatement({
+          sid: 'SecurityHubEnableOrganizationAdminTaskOrganizationActions',
+          actions: ['organizations:DescribeOrganization', 'organizations:ListAccounts', 'organizations:ListDelegatedAdministrators'],
+          resources: ['*'],
+        }),
+        new iam.PolicyStatement({
+          actions: ['organizations:EnableAWSServiceAccess'],
+          resources: ['*'],
+          conditions: {
+            StringEquals: {
+              'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
             },
-          }),
-          new iam.PolicyStatement({
-            actions: ['organizations:RegisterDelegatedAdministrator', 'organizations:DeregisterDelegatedAdministrator'],
-            resources: [`arn:${Stack.of(this).partition}:organizations::*:account/o-*/*`],
-            conditions: {
-              StringEquals: {
-                'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
-              },
+          },
+        }),
+        new iam.PolicyStatement({
+          actions: ['organizations:RegisterDelegatedAdministrator', 'organizations:DeregisterDelegatedAdministrator'],
+          resources: [`arn:${Stack.of(this).partition}:organizations::*:account/o-*/*`],
+          conditions: {
+            StringEquals: {
+              'organizations:ServicePrincipal': 'securityhub.amazonaws.com',
             },
-          }),
-          new iam.PolicyStatement({
-            sid: 'SecurityHubCreateMembersTaskIamAction',
-            actions: ['iam:CreateServiceLinkedRole'],
-            resources: ['*'],
-            conditions: {
-              StringEquals: {
-                'iam:AWSServiceName': 'securityhub.amazonaws.com',
-              },
+          },
+        }),
+        new iam.PolicyStatement({
+          sid: 'SecurityHubCreateMembersTaskIamAction',
+          actions: ['iam:CreateServiceLinkedRole'],
+          resources: ['*'],
+          conditions: {
+            StringEquals: {
+              'iam:AWSServiceName': 'securityhub.amazonaws.com',
             },
-          }),
-          new iam.PolicyStatement({
-            sid: 'EnableSecurityHub',
-            actions: ['securityhub:*'],
-            resources: ['*'],
-          }),
-          new iam.PolicyStatement({
-            sid: 'SecurityHubConfiguration',
-            actions: ['sts:AssumeRole'],
-            resources: [props.secHubCrossAccountRoleArn],
-          }),
-        ],
-      }),
+          },
+        }),
+        new iam.PolicyStatement({
+          sid: 'EnableSecurityHub',
+          actions: ['securityhub:*'],
+          resources: ['*'],
+        }),
+        new iam.PolicyStatement({
+          sid: 'SecurityHubConfiguration',
+          actions: ['sts:AssumeRole'],
+          resources: [props.secHubCrossAccountRoleArn],
+        }),
+        new iam.PolicyStatement({
+          sid: 'ControlTowerAccess',
+          actions: ['controltower:GetLandingZone', 'controltower:ListLandingZones'],
+          resources: ['*'],
+        }),
+      ],
     });
+
+    // invoke lambda for updating security hub on landing zone changes
+    // so changing the landing zone goverend regions updates aggretation regions
+    const landingzoneUpdateEventRule = new Rule(this, 'LandingzoneUpdateEventRule', {
+      eventPattern: {
+        source: ['aws.controltower'],
+        detailType: ['AWS Service Event via CloudTrail'],
+        detail: {
+          eventName: ['UpdateLandingZone'],
+        },
+      },
+    });
+
+    landingzoneUpdateEventRule.addTarget(new LambdaFunction(onEventLambda));
+
+    onEventLambda.addPermission('allowEventsInvocation', {
+      principal: new ServicePrincipal('events.amazonaws.com'),
+      sourceArn: landingzoneUpdateEventRule.ruleArn,
+    });
+
+    this.provider = new cr.Provider(this, 'EnableSecurityHubProvider', { onEventHandler: onEventLambda });
   }
 }
