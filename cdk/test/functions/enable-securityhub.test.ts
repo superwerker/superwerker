@@ -40,27 +40,15 @@ describe('handler', () => {
     const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
     enableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
     enableOrganisationAdmin.mockImplementation();
-    const disableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'disableOrganisationAdmin');
-    disableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
-    disableOrganisationAdmin.mockImplementation();
     const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
     createFindingAggregator.mockReturnValue(new Promise(() => {}));
     createFindingAggregator.mockImplementation();
-    const deleteFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'deleteFindingAggregator');
-    deleteFindingAggregator.mockReturnValue(new Promise(() => {}));
-    deleteFindingAggregator.mockImplementation();
     const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
     createMembers.mockReturnValue(new Promise(() => {}));
     createMembers.mockImplementation();
-    const deleteMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'deleteMembers');
-    deleteMembers.mockReturnValue(new Promise(() => {}));
-    deleteMembers.mockImplementation();
     const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
     enableStandards.mockReturnValue(new Promise(() => {}));
     enableStandards.mockImplementation();
-    const disableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'disableStandards');
-    disableStandards.mockReturnValue(new Promise(() => {}));
-    disableStandards.mockImplementation();
 
     controlTowerClientMock.on(ListLandingZonesCommand).resolves({
       landingZones: [
@@ -93,27 +81,15 @@ describe('handler', () => {
   });
 
   it('should disable Security Hub for audit account', async () => {
-    const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
-    enableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
-    enableOrganisationAdmin.mockImplementation();
     const disableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'disableOrganisationAdmin');
     disableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
     disableOrganisationAdmin.mockImplementation();
-    const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
-    createFindingAggregator.mockReturnValue(new Promise(() => {}));
-    createFindingAggregator.mockImplementation();
     const deleteFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'deleteFindingAggregator');
     deleteFindingAggregator.mockReturnValue(new Promise(() => {}));
     deleteFindingAggregator.mockImplementation();
-    const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
-    createMembers.mockReturnValue(new Promise(() => {}));
-    createMembers.mockImplementation();
     const deleteMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'deleteMembers');
     deleteMembers.mockReturnValue(new Promise(() => {}));
     deleteMembers.mockImplementation();
-    const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
-    enableStandards.mockReturnValue(new Promise(() => {}));
-    enableStandards.mockImplementation();
     const disableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'disableStandards');
     disableStandards.mockReturnValue(new Promise(() => {}));
     disableStandards.mockImplementation();
@@ -134,31 +110,20 @@ describe('handler', () => {
     const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
     enableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
     enableOrganisationAdmin.mockImplementation();
-    const disableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'disableOrganisationAdmin');
-    disableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
-    disableOrganisationAdmin.mockImplementation();
     const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
     createFindingAggregator.mockReturnValue(new Promise(() => {}));
     createFindingAggregator.mockImplementation();
-    const deleteFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'deleteFindingAggregator');
-    deleteFindingAggregator.mockReturnValue(new Promise(() => {}));
-    deleteFindingAggregator.mockImplementation();
     const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
     createMembers.mockReturnValue(new Promise(() => {}));
     createMembers.mockImplementation();
-    const deleteMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'deleteMembers');
-    deleteMembers.mockReturnValue(new Promise(() => {}));
-    deleteMembers.mockImplementation();
     const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
     enableStandards.mockReturnValue(new Promise(() => {}));
     enableStandards.mockImplementation();
-    const disableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'disableStandards');
-    disableStandards.mockReturnValue(new Promise(() => {}));
-    disableStandards.mockImplementation();
 
     const event = {} as AWSLambda.CloudFormationCustomResourceEvent;
 
-    await handler(event);
+    const result = await handler(event);
+    expect(result).toEqual({ Status: 'Success', StatusCode: 200 });
 
     expect(enableOrganisationAdmin).toHaveBeenCalledWith('us-west-2');
     expect(createFindingAggregator).toHaveBeenCalled();
