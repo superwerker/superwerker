@@ -29,8 +29,6 @@ describe('createMembers', () => {
     ];
 
     organizationsClientMock.on(ListAccountsCommand).resolves({ Accounts: allAccounts, NextToken: undefined });
-    securityHubClientMock.on(CreateMembersCommand).resolves({});
-
     await securityHubMemberMgmt.createMembers();
 
     expect(organizationsClientMock).toHaveReceivedAnyCommand();
@@ -40,6 +38,15 @@ describe('createMembers', () => {
         { AccountId: 'account2', Email: 'email2@example.com' },
       ],
     });
+    expect(securityHubClientMock).toHaveReceivedCommandWith(UpdateOrganizationConfigurationCommand, { AutoEnable: true });
+  });
+
+  it('should skip creating members when there are no accounts returned, but still auto enable', async () => {
+    organizationsClientMock.on(ListAccountsCommand).resolves({ NextToken: undefined });
+
+    await securityHubMemberMgmt.createMembers();
+
+    expect(securityHubClientMock).not.toHaveReceivedCommandWith(CreateMembersCommand, { AccountDetails: [] });
     expect(securityHubClientMock).toHaveReceivedCommandWith(UpdateOrganizationConfigurationCommand, { AutoEnable: true });
   });
 
@@ -86,6 +93,16 @@ describe('deleteMembers', () => {
     expect(securityHubClientMock).toHaveReceivedCommandWith(ListMembersCommand, { NextToken: undefined });
     expect(securityHubClientMock).toHaveReceivedCommandWith(DisassociateMembersCommand, { AccountIds: ['account1', 'account2'] });
     expect(securityHubClientMock).toHaveReceivedCommandWith(DeleteMembersCommand, { AccountIds: ['account1', 'account2'] });
+  });
+
+  it('should skip disassociate and delete existing members when there are no members', async () => {
+    securityHubClientMock.on(ListMembersCommand).resolves({ NextToken: undefined });
+
+    await securityHubMemberMgmt.deleteMembers();
+
+    expect(securityHubClientMock).toHaveReceivedCommandWith(ListMembersCommand, { NextToken: undefined });
+    expect(securityHubClientMock).not.toHaveReceivedCommandWith(DisassociateMembersCommand, { AccountIds: [] });
+    expect(securityHubClientMock).not.toHaveReceivedCommandWith(DeleteMembersCommand, { AccountIds: [] });
   });
 
   it('should not disassociate and delete members if there are no existing members', async () => {

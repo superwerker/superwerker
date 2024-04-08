@@ -46,8 +46,10 @@ export class SecurityHubMemberMgmt {
 
     console.log('Create Security Hub Members');
 
-    // initally invite all accounts to be members
-    await throttlingBackOff(() => this.securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })));
+    if (allAccounts.length > 0) {
+      // initally invite all accounts to be members
+      await throttlingBackOff(() => this.securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })));
+    }
 
     // for all accounts that are added later automatically enable security hub for them
     await throttlingBackOff(() => this.securityHubClient.send(new UpdateOrganizationConfigurationCommand({ AutoEnable: true })));
