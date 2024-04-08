@@ -38,16 +38,12 @@ describe('handler', () => {
 
   it('should enable Security Hub for audit account', async () => {
     const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
-    enableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
     enableOrganisationAdmin.mockImplementation();
     const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
-    createFindingAggregator.mockReturnValue(new Promise(() => {}));
     createFindingAggregator.mockImplementation();
     const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
-    createMembers.mockReturnValue(new Promise(() => {}));
     createMembers.mockImplementation();
     const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
-    enableStandards.mockReturnValue(new Promise(() => {}));
     enableStandards.mockImplementation();
 
     controlTowerClientMock.on(ListLandingZonesCommand).resolves({
@@ -82,16 +78,12 @@ describe('handler', () => {
 
   it('should disable Security Hub for audit account', async () => {
     const disableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'disableOrganisationAdmin');
-    disableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
     disableOrganisationAdmin.mockImplementation();
     const deleteFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'deleteFindingAggregator');
-    deleteFindingAggregator.mockReturnValue(new Promise(() => {}));
     deleteFindingAggregator.mockImplementation();
     const deleteMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'deleteMembers');
-    deleteMembers.mockReturnValue(new Promise(() => {}));
     deleteMembers.mockImplementation();
     const disableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'disableStandards');
-    disableStandards.mockReturnValue(new Promise(() => {}));
     disableStandards.mockImplementation();
 
     const event = {
@@ -108,16 +100,12 @@ describe('handler', () => {
 
   it('should execute update when invoked manually or via eventbridge', async () => {
     const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
-    enableOrganisationAdmin.mockReturnValue(new Promise(() => {}));
     enableOrganisationAdmin.mockImplementation();
     const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
-    createFindingAggregator.mockReturnValue(new Promise(() => {}));
     createFindingAggregator.mockImplementation();
     const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
-    createMembers.mockReturnValue(new Promise(() => {}));
     createMembers.mockImplementation();
     const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
-    enableStandards.mockReturnValue(new Promise(() => {}));
     enableStandards.mockImplementation();
 
     const event = {} as AWSLambda.CloudFormationCustomResourceEvent;
