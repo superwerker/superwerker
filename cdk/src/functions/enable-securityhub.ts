@@ -48,7 +48,7 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
 
   let controlTowerRegions = await getControlTowerRegions(controlTowerClient);
   console.log(controlTowerRegions);
-  // remove home region from the list
+  //remove home region from the list
   controlTowerRegions = controlTowerRegions.filter((region: string) => region !== homeRegion).map((region: any) => region);
 
   const securityHubOrganizationMgmt = new SecurityHubOrganizationMgmt(
