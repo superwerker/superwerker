@@ -1,6 +1,14 @@
 import path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { Duration, NestedStack, NestedStackProps, aws_events as events, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
+import {
+  CfnOutput,
+  Duration,
+  NestedStack,
+  NestedStackProps,
+  aws_events as events,
+  aws_iam as iam,
+  aws_lambda as lambda,
+} from 'aws-cdk-lib';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { Construct } from 'constructs';
 
@@ -34,5 +42,10 @@ export class BillingStack extends NestedStack {
     });
 
     landingZoneSetupFinishedTrigger.addTarget(new LambdaFunction(billingSetupFn));
+
+    new CfnOutput(this, 'AwsApiLibRoleName', {
+      description: 'Role Name for AWS API Lib',
+      value: awsApiLibBillingRole.roleName,
+    });
   }
 }
