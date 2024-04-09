@@ -8,8 +8,8 @@ export class BillingStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const billingSetupFn = new PythonFunction(this, 'NotificationOpsItemCreated', {
-      entry: path.join(__dirname, '..', 'functions', 'notification-opsitem-created.ts'),
+    const billingSetupFn = new PythonFunction(this, 'BillingSetup', {
+      entry: path.join(__dirname, '..', 'functions', 'billing-setup'),
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_12,
       timeout: Duration.seconds(30),
