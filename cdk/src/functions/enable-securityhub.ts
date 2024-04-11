@@ -9,7 +9,7 @@ import { SecurityHubStandardsMgmt } from './securityhub/enable-standards';
 import { getCredsFromAssumeRole } from './utils/assume-role';
 import { throttlingBackOff } from './utils/throttle';
 
-const standardsToEnable = [
+export const standardsToEnable = [
   {
     name: 'AWS Foundational Security Best Practices v1.0.0',
     enable: true,
