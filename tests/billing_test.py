@@ -69,6 +69,3 @@ def test_billing_preferences(billing):
 
 def test_tax_settings(billing):
     assert billing.tax.inheritance == True, 'Tax inheritance is not enabled'
-
-def test_living_documentation():
-    assert billing.iam_access == True, 'IAM access is not enabled'

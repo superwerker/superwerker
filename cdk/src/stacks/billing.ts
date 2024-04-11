@@ -47,5 +47,9 @@ export class BillingStack extends NestedStack {
       description: 'Role Name for AWS API Lib',
       value: awsApiLibBillingRole.roleName,
     });
+    new CfnOutput(this, 'BillingSetupFunctionName', {
+      description: 'Function Name for Billing Setup Lambda',
+      value: billingSetupFn.functionName,
+    });
   }
 }
