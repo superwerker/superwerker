@@ -27,6 +27,8 @@ def handler(event, _):
             print('Enabling Credit Sharing...')
             billing.preferences.credit_sharing = True
 
+            return {}
+
     else:
 
         # return current settings and recommentations for display on cloudwatch dashboard
@@ -43,5 +45,5 @@ def handler(event, _):
 <li>PDF invoices by email: {billing.preferences.pdf_invoice_by_mail} &#10004;</li>
 <li>Credit sharing: {billing.preferences.credit_sharing} &#10004;</li></ul>'''
 
-    return {}
+    
 
