@@ -44,6 +44,7 @@ Superwerker configures the following AWS services and features in a fully automa
 7. [AWS Systems Manager](https://aws.amazon.com/systems-manager) OpsCenter/Items notification aggregation and incident response handling
 8. Secure mailboxes and service catalogue aliases for all root accounts
 9.  A dashboard with more information and deep-links to resources, e.g. setting up SSO with existing identity providers, GuardDuty/Security Hub dashboards, AWS account setup
+10. [Billing](https://aws.amazon.com/billing/home?region=us-east-1#/preferences) setup to enable PDF invoices, Credit Sharing and Tax inheritance.
 
 ### Say what again? (the non-technical what's included)
 
@@ -55,7 +56,7 @@ AWS provides all the building blocks. superwerker adds the wiring and `how to` s
     1. Protect superuser (`root`) access to your AWS accounts
     2. Scanning for best practise violations and active threats against your infrastructure
     3. Backups enabled for all database and file systems
-4. Billing best practices built-in: Automatic cost control and budget alarm
+4. Billing best practices built-in: Automatic cost control, budget alarms and configuration for enhanced usability (PDF invoices as well as sharing your tax information and credits across the organization)
 5. Low total cost of ownership: native and maintenance-free AWS service are used (no third-party tooling required)
 6. Notification centre: aggregates notifications from several services in a single place
 7. Gradual roll-out: features can be enabled/disabled individually
