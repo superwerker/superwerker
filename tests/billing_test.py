@@ -8,8 +8,6 @@ sts = boto3.client('sts')
 cfn = boto3.client('cloudformation')
 iam = boto3.client('iam')
 
-aws_api_lib_role_name = 'superwerker-Billing-117S0GIIAOIKP-BillingApilibRole-J2bVmoKUeTBq'
-
 @pytest.fixture(scope="module")
 def billing_stack():
     stack_prefix = 'superwerker-Billing'
@@ -32,7 +30,11 @@ def aws_api_lib_role_name(billing_stack):
         StackName=billing_stack['StackId'],
     )
 
-    return res['Stacks'][0]['Outputs'][0]['OutputValue']
+    for output in res['Stacks'][0]['Outputs']:
+        if output['OutputKey'] == 'AwsApiLibRoleName':
+            return output['OutputValue']
+
+    return ''
 
 @pytest.fixture(scope="module")
 @retry(stop_max_delay=10000, wait_fixed=2000)
