@@ -26,7 +26,17 @@ export class BillingStack extends NestedStack {
 
     const awsApiLibBillingRole = new iam.Role(this, 'AwsApilibRole', {
       assumedBy: billingSetupFn.role!,
-      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
+      inlinePolicies: {
+        AWSApiLibBillingPolicy: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
+              actions: ['billing:*', 'tax:*', 'invoicing:*'],
+              resources: ['*'],
+            }),
+          ],
+        }),
+      },
     });
     (awsApiLibBillingRole.node.defaultChild as iam.CfnRole).overrideLogicalId('BillingApilibRole');
 
