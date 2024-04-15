@@ -1,31 +1,15 @@
-import path from 'path';
-import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import {
-  CfnOutput,
-  Duration,
-  NestedStack,
-  NestedStackProps,
-  aws_events as events,
-  aws_iam as iam,
-  aws_lambda as lambda,
-} from 'aws-cdk-lib';
-import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { CfnOutput, NestedStack, NestedStackProps, aws_iam as iam } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import { BillingSetup } from '../constructs/billing-setup';
 
 export class BillingStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const billingSetupFn = new PythonFunction(this, 'BillingSetup', {
-      entry: path.join(__dirname, '..', 'functions', 'billing-setup'),
-      handler: 'handler',
-      runtime: lambda.Runtime.PYTHON_3_12,
-      timeout: Duration.seconds(30),
-    });
-    (billingSetupFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BillingSetup');
+    const billingSetupConst = new BillingSetup(this, 'BillingSetup');
 
     const awsApiLibBillingRole = new iam.Role(this, 'AwsApilibRole', {
-      assumedBy: billingSetupFn.role!,
+      assumedBy: billingSetupConst.billingSetupFn.role!,
       inlinePolicies: {
         AWSApiLibBillingPolicy: new iam.PolicyDocument({
           statements: [
@@ -40,26 +24,15 @@ export class BillingStack extends NestedStack {
     });
     (awsApiLibBillingRole.node.defaultChild as iam.CfnRole).overrideLogicalId('BillingApilibRole');
 
-    billingSetupFn.addEnvironment('AWSAPILIB_BILLING_ROLE_ARN', awsApiLibBillingRole.roleArn);
+    billingSetupConst.billingSetupFn.addEnvironment('AWSAPILIB_BILLING_ROLE_ARN', awsApiLibBillingRole.roleArn);
 
-    const landingZoneSetupFinishedTrigger = new events.Rule(this, 'LandingZoneSetupFinishedTrigger', {
-      eventPattern: {
-        source: ['superwerker'],
-        detail: {
-          eventName: ['LandingZoneSetupOrUpdateFinished'],
-        },
-      },
+    new CfnOutput(this, 'BillingSetupFunctionName', {
+      description: 'Function Name for Billing Setup Lambda',
+      value: billingSetupConst.billingSetupFn.functionName,
     });
-
-    landingZoneSetupFinishedTrigger.addTarget(new LambdaFunction(billingSetupFn));
-
     new CfnOutput(this, 'AwsApiLibRoleName', {
       description: 'Role Name for AWS API Lib',
       value: awsApiLibBillingRole.roleName,
-    });
-    new CfnOutput(this, 'BillingSetupFunctionName', {
-      description: 'Function Name for Billing Setup Lambda',
-      value: billingSetupFn.functionName,
     });
   }
 }
