@@ -96,71 +96,35 @@ def test_securityhub_finding_aggregator_regions(audit_account_id, control_tower_
         # we do not use ALL_REGIONS as linkeing mode
         assert finding_aggregator['RegionLinkingMode'] == 'SPECIFIED_REGIONS'
 
-def test_securityhub_enabled_standards(audit_account_id, control_tower_regions):
+def test_securityhub_enabled_standards_and_controls(audit_account_id, control_tower_regions):
 
-    assert True
+    audit_account = control_tower_exection_role_session(audit_account_id)
+    sechub_audit = audit_account.client('securityhub')
+    control_tower_regions = control_tower_regions.split(",")
+    region = control_tower_regions[0] # first region is home region
 
-def test_securityhub_enabled_controls(audit_account_id, control_tower_regions):
+    enabled_standards_response = sechub_audit.get_enabled_standards()['StandardsSubscriptions']
+    
+    # we are activating exactly one standard
+    assert len(enabled_standards_response) == 1
 
-    assert True
+    assert enabled_standards_response[0]['StandardsArn'] == f'arn:aws:securityhub:{region}::standards/aws-foundational-security-best-practices/v/1.0.0'
+    assert enabled_standards_response[0]['StandardsSubscriptionArn'] == f'arn:aws:securityhub:{region}:{audit_account_id}:subscription/aws-foundational-security-best-practices/v/1.0.0'
+    assert enabled_standards_response[0]['StandardsStatus'] == 'READY'
 
-# def test_security_hub_cannot_be_disabled_in_member_account(log_archive_account_id, management_account_id):
+    response = sechub_audit.describe_standards_controls(StandardsSubscriptionArn=enabled_standards_response[0]['StandardsSubscriptionArn'])
+    standard_controls = response['Controls']
+    while "NextToken" in response:
+        response = sechub_audit.describe_standards_controls(StandardsSubscriptionArn=enabled_standards_response[0]['StandardsSubscriptionArn'], NextToken=response["NextToken"])
+        standard_controls.extend(response["Controls"])
 
-#     # use log archive as sample member
-#     log_archive_account = control_tower_exection_role_session(log_archive_account_id)
-#     iam = log_archive_account.client('iam')
+    disabled_controls_for_standard = []
+    for control in standard_controls:
+        if control['ControlStatus'] == 'DISABLED':
+            disabled_controls_for_standard.append(control)
 
-#     # create a temp admin role since the ControlTowerException role is allowed to disable SH
-#     try:
-#         try:
-#             iam.detach_role_policy(
-#                 RoleName='SuperWerkerScpTestRole',
-#                 PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
-#             )
-#         except:
-#             pass
-#         iam.delete_role(RoleName='SuperWerkerScpTestRole')
-#     except:
-#         pass
-
-#     iam.create_role(
-#         RoleName='SuperWerkerScpTestRole',
-#         AssumeRolePolicyDocument=json.dumps({
-#             "Version": "2012-10-17",
-#             "Statement": [
-#                 {
-#                     "Effect": "Allow",
-#                     "Principal": {
-#                         "AWS": f'arn:aws:iam::{management_account_id}:root'
-#                     },
-#                     "Action": "sts:AssumeRole"
-#                 }
-#             ]
-#         }))
-#     iam.attach_role_policy(
-#         RoleName='SuperWerkerScpTestRole',
-#         PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
-#     )
-
-#     scp_test_role_creds = wait_for_role_to_be_assumed(log_archive_account_id)
-
-#     scp_test_session = boto3.session.Session(
-#         aws_access_key_id=scp_test_role_creds['AccessKeyId'],
-#         aws_secret_access_key=scp_test_role_creds['SecretAccessKey'],
-#         aws_session_token=scp_test_role_creds['SessionToken']
-#     )
-
-#     scp_test_session_security_hub = scp_test_session.client('securityhub')
-
-#     # assert that SCP forbids disabling of security hub
-#     with pytest.raises(botocore.exceptions.ClientError) as exception:
-#         scp_test_session_security_hub.disable_security_hub()
-#     assert f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:{scp_test_session.region_name}:{log_archive_account_id}:hub/default with an explicit deny' == str(exception.value)
-
-#     # assert that SCP forbids leaving
-#     with pytest.raises(botocore.exceptions.ClientError) as exception:
-#         scp_test_session_security_hub.disassociate_from_master_account()
-#     assert f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:{scp_test_session.region_name}:{log_archive_account_id}:hub/default with an explicit deny' == str(exception.value)
+    disabled_control_ids = [control['ControlId'] for control in disabled_controls_for_standard]
+    assert 'Macie.1' in disabled_control_ids
 
 # Wait for up to 1 minute, exponentially increasing by 2^x * 1000ms
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)

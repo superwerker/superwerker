@@ -13,7 +13,7 @@ export const standardsToEnable = [
   {
     name: 'AWS Foundational Security Best Practices v1.0.0',
     enable: true,
-    controlsToDisable: ['CloudFormation.1', 'S3.11', 'Macie.1', 'EC2.10'],
+    controlsToDisable: ['Macie.1'],
   },
   {
     name: 'CIS AWS Foundations Benchmark v1.2.0',
