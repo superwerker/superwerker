@@ -116,7 +116,7 @@ class EnableSecurityHubProvider extends Construct {
     });
 
     // invoke lambda for updating security hub on landing zone changes
-    // so changing the landing zone goverend regions updates aggretation regions
+    // so that changing the landing zone governed regions updates the security hub aggregation regions
     const landingzoneUpdateEventRule = new Rule(this, 'LandingzoneUpdateEventRule', {
       eventPattern: {
         source: ['aws.controltower'],
