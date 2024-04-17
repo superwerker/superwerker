@@ -3,7 +3,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: Sets up SecurityHub with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization. (qs-1s3rsr7n9)
 
 Resources:
-
   LandingZoneSetupFinishedTrigger:
     Type: AWS::Events::Rule
     Properties:
@@ -48,7 +47,6 @@ Resources:
                 "MemberAWSAccountId": [<AwsAccountId>]
               }
 
-
   SSMAutomationExecutionRoleforCWEvents:
     Type: AWS::IAM::Role
     Properties:
@@ -75,15 +73,15 @@ Resources:
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
+        schemaVersion: "0.3"
         assumeRole: !GetAtt CreateLandingZoneEnableSecurityHubRole.Arn
         parameters:
           AuditAccountId:
             type: String
-            default: '{{ssm:/superwerker/account_id_audit}}'
+            default: "{{ssm:/superwerker/account_id_audit}}"
           LogArchiveAccountId:
             type: String
-            default: '{{ssm:/superwerker/account_id_logarchive}}'
+            default: "{{ssm:/superwerker/account_id_logarchive}}"
         mainSteps:
           - name: EnableSecurityHubInAuditAccount
             action: aws:executeAutomation
@@ -91,14 +89,14 @@ Resources:
               DocumentName: !Ref EnableSecurityHubInOrgAccount
               RuntimeParameters:
                 AWSAccountId:
-                  - '{{ AuditAccountId }}'
+                  - "{{ AuditAccountId }}"
           - name: EnableSecurityHubMemberInOrgLogArchiveAccount
             action: aws:executeAutomation
             inputs:
               DocumentName: !Ref EnableSecurityHubInOrgAccountAndAddAsMember
               RuntimeParameters:
                 MemberAWSAccountId:
-                  - '{{ LogArchiveAccountId }}'
+                  - "{{ LogArchiveAccountId }}"
 
   CreateLandingZoneEnableSecurityHubRole:
     Type: AWS::IAM::Role
@@ -117,12 +115,12 @@ Resources:
               - Effect: Allow
                 Action: ssm:StartAutomationExecution
                 Resource:
-                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
-                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccountAndAddAsMember}:*
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccount}:*
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/${EnableSecurityHubInOrgAccountAndAddAsMember}:*
               - Effect: Allow
                 Action:
                   - ssm:GetAutomationExecution
-                Resource: '*'
+                Resource: "*"
         - PolicyName: SSMParameters
           PolicyDocument:
             Statement:
@@ -134,14 +132,14 @@ Resources:
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
+        schemaVersion: "0.3"
         assumeRole: !GetAtt EnableSecurityHubInOrgAccountAndAddAsMemberRole.Arn
         parameters:
           MemberAWSAccountId:
             type: String
           AuditAccountId:
             type: String
-            default: '{{ssm:/superwerker/account_id_audit}}'
+            default: "{{ssm:/superwerker/account_id_audit}}"
         mainSteps:
           - name: EnableSecurityHubInOrgAccount
             action: aws:executeAutomation
@@ -149,13 +147,13 @@ Resources:
               DocumentName: !Ref EnableSecurityHubInOrgAccount
               RuntimeParameters:
                 AWSAccountId:
-                  - '{{ MemberAWSAccountId }}'
+                  - "{{ MemberAWSAccountId }}"
           - name: MemberAccount
             action: aws:executeAwsApi
             inputs:
               Service: organizations
               Api: DescribeAccount
-              AccountId: '{{ MemberAWSAccountId }}'
+              AccountId: "{{ MemberAWSAccountId }}"
             outputs:
               - Name: EmailAddress
                 Selector: $.Account.Email
@@ -167,13 +165,13 @@ Resources:
               DocumentName: !Ref InviteSecurityHubMember
               Parameters:
                 MemberAWSAccountId:
-                  - '{{ MemberAWSAccountId }}'
+                  - "{{ MemberAWSAccountId }}"
                 MemberAWSAccountEmail:
-                  - '{{ MemberAccount.EmailAddress }}'
+                  - "{{ MemberAccount.EmailAddress }}"
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
-                    - '{{ AuditAccountId }}'
+                    - "{{ AuditAccountId }}"
                   Regions:
                     - !Ref AWS::Region
             outputs:
@@ -189,7 +187,7 @@ Resources:
               Filters:
                 - Key: ExecutionId
                   Values:
-                    - '{{ InviteSecurityHubMember.AutomationExecutionId }}'
+                    - "{{ InviteSecurityHubMember.AutomationExecutionId }}"
               PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
               DesiredValues:
                 - Success
@@ -202,7 +200,7 @@ Resources:
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
-                    - '{{ MemberAWSAccountId }}'
+                    - "{{ MemberAWSAccountId }}"
                   Regions:
                     - !Ref AWS::Region
             outputs:
@@ -218,7 +216,7 @@ Resources:
               Filters:
                 - Key: ExecutionId
                   Values:
-                    - '{{ AcceptInvitation.AutomationExecutionId }}'
+                    - "{{ AcceptInvitation.AutomationExecutionId }}"
               PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
               DesiredValues:
                 - Success
@@ -229,7 +227,7 @@ Resources:
       cfn-lint:
         config:
           ignore_checks:
-          - EIAMPolicyWildcardResource
+            - EIAMPolicyWildcardResource
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -255,7 +253,7 @@ Resources:
                 Action:
                   - ssm:DescribeAutomationExecutions
                   - ssm:GetAutomationExecution
-                Resource: '*'
+                Resource: "*"
         - PolicyName: AllowCallCrossAccountAutomation
           PolicyDocument:
             Statement:
@@ -267,7 +265,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: organizations:DescribeAccount
-                Resource: '*'
+                Resource: "*"
         - PolicyName: SSMParameters
           PolicyDocument:
             Statement:
@@ -280,7 +278,7 @@ Resources:
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
+        schemaVersion: "0.3"
         parameters:
           MemberAWSAccountId:
             type: String
@@ -293,22 +291,22 @@ Resources:
               Service: securityhub
               Api: CreateMembers
               AccountDetails:
-                - AccountId: '{{ MemberAWSAccountId }}'
-                  Email: '{{ MemberAWSAccountEmail }}'
+                - AccountId: "{{ MemberAWSAccountId }}"
+                  Email: "{{ MemberAWSAccountEmail }}"
           - name: InviteMembers
             action: aws:executeAwsApi
             inputs:
               Service: securityhub
               Api: InviteMembers
               AccountIds:
-                - '{{ MemberAWSAccountId }}'
+                - "{{ MemberAWSAccountId }}"
 
   AcceptSecurityHubInvitation:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
+        schemaVersion: "0.3"
         mainSteps:
           - name: Invitation
             action: aws:executeAwsApi
@@ -325,15 +323,15 @@ Resources:
             inputs:
               Service: securityhub
               Api: AcceptInvitation
-              InvitationId: '{{ Invitation.InvitationId }}'
-              MasterId: '{{ Invitation.AccountId }}'
+              InvitationId: "{{ Invitation.InvitationId }}"
+              MasterId: "{{ Invitation.AccountId }}"
 
   EnableSecurityHubInOrgAccount:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
+        schemaVersion: "0.3"
         assumeRole: !GetAtt EnableSecurityHubInOrgAccountRole.Arn
         parameters:
           AWSAccountId:
@@ -348,7 +346,7 @@ Resources:
               TargetLocations:
                 - ExecutionRoleName: AWSControlTowerExecution
                   Accounts:
-                    - '{{ AWSAccountId }}'
+                    - "{{ AWSAccountId }}"
                   Regions:
                     - !Ref AWS::Region
             outputs:
@@ -364,7 +362,7 @@ Resources:
               Filters:
                 - Key: ExecutionId
                   Values:
-                    - '{{ EnableSecurityHubInOrgAccount.AutomationExecutionId }}'
+                    - "{{ EnableSecurityHubInOrgAccount.AutomationExecutionId }}"
               PropertySelector: $.AutomationExecutionMetadataList[0].AutomationExecutionStatus
               DesiredValues:
                 - Success
@@ -392,7 +390,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:DescribeAutomationExecutions
-                Resource: '*'
+                Resource: "*"
         - PolicyName: AllowCallCrossAccountAutomation
           PolicyDocument:
             Statement:
@@ -405,7 +403,7 @@ Resources:
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
+        schemaVersion: "0.3"
         mainSteps:
           - name: CheckIfSecurityHubIsEnabled
             action: aws:executeAwsApi
@@ -426,10 +424,3 @@ Resources:
               Service: securityhub
               Api: EnableSecurityHub
             isEnd: true
-
-Metadata:
-  SuperwerkerVersion: 0.0.0-DEVELOPMENT
-  cfn-lint:
-    config:
-      ignore_checks:
-        - E9007

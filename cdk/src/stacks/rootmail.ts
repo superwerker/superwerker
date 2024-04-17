@@ -53,6 +53,7 @@ export class RootmailStack extends NestedStack {
     this.emailBucket = new s3.Bucket(this, 'EmailBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
     });
     (this.emailBucket.node.defaultChild as CfnResource).overrideLogicalId('EmailBucket');
     this.emailBucket.applyRemovalPolicy(RemovalPolicy.RETAIN);

@@ -12,6 +12,7 @@ import {
   aws_sns_subscriptions as subscriptions,
 } from 'aws-cdk-lib';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { Alias } from 'aws-cdk-lib/aws-kms';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
@@ -24,7 +25,11 @@ export class NotificationsStack extends NestedStack {
     });
 
     // NotificationTopic
-    const notificationTopic = new sns.Topic(this, 'NotificationTopic');
+    const aws_sns_kms = Alias.fromAliasName(this, 'aws-managed-sns-kms-key', 'alias/aws/sns');
+
+    const notificationTopic = new sns.Topic(this, 'NotificationTopic', {
+      masterKey: aws_sns_kms,
+    });
     notificationTopic.addSubscription(new subscriptions.EmailSubscription(notificationsMail.valueAsString));
     (notificationTopic.node.defaultChild as sns.CfnTopic).overrideLogicalId('NotificationTopic');
 
