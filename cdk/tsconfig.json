@@ -9,7 +9,7 @@
     "declaration": true,
     "experimentalDecorators": true,
     "sourceMap": true,
-    "noEmitOnError": false,
+    "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
