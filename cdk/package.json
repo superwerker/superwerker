@@ -14,6 +14,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.0.3",
     "@commitlint/config-conventional": "^19.0.3",
+    "@stylistic/eslint-plugin": "^1.7.2",
     "@types/async-retry": "^1.4.8",
     "@types/aws-lambda": "^8.10.132",
     "@types/jest": "^29.5.11",
