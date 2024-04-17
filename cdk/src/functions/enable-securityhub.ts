@@ -47,9 +47,10 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
   const securityHubClientAuditAccount = new SecurityHubClient({ credentials: creds });
 
   let controlTowerRegions = await getControlTowerRegions(controlTowerClient);
-  console.log(controlTowerRegions);
+  console.log('control tower regions:', controlTowerRegions);
   //remove home region from the list
   controlTowerRegions = controlTowerRegions.filter((region: string) => region !== homeRegion).map((region: any) => region);
+  console.log('control tower regions without home:', controlTowerRegions);
 
   const securityHubOrganizationMgmt = new SecurityHubOrganizationMgmt(
     adminAccountId,

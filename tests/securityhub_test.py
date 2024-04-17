@@ -96,7 +96,7 @@ def test_securityhub_finding_aggregator_regions(audit_account_id, control_tower_
         # we do not use ALL_REGIONS as linkeing mode
         assert finding_aggregator['RegionLinkingMode'] == 'SPECIFIED_REGIONS'
 
-def test_securityhub_enabled_standards_and_controls(audit_account_id, control_tower_regions):
+def test_securityhub_enabled_standards(audit_account_id, control_tower_regions):
 
     audit_account = control_tower_exection_role_session(audit_account_id)
     sechub_audit = audit_account.client('securityhub')
@@ -112,6 +112,17 @@ def test_securityhub_enabled_standards_and_controls(audit_account_id, control_to
     assert enabled_standards_response[0]['StandardsSubscriptionArn'] == f'arn:aws:securityhub:{region}:{audit_account_id}:subscription/aws-foundational-security-best-practices/v/1.0.0'
     assert enabled_standards_response[0]['StandardsStatus'] == 'READY'
 
+def test_securityhub_enabled_controls(audit_account_id, control_tower_regions):
+
+    audit_account = control_tower_exection_role_session(audit_account_id)
+    sechub_audit = audit_account.client('securityhub')
+    control_tower_regions = control_tower_regions.split(",")
+
+    enabled_standards_response = sechub_audit.get_enabled_standards()['StandardsSubscriptions']
+    
+    # we are activating exactly one standard
+    assert len(enabled_standards_response) == 1
+
     response = sechub_audit.describe_standards_controls(StandardsSubscriptionArn=enabled_standards_response[0]['StandardsSubscriptionArn'])
     standard_controls = response['Controls']
     while "NextToken" in response:
@@ -125,6 +136,7 @@ def test_securityhub_enabled_standards_and_controls(audit_account_id, control_to
 
     disabled_control_ids = [control['ControlId'] for control in disabled_controls_for_standard]
     assert 'Macie.1' in disabled_control_ids
+
 
 # Wait for up to 1 minute, exponentially increasing by 2^x * 1000ms
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
