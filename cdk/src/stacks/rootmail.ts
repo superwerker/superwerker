@@ -1,3 +1,4 @@
+import Fs from 'fs';
 import {
   Duration,
   aws_iam as iam,
@@ -11,11 +12,10 @@ import {
   Stack,
   CfnParameter,
 } from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib';
+import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
-import * as cdk from 'aws-cdk-lib';
-import Fs from 'fs';
-import { CfnRole } from 'aws-cdk-lib/aws-iam';
 
 export class RootmailStack extends NestedStack {
   public readonly emailBucket: s3.Bucket;
