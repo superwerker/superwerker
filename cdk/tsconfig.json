@@ -1,29 +1,21 @@
 {
+  "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "rootDirs": ["src", "test"],
+    "rootDirs": [
+      "src",
+      "test"
+    ],
     "outDir": "lib",
-    "alwaysStrict": true,
     "declaration": true,
-    "esModuleInterop": true,
     "experimentalDecorators": true,
     "sourceMap": true,
-    "lib": [
-      "es2022"
-    ],
-    "module": "CommonJS",
     "noEmitOnError": false,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "resolveJsonModule": true,
-    "strict": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
     "stripInternal": true,
-    "target": "ES2019"
   },
   "include": [
     "src/**/*.ts",

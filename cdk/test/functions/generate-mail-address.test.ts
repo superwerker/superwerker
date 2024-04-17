@@ -1,15 +1,18 @@
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { CloudFormationCustomResourceCreateEvent, CloudFormationCustomResourceDeleteEvent, Context } from 'aws-lambda';
 import { handler, generateEmail } from '../../src/functions/generate-mail-address';
 
 describe('generate-mail-address', () => {
   it('generates new email', async () => {
-    const result = await handler({
-      RequestType: 'Create',
-      ResourceProperties: {
-        Domain: 'aws.superluminar.io',
-        Name: 'sbstjn-example',
-      },
-    } as unknown as OnEventRequest);
+    const result = await handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          Domain: 'aws.superluminar.io',
+          Name: 'sbstjn-example',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     expect(result).toMatchObject({ Data: { Email: expect.stringMatching(/root\+[0-9a-f\-]*@aws.superluminar.io/) } });
   });
@@ -21,37 +24,46 @@ describe('generate-mail-address', () => {
   });
 
   it('cannot generate email address if no domain is provided', async () => {
-    const result = handler({
-      RequestType: 'Create',
-      ResourceProperties: {
-        Domain: '',
-        Name: 'sbstjn-example',
-      },
-    } as unknown as OnEventRequest);
+    const result = handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          Domain: '',
+          Name: 'sbstjn-example',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     await expect(result).rejects.toStrictEqual(new Error('Missing domain'));
   });
 
   it('cannot generate email address if no name is provided', async () => {
-    const result = handler({
-      RequestType: 'Create',
-      ResourceProperties: {
-        Domain: 'aws.superluminar.io',
-        Name: '',
-      },
-    } as unknown as OnEventRequest);
+    const result = handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          Domain: 'aws.superluminar.io',
+          Name: '',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     await expect(result).rejects.toStrictEqual(new Error('Missing name'));
   });
 
   it('Custom Resource Delete', async () => {
-    const result = await handler({
-      RequestType: 'Delete',
-      ResourceProperties: {
-        Domain: 'aws.superluminar.io',
-        Name: '',
-      },
-    } as unknown as OnEventRequest);
+    const result = await handler(
+      {
+        RequestType: 'Delete',
+        ResourceProperties: {
+          Domain: 'aws.superluminar.io',
+          Name: '',
+        },
+      } as unknown as CloudFormationCustomResourceDeleteEvent,
+      {} as Context,
+    );
 
     expect(result).toMatchObject({});
   });
