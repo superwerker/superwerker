@@ -20,6 +20,14 @@ def test_superwerker_dashboard():
     assert function_exists, "superwerker dashboard generator lambda function not found"
     
 def test_superwerker_legacy_dashboard():
+    paginator = lambda_client.get_paginator('list_functions')
+    page_iterator = paginator.paginate()
+
+    for page in page_iterator:
+        for function in page['Functions']:
+            if function['FunctionName'].startswith('superwerker-LivingDocumen-DashboardGenerator'):
+                lambda_client.invoke(FunctionName=function['FunctionName'], InvocationType='RequestResponse')
+
     with pytest.raises(botocore.exceptions.ClientError) as exception:
         cw.get_dashboard(DashboardName="superwerker")
-    assert 'An error occurred (ResourceNotFound) when calling the GetDashboard operation: Dashboard superwerker does not exist'
+    assert 'An error occurred (ResourceNotFound) when calling the GetDashboard operation: Dashboard superwerker does not exist' == str(exception.value)
