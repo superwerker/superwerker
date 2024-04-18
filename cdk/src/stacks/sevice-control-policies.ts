@@ -1,6 +1,6 @@
-import { CfnParameter, CustomResource, NestedStack, NestedStackProps, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnParameter, CustomResource, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { PhysicalResourceId, Provider } from 'aws-cdk-lib/custom-resources';
+import { Provider } from 'aws-cdk-lib/custom-resources';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import * as path from 'path';
@@ -80,7 +80,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: initialPolicy,
     });
 
-    const resource = new CustomResource(this, 'Resource', {
+    new CustomResource(this, 'Resource', {
       serviceToken: ServiceControlPolicyProvider.getOrCreate(this),
       resourceType: 'Custom::SCPBaseline',
       properties: {
