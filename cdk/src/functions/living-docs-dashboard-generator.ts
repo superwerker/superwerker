@@ -1,38 +1,55 @@
-import { CloudWatchClient, PutDashboardCommand } from '@aws-sdk/client-cloudwatch';
+import { CloudWatchClient, DeleteDashboardsCommand } from '@aws-sdk/client-cloudwatch';
 import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import endent from 'endent';
 
 const ssmClient = new SSMClient();
 const cloudwatchClient = new CloudWatchClient({});
 
-export async function handler(_event: any, _context: any) {
+const DOCS = `
+## DNS Configuration and Next Steps
+Will fetch the current DNS configuration for the domain and display it in a widget.
+Additonally, some information regarding the next steps to finish the setup will be displayed.
+
+### Widget parameters
+No parameters required
+\`\`\`
+`;
+
+export interface WidgetContent {
+  markdown: string;
+}
+
+export async function handler(event: any, _context: any): Promise<string | WidgetContent> {
+  if (event.describe) {
+    return DOCS;
+  }
+
   const dnsDomain = process.env.SUPERWERKER_DOMAIN;
   const awsRegion = process.env.AWS_REGION;
   const hostedZoneParamName = process.env.HOSTEDZONE_PARAM_NAME;
   const propagationParamName = process.env.PROPAGATION_PARAM_NAME;
 
-  const dnsNames = await ssmClient.send(
-    new GetParameterCommand({
-      Name: hostedZoneParamName,
-    }),
-  );
+  //fire and forget: delete legacy 'superwerker' dashboard if it exists
+  void deleteLegacyDashboard();
+
+  const [dnsNames, isRootMailConfiguredBool] = await Promise.all([
+    ssmClient.send(
+      new GetParameterCommand({
+        Name: hostedZoneParamName,
+      }),
+    ),
+    isRootMailConfigured(propagationParamName!),
+  ]);
+
   const dnsNamesArray = dnsNames.Parameter!.Value!.split(',');
 
-  const isRootMailConfiguredBool = await isRootMailConfigured(propagationParamName!);
-
   const dnsDelegationText = createDnsDelegationText(isRootMailConfiguredBool, dnsDomain!, dnsNamesArray);
-  const finalDashboardMessage = generateFinalDashboardMessage(dnsDelegationText, dnsDomain!, awsRegion!);
-  const finalDashboardMessageEscaped = escape_string(finalDashboardMessage);
+  const widgetContent = generateWidgetContent(dnsDelegationText, dnsDomain!, awsRegion!);
 
-  await cloudwatchClient.send(
-    new PutDashboardCommand({
-      DashboardName: 'superwerker',
-      DashboardBody: `{"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": "${finalDashboardMessageEscaped}"}}]}`,
-    }),
-  );
+  return { markdown: widgetContent } as WidgetContent;
 }
 
-async function isRootMailConfigured(propagationParamName: string) {
+async function isRootMailConfigured(propagationParamName: string): Promise<boolean> {
   const ssmRes = await ssmClient.send(
     new GetParameterCommand({
       Name: propagationParamName,
@@ -41,7 +58,7 @@ async function isRootMailConfigured(propagationParamName: string) {
   return ssmRes.Parameter!.Value! === 'done';
 }
 
-export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDomain: string, dnsNames: string[]) {
+export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDomain: string, dnsNames: string[]): string {
   let dnsDelegationText = '';
   if (isRootMailConfiguredBool) {
     dnsDelegationText = generateSuccesfulDnsConfigurationMessage(dnsDomain!);
@@ -55,26 +72,13 @@ export function createDnsDelegationText(isRootMailConfiguredBool: boolean, dnsDo
   return dnsDelegationText;
 }
 
-function escape_string(input: string) {
-  return input
-    .replace(/[\\]/g, '\\\\')
-    .replace(/[\"]/g, '\\"')
-    .replace(/[\/]/g, '\\/')
-    .replace(/[\b]/g, '\\b')
-    .replace(/[\f]/g, '\\f')
-    .replace(/[\n]/g, '\\n')
-    .replace(/[\r]/g, '\\r')
-    .replace(/[\t]/g, '\\t')
-    .replace(/[\u0000-\u0019]+/g, '');
-}
-
-function generateSuccesfulDnsConfigurationMessage(dnsDomain: string) {
+function generateSuccesfulDnsConfigurationMessage(dnsDomain: string): string {
   return endent`
     #### 🏠 ${dnsDomain}
     #### ✅ DNS configuration is set up correctly.`;
 }
 
-function generateDnsConfigurationRequiredMessage(dnsDomain: string, ns: string[]) {
+function generateDnsConfigurationRequiredMessage(dnsDomain: string, ns: string[]): string {
   return endent`
     #### 🏠 ${dnsDomain}
     #### ❌ DNS configuration needed.
@@ -94,7 +98,7 @@ function generateDnsConfigurationRequiredMessage(dnsDomain: string, ns: string[]
     `;
 }
 
-export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDomain: string, region: string) {
+export function generateWidgetContent(dnsDelegationText: string, dnsDomain: string, region: string): string {
   const currentTime = new Date();
   return endent`
   # [superwerker](https://github.com/superwerker/superwerker)
@@ -134,10 +138,19 @@ export function generateFinalDashboardMessage(dnsDelegationText: string, dnsDoma
   - [Architecture Decision Records](https://github.com/superwerker/superwerker/tree/main/docs/adrs)
   - [#superwerker](https://og-aws.slack.com/archives/C01CQ34TC93) Slack channel in [og-aws](http://slackhatesthe.cloud)
 
-  &nbsp;
-
   \`\`\`
-  Updated at ${currentTime} (use browser reload to refresh)
+  Updated at ${currentTime}
   \`\`\`
   `;
+}
+
+async function deleteLegacyDashboard(): Promise<void> {
+  cloudwatchClient
+    .send(
+      new DeleteDashboardsCommand({
+        DashboardNames: ['superwerker'],
+      }),
+    )
+    .then((response) => console.log('Successfully deleted legacy superwerker dashboard', response))
+    .catch((error) => console.log('Could not delete legacy superwerker dashboard', error));
 }

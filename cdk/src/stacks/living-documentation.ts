@@ -1,9 +1,7 @@
 import path from 'path';
 import { NestedStack, NestedStackProps, aws_lambda as lambda, aws_iam as iam, Duration, Arn, ArnFormat, CfnParameter } from 'aws-cdk-lib';
-import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
-import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { Dashboard, CustomWidget } from 'aws-cdk-lib/aws-cloudwatch';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-
 import { Construct } from 'constructs';
 
 export class LivingDocumentationStack extends NestedStack {
@@ -37,6 +35,20 @@ export class LivingDocumentationStack extends NestedStack {
 
     (dashboardGeneratorFunction.node.defaultChild as lambda.CfnFunction).overrideLogicalId('DashboardGeneratorFunction');
 
+    const superwerkerDashboard = new Dashboard(this, 'SuperwerkerDashboard', {
+      dashboardName: 'Superwerker-LivingDocumentation',
+    });
+
+    superwerkerDashboard.addWidgets(
+      new CustomWidget({
+        title: '',
+        width: 20,
+        height: 17,
+        updateOnRefresh: true,
+        functionArn: dashboardGeneratorFunction.functionArn,
+      }),
+    );
+
     const ssmParametersDescribe = new iam.PolicyStatement({
       actions: ['ssm:DescribeParameters'],
       resources: ['*'],
@@ -58,8 +70,8 @@ export class LivingDocumentationStack extends NestedStack {
       effect: iam.Effect.ALLOW,
     });
 
-    const cloudwatchPutDashboard = new iam.PolicyStatement({
-      actions: ['cloudwatch:PutDashboard'],
+    const cloudwatchDeleteDashboard = new iam.PolicyStatement({
+      actions: ['cloudwatch:DeleteDashboards'],
       resources: [
         Arn.format({
           partition: this.partition,
@@ -92,14 +104,8 @@ export class LivingDocumentationStack extends NestedStack {
 
     dashboardGeneratorFunction.role!.attachInlinePolicy(
       new iam.Policy(this, 'dashboard-generator-function', {
-        statements: [ssmParametersDescribe, ssmParameterRead, cloudwatchPutDashboard, cloudwatchDescribeAlarms],
+        statements: [ssmParametersDescribe, ssmParameterRead, cloudwatchDeleteDashboard, cloudwatchDescribeAlarms],
       }),
     );
-
-    const rule = new Rule(this, 'ScheduleLivingDocumentationRefresh', {
-      schedule: Schedule.rate(Duration.minutes(1)), // runs in Lambda free tier
-    });
-
-    rule.addTarget(new LambdaFunction(dashboardGeneratorFunction));
   }
 }
