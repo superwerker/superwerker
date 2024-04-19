@@ -1,8 +1,8 @@
+import * as path from 'path';
 import { CfnResource, CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
-import * as path from 'path';
 import {
   ATTR_VERIFICATION_TOKEN,
   ATTR_DKIM_TOKENS,

@@ -8,6 +8,7 @@ import {
   aws_budgets as budgets,
 } from 'aws-cdk-lib';
 import { CfnBudget } from 'aws-cdk-lib/aws-budgets';
+import { Alias } from 'aws-cdk-lib/aws-kms';
 import { CfnTopic } from 'aws-cdk-lib/aws-sns';
 import { Construct } from 'constructs';
 
@@ -15,7 +16,11 @@ export class BudgetStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const budgetNotificationTopic = new sns.Topic(this, 'BudgetNotification');
+    const aws_sns_kms = Alias.fromAliasName(this, 'aws-managed-sns-kms-key', 'alias/aws/sns');
+
+    const budgetNotificationTopic = new sns.Topic(this, 'BudgetNotification', {
+      masterKey: aws_sns_kms,
+    });
     (budgetNotificationTopic.node.defaultChild as CfnTopic).overrideLogicalId('BudgetNotification');
 
     const snsTopicPolicy = new sns.TopicPolicy(this, 'BudgetNotificationPolicy', {
