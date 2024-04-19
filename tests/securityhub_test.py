@@ -146,7 +146,7 @@ def wait_for_role_to_be_assumed(account_id):
                 RoleSessionName='SuperWerkerScpTest'
             )['Credentials']
 
-def test_security_hub_config_rules_exist(audit_account_id):
+def test_securityhub_config_rules_exist(audit_account_id):
     audit_account = control_tower_exection_role_session(audit_account_id)
     config_audit = audit_account.client('config')
 

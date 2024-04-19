@@ -22,7 +22,7 @@ import {
   StandardsStatus,
   UpdateStandardsControlCommand,
 } from '@aws-sdk/client-securityhub';
-import { throttlingBackOff } from '../utils/throttle';
+import { delay, throttlingBackOff } from '../utils/throttle';
 
 export class SecurityHubStandardsMgmt {
   private securityHubClient: SecurityHubClient;
@@ -74,6 +74,8 @@ export class SecurityHubStandardsMgmt {
 
     // get list of controls to modify
     const controlsToModify = await this.getControlArnsToModify(standardsToEnable, awsSecurityHubStandards);
+    console.log('Controls to disable: ', controlsToModify.disableStandardControlArns);
+    console.log('Controls to enable: ', controlsToModify.enableStandardControlArns);
 
     // Disable standard controls
     for (const controlArnToModify of controlsToModify.disableStandardControlArns) {
@@ -146,7 +148,7 @@ export class SecurityHubStandardsMgmt {
     standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
     awsSecurityHubStandards: { [name: string]: string }[],
   ): Promise<{ disableStandardControlArns: string[]; enableStandardControlArns: string[] }> {
-    const existingEnabledStandards = await this.getExistingEnabledStandards();
+    let existingEnabledStandards = await this.getExistingEnabledStandards();
     const disableStandardControls: string[] = [];
     const enableStandardControls: string[] = [];
 
@@ -157,50 +159,39 @@ export class SecurityHubStandardsMgmt {
         for (const awsSecurityHubStandard of awsSecurityHubStandards) {
           if (awsSecurityHubStandard[inputStandard.name]) {
             console.log(`Standard Name: ${awsSecurityHubStandard[inputStandard.name]}`);
-            const existingEnabledStandard = existingEnabledStandards.find(
-              (item) => item.StandardsArn === awsSecurityHubStandard[inputStandard.name],
-            );
-            if (existingEnabledStandard) {
-              console.log(`Getting controls for ${existingEnabledStandard!.StandardsSubscriptionArn} subscription`);
 
-              const standardsControl = [];
+            let existingEnabledStandard;
 
-              do {
-                const page = await this.getDescribeStandardsControls(existingEnabledStandard!.StandardsSubscriptionArn, nextToken);
-                for (const control of page.Controls!) {
-                  standardsControl.push(control);
-                }
-                nextToken = page.NextToken;
-              } while (nextToken);
+            while (!existingEnabledStandard) {
+              existingEnabledStandard = existingEnabledStandards.find(
+                (item) => item.StandardsArn === awsSecurityHubStandard[inputStandard.name] && item.StandardsStatus === 'READY',
+              );
+              existingEnabledStandards = await this.getExistingEnabledStandards();
+              console.log('waiting for standard to get in status READY: ', existingEnabledStandards);
+            }
 
-              while (standardsControl.length === 0) {
-                console.warn(`Delaying standard control retrieval by 10000 ms for ${existingEnabledStandard!.StandardsSubscriptionArn}`);
-                /* istanbul ignore next */
-                setTimeout(() => {}, 10000);
-                console.warn(`Rechecking - Getting controls for ${existingEnabledStandard!.StandardsSubscriptionArn}`);
-                nextToken = undefined;
-                do {
-                  const page = await this.getDescribeStandardsControls(existingEnabledStandard!.StandardsSubscriptionArn, nextToken);
-                  for (const control of page.Controls!) {
-                    standardsControl.push(control);
-                  }
-                  nextToken = page.NextToken;
-                } while (nextToken);
+            console.log(`Getting controls for ${existingEnabledStandard!.StandardsSubscriptionArn} subscription`);
+
+            const standardsControl = [];
+            do {
+              const page = await this.getDescribeStandardsControls(existingEnabledStandard!.StandardsSubscriptionArn, nextToken);
+              for (const control of page.Controls!) {
+                standardsControl.push(control);
               }
+              nextToken = page.NextToken;
+            } while (nextToken);
 
-              console.log(`When control list available for ${existingEnabledStandard!.StandardsSubscriptionArn}`);
-              console.log(standardsControl);
+            console.log(`When control list available for ${existingEnabledStandard!.StandardsSubscriptionArn}`);
+            console.log(standardsControl);
 
-              for (const control of standardsControl) {
-                if (inputStandard.controlsToDisable!.includes(control.ControlId!)) {
-                  console.log(control.ControlId!);
-                  disableStandardControls.push(control.StandardsControlArn!);
-                } else {
-                  if (control.ControlStatus == 'DISABLED') {
-                    console.log('following is disabled need to be enable now');
-                    console.log(control.ControlId!);
-                    enableStandardControls.push(control.StandardsControlArn!);
-                  }
+            for (const control of standardsControl) {
+              if (inputStandard.controlsToDisable!.includes(control.ControlId!)) {
+                console.log('following should be disabled: ', control.ControlId!);
+                disableStandardControls.push(control.StandardsControlArn!);
+              } else {
+                if (control.ControlStatus == 'DISABLED') {
+                  console.log('following should be enabled: ', control.ControlId!);
+                  enableStandardControls.push(control.StandardsControlArn!);
                 }
               }
             }
