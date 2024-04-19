@@ -1,7 +1,3 @@
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
-import 'aws-sdk-client-mock-jest';
-import { handler } from '../../src/functions/hosted-zone-dkim-propagation.is-complete-handler';
-import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import {
   GetAccountSendingEnabledCommand,
   GetIdentityDkimAttributesCommand,
@@ -9,7 +5,11 @@ import {
   GetIdentityVerificationAttributesCommand,
   SESClient,
 } from '@aws-sdk/client-ses';
+import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import 'aws-sdk-client-mock-jest';
 import { mockClient } from 'aws-sdk-client-mock';
+import { handler } from '../../src/functions/hosted-zone-dkim-propagation.is-complete-handler';
 
 const sesClientMock = mockClient(SESClient);
 const ssmClientMock = mockClient(SSMClient);

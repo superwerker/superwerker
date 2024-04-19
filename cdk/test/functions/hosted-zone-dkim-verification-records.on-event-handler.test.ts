@@ -1,8 +1,8 @@
-import { mockClient } from 'aws-sdk-client-mock';
+import { DeleteIdentityCommand, SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
 import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/hosted-zone-dkim-verification-records.on-event-handler';
-import { DeleteIdentityCommand, SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
 
 const sesClientMock = mockClient(SESClient);
 
