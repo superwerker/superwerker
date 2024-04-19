@@ -1,10 +1,10 @@
+import * as path from 'path';
 import { CfnParameter, CustomResource, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
-import { Provider } from 'aws-cdk-lib/custom-resources';
-import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Construct } from 'constructs';
-import * as path from 'path';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Provider } from 'aws-cdk-lib/custom-resources';
+import { Construct } from 'constructs';
 
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -80,8 +80,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: initialPolicy,
     });
 
-    new CustomResource(this, 'Resource', {
-      serviceToken: ServiceControlPolicyProvider.getOrCreate(this),
+    new CustomResource(this, 'SCPControlPolicyBaseline', {
+      serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
       resourceType: 'Custom::SCPBaseline',
       properties: {
         policyId: '', //check how this will be passed on delete command.
@@ -91,14 +91,19 @@ export class ServiceControlPoliciesStack extends NestedStack {
         description: 'superwerker - service-control-policy',
       },
     });
+
+    new CustomResource(this, 'SCPEnable', {
+      serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
+      resourceType: 'Custom::SCPBaseline',
+    });
   }
 }
 
-class ServiceControlPolicyProvider extends Construct {
+class ServiceControlPolicyBaselineProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-provider';
-    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyProvider) || new ServiceControlPolicyProvider(stack, id);
+    const id = 'superwerker.service-control-policy-baseline-provider';
+    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyBaselineProvider) || new ServiceControlPolicyBaselineProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -107,8 +112,8 @@ class ServiceControlPolicyProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    this.provider = new Provider(this, 'service-control-policy-provider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-on-event', {
+    this.provider = new Provider(this, 'service-control-policy-baseline-provider', {
+      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-baseline-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'create-service-control-policies-baseline.ts'),
         runtime: Runtime.NODEJS_20_X,
         initialPolicy: [
@@ -124,6 +129,34 @@ class ServiceControlPolicyProvider extends Construct {
               'organizations:ListPolicies',
               'organizations:ListPoliciesForTarget',
             ],
+          }),
+        ],
+      }),
+    });
+  }
+}
+
+class ServiceControlPolicyEnableProvider extends Construct {
+  public static getOrCreate(scope: Construct) {
+    const stack = Stack.of(scope);
+    const id = 'superwerker.service-control-policy-enable-provider';
+    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyEnableProvider) || new ServiceControlPolicyEnableProvider(stack, id);
+    return x.provider.serviceToken;
+  }
+
+  private readonly provider: Provider;
+
+  constructor(scope: Construct, id: string) {
+    super(scope, id);
+
+    this.provider = new Provider(this, 'service-control-policy-enable-provider', {
+      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-enable-on-event', {
+        entry: path.join(__dirname, '..', 'functions', 'enable-create-service-control-policies.ts'),
+        runtime: Runtime.NODEJS_20_X,
+        initialPolicy: [
+          new PolicyStatement({
+            resources: ['*'],
+            actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
           }),
         ],
       }),
