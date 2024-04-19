@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-unresolved
 import { SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
 import { CdkCustomResourceEvent, CloudFormationCustomResourceUpdateEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
