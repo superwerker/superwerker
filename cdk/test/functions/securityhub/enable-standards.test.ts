@@ -45,12 +45,73 @@ describe('enableStandards', () => {
       NextToken: undefined,
     });
 
-    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
-      StandardsSubscriptions: [],
+    securityHubClientMock
+      .on(GetEnabledStandardsCommand)
+      .resolvesOnce({
+        StandardsSubscriptions: [],
+        NextToken: undefined,
+      })
+      .resolves({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'READY',
+          },
+        ],
+        NextToken: undefined,
+      });
+
+    securityHubClientMock.on(DescribeStandardsControlsCommand).resolves({
+      Controls: [
+        {
+          StandardsControlArn:
+            'arn:aws:securityhub:eu-central-1:11223344556677:control/aws-foundational-security-best-practices/v/1.0.0/ACM.1',
+          ControlStatus: 'ENABLED',
+          ControlId: 'ACM.1',
+        },
+      ],
       NextToken: undefined,
     });
 
     await securityHubStandardsMgmt.enableStandards(standardsToEnable);
+
+    expect(securityHubClientMock).toHaveReceivedCommandWith(BatchEnableStandardsCommand, {
+      StandardsSubscriptionRequests: [{ StandardsArn: secHubStandards[0].StandardsArn }],
+    });
+    expect(securityHubClientMock).not.toHaveReceivedCommand(BatchDisableStandardsCommand);
+  });
+
+  it('fail when standard does not reach READY state', async () => {
+    securityHubClientMock.on(DescribeStandardsCommand).resolves({
+      Standards: secHubStandards,
+      NextToken: undefined,
+    });
+
+    securityHubClientMock
+      .on(GetEnabledStandardsCommand)
+      .resolvesOnce({
+        StandardsSubscriptions: [],
+        NextToken: undefined,
+      })
+      .resolves({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'PENDING',
+          },
+        ],
+        NextToken: undefined,
+      });
+
+    await expect(securityHubStandardsMgmt.enableStandards(standardsToEnable)).rejects.toThrow(
+      `Standard ${standardsToEnable[0].name} could not be enabled`,
+    );
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(BatchEnableStandardsCommand, {
       StandardsSubscriptionRequests: [{ StandardsArn: secHubStandards[0].StandardsArn }],
@@ -115,18 +176,38 @@ describe('enableStandards', () => {
       NextToken: undefined,
     });
 
-    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
-      StandardsSubscriptions: [
-        {
-          StandardsSubscriptionArn:
-            'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
-          StandardsArn: secHubStandards[0].StandardsArn,
-          StandardsInput: {},
-          StandardsStatus: 'READY',
-        },
-      ],
-      NextToken: undefined,
-    });
+    securityHubClientMock
+      .on(GetEnabledStandardsCommand)
+      .resolvesOnce({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'READY',
+          },
+        ],
+        NextToken: undefined,
+      })
+      .resolves({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'READY',
+          },
+          {
+            StandardsSubscriptionArn: 'arn:aws:securityhub:eu-central-1:11223344556677:subscription/cis-aws-foundations-benchmark/v/1.2.',
+            StandardsArn: secHubStandards[1].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'READY',
+          },
+        ],
+        NextToken: undefined,
+      });
 
     securityHubClientMock.on(DescribeStandardsControlsCommand).resolves({
       Controls: [
@@ -152,11 +233,6 @@ describe('enableStandards', () => {
     const enableMissingStandard = [
       {
         name: 'AWS Foundational Security Best Practices v1.0.0',
-        enable: true,
-        controlsToDisable: [],
-      },
-      {
-        name: 'CIS AWS Foundations Benchmark v1.2.0',
         enable: true,
         controlsToDisable: [],
       },
@@ -191,63 +267,6 @@ describe('enableStandards', () => {
       ],
       NextToken: undefined,
     });
-
-    await securityHubStandardsMgmt.enableStandards(enableMissingStandard);
-
-    expect(securityHubClientMock).toHaveReceivedCommandWith(BatchEnableStandardsCommand, {
-      StandardsSubscriptionRequests: [{ StandardsArn: secHubStandards[1].StandardsArn }],
-    });
-    expect(securityHubClientMock).not.toHaveReceivedCommand(BatchDisableStandardsCommand);
-    expect(securityHubClientMock).toHaveReceivedCommandWith(UpdateStandardsControlCommand, {
-      StandardsControlArn: 'arn:aws:securityhub:eu-central-1:11223344556677:control/aws-foundational-security-best-practices/v/1.0.0/ACM.1',
-      ControlStatus: 'ENABLED',
-    });
-  });
-
-  it('fail first control retrival', async () => {
-    const enableMissingStandard = [
-      {
-        name: 'AWS Foundational Security Best Practices v1.0.0',
-        enable: true,
-        controlsToDisable: [],
-      },
-    ];
-
-    securityHubClientMock.on(DescribeStandardsCommand).resolves({
-      Standards: secHubStandards,
-      NextToken: undefined,
-    });
-
-    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
-      StandardsSubscriptions: [
-        {
-          StandardsSubscriptionArn:
-            'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
-          StandardsArn: secHubStandards[0].StandardsArn,
-          StandardsInput: {},
-          StandardsStatus: 'READY',
-        },
-      ],
-      NextToken: undefined,
-    });
-
-    securityHubClientMock
-      .on(DescribeStandardsControlsCommand)
-      .resolvesOnce({
-        Controls: [],
-        NextToken: undefined,
-      })
-      .resolvesOnce({
-        Controls: [
-          {
-            StandardsControlArn:
-              'arn:aws:securityhub:eu-central-1:11223344556677:control/aws-foundational-security-best-practices/v/1.0.0/ACM.1',
-            ControlStatus: 'DISABLED',
-            ControlId: 'ACM.1',
-          },
-        ],
-        NextToken: undefined,
-      });
 
     await securityHubStandardsMgmt.enableStandards(enableMissingStandard);
 
