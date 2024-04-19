@@ -6,7 +6,12 @@ import {
   AccountOwnerNotVerifiedException,
 } from '@aws-sdk/client-organizations';
 import { ParameterAlreadyExists, ParameterLimitExceeded, PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import {
+  CloudFormationCustomResourceCreateEvent,
+  CloudFormationCustomResourceUpdateEvent,
+  CloudFormationCustomResourceDeleteEvent,
+  Context,
+} from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
 import axios from 'axios';
 import { handler } from '../../src/functions/./prepare-account';
@@ -31,13 +36,16 @@ describe('create organizations function', () => {
     });
     ssmClientMock.on(PutParameterCommand).resolves({});
 
-    const response = await handler({
-      RequestType: 'Create',
-      ResourceProperties: {
-        SIGNAL_URL: 'https://example.com',
-        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-      },
-    } as unknown as OnEventRequest);
+    const response = await handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          SIGNAL_URL: 'https://example.com',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     expect(response).toMatchObject({ PhysicalResourceId: 'org-id' });
 
@@ -51,13 +59,16 @@ describe('create organizations function', () => {
 
     ssmClientMock.on(PutParameterCommand).resolves({});
 
-    const response = await handler({
-      RequestType: 'Create',
-      ResourceProperties: {
-        SIGNAL_URL: 'https://example.com',
-        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-      },
-    } as unknown as OnEventRequest);
+    const response = await handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          SIGNAL_URL: 'https://example.com',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     expect(response).toMatchObject({ PhysicalResourceId: 'organisationalreadyexists' });
 
@@ -70,13 +81,16 @@ describe('create organizations function', () => {
       .rejects(new AccountOwnerNotVerifiedException({ message: 'dummy message', $metadata: {} }));
 
     try {
-      await handler({
-        RequestType: 'Create',
-        ResourceProperties: {
-          SIGNAL_URL: 'https://example.com',
-          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-        },
-      } as unknown as OnEventRequest);
+      await handler(
+        {
+          RequestType: 'Create',
+          ResourceProperties: {
+            SIGNAL_URL: 'https://example.com',
+            ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+          },
+        } as unknown as CloudFormationCustomResourceCreateEvent,
+        {} as Context,
+      );
     } catch (e) {
       expect(e).toMatchObject(new Error('Unexpected error while creating organization: AccountOwnerNotVerifiedException: dummy message'));
     }
@@ -90,13 +104,16 @@ describe('create organizations function', () => {
     });
     ssmClientMock.on(PutParameterCommand).rejects(new ParameterAlreadyExists({ message: 'dummy message', $metadata: {} }));
 
-    const response = await handler({
-      RequestType: 'Create',
-      ResourceProperties: {
-        SIGNAL_URL: 'https://example.com',
-        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-      },
-    } as unknown as OnEventRequest);
+    const response = await handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          SIGNAL_URL: 'https://example.com',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     expect(response).toMatchObject({ PhysicalResourceId: 'org-id' });
 
@@ -113,15 +130,18 @@ describe('create organizations function', () => {
     ssmClientMock.on(PutParameterCommand).rejects(new ParameterLimitExceeded({ message: 'dummy message', $metadata: {} }));
 
     try {
-      await handler({
-        RequestType: 'Create',
-        ResourceProperties: {
-          SIGNAL_URL: 'https://example.com',
-          SECURITY_OU_SSM_PARAMETER: 'Security',
-          SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
-          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-        },
-      } as unknown as OnEventRequest);
+      await handler(
+        {
+          RequestType: 'Create',
+          ResourceProperties: {
+            SIGNAL_URL: 'https://example.com',
+            SECURITY_OU_SSM_PARAMETER: 'Security',
+            SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+            ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+          },
+        } as unknown as CloudFormationCustomResourceCreateEvent,
+        {} as Context,
+      );
     } catch (e) {
       expect(e).toMatchObject(new Error('Unexpected error while creating SSM Parameter: ParameterLimitExceeded: dummy message'));
     }
@@ -138,15 +158,18 @@ describe('create organizations function', () => {
 
     ssmClientMock.on(PutParameterCommand).rejects(new ParameterAlreadyExists({ message: 'dummy message', $metadata: {} }));
 
-    const response = await handler({
-      RequestType: 'Update',
-      ResourceProperties: {
-        SIGNAL_URL: 'https://example.com',
-        SECURITY_OU_SSM_PARAMETER: 'Security',
-        SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
-        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-      },
-    } as unknown as OnEventRequest);
+    const response = await handler(
+      {
+        RequestType: 'Update',
+        ResourceProperties: {
+          SIGNAL_URL: 'https://example.com',
+          SECURITY_OU_SSM_PARAMETER: 'Security',
+          SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+        },
+      } as unknown as CloudFormationCustomResourceUpdateEvent,
+      {} as Context,
+    );
 
     expect(response).toMatchObject({ PhysicalResourceId: 'org-id' });
   });
@@ -161,30 +184,36 @@ describe('create organizations function', () => {
     ssmClientMock.on(PutParameterCommand).rejects(new ParameterLimitExceeded({ message: 'dummy message', $metadata: {} }));
 
     try {
-      await handler({
-        RequestType: 'Update',
-        ResourceProperties: {
-          SIGNAL_URL: 'https://example.com',
-          SECURITY_OU_SSM_PARAMETER: 'Security',
-          SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
-          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-        },
-      } as unknown as OnEventRequest);
+      await handler(
+        {
+          RequestType: 'Update',
+          ResourceProperties: {
+            SIGNAL_URL: 'https://example.com',
+            SECURITY_OU_SSM_PARAMETER: 'Security',
+            SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+            ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+          },
+        } as unknown as CloudFormationCustomResourceUpdateEvent,
+        {} as Context,
+      );
     } catch (e) {
       expect(e).toMatchObject(new Error('Unexpected error while creating SSM Parameter: ParameterLimitExceeded: dummy message'));
     }
   });
 
   it('Custom Resource Delete', async () => {
-    const result = await handler({
-      RequestType: 'Delete',
-      ResourceProperties: {
-        SIGNAL_URL: 'https://example.com',
-        SECURITY_OU_SSM_PARAMETER: 'Security',
-        SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
-        ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
-      },
-    } as unknown as OnEventRequest);
+    const result = await handler(
+      {
+        RequestType: 'Delete',
+        ResourceProperties: {
+          SIGNAL_URL: 'https://example.com',
+          SECURITY_OU_SSM_PARAMETER: 'Security',
+          SANDBOX_OU_SSM_PARAMETER: 'Sandbox',
+          ServiceToken: 'arn:aws:lambda:us-east-1:123456789012:function:custom-resource-handler',
+        },
+      } as unknown as CloudFormationCustomResourceDeleteEvent,
+      {} as Context,
+    );
 
     expect(organizationsClientMock).not.toHaveReceivedCommand(CreateOrganizationCommand);
 

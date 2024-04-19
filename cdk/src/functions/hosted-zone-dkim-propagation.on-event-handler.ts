@@ -1,9 +1,8 @@
-// eslint-disable-next-line import/no-unresolved
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
 
-export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   switch (event.RequestType) {
     case 'Create':
       console.log(`${event.RequestType} DKIM propagation. PhysicalResourceId: ${event.RequestId}`);
