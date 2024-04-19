@@ -21,6 +21,7 @@ export class SuperwerkerStack extends Stack {
   public static LOG_ARCHIVE_ACCOUNT = 'Log Archive';
   public static HOSTEDZONE_PARAM_NAME = '/superwerker/domain_name_servers';
   public static PROPAGATION_PARAM_NAME = '/superwerker/propagation_status';
+  public static ROOTMAIL_PASSWORD_PARAM_NAME = '/superwerker/rootmail_password';
 
   constructor(scope: Construct, id: string, props: SuperwerkerStackProps) {
     super(scope, id, props);
@@ -116,6 +117,7 @@ export class SuperwerkerStack extends Stack {
         Subdomain: subdomain.valueAsString,
         PropagationParameterName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
         HostedZoneParameterName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
+        RootmailPasswordParameterName: SuperwerkerStack.ROOTMAIL_PASSWORD_PARAM_NAME,
       },
     });
     (rootMailStack.node.defaultChild as CfnStack).overrideLogicalId('RootMail');

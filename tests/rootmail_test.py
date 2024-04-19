@@ -3,163 +3,57 @@ import boto3
 import uuid
 from retrying import retry
 import warnings
+from exchangelib import Credentials, Account, Configuration, DELEGATE, BASIC, Build, Version
 
 ses = boto3.client('ses', region_name='eu-west-1')
 ssm = boto3.client('ssm')
-
+workmail = boto3.client('workmail', region_name='eu-west-1')
 
 # https://github.com/boto/boto3/issues/454
 @pytest.fixture(autouse=True)
 def ignore_warnings():
     warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<ssl.SSLSocket.*>")
 
-def test_root_email_body_text():
-
-    id = uuid.uuid4().hex
-    send_email(id, 'This is a mail body')
-
-    res = get_ops_item_by_title(id)
-
-    assert 1 == len(res['Entities'])
-
-    id = res['Entities'][0]['Id']
-    description = res['Entities'][0]['Data']['AWS:OpsItem']['Content'][0]['Description']
-
-    assert 'This is a mail body' == description.rstrip()
-
-    ssm.update_ops_item(
-        OpsItemId=id,
-        Status='Resolved',
-    )
-
-def test_root_email_body_text_and_html():
-
-    id = uuid.uuid4().hex
-    send_email(id, 'This is another mail body', "<h1>This should be ignored</h1>")
-
-    res = get_ops_item_by_title(id)
-
-    assert 1 == len(res['Entities'])
-
-    id = res['Entities'][0]['Id']
-    description = res['Entities'][0]['Data']['AWS:OpsItem']['Content'][0]['Description']
-
-    assert 'This is another mail body' == description.rstrip()
-
-    ssm.update_ops_item(
-        OpsItemId=id,
-        Status='Resolved',
-    )
-
-def test_root_email_body_html():
-
-    id = uuid.uuid4().hex
-    send_email(id, None, "<script>alert('Hi!')</script><h1>Hello</h1>")
-
-    res = get_ops_item_by_title(id)
-
-    assert 1 == len(res['Entities'])
-
-    id = res['Entities'][0]['Id']
-    description = res['Entities'][0]['Data']['AWS:OpsItem']['Content'][0]['Description']
-
-    assert "<script>alert('Hi!')</script><h1>Hello</h1>" == description.rstrip()
-
-    ssm.update_ops_item(
-        OpsItemId=id,
-        Status='Resolved',
-    )
-
-def test_root_email_virus():
-
-    EICAR='X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'
-
-    id = uuid.uuid4().hex
-    send_email(id, EICAR)
-
-    res = wait_for_get_ops_summary(
-        Filters=[
-            {
-                'Key': 'AWS:OpsItem.Title',
-                'Values': [
-                    id,
-                ],
-                'Type': 'Equal',
-            },
-            {
-                'Key': 'AWS:OpsItem.Status',
-                'Values': [
-                    'Open',
-                ],
-                'Type': 'Equal',
-            },
-        ],
-    )
-
-    assert 0 == len(res['Entities'])
-
-def test_welcome_mail_get_filtered():
-
-    id = uuid.uuid4().hex
-    subject = 'Welcome to Amazon Web Services'
-    send_email(id=id, subject=subject, body_text='some mail body')
-
-    res = wait_for_get_ops_summary(
-        Filters=[
-            {
-                'Key': 'AWS:OpsItem.Title',
-                'Values': [
-                    subject,
-                ],
-                'Type': 'Equal',
-            },
-            {
-                'Key': 'AWS:OpsItem.Status',
-                'Values': [
-                    'Open',
-                ],
-                'Type': 'Equal',
-            },
-        ],
-    )
-
-    assert 0 == len(res['Entities'])
-
-def test_account_ready_mail_get_filtered():
-
-    id = uuid.uuid4().hex
-    subject = 'Your AWS Account is Ready - Get Started Now'
-    send_email(id=id, subject=subject, body_text='some mail body')
-
-    res = wait_for_get_ops_summary(
-        Filters=[
-            {
-                'Key': 'AWS:OpsItem.Title',
-                'Values': [
-                    subject,
-                ],
-                'Type': 'Equal',
-            },
-            {
-                'Key': 'AWS:OpsItem.Status',
-                'Values': [
-                    'Open',
-                ],
-                'Type': 'Equal',
-            },
-        ],
-    )
-
-    assert 0 == len(res['Entities'])
-
-def send_email(id, body_text=None, body_html=None, subject=None):
-
+@pytest.fixture(scope='session')
+def domain():
     res = ses.list_identities(
         IdentityType='Domain',
         MaxItems=1,
     )
+    return [identity for identity in res['Identities'] if "superwerker" in identity][0]
 
-    domain = res['Identities'][0]
+def test_workmail_resources_exist(domain):
+
+    orgList = workmail.list_organizations()
+    activeOrg = [org for org in orgList['OrganizationSummaries'] if org['State'] == 'Active']
+
+    assert domain == activeOrg[0]['DefaultMailDomain']
+
+    orgId = activeOrg[0]['OrganizationId']
+
+    userList = workmail.list_users(
+        OrganizationId = orgId,
+        Filters = {
+            'PrimaryEmailPrefix': 'root@{domain}'.format(domain=domain),
+        }
+    )
+
+    assert 1 == len(userList['Users'])
+    assert 'ENABLED' == userList['Users'][0]['State']
+
+
+def test_email_delivery(domain):
+
+    id = uuid.uuid4().hex
+    send_email(domain, id, 'This is a mail body')
+
+    msg = get_email_by_subject(domain, id)
+
+    assert "test@{domain}".format(domain=domain) == msg.sender.email_address
+    assert id == msg.subject
+
+
+def send_email(domain, id, body_text=None, body_html=None, subject=None):
 
     body = {}
 
@@ -188,33 +82,33 @@ def send_email(id, body_text=None, body_html=None, subject=None):
 
     return res
 
-
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=20000)
-def get_ops_item_by_title(title):
-    res = ssm.get_ops_summary(
-        Filters=[
-            {
-                'Key': 'AWS:OpsItem.Title',
-                'Values': [
-                    title,
-                ],
-                'Type': 'Equal',
-            },
-            {
-                'Key': 'AWS:OpsItem.Status',
-                'Values': [
-                    'Open',
-                ],
-                'Type': 'Equal',
-            },
-        ],
+def get_email_by_subject(domain, subject):
+
+    ssmRes = ssm.get_parameter(
+        Name="/superwerker/rootmail_password", 
+        WithDecryption=True)
+    password = ssmRes['Parameter']['Value']
+
+    credentials = Credentials(username="root@{domain}".format(domain=domain), password=password)
+
+    config = Configuration(
+        credentials=credentials, 
+        service_endpoint='https://ews.mail.eu-west-1.awsapps.com/EWS/Exchange.asmx',
+        auth_type='basic'
     )
 
-    if len(res['Entities']) == 0:
-        raise  # mail has probably not arrived yet
-    return res
+    account = Account(
+        primary_smtp_address="root@{domain}".format(domain=domain),
+        config=config,
+        autodiscover=False
+    )
 
-@retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=20000)
-def wait_for_get_ops_summary(**kwargs):
-    return ssm.get_ops_summary(**kwargs)
+    msgQuerySet = account.inbox.filter(subject__contains=subject)
+
+    if msgQuerySet.count() == 0:
+        raise
+    else:
+        return msgQuerySet[0]
+
 
