@@ -18,7 +18,6 @@ Parameters:
     Type: String
 
 Conditions:
-  IncludeSecurityHub: !Equals [!Ref IncludeSecurityHub, true]
   IncludeBackup: !Equals [!Ref IncludeBackup, true]
   RolloutSCPs: !And
     - !Equals [!Ref IncludeSecurityHub, true]
@@ -41,29 +40,6 @@ Resources:
         - Statements: !Join
             - ","
             - - !If
-                - IncludeSecurityHub
-                - !Sub |
-                  {
-                      "Condition": {
-                          "ArnNotLike": {
-                              "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution"
-                          }
-                      },
-                      "Action": [
-                          "securityhub:DeleteInvitations",
-                          "securityhub:DisableSecurityHub",
-                          "securityhub:DisassociateFromMasterAccount",
-                          "securityhub:DeleteMembers",
-                          "securityhub:DisassociateMembers"
-                      ],
-                      "Resource": [
-                          "*"
-                      ],
-                      "Effect": "Deny",
-                      "Sid": "SWProtectSecurityHub"
-                  }
-                - !Ref AWS::NoValue
-              - !If
                 - IncludeBackup
                 - !Sub |
                   {
