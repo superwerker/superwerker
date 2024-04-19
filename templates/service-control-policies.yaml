@@ -6,11 +6,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: Sets up Service Control Policies(SCP). (qs-1s3rsr7o0)
 
 Parameters:
-  IncludeSecurityHub:
-    AllowedValues:
-      - true
-      - false
-    Type: String
   IncludeBackup:
     AllowedValues:
       - true
@@ -19,14 +14,11 @@ Parameters:
 
 Conditions:
   IncludeBackup: !Equals [!Ref IncludeBackup, true]
-  RolloutSCPs: !And
-    - !Equals [!Ref IncludeSecurityHub, true]
-    - !Equals [!Ref IncludeBackup, true]
 
 Resources:
   SCPBaseline:
     Type: AWS::CloudFormation::CustomResource
-    Condition: RolloutSCPs
+    Condition: IncludeBackup
     Properties:
       ServiceToken: !GetAtt SCPCustomResource.Arn
       Policy: !Sub
