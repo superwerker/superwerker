@@ -145,3 +145,18 @@ def wait_for_role_to_be_assumed(account_id):
                 RoleArn=f'arn:aws:iam::{account_id}:role/SuperWerkerScpTestRole',
                 RoleSessionName='SuperWerkerScpTest'
             )['Credentials']
+
+def test_security_hub_config_rules_exist(audit_account_id):
+    audit_account = control_tower_exection_role_session(audit_account_id)
+    config_audit = audit_account.client('config')
+
+    response_iterator = config_audit.get_paginator('describe_config_rules').paginate()
+    
+    security_hub_rules = []
+    for page in response_iterator:
+        for rule in page['ConfigRules']:
+            if rule['ConfigRuleName'].startswith('securityhub-'):
+                security_hub_rules.append(rule['ConfigRuleName'])
+
+    assert len(security_hub_rules) > 0, 'No Security Hub Config Rules found'
+           

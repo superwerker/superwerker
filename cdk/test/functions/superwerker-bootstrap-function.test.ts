@@ -1,5 +1,10 @@
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import {
+  CloudFormationCustomResourceCreateEvent,
+  CloudFormationCustomResourceUpdateEvent,
+  CloudFormationCustomResourceDeleteEvent,
+  Context,
+} from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/superwerker-bootstrap-function';
@@ -19,9 +24,12 @@ describe('superwerker bootstrap function', () => {
   it('puts parameters for each account and sends events', async () => {
     eventBridgeClientMock.on(PutEventsCommand).resolves({});
 
-    await handler({
-      RequestType: 'Create',
-    } as unknown as OnEventRequest);
+    await handler(
+      {
+        RequestType: 'Create',
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
 
     expect(eventBridgeClientMock).toHaveReceivedCommandWith(PutEventsCommand, {
       Entries: [
@@ -37,9 +45,12 @@ describe('superwerker bootstrap function', () => {
   });
 
   it('Custom Resource Update', async () => {
-    const result = await handler({
-      RequestType: 'Update',
-    } as unknown as OnEventRequest);
+    const result = await handler(
+      {
+        RequestType: 'Update',
+      } as unknown as CloudFormationCustomResourceUpdateEvent,
+      {} as Context,
+    );
 
     expect(eventBridgeClientMock).not.toHaveReceivedCommand(PutEventsCommand);
 
@@ -47,9 +58,12 @@ describe('superwerker bootstrap function', () => {
   });
 
   it('Custom Resource Delete', async () => {
-    const result = await handler({
-      RequestType: 'Delete',
-    } as unknown as OnEventRequest);
+    const result = await handler(
+      {
+        RequestType: 'Delete',
+      } as unknown as CloudFormationCustomResourceDeleteEvent,
+      {} as Context,
+    );
 
     expect(eventBridgeClientMock).not.toHaveReceivedCommand(PutEventsCommand);
 

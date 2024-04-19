@@ -1,8 +1,8 @@
+import { DeleteIdentityCommand, SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
+import { CloudFormationCustomResourceCreateEvent, CloudFormationCustomResourceDeleteEvent, Context } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/hosted-zone-dkim-verification-records.on-event-handler';
-import { DeleteIdentityCommand, SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
 
 const sesClientMock = mockClient(SESClient);
 
@@ -41,9 +41,9 @@ describe('hosted-zone-dkim-verification-records.on-event-handler', () => {
         ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
         Domain: 'aws.testdomain.com',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as CloudFormationCustomResourceCreateEvent;
 
-    const result = await handler(event);
+    const result = await handler(event, {} as Context);
 
     expect(sesClientMock).toReceiveCommandWith(VerifyDomainDkimCommand, {
       Domain: 'aws.testdomain.com',
@@ -78,9 +78,9 @@ describe('hosted-zone-dkim-verification-records.on-event-handler', () => {
         ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
         Domain: 'aws.testdomain.com',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as CloudFormationCustomResourceDeleteEvent;
 
-    const result = await handler(event);
+    const result = await handler(event, {} as Context);
 
     expect(sesClientMock).not.toHaveReceivedCommand(DeleteIdentityCommand);
 

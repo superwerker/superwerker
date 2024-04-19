@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-unresolved
 import {
   GetAccountSendingEnabledCommand,
   GetIdentityDkimAttributesCommand,
@@ -7,7 +6,7 @@ import {
   SESClient,
 } from '@aws-sdk/client-ses';
 import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { CdkCustomResourceEvent, Context } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
 
@@ -18,7 +17,7 @@ export interface IsCompleteHandlerResponse {
   IsComplete: boolean;
 }
 
-export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<IsCompleteHandlerResponse> {
+export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<IsCompleteHandlerResponse> {
   const domain = event.ResourceProperties[PROP_DOMAIN];
   const propagationParamName = event.ResourceProperties[PROP_PARAM_NAME];
 
