@@ -1,5 +1,6 @@
 boto3
 exchangelib
+awsapilib>=3.1.5
 retrying
 pytest
 pytest-timeout

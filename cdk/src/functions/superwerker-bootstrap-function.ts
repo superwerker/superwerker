@@ -1,4 +1,5 @@
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 
 const eventBridgeClient = new EventBridgeClient();
 
@@ -20,7 +21,7 @@ export async function bootstap() {
   return response;
 }
 
-export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   switch (event.RequestType) {
     case 'Create':
       console.log('Triggering enablement of superwerker features...');

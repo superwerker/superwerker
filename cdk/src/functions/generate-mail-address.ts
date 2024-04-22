@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
-
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_NAME = 'Name';
 export const ATTR_EMAIL = 'Email';
@@ -24,7 +23,7 @@ export function generateEmail(domain: string): string {
   return email;
 }
 
-export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   switch (event.RequestType) {
     case 'Create':
     case 'Update':

@@ -1,6 +1,7 @@
 import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
+import { BillingStack } from './billing';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
 import { GuardDutyStack } from './guardduty';
@@ -212,5 +213,10 @@ export class SuperwerkerStack extends Stack {
     serviceControlPoliciesStack.addDependency(controlTowerStack);
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+
+    // Billing
+    const billingStack = new BillingStack(this, 'Billing', {});
+    billingStack.addDependency(controlTowerStack);
+    (billingStack.node.defaultChild as CfnStack).overrideLogicalId('Billing');
   }
 }

@@ -5,7 +5,7 @@ import {
   AlreadyInOrganizationException,
 } from '@aws-sdk/client-organizations';
 import { SSMClient, PutParameterCommand, ParameterType, PutParameterCommandOutput, ParameterAlreadyExists } from '@aws-sdk/client-ssm';
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 import axios from 'axios';
 
 const CT_VERSION = '3.3';
@@ -14,7 +14,7 @@ const CT_SANDBOX_OU_NAME = 'Sandbox';
 const CT_BUCKET_RETENTION_LOGGING = '90';
 const CT_BUCKET_RETENTION_ACCESS_LOGGING = '365';
 
-export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   console.log(event);
   const CT_REGIONS = event.ResourceProperties.ServiceToken.split(':')[3];
 

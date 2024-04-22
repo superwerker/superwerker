@@ -18,14 +18,13 @@ Parameters:
     Type: String
 
 Conditions:
-  IncludeSecurityHub: !Equals [ !Ref IncludeSecurityHub, true ]
-  IncludeBackup: !Equals [ !Ref IncludeBackup, true ]
+  IncludeSecurityHub: !Equals [!Ref IncludeSecurityHub, true]
+  IncludeBackup: !Equals [!Ref IncludeBackup, true]
   RolloutSCPs: !And
-    - !Equals [ !Ref IncludeSecurityHub, true ]
-    - !Equals [ !Ref IncludeBackup, true ]
+    - !Equals [!Ref IncludeSecurityHub, true]
+    - !Equals [!Ref IncludeBackup, true]
 
 Resources:
-
   SCPBaseline:
     Type: AWS::CloudFormation::CustomResource
     Condition: RolloutSCPs
@@ -40,62 +39,61 @@ Resources:
               ]
           }
         - Statements: !Join
-          - ','
-          - - !If
-              - IncludeSecurityHub
-              - !Sub |
-                {
-                    "Condition": {
-                        "ArnNotLike": {
-                            "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution"
-                        }
-                    },
-                    "Action": [
-                        "securityhub:DeleteInvitations",
-                        "securityhub:DisableSecurityHub",
-                        "securityhub:DisassociateFromMasterAccount",
-                        "securityhub:DeleteMembers",
-                        "securityhub:DisassociateMembers"
-                    ],
-                    "Resource": [
-                        "*"
-                    ],
-                    "Effect": "Deny",
-                    "Sid": "SWProtectSecurityHub"
-                }
-              - !Ref AWS::NoValue
-            - !If
-              - IncludeBackup
-              - !Sub |
-                {
-                    "Condition": {
-                        "ArnNotLike": {
-                            "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/stacksets-exec-*"
-                        }
-                    },
-                    "Action": [
-                        "iam:AttachRolePolicy",
-                        "iam:CreateRole",
-                        "iam:DeleteRole",
-                        "iam:DeleteRolePermissionsBoundary",
-                        "iam:DeleteRolePolicy",
-                        "iam:DetachRolePolicy",
-                        "iam:PutRolePermissionsBoundary",
-                        "iam:PutRolePolicy",
-                        "iam:UpdateAssumeRolePolicy",
-                        "iam:UpdateRole",
-                        "iam:UpdateRoleDescription"
-                    ],
-                    "Resource": [
-                        "arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole",
-                        "arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
-                    ],
-                    "Effect": "Deny",
-                    "Sid": "SWProtectBackup"
-                }
-              - !Ref AWS::NoValue
+            - ","
+            - - !If
+                - IncludeSecurityHub
+                - !Sub |
+                  {
+                      "Condition": {
+                          "ArnNotLike": {
+                              "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution"
+                          }
+                      },
+                      "Action": [
+                          "securityhub:DeleteInvitations",
+                          "securityhub:DisableSecurityHub",
+                          "securityhub:DisassociateFromMasterAccount",
+                          "securityhub:DeleteMembers",
+                          "securityhub:DisassociateMembers"
+                      ],
+                      "Resource": [
+                          "*"
+                      ],
+                      "Effect": "Deny",
+                      "Sid": "SWProtectSecurityHub"
+                  }
+                - !Ref AWS::NoValue
+              - !If
+                - IncludeBackup
+                - !Sub |
+                  {
+                      "Condition": {
+                          "ArnNotLike": {
+                              "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/stacksets-exec-*"
+                          }
+                      },
+                      "Action": [
+                          "iam:AttachRolePolicy",
+                          "iam:CreateRole",
+                          "iam:DeleteRole",
+                          "iam:DeleteRolePermissionsBoundary",
+                          "iam:DeleteRolePolicy",
+                          "iam:DetachRolePolicy",
+                          "iam:PutRolePermissionsBoundary",
+                          "iam:PutRolePolicy",
+                          "iam:UpdateAssumeRolePolicy",
+                          "iam:UpdateRole",
+                          "iam:UpdateRoleDescription"
+                      ],
+                      "Resource": [
+                          "arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+                          "arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
+                      ],
+                      "Effect": "Deny",
+                      "Sid": "SWProtectBackup"
+                  }
+                - !Ref AWS::NoValue
       Attach: true
-
 
   SCPCustomResource:
     Type: AWS::Serverless::Function
@@ -311,11 +309,3 @@ Resources:
                 except o.exceptions.ConcurrentModificationException as e:
                     print('Exception: {}'.format(e))
             raise Exception
-
-Metadata:
-  SuperwerkerVersion: 0.0.0-DEVELOPMENT
-  cfn-lint:
-    config:
-      ignore_checks:
-        - E9007
-        - EIAMPolicyWildcardResource
