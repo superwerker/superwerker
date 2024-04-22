@@ -1,5 +1,4 @@
 import { mockClient } from 'aws-sdk-client-mock';
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/workmail-organization.on-event-handler';
 import {
@@ -39,7 +38,7 @@ describe('workmail-organization.on-event-handler', () => {
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as AWSLambda.CloudFormationCustomResourceEvent;
 
     const result = await handler(event);
 
@@ -123,7 +122,7 @@ describe('workmail-organization.on-event-handler', () => {
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as AWSLambda.CloudFormationCustomResourceDeleteEvent;
 
     const result = await handler(event);
 
@@ -251,7 +250,7 @@ describe('workmail-organization.on-event-handler', () => {
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as AWSLambda.CloudFormationCustomResourceEvent;
 
     await handler(event);
 

@@ -1,5 +1,4 @@
 import { mockClient } from 'aws-sdk-client-mock';
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
 import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/workmail-user.on-event-handler';
 import { SSMClient, PutParameterCommand, DeleteParameterCommand } from '@aws-sdk/client-ssm';
@@ -40,7 +39,7 @@ describe('workmail-user.on-event-handler', () => {
         PasswordParamName: '/superwerker/rootmail_password',
         WorkmailOrgId: 'm-123123',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as AWSLambda.CloudFormationCustomResourceEvent;
 
     const result = await handler(event);
 
@@ -88,7 +87,7 @@ describe('workmail-user.on-event-handler', () => {
         PasswordParamName: '/superwerker/rootmail_password',
         WorkmailOrgId: 'm-123123',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as AWSLambda.CloudFormationCustomResourceEvent;
 
     const result = await handler(event);
 
@@ -138,7 +137,7 @@ describe('workmail-user.on-event-handler', () => {
         PasswordParamName: '/superwerker/rootmail_password',
         WorkmailOrgId: 'm-123123',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as AWSLambda.CloudFormationCustomResourceEvent;
 
     const result = await handler(event);
 

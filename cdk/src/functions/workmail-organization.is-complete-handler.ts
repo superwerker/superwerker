@@ -14,7 +14,7 @@ const SSM = new SSMClient();
 
 export interface isCompleteEvent extends AWSLambda.CloudFormationCustomResourceEventCommon {
   PhysicalResourceId: string;
-  RequestType: string;
+  RequestType: 'Create' | 'Update' | 'Delete';
 }
 
 export async function handler(event: isCompleteEvent) {

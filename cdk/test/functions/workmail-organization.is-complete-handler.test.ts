@@ -1,7 +1,6 @@
 import { mockClient } from 'aws-sdk-client-mock';
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { handler, isCompleteEvent } from '../../src/functions/workmail-organization.is-complete-handler';
 import 'aws-sdk-client-mock-jest';
-import { handler } from '../../src/functions/workmail-organization.is-complete-handler';
 import {
   WorkMailClient,
   DescribeOrganizationCommand,
@@ -28,7 +27,7 @@ const event = {
     PropagationParamName: '/superwerker/propagation_status',
     HostedZoneId: 'hostedzoneid123',
   },
-} as unknown as OnEventRequest;
+} as isCompleteEvent;
 
 describe('workmail-organization.is-complete-handler', () => {
   beforeEach(() => {
@@ -130,7 +129,7 @@ describe('workmail-organization.is-complete-handler', () => {
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as unknown as OnEventRequest;
+    } as isCompleteEvent;
 
     const result = await handler(deleteEvent);
 
@@ -153,7 +152,7 @@ describe('workmail-organization.is-complete-handler', () => {
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as unknown as OnEventRequest;
+    } as isCompleteEvent;
 
     const result = await handler(deleteEvent);
 
