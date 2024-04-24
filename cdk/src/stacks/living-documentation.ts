@@ -42,7 +42,7 @@ export class LivingDocumentationStack extends NestedStack {
     superwerkerDashboard.addWidgets(
       new CustomWidget({
         title: '',
-        width: 20,
+        width: 24,
         height: 17,
         updateOnRefresh: true,
         functionArn: dashboardGeneratorFunction.functionArn,
