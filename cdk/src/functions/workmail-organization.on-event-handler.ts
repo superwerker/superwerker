@@ -1,12 +1,18 @@
-// eslint-disable-next-line import/no-unresolved
 import {
-  WorkMailClient,
+  Change,
+  ChangeAction,
+  ChangeResourceRecordSetsCommand,
+  ChangeResourceRecordSetsCommandOutput,
+  RRType,
+  Route53Client,
+} from '@aws-sdk/client-route-53';
+import {
   CreateOrganizationCommand,
-  GetMailDomainCommand,
   DeleteOrganizationCommand,
+  GetMailDomainCommand,
   ListOrganizationsCommand,
+  WorkMailClient,
 } from '@aws-sdk/client-workmail';
-import { Route53Client, ChangeResourceRecordSetsCommand, Change, ChangeAction, RRType } from '@aws-sdk/client-route-53';
 import { v4 as uuidv4 } from 'uuid';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
@@ -66,16 +72,23 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
       console.log(`${event.RequestType} Workmail organization custom resource. PhysicalResourceId: ${event.PhysicalResourceId}`);
 
       console.log(`Deleting Workmail / SES DNS records from hosted zone ${hostedZoneId}`);
-      await deleteDNSRecords(event.PhysicalResourceId!, hostedZoneId, domain);
+      const deleteResponse = await deleteDNSRecords(event.PhysicalResourceId!, hostedZoneId, domain).catch(function (error) {
+        console.error('Error when deleting DNS records sets', error);
+      });
+      console.log('Delete response:', deleteResponse);
 
       console.log(`Deleting Workmail organization ${event.PhysicalResourceId}`);
-      await workmail.send(
-        new DeleteOrganizationCommand({
-          OrganizationId: event.PhysicalResourceId,
-          DeleteDirectory: true,
-          ForceDelete: false,
-        }),
-      );
+      await workmail
+        .send(
+          new DeleteOrganizationCommand({
+            OrganizationId: event.PhysicalResourceId,
+            DeleteDirectory: true,
+            ForceDelete: false,
+          }),
+        )
+        .catch(function (error) {
+          console.error('Error when deleting workmail organization', error);
+        });
 
       return {
         PhysicalResourceId: event.PhysicalResourceId,
@@ -83,7 +96,14 @@ export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent
   }
 }
 
-async function deleteDNSRecords(workmailOrgId: string, hostedZoneId: string, domain: string): Promise<Object> {
+/*
+ * Delete DNS records from Route53. Otherwise the hosted zone cannot be deleted.
+ */
+async function deleteDNSRecords(
+  workmailOrgId: string,
+  hostedZoneId: string,
+  domain: string,
+): Promise<ChangeResourceRecordSetsCommandOutput> {
   // Get DNS records from Workmail
   const workmail_domain = await workmail.send(
     new GetMailDomainCommand({
@@ -132,6 +152,8 @@ async function deleteDNSRecords(workmailOrgId: string, hostedZoneId: string, dom
       Changes: changeRecords,
     },
   };
+
+  console.log('Delete input:', changeRecords);
 
   const deleteResponse = await route53.send(new ChangeResourceRecordSetsCommand(deleteInput));
   return deleteResponse;

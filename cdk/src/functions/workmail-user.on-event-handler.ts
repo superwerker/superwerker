@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-unresolved
 import { SSMClient, PutParameterCommand, DeleteParameterCommand } from '@aws-sdk/client-ssm';
 import {
   WorkMailClient,

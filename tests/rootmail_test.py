@@ -18,7 +18,6 @@ def ignore_warnings():
 def domain():
     res = ses.list_identities(
         IdentityType='Domain',
-        MaxItems=1,
     )
     return [identity for identity in res['Identities'] if "superwerker" in identity][0]
 

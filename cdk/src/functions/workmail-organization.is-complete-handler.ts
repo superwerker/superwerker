@@ -1,11 +1,10 @@
-// eslint-disable-next-line import/no-unresolved
+import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import {
-  WorkMailClient,
   DescribeOrganizationCommand,
   GetMailDomainCommand,
   UpdateDefaultMailDomainCommand,
+  WorkMailClient,
 } from '@aws-sdk/client-workmail';
-import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
 
