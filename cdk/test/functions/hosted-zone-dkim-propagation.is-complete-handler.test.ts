@@ -5,13 +5,13 @@ import {
   GetIdentityVerificationAttributesCommand,
   SESClient,
 } from '@aws-sdk/client-ses';
+import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import {
   CloudFormationCustomResourceCreateEvent,
   CloudFormationCustomResourceDeleteEvent,
   CloudFormationCustomResourceUpdateEvent,
   Context,
 } from 'aws-lambda';
-import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import 'aws-sdk-client-mock-jest';
 import { mockClient } from 'aws-sdk-client-mock';
 import { handler } from '../../src/functions/hosted-zone-dkim-propagation.is-complete-handler';
