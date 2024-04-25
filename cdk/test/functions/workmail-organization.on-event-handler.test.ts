@@ -1,6 +1,4 @@
-import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
-import { handler } from '../../src/functions/workmail-organization.on-event-handler';
+import { Route53Client, ChangeResourceRecordSetsCommand } from '@aws-sdk/client-route-53';
 import {
   WorkMailClient,
   CreateOrganizationCommand,
@@ -8,7 +6,9 @@ import {
   ListOrganizationsCommand,
   DeleteOrganizationCommand,
 } from '@aws-sdk/client-workmail';
-import { Route53Client, ChangeResourceRecordSetsCommand } from '@aws-sdk/client-route-53';
+import { mockClient } from 'aws-sdk-client-mock';
+import 'aws-sdk-client-mock-jest';
+import { handler } from '../../src/functions/workmail-organization.on-event-handler';
 
 const workmailClientMock = mockClient(WorkMailClient);
 const route53ClientMock = mockClient(Route53Client);
@@ -62,6 +62,8 @@ describe('workmail-organization.on-event-handler', () => {
   });
 
   it('deletes workmail organization & DNS records when receiving "delete" event', async () => {
+    workmailClientMock.on(DeleteOrganizationCommand).resolves({});
+
     workmailClientMock.on(GetMailDomainCommand).resolves({
       Records: [
         {
@@ -205,6 +207,137 @@ describe('workmail-organization.on-event-handler', () => {
               ResourceRecords: [
                 {
                   Value: 'xyzxyz.dkim.amazonses.com.',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+
+    expect(workmailClientMock).toHaveReceivedCommandWith(DeleteOrganizationCommand, {
+      OrganizationId: event.PhysicalResourceId,
+      DeleteDirectory: true,
+      ForceDelete: false,
+    });
+
+    expect(result).toMatchObject({
+      PhysicalResourceId: event.PhysicalResourceId,
+    });
+  });
+
+  it('deletes workmail organization when DNS records deletion fails', async () => {
+    workmailClientMock.on(DeleteOrganizationCommand).resolves({});
+    route53ClientMock.on(ChangeResourceRecordSetsCommand).rejects('Error deleting records InvalidChangeBatch');
+
+    workmailClientMock.on(GetMailDomainCommand).resolves({
+      Records: [
+        {
+          Hostname: 'aws.testdomain.com.',
+          Type: 'MX',
+          Value: '10 inbound-smtp.eu-west-1.amazonaws.com.',
+        },
+      ],
+    });
+
+    const event = {
+      RequestType: 'Delete',
+      ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
+      ResponseURL: '...',
+      StackId: 'arn:aws:cloudformation:eu-central-1:123123:stack/xxx',
+      RequestId: 'myRequestId123123',
+      PhysicalResourceId: 'orgid123',
+      LogicalResourceId: 'WorkmailOrganization123',
+      ResourceType: 'Custom::WorkmailOrganization',
+      ResourceProperties: {
+        ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
+        Domain: 'aws.testdomain.com',
+        PropagationParamName: '/superwerker/propagation_status',
+        HostedZoneId: 'hostedzoneid123',
+      },
+    } as unknown as AWSLambda.CloudFormationCustomResourceDeleteEvent;
+
+    const result = await handler(event);
+
+    expect(route53ClientMock).toHaveReceivedCommandWith(ChangeResourceRecordSetsCommand, {
+      HostedZoneId: 'hostedzoneid123',
+      ChangeBatch: {
+        Comment: 'Delete records from Workmail / SES',
+        Changes: [
+          {
+            Action: 'DELETE',
+            ResourceRecordSet: {
+              Name: 'aws.testdomain.com.',
+              Type: 'MX',
+              TTL: 600,
+              ResourceRecords: [
+                {
+                  Value: '10 inbound-smtp.eu-west-1.amazonaws.com.',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+
+    expect(workmailClientMock).toHaveReceivedCommandWith(DeleteOrganizationCommand, {
+      OrganizationId: event.PhysicalResourceId,
+      DeleteDirectory: true,
+      ForceDelete: false,
+    });
+
+    expect(result).toMatchObject({
+      PhysicalResourceId: event.PhysicalResourceId,
+    });
+  });
+
+  it('execution does not fail when delete workmail fails', async () => {
+    workmailClientMock.on(DeleteOrganizationCommand).rejects('OrganizationNotFoundException');
+    route53ClientMock.on(ChangeResourceRecordSetsCommand).rejects('Error deleting records InvalidChangeBatch');
+    workmailClientMock.on(GetMailDomainCommand).resolves({
+      Records: [
+        {
+          Hostname: 'aws.testdomain.com.',
+          Type: 'MX',
+          Value: '10 inbound-smtp.eu-west-1.amazonaws.com.',
+        },
+      ],
+    });
+
+    const event = {
+      RequestType: 'Delete',
+      ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
+      ResponseURL: '...',
+      StackId: 'arn:aws:cloudformation:eu-central-1:123123:stack/xxx',
+      RequestId: 'myRequestId123123',
+      PhysicalResourceId: 'orgid123',
+      LogicalResourceId: 'WorkmailOrganization123',
+      ResourceType: 'Custom::WorkmailOrganization',
+      ResourceProperties: {
+        ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
+        Domain: 'aws.testdomain.com',
+        PropagationParamName: '/superwerker/propagation_status',
+        HostedZoneId: 'hostedzoneid123',
+      },
+    } as unknown as AWSLambda.CloudFormationCustomResourceDeleteEvent;
+
+    const result = await handler(event);
+
+    expect(route53ClientMock).toHaveReceivedCommandWith(ChangeResourceRecordSetsCommand, {
+      HostedZoneId: 'hostedzoneid123',
+      ChangeBatch: {
+        Comment: 'Delete records from Workmail / SES',
+        Changes: [
+          {
+            Action: 'DELETE',
+            ResourceRecordSet: {
+              Name: 'aws.testdomain.com.',
+              Type: 'MX',
+              TTL: 600,
+              ResourceRecords: [
+                {
+                  Value: '10 inbound-smtp.eu-west-1.amazonaws.com.',
                 },
               ],
             },

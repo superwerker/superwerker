@@ -1,13 +1,13 @@
-import { mockClient } from 'aws-sdk-client-mock';
-import { handler, isCompleteEvent } from '../../src/functions/workmail-organization.is-complete-handler';
-import 'aws-sdk-client-mock-jest';
+import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import {
-  WorkMailClient,
   DescribeOrganizationCommand,
   GetMailDomainCommand,
   UpdateDefaultMailDomainCommand,
+  WorkMailClient,
 } from '@aws-sdk/client-workmail';
-import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { mockClient } from 'aws-sdk-client-mock';
+import 'aws-sdk-client-mock-jest';
+import { handler, isCompleteEvent } from '../../src/functions/workmail-organization.is-complete-handler';
 
 const workmailClientMock = mockClient(WorkMailClient);
 const ssmClientMock = mockClient(SSMClient);

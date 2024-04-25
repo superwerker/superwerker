@@ -1,6 +1,3 @@
-import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
-import { handler } from '../../src/functions/workmail-user.on-event-handler';
 import { SSMClient, PutParameterCommand, DeleteParameterCommand } from '@aws-sdk/client-ssm';
 import {
   WorkMailClient,
@@ -10,6 +7,9 @@ import {
   DeregisterFromWorkMailCommand,
   DeleteUserCommand,
 } from '@aws-sdk/client-workmail';
+import { mockClient } from 'aws-sdk-client-mock';
+import { handler } from '../../src/functions/workmail-user.on-event-handler';
+import 'aws-sdk-client-mock-jest';
 
 const ssmClientMock = mockClient(SSMClient);
 const workmailClientMock = mockClient(WorkMailClient);
