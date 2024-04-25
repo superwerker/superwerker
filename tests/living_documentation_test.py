@@ -25,7 +25,7 @@ def test_superwerker_dashboard(dashboard_generator_function):
     "widgets": [
         {{
             "height": 17,
-            "width": 20,
+            "width": 24,
             "y": 0,
             "x": 0,
             "type": "custom",
