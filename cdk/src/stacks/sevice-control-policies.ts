@@ -22,7 +22,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     // Backup
-    const includeBackup = new CfnParameter(this, 'IncludeBackup1', {
+    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
       allowedValues: ['Yes', 'No'],
     });
