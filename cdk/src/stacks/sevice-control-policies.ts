@@ -21,18 +21,22 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: [denyLeavingOrganizationStatement],
     });
 
-    // Backup
+    // Security Hub
     const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
       type: 'String',
+      description: 'Enable AWS Security Hub',
       allowedValues: ['Yes', 'No'],
+      default: 'Yes',
     });
 
     console.log(includeSecurityHub);
 
-    // Backup
+    //Backup
     const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
+      description: 'Enable automated backups',
       allowedValues: ['Yes', 'No'],
+      default: 'Yes',
     });
 
     if (includeBackup.valueAsString == 'Yes') {
