@@ -22,6 +22,14 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     // Backup
+    const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
+      type: 'String',
+      allowedValues: ['Yes', 'No'],
+    });
+
+    console.log(includeSecurityHub);
+
+    // Backup
     const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
       allowedValues: ['Yes', 'No'],
