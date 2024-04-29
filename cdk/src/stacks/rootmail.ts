@@ -2,6 +2,7 @@ import { aws_route53 as r53, aws_ssm as ssm, CfnResource, NestedStack, NestedSta
 import { Construct } from 'constructs';
 import { WorkmailOrganization } from '../constructs/rootmail-workmail-organization';
 import { WorkmailUser } from '../constructs/rootmail-workmail-user';
+import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 
 export class RootmailStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -51,11 +52,19 @@ export class RootmailStack extends NestedStack {
       simpleName: false,
     });
 
+    const hostedZoneDkim = new HostedZoneDkim(this, 'HostedZoneDkim', {
+      domain: domain.valueAsString,
+      subdomain: subdomain.valueAsString,
+      hostedZone: hostedZone,
+      hostedZoneSSMParameter: hostedZoneSSMParameter,
+    });
+
     const workmailOrganization = new WorkmailOrganization(this, 'WorkmailOrganization', {
       domain: `${subdomain.valueAsString}.${domain.valueAsString}`,
       propagationParameter: propagationParameter,
       hostedZoneId: hostedZone.hostedZoneId,
     });
+    workmailOrganization.node.addDependency(hostedZoneDkim);
 
     new WorkmailUser(this, 'WorkmailUser', {
       domain: `${subdomain.valueAsString}.${domain.valueAsString}`,
