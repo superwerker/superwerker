@@ -126,7 +126,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 class ServiceControlPolicyRootProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-enable-provider';
+    const id = 'superwerker.service-control-policy-root-provider';
     const x = (stack.node.tryFindChild(id) as ServiceControlPolicyRootProvider) || new ServiceControlPolicyRootProvider(stack, id);
     return x.provider.serviceToken;
   }
@@ -136,8 +136,8 @@ class ServiceControlPolicyRootProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    this.provider = new Provider(this, 'service-control-policy-baseline-provider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-baseline-on-event', {
+    this.provider = new Provider(this, 'service-control-policy-root-provider', {
+      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-root-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'service-control-policies-root.ts'),
         runtime: Runtime.NODEJS_20_X,
         initialPolicy: [
@@ -167,7 +167,7 @@ class ServiceControlPolicyRootProvider extends Construct {
 class ServiceControlPolicySandboxProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-enable-provider';
+    const id = 'superwerker.service-control-policy-sandbox-provider';
     const x = (stack.node.tryFindChild(id) as ServiceControlPolicySandboxProvider) || new ServiceControlPolicySandboxProvider(stack, id);
     return x.provider.serviceToken;
   }
@@ -177,8 +177,8 @@ class ServiceControlPolicySandboxProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    this.provider = new Provider(this, 'service-control-policy-baseline-provider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-baseline-on-event', {
+    this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
+      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-sandbox-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'service-control-policies-sandbox.ts'),
         runtime: Runtime.NODEJS_20_X,
         initialPolicy: [
