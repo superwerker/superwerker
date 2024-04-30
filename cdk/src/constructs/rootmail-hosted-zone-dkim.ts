@@ -96,5 +96,33 @@ export class HostedZoneDkim extends Construct {
       ttl: Duration.seconds(60),
     });
     (verificationRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneVerificationTokenRecord');
+
+    const autoDiscoverRecord = new r53.RecordSet(this, 'HostedZoneAutoDiscoverRecord', {
+      deleteExisting: false,
+      zone: hostedZone,
+      target: r53.RecordTarget.fromValues('autodiscover.mail.eu-west-1.awsapps.com'),
+      recordName: `autodiscover.${subdomain}.${domain}`,
+      ttl: Duration.seconds(60),
+      recordType: r53.RecordType.CNAME,
+    });
+    (autoDiscoverRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneAutoDiscoverRecord');
+
+    const spfRecord = new r53.TxtRecord(this, 'HostedZoneSpfRecord', {
+      zone: hostedZone,
+      values: ['v=spf1 include:amazonses.com ~all'],
+      deleteExisting: false,
+      recordName: `${subdomain}.${domain}`,
+      ttl: Duration.seconds(60),
+    });
+    (spfRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneSpfRecord');
+
+    const dmarcRecord = new r53.TxtRecord(this, 'HostedZoneDmarcRecord', {
+      zone: hostedZone,
+      values: ['v=DMARC1;p=quarantine;pct=100;fo=1'],
+      deleteExisting: false,
+      recordName: `_dmarc.${subdomain}.${domain}`,
+      ttl: Duration.seconds(60),
+    });
+    (dmarcRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDmarcRecord');
   }
 }
