@@ -3,7 +3,7 @@ import {
   CreatePolicyCommand,
   DeletePolicyCommand,
   DetachPolicyCommand,
-  ListAccountsForParentCommand,
+  ListOrganizationalUnitsForParentCommand,
   ListRootsCommand,
   OrganizationsClient,
   PolicyType,
@@ -35,22 +35,20 @@ async function getSandboxId(organizationClient: OrganizationsClient): Promise<st
   let root = await getRootId(organizationClient);
 
   try {
-    const command = new ListAccountsForParentCommand({ ParentId: root });
+    const command = new ListOrganizationalUnitsForParentCommand({ ParentId: root });
     const response = await organizationClient.send(command);
 
-    const accounts = response.Accounts || [];
+    const oUnits = response.OrganizationalUnits || [];
 
-    for (const account of accounts) {
-      if (account.Name == 'Sandbox') {
-        return account.Id;
+    for (const oUnit of oUnits) {
+      if (oUnit.Name == 'Sandbox') {
+        return oUnit.Id;
       }
     }
     return '';
   } catch (e) {
     return '';
   }
-
-  return '';
 }
 
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
@@ -63,7 +61,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
         //Attach SCP to Sandbox Account
         let sandboxId = await getSandboxId(client);
 
-        if (sandboxId?.includes('Error') || sandboxId?.includes('No root')) {
+        if (sandboxId == '') {
           return { Error: sandboxId };
         }
 
@@ -110,7 +108,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
 
       const commandDetachPolicy = new DetachPolicyCommand({
         PolicyId: event.PhysicalResourceId,
-        TargetId: await getRootId(client),
+        TargetId: await getSandboxId(client),
       });
 
       await client.send(commandDetachPolicy);
