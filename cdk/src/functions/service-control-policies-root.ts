@@ -55,7 +55,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
 
         await client.send(commandAttachPolicyRoot);
 
-        return { SUCESS: 'SCPs have been successfully created for Root account' };
+        return { SUCCESS: 'SCPs have been successfully created for Root account' };
       } catch (e) {
         console.log('Error during Creating Policy: ', e);
         return { ErrorMessage: `Error during creating policy: ${e}` };
