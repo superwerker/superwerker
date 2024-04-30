@@ -37,39 +37,41 @@ export class ServiceControlPoliciesStack extends NestedStack {
       default: 'Yes',
     });
 
-    console.log(includeSecurityHub);
+    console.log(includeSecurityHub, includeBackup);
 
-    if (includeBackup.valueAsString == 'Yes') {
-      const backupStatement = new PolicyStatement({
-        conditions: {
-          ArnNotLike: {
-            'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
-          },
+    const backupStatement = new PolicyStatement({
+      conditions: {
+        ArnNotLike: {
+          'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
         },
-        actions: [
-          'iam:AttachRolePolicy',
-          'iam:CreateRole',
-          'iam:DeleteRole',
-          'iam:DeleteRolePermissionsBoundary',
-          'iam:DeleteRolePolicy',
-          'iam:DetachRolePolicy',
-          'iam:PutRolePermissionsBoundary',
-          'iam:PutRolePolicy',
-          'iam:UpdateAssumeRolePolicy',
-          'iam:UpdateRole',
-          'iam:UpdateRoleDescription',
-        ],
-        resources: [
-          'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
-          'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
-        ],
-        effect: Effect.DENY,
-        sid: 'SWProtectBackup',
-      });
-      scpPolicyDocumentRoot.addStatements(backupStatement);
-    }
+      },
+      actions: [
+        'iam:AttachRolePolicy',
+        'iam:CreateRole',
+        'iam:DeleteRole',
+        'iam:DeleteRolePermissionsBoundary',
+        'iam:DeleteRolePolicy',
+        'iam:DetachRolePolicy',
+        'iam:PutRolePermissionsBoundary',
+        'iam:PutRolePolicy',
+        'iam:UpdateAssumeRolePolicy',
+        'iam:UpdateRole',
+        'iam:UpdateRoleDescription',
+      ],
+      resources: [
+        'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
+        'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
+      ],
+      effect: Effect.DENY,
+      sid: 'SWProtectBackup',
+    });
+    scpPolicyDocumentRoot.addStatements(backupStatement);
 
-    const scpRootResource = new CustomResource(this, 'SCPRoot', {
+    // if (includeBackup.valueAsString == 'Yes') {
+
+    // }
+
+    new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       resourceType: 'Custom::SCPRoot',
       properties: {
@@ -120,7 +122,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: [denyExpensiveAPICallsStatement],
     });
 
-    const scpSandboxResource = new CustomResource(this, 'SCPSandbox', {
+    new CustomResource(this, 'SCPSandbox', {
       serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
       resourceType: 'Custom::SCPSandbox',
       properties: {
@@ -130,8 +132,6 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     this.addMetadata('cfn - lint', { config: { ignore_checks: ['E9007', 'EPolicyWildcardPrincipal'] } });
-
-    console.log(scpRootResource, scpSandboxResource);
   }
 }
 

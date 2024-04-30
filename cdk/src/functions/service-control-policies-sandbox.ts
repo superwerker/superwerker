@@ -12,41 +12,41 @@ import {
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 
 async function getRootId(organizationClient: OrganizationsClient): Promise<string | undefined> {
-  let id = '';
   try {
     const command = new ListRootsCommand({});
     const response = await organizationClient.send(command);
 
-    if (!response.Roots || response.Roots.length === 0) {
+    if (!response.Roots) {
       console.warn('No roots found in the organization');
       return 'No roots';
     }
 
-    const root = response.Roots[0];
-    id = root.Id || '';
-    return id;
+    return response.Roots[0].Id;
   } catch (error) {
-    console.error(`Error getting root accounts for ${id}`, error);
+    console.error('Error getting root account', error);
     return `Error: ${error}`;
   }
 }
 
 async function getSandboxId(organizationClient: OrganizationsClient): Promise<string | undefined> {
-  let root = await getRootId(organizationClient);
+  let rootId = await getRootId(organizationClient);
+  if (rootId) {
+    try {
+      const command = new ListOrganizationalUnitsForParentCommand({ ParentId: rootId });
+      const response = await organizationClient.send(command);
 
-  try {
-    const command = new ListOrganizationalUnitsForParentCommand({ ParentId: root });
-    const response = await organizationClient.send(command);
+      const oUnits = response.OrganizationalUnits || [];
 
-    const oUnits = response.OrganizationalUnits || [];
-
-    for (const oUnit of oUnits) {
-      if (oUnit.Name == 'Sandbox') {
-        return oUnit.Id;
+      for (const oUnit of oUnits) {
+        if (oUnit.Name == 'Sandbox') {
+          return oUnit.Id;
+        }
       }
+      return '';
+    } catch (e) {
+      return '';
     }
-    return '';
-  } catch (e) {
+  } else {
     return '';
   }
 }
@@ -61,7 +61,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
         //Attach SCP to Sandbox Account
         let sandboxId = await getSandboxId(client);
 
-        if (sandboxId == '') {
+        if (!sandboxId) {
           return { Error: sandboxId };
         }
 
