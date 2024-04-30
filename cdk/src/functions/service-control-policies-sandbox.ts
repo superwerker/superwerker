@@ -75,15 +75,19 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
         });
 
         const responseCreatePolicySandbox = await client.send(commandCreatePolicySandbox);
+        console.log('Create Policy Response Sandbox: ', responseCreatePolicySandbox);
 
-        const commandAttachPolicySandbox = new AttachPolicyCommand({
-          PolicyId: responseCreatePolicySandbox.Policy?.PolicySummary?.Id || '',
-          TargetId: sandboxId,
-        });
+        if (responseCreatePolicySandbox.Policy) {
+          const commandAttachPolicySandbox = new AttachPolicyCommand({
+            PolicyId: responseCreatePolicySandbox.Policy?.PolicySummary?.Id || '',
+            TargetId: sandboxId,
+          });
 
-        await client.send(commandAttachPolicySandbox);
+          await client.send(commandAttachPolicySandbox);
 
-        return { SUCESS: 'SCPs have been successfully created for Sandbox account' };
+          return { SUCESS: 'SCPs have been successfully created for Sandbox account' };
+        }
+        return { Error: responseCreatePolicySandbox };
       } catch (e) {
         console.log('Error during Creating Policy for Sandbox account: ', e);
         return { ErrorMessage: `Error during creating policy for Sandbox account: ${e}` };
