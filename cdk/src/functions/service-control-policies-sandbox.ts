@@ -11,43 +11,27 @@ import {
 } from '@aws-sdk/client-organizations';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 
-async function getRootId(organizationClient: OrganizationsClient): Promise<string | undefined> {
+async function getSandboxId(organizationClient: OrganizationsClient): Promise<string | undefined> {
   try {
-    const command = new ListRootsCommand({});
-    const response = await organizationClient.send(command);
+    const commandListRoots = new ListRootsCommand({});
+    const responseListRoots = await organizationClient.send(commandListRoots);
 
-    if (!response.Roots) {
-      console.warn('No roots found in the organization');
-      return 'No roots';
+    const rootId = responseListRoots.Roots[0].Id;
+
+    const commandListOUs = new ListOrganizationalUnitsForParentCommand({ ParentId: rootId });
+    const responseListOUs = await organizationClient.send(commandListOUs);
+
+    const oUnits = responseListOUs.OrganizationalUnits || [];
+
+    for (const oUnit of oUnits) {
+      if (oUnit.Name == 'Sandbox') {
+        return oUnit.Id;
+      }
     }
-
-    return response.Roots[0].Id;
+    return '';
   } catch (error) {
     console.error('Error getting root account', error);
     return `Error: ${error}`;
-  }
-}
-
-async function getSandboxId(organizationClient: OrganizationsClient): Promise<string | undefined> {
-  let rootId = await getRootId(organizationClient);
-  if (rootId) {
-    try {
-      const command = new ListOrganizationalUnitsForParentCommand({ ParentId: rootId });
-      const response = await organizationClient.send(command);
-
-      const oUnits = response.OrganizationalUnits || [];
-
-      for (const oUnit of oUnits) {
-        if (oUnit.Name == 'Sandbox') {
-          return oUnit.Id;
-        }
-      }
-      return '';
-    } catch (e) {
-      return '';
-    }
-  } else {
-    return '';
   }
 }
 
