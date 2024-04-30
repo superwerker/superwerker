@@ -25,21 +25,21 @@ export class ServiceControlPoliciesStack extends NestedStack {
     const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
       description: 'Enable automated backups',
-      allowedValues: ['true', 'false'],
-      default: 'true',
+      allowedValues: ['Yes', 'No'],
+      default: 'Yes',
     });
 
     //Backup
     const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
       type: 'String',
       description: 'Enable security hub',
-      allowedValues: ['true', 'false'],
-      default: 'true',
+      allowedValues: ['Yes', 'No'],
+      default: 'Yes',
     });
 
     console.log(includeSecurityHub);
 
-    if (includeBackup.valueAsString == 'true') {
+    if (includeBackup.valueAsString == 'Yes') {
       const backupStatement = new PolicyStatement({
         conditions: {
           ArnNotLike: {
@@ -69,7 +69,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       scpPolicyDocumentRoot.addStatements(backupStatement);
     }
 
-    new CustomResource(this, 'SCPRoot', {
+    const scpRootResource = new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       resourceType: 'Custom::SCPRoot',
       properties: {
@@ -120,7 +120,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: [denyExpensiveAPICallsStatement],
     });
 
-    new CustomResource(this, 'SCPSandbox', {
+    const scpSandboxResource = new CustomResource(this, 'SCPSandbox', {
       serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
       resourceType: 'Custom::SCPSandbox',
       properties: {
@@ -130,6 +130,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     this.addMetadata('cfn - lint', { config: { ignore_checks: ['E9007', 'EPolicyWildcardPrincipal'] } });
+
+    console.log(scpRootResource, scpSandboxResource);
   }
 }
 
