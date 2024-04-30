@@ -25,8 +25,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
     const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
       description: 'Enable automated backups',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+      allowedValues: ['true', 'false'],
+      default: 'true',
     });
 
     //Backup
@@ -39,7 +39,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     console.log(includeSecurityHub);
 
-    if (includeBackup.valueAsString == 'Yes') {
+    if (includeBackup.valueAsString == 'true') {
       const backupStatement = new PolicyStatement({
         conditions: {
           ArnNotLike: {
