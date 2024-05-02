@@ -207,9 +207,12 @@ export class SuperwerkerStack extends Stack {
         IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'Yes', 'No')}`,
       },
     });
+    const rolloutScps = new CfnCondition(this, 'rolloutscps', {
+      expression: Fn.conditionAnd(backupCondition, serviceControlPoliciesCondition),
+    });
     serviceControlPoliciesStack.addDependency(controlTowerStack);
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = rolloutScps;
 
     // Billing
     const billingStack = new BillingStack(this, 'Billing', {});

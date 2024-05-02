@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { CfnParameter, CustomResource, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { CustomResource, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Provider } from 'aws-cdk-lib/custom-resources';
@@ -11,56 +11,47 @@ export class ServiceControlPoliciesStack extends NestedStack {
     super(scope, id, props);
 
     //Backup
-    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
-      type: 'String',
-      description: 'Enable automated backups',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+    const backupStatement = new PolicyStatement({
+      conditions: {
+        ArnNotLike: {
+          'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
+        },
+      },
+      actions: [
+        'iam:AttachRolePolicy',
+        'iam:CreateRole',
+        'iam:DeleteRole',
+        'iam:DeleteRolePermissionsBoundary',
+        'iam:DeleteRolePolicy',
+        'iam:DetachRolePolicy',
+        'iam:PutRolePermissionsBoundary',
+        'iam:PutRolePolicy',
+        'iam:UpdateAssumeRolePolicy',
+        'iam:UpdateRole',
+        'iam:UpdateRoleDescription',
+      ],
+      resources: [
+        'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
+        'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
+      ],
+      effect: Effect.DENY,
+      sid: 'SWProtectBackup',
+    });
+    const scpPolicyDocumentRoot = new PolicyDocument({ statements: [backupStatement] });
+
+    new CustomResource(this, 'SCPBaseline', {
+      serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
+      resourceType: 'Custom::SCPRoot',
+      properties: {
+        Policy: JSON.stringify(scpPolicyDocumentRoot),
+        Attach: 'true',
+      },
     });
 
-    if (includeBackup.valueAsString == 'Yes') {
-      const backupStatement = new PolicyStatement({
-        conditions: {
-          ArnNotLike: {
-            'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
-          },
-        },
-        actions: [
-          'iam:AttachRolePolicy',
-          'iam:CreateRole',
-          'iam:DeleteRole',
-          'iam:DeleteRolePermissionsBoundary',
-          'iam:DeleteRolePolicy',
-          'iam:DetachRolePolicy',
-          'iam:PutRolePermissionsBoundary',
-          'iam:PutRolePolicy',
-          'iam:UpdateAssumeRolePolicy',
-          'iam:UpdateRole',
-          'iam:UpdateRoleDescription',
-        ],
-        resources: [
-          'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
-          'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
-        ],
-        effect: Effect.DENY,
-        sid: 'SWProtectBackup',
-      });
-      const scpPolicyDocumentRoot = new PolicyDocument({ statements: [backupStatement] });
-
-      new CustomResource(this, 'SCPBaseline', {
-        serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
-        resourceType: 'Custom::SCPRoot',
-        properties: {
-          Policy: JSON.stringify(scpPolicyDocumentRoot),
-          Attach: 'true',
-        },
-      });
-
-      new CustomResource(this, 'SCPEnable', {
-        serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
-        resourceType: 'Custom::SCPSandbox',
-      });
-    }
+    new CustomResource(this, 'SCPEnable', {
+      serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
+      resourceType: 'Custom::SCPSandbox',
+    });
   }
 }
 
