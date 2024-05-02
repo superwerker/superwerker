@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { CustomResource, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Provider } from 'aws-cdk-lib/custom-resources';
@@ -91,6 +91,7 @@ class ServiceControlPolicyRootProvider extends Construct {
             ],
           }),
         ],
+        timeout: Duration.seconds(200),
       }),
     });
   }
@@ -111,6 +112,7 @@ class ServiceControlPolicySandboxProvider extends Construct {
 
     this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
       onEventHandler: new PythonFunction(this, 'service-control-policy-sandbox-on-event', {
+        timeout: Duration.seconds(200),
         entry: path.join(__dirname, '..', 'functions', 'scp-enable-setup'),
         runtime: Runtime.PYTHON_3_9,
         initialPolicy: [
