@@ -52,8 +52,8 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
         const commandCreatePolicySandbox = new CreatePolicyCommand({
           Type: PolicyType.SERVICE_CONTROL_POLICY,
           Description: `superwerker - sandbox - ${event.LogicalResourceId}`,
-          Name: event.ResourceProperties.scpNameRoot,
-          Content: event.ResourceProperties.policySandbox,
+          Name: event.ResourceProperties.scpName,
+          Content: event.ResourceProperties.policy,
         });
 
         const responseCreatePolicySandbox = await client.send(commandCreatePolicySandbox);
