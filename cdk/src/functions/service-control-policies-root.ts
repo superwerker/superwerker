@@ -103,7 +103,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       await client.send(commandDetachPolicy);
 
       const commandDeletePolicy = new DeletePolicyCommand({
-        PolicyId: event.PhysicalResourceId,
+        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
       });
 
       const responseDeletePolicy = await client.send(commandDeletePolicy);

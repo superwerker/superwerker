@@ -69,7 +69,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
 
         const commandCreatePolicySandbox = new CreatePolicyCommand({
           Type: PolicyType.SERVICE_CONTROL_POLICY,
-          Description: `superwerker - sandbox - ${event.LogicalResourceId}`,
+          Description: `superwerker - ${event.LogicalResourceId}`,
           Name: event.ResourceProperties.scpName,
           Content: event.ResourceProperties.policy,
         });
@@ -115,7 +115,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       await client.send(commandDetachPolicy);
 
       const commandDeletePolicy = new DeletePolicyCommand({
-        PolicyId: event.PhysicalResourceId,
+        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
       });
 
       const responseDeletePolicy = await client.send(commandDeletePolicy);

@@ -204,7 +204,6 @@ export class SuperwerkerStack extends Stack {
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
     const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
       parameters: {
-        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'Yes', 'No')}`,
         IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'Yes', 'No')}`,
       },
     });
