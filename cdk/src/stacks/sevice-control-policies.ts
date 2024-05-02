@@ -1,8 +1,8 @@
 import * as path from 'path';
+import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { CfnParameter, CustomResource, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
@@ -78,7 +78,7 @@ class ServiceControlPolicyRootProvider extends Construct {
     super(scope, id);
 
     this.provider = new Provider(this, 'service-control-policy-root-provider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-root-on-event', {
+      onEventHandler: new PythonFunction(this, 'service-control-policy-root-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'scp-create-setup'),
         runtime: Runtime.PYTHON_3_9,
         initialPolicy: [
@@ -119,7 +119,7 @@ class ServiceControlPolicySandboxProvider extends Construct {
     super(scope, id);
 
     this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
-      onEventHandler: new lambda.NodejsFunction(this, 'service-control-policy-sandbox-on-event', {
+      onEventHandler: new PythonFunction(this, 'service-control-policy-sandbox-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'scp-enable-setup'),
         runtime: Runtime.PYTHON_3_9,
         initialPolicy: [
