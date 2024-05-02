@@ -78,14 +78,15 @@ def handler(event, context):
             print('Updating Policy: {}'.format(LogicalResourceId))
             with_retry(o.update_policy, PolicyId=policy_id, **parameters)
         elif RequestType == DELETE:
-            print('Deleting Policy: {}'.format(LogicalResourceId))
-            # Same as above
-            if re.match('p-[0-9a-z]+', policy_id):
-                if policy_attached(policy_id):
-                    with_retry(o.detach_policy, PolicyId=policy_id, TargetId=root_id())
-                with_retry(o.delete_policy, PolicyId=policy_id)
-            else:
-                print('{} is no valid PolicyId'.format(policy_id))
+            return True
+            # print('Deleting Policy: {}'.format(LogicalResourceId))
+            # # Same as above
+            # if re.match('p-[0-9a-z]+', policy_id):
+            #     if policy_attached(policy_id):
+            #         with_retry(o.detach_policy, PolicyId=policy_id, TargetId=root_id())
+            #     with_retry(o.delete_policy, PolicyId=policy_id)
+            # else:
+            #     print('{} is no valid PolicyId'.format(policy_id))
         else:
             raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
