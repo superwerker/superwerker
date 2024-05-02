@@ -202,11 +202,7 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
     });
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
-      parameters: {
-        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'Yes', 'No')}`,
-      },
-    });
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {});
     const rolloutScps = new CfnCondition(this, 'rolloutscps', {
       expression: Fn.conditionAnd(backupCondition, serviceControlPoliciesCondition),
     });
