@@ -17,6 +17,10 @@ async function getSandboxId(organizationClient: OrganizationsClient): Promise<st
     const commandListRoots = new ListRootsCommand({});
     const responseListRoots = await organizationClient.send(commandListRoots);
 
+    if (responseListRoots.Roots?.length == 0) {
+      return `Error getting root account ${responseListRoots}`;
+    }
+
     const rootId = responseListRoots.Roots[0].Id;
 
     const commandListOUs = new ListOrganizationalUnitsForParentCommand({ ParentId: rootId });
@@ -31,7 +35,7 @@ async function getSandboxId(organizationClient: OrganizationsClient): Promise<st
     }
     return '';
   } catch (error) {
-    console.error('Error getting root account', error);
+    console.error('Error getting sandbox account', error);
     return `Error: ${error}`;
   }
 }
@@ -62,11 +66,6 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       console.log('Creating Policy for : ', event.LogicalResourceId);
       try {
         //Attach SCP to Sandbox Account
-        let sandboxId = await getSandboxId(client);
-
-        if (!sandboxId) {
-          return { Error: sandboxId };
-        }
 
         const commandCreatePolicySandbox = new CreatePolicyCommand({
           Type: PolicyType.SERVICE_CONTROL_POLICY,
@@ -76,17 +75,16 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
         });
 
         const responseCreatePolicySandbox = await client.send(commandCreatePolicySandbox);
-        console.log('Create Policy Response Sandbox: ', responseCreatePolicySandbox);
 
         if (responseCreatePolicySandbox.Policy) {
           const commandAttachPolicySandbox = new AttachPolicyCommand({
             PolicyId: responseCreatePolicySandbox.Policy?.PolicySummary?.Id || '',
-            TargetId: sandboxId,
+            TargetId: await getSandboxId(client),
           });
 
-          await client.send(commandAttachPolicySandbox);
+          const responseAttachPolicy = await client.send(commandAttachPolicySandbox);
 
-          return { SUCESS: 'SCPs have been successfully created for Sandbox account' };
+          return { SUCESS: `SCPs have been successfully created for Sandbox account. ${responseAttachPolicy}` };
         }
         return { Error: responseCreatePolicySandbox };
       } catch (e) {
