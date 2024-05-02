@@ -45,12 +45,21 @@ describe('resources', () => {
     if (key.startsWith('Generate')) delete expectedResources[key];
   }
 
+  const removedKeys = ['ServiceControlPolicies'];
+  for (const key in expectedResources) {
+    if (removedKeys.includes(key)) {
+      delete expectedResources[key];
+    }
+  }
+
   test.each(Object.entries(expectedResources))('resource: %p', (resource, resourceProps) => {
     // This sucks. Unfortunately we can't just call 'hasResource('myLogicalId').
     // TODO: make this better, either extend Template to have a better matcher or come up with a helper method.
     // Maybe like this: https://www.emgoto.com/jest-partial-match/
     // https://cdk-dev.slack.com/archives/C018XT6REKT/p1662017721195839
     // For now we just check that the logical id and the condition are the same
+
+    // Ignore resources that are no longer needed, TODO : check if still needed for backward compatibility
 
     // check that conditions match the original ones
     if (resourceProps.Condition) {

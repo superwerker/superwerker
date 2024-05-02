@@ -10,17 +10,6 @@ export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    // const denyLeavingOrganizationStatement = new PolicyStatement({
-    //   sid: 'PreventLeavingOrganization',
-    //   effect: Effect.DENY,
-    //   actions: ['organizations:LeaveOrganization'],
-    //   resources: ['*'],
-    // });
-
-    // const scpPolicyDocumentRoot = new PolicyDocument({
-    //   statements: [denyLeavingOrganizationStatement],
-    // });
-
     //Backup
     const includeBackup = new CfnParameter(this, 'IncludeBackup', {
       type: 'String',
@@ -57,14 +46,12 @@ export class ServiceControlPoliciesStack extends NestedStack {
         sid: 'SWProtectBackup',
       });
       const scpPolicyDocumentRoot = new PolicyDocument({ statements: [backupStatement] });
-      //scpPolicyDocumentRoot.addStatements(backupStatement);
 
       new CustomResource(this, 'SCPBaseline', {
         serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
         resourceType: 'Custom::SCPRoot',
         properties: {
           Policy: JSON.stringify(scpPolicyDocumentRoot),
-          //scpName: 'superwerker-root',
           Attach: 'true',
         },
       });
@@ -72,55 +59,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
       new CustomResource(this, 'SCPEnable', {
         serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
         resourceType: 'Custom::SCPSandbox',
-        // properties: {
-        //   // policy: JSON.stringify(scpPolicyDocumentSandbox),
-        //   // scpName: 'superwerker-sandbox',
-        //   // attach: true,
-        // },
       });
     }
-
-    //Deny Expensive API Calls in the Sandbox OU
-    // const denyExpensiveAPICallsStatement = new PolicyStatement({
-    //   sid: 'DenyExpensiveResourceCreation',
-    //   effect: Effect.DENY,
-    //   actions: [
-    //     'route53domains:RegisterDomain',
-    //     'route53domains:RenewDomain',
-    //     'route53domains:TransferDomain',
-    //     'ec2:ModifyReservedInstances',
-    //     'ec2:PurchaseHostReservation',
-    //     'ec2:PurchaseReservedInstancesOffering',
-    //     'ec2:PurchaseScheduledInstances',
-    //     'rds:PurchaseReservedDBInstancesOffering',
-    //     'dynamodb:PurchaseReservedCapacityOfferings',
-    //     's3:PutObjectRetention',
-    //     's3:PutObjectLegalHold',
-    //     's3:BypassGovernanceRetention',
-    //     's3:PutBucketObjectLockConfiguration',
-    //     'elasticache:PurchaseReservedCacheNodesOffering',
-    //     'redshift:PurchaseReservedNodeOffering',
-    //     'savingsplans:CreateSavingsPlan',
-    //     'aws-marketplace:AcceptAgreementApprovalRequest',
-    //     'aws-marketplace:Subscribe',
-    //     'shield:CreateSubscription',
-    //     'acm-pca:CreateCertificateAuthority',
-    //     'es:PurchaseReservedElasticsearchInstanceOffering',
-    //     'outposts:CreateOutpost',
-    //     'snowball:CreateCluster',
-    //     's3-object-lambda:PutObjectLegalHold',
-    //     's3-object-lambda:PutObjectRetention',
-    //     'glacier:InitiateVaultLock',
-    //     'glacier:CompleteVaultLock',
-    //     'es:PurchaseReservedInstanceOffering',
-    //     'backup:PutBackupVaultLockConfiguration',
-    //   ],
-    //   resources: ['*'],
-    // });
-
-    // const scpPolicyDocumentSandbox = new PolicyDocument({
-    //   statements: [denyExpensiveAPICallsStatement],
-    // });
   }
 }
 
