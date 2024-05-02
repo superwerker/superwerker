@@ -7,6 +7,7 @@ import {
   OrganizationsClient,
   PolicyType,
   UpdatePolicyCommand,
+  ListPoliciesCommand,
 } from '@aws-sdk/client-organizations';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 
@@ -28,6 +29,24 @@ async function getRootId(organizationClient: OrganizationsClient): Promise<strin
     console.error(`Error getting root accounts for ${id}`, error);
     return `Error: ${error}`;
   }
+}
+
+async function getPolicyId(organizationClient: OrganizationsClient, policyName: string) {
+  const commandListPolicies = new ListPoliciesCommand({
+    Filter: PolicyType.SERVICE_CONTROL_POLICY,
+  });
+
+  const response = await organizationClient.send(commandListPolicies);
+
+  if (response.Policies?.length) {
+    response.Policies.forEach((policy) => {
+      if (policy.Name && policy.Name == policyName) {
+        return policy.Id;
+      }
+    });
+  }
+
+  return '';
 }
 
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
@@ -64,7 +83,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
     case 'Update':
       console.log('Updating Policy: ', event.LogicalResourceId);
       const commandUpdatePolicy = new UpdatePolicyCommand({
-        PolicyId: event.PhysicalResourceId,
+        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
         Description: `superwerker - ${event.LogicalResourceId}`,
         Name: event.ResourceProperties.scpName,
         Content: event.ResourceProperties.policy,
@@ -77,7 +96,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       console.log('Deleting Policy: ', event.LogicalResourceId);
 
       const commandDetachPolicy = new DetachPolicyCommand({
-        PolicyId: event.PhysicalResourceId,
+        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
         TargetId: await getRootId(client),
       });
 
