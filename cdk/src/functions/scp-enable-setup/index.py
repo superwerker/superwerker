@@ -37,7 +37,7 @@ def exception_handling(function):
 
 
 @exception_handling
-def enable_service_control_policies(event, context):
+def handler(event, context):
     RequestType = event["RequestType"]
     if RequestType == CREATE and not scp_enabled():
         r_id = root_id()
