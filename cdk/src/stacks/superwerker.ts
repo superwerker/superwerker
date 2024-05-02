@@ -151,7 +151,9 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeBackup, 'Yes'),
     });
     backupCondition.overrideLogicalId('IncludeBackup');
-    const backupStack = new BackupStack(this, 'Backup', {});
+    const backupStack = new BackupStack(this, 'Backup', {
+      description: 'Sets up backup configuration and policies.',
+    });
     backupStack.addDependency(controlTowerStack);
     (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
     (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
