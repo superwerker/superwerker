@@ -32,6 +32,8 @@ export class SecurityHubMemberMgmt {
   }
 
   async createMembers() {
+    console.log('Create Security Hub Members...');
+
     const allAccounts: { AccountId: string; Email: string | undefined }[] = [];
     let nextToken: string | undefined = undefined;
     do {
@@ -44,11 +46,14 @@ export class SecurityHubMemberMgmt {
       nextToken = page.NextToken;
     } while (nextToken);
 
-    console.log('Create Security Hub Members');
+    console.log('Adding accounts to Security Hub:', allAccounts);
 
     if (allAccounts.length > 0) {
       // initally invite all accounts to be members
-      await throttlingBackOff(() => this.securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })));
+      const createMembersResponse = await throttlingBackOff(() =>
+        this.securityHubClient.send(new CreateMembersCommand({ AccountDetails: allAccounts })),
+      );
+      console.log('CreateMembersResponse:', createMembersResponse);
     }
 
     // for all accounts that are added later automatically enable security hub for them

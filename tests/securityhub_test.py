@@ -138,6 +138,67 @@ def test_securityhub_enabled_controls(audit_account_id, control_tower_regions):
     assert 'Macie.1' in disabled_control_ids
 
 
+
+def test_security_hub_cannot_be_disabled_in_member_account(log_archive_account_id, management_account_id):
+
+    # use log archive as sample member
+    log_archive_account = control_tower_exection_role_session(log_archive_account_id)
+    iam = log_archive_account.client('iam')
+
+    # create a temp admin role since the ControlTowerException role is allowed to disable SH
+    try:
+        try:
+            iam.detach_role_policy(
+                RoleName='SuperWerkerScpTestRole',
+                PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
+            )
+        except:
+            pass
+        iam.delete_role(RoleName='SuperWerkerScpTestRole')
+    except:
+        pass
+
+    iam.create_role(
+        RoleName='SuperWerkerScpTestRole',
+        AssumeRolePolicyDocument=json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": f'arn:aws:iam::{management_account_id}:root'
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }))
+    iam.attach_role_policy(
+        RoleName='SuperWerkerScpTestRole',
+        PolicyArn='arn:aws:iam::aws:policy/AdministratorAccess'
+    )
+
+    scp_test_role_creds = wait_for_role_to_be_assumed(log_archive_account_id)
+
+    scp_test_session = boto3.session.Session(
+        aws_access_key_id=scp_test_role_creds['AccessKeyId'],
+        aws_secret_access_key=scp_test_role_creds['SecretAccessKey'],
+        aws_session_token=scp_test_role_creds['SessionToken']
+    )
+
+    scp_test_session_security_hub = scp_test_session.client('securityhub')
+
+    # assert that disabling of security hub is prevented
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        scp_test_session_security_hub.disable_security_hub()
+    assert f'An error occurred (InvalidInputException) when calling the DisableSecurityHub operation: Member account cannot disable Security Hub' == str(exception.value)
+
+    # assert that SCP forbids leaving
+    with pytest.raises(botocore.exceptions.ClientError) as exception:
+        scp_test_session_security_hub.disassociate_from_master_account()
+    assert f'An error occurred (BadRequestException) when calling the DisassociateFromMasterAccount operation: The request is rejected because member cannot disassociate from Organization administrator' == str(exception.value)
+
+
+
 # Wait for up to 1 minute, exponentially increasing by 2^x * 1000ms
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
 def wait_for_role_to_be_assumed(account_id):
