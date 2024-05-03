@@ -1,5 +1,19 @@
-import { aws_route53 as r53, aws_ssm as ssm, CfnResource, NestedStack, NestedStackProps, CfnParameter } from 'aws-cdk-lib';
+import {
+  aws_route53 as r53,
+  aws_ssm as ssm,
+  Duration,
+  CfnResource,
+  NestedStack,
+  NestedStackProps,
+  CfnParameter,
+  aws_lambda as lambda,
+  aws_iam as iam,
+  aws_events as events,
+  aws_events_targets as targets,
+} from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as path from 'path';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { WorkmailOrganization } from '../constructs/rootmail-workmail-organization';
 import { WorkmailUser } from '../constructs/rootmail-workmail-user';
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
@@ -71,5 +85,42 @@ export class RootmailStack extends NestedStack {
       workmailOrgId: workmailOrganization.workmailOrgId,
       passwordParam: rootmailPasswordParameterName.valueAsString,
     });
+
+    const sesRuleSetFunction = new NodejsFunction(this, 'sesRuleSetFunction', {
+      entry: path.join(__dirname, '..', 'functions', 'ses-rule-set-function.ts'),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      logRetention: 3,
+      timeout: Duration.seconds(30),
+    });
+
+    sesRuleSetFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ses:SetActiveReceiptRuleSet'],
+        effect: iam.Effect.ALLOW,
+        resources: ['*'],
+      }),
+    );
+
+    const sesRuleSetEvent = new events.Rule(this, 'sesRuleSetEvent', {
+      ruleName: 'Superwerker-RootMail-Event',
+      eventPattern: {
+        detailType: ['CloudFormation Stack Status Change'],
+        source: ['aws.cloudformation'],
+        resources: [`${this.stackId}`],
+        detail: {
+          'status-details': {
+            status: ['UPDATE_COMPLETE'],
+          },
+        },
+      },
+      targets: [
+        new targets.LambdaFunction(sesRuleSetFunction, {
+          maxEventAge: Duration.hours(1),
+          retryAttempts: 5,
+        }),
+      ],
+    });
+
+    targets.addLambdaPermission(sesRuleSetEvent, sesRuleSetFunction);
   }
 }
