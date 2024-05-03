@@ -32,8 +32,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
         'iam:UpdateRoleDescription',
       ],
       resources: [
-        'arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole',
-        'arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
+        'arn:${Stack.of(this).partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
+        'arn:${Stack.of(this).partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
       ],
       effect: Effect.DENY,
       sid: 'SWProtectBackup',
@@ -41,7 +41,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     scpPolicyDocumentRoot.addStatements(backupStatement);
 
-    new CustomResource(this, 'SCPBaseline', {
+    new CustomResource(this, 'CreateSCP', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       resourceType: 'Custom::SCPRoot',
       properties: {
@@ -50,7 +50,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       },
     });
 
-    new CustomResource(this, 'SCPEnable', {
+    new CustomResource(this, 'EnableSCP', {
       serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
       resourceType: 'Custom::SCPSandbox',
     });
@@ -121,19 +121,7 @@ class ServiceControlPolicySandboxProvider extends Construct {
           new PolicyStatement({
             effect: Effect.ALLOW,
             resources: ['*'],
-            actions: [
-              'organizations:EnablePolicyType',
-              'organizations:DisablePolicyType',
-              'organizations:ListRoots',
-              'organizations:CreatePolicy',
-              'organizations:UpdatePolicy',
-              'organizations:DeletePolicy',
-              'organizations:AttachPolicy',
-              'organizations:DetachPolicy',
-              'organizations:ListRoots',
-              'organizations:ListPolicies',
-              'organizations:ListPoliciesForTarget',
-            ],
+            actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
           }),
         ],
       }),
