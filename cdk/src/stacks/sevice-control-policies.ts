@@ -32,8 +32,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
         'iam:UpdateRoleDescription',
       ],
       resources: [
-        'arn:${Stack.of(this).partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
-        'arn:${Stack.of(this).partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
+        `arn:${Stack.of(this).partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole`,
+        `arn:${Stack.of(this).partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole`,
       ],
       effect: Effect.DENY,
       sid: 'SWProtectBackup',
