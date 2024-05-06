@@ -68,6 +68,17 @@ export class SecurityHubOrganizationMgmt {
         await throttlingBackOff(() =>
           this.securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: this.securityAdminAccountId })),
         );
+        const response = await throttlingBackOff(() =>
+          this.organizationsClient.send(new ListDelegatedAdministratorsCommand({ ServicePrincipal: 'securityhub.amazonaws.com' })),
+        );
+        if (response.DelegatedAdministrators!.length === 0 || response.DelegatedAdministrators![0].Id !== this.securityAdminAccountId) {
+          console.warn(
+            `Audit Account ${this.securityAdminAccountId} has not been registered as delegated administrator account. Retrying...`,
+          );
+          await throttlingBackOff(() =>
+            this.securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: this.securityAdminAccountId })),
+          );
+        }
         break;
       } catch (error) {
         console.log(error);
