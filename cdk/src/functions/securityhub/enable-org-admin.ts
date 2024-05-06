@@ -43,7 +43,7 @@ export class SecurityHubOrganizationMgmt {
   }
 
   async enableOrganisationAdmin(region: string) {
-    const securityHubAdminAccount = await this.getSecurityHubDelegatedAccount();
+    let securityHubAdminAccount = await this.getSecurityHubDelegatedAccount();
 
     if (securityHubAdminAccount.status) {
       if (securityHubAdminAccount.accountId === this.securityAdminAccountId) {
@@ -58,8 +58,9 @@ export class SecurityHubOrganizationMgmt {
       return;
     }
 
-    // Enable security hub in management account before creating delegation admin account
+    console.log('Enabling security hub in management account before creating delegation admin account');
     await this.enableSecurityHub();
+
     console.log(`Started enableOrganizationAdminAccount in ${region} region for account ${this.securityAdminAccountId}`);
     let retries = 0;
     while (retries < 10) {
@@ -68,10 +69,8 @@ export class SecurityHubOrganizationMgmt {
         await throttlingBackOff(() =>
           this.securityHubClient.send(new EnableOrganizationAdminAccountCommand({ AdminAccountId: this.securityAdminAccountId })),
         );
-        const response = await throttlingBackOff(() =>
-          this.organizationsClient.send(new ListDelegatedAdministratorsCommand({ ServicePrincipal: 'securityhub.amazonaws.com' })),
-        );
-        if (response.DelegatedAdministrators!.length === 0 || response.DelegatedAdministrators![0].Id !== this.securityAdminAccountId) {
+        securityHubAdminAccount = await this.getSecurityHubDelegatedAccount();
+        if (securityHubAdminAccount.accountId !== this.securityAdminAccountId) {
           console.warn(
             `Audit Account ${this.securityAdminAccountId} has not been registered as delegated administrator account. Retrying...`,
           );

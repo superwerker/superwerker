@@ -29,21 +29,61 @@ describe('enableOrganisationAdmin', () => {
   });
 
   it('should enable organization admin account when not already set', async () => {
-    // no admin account set
-    securityHubClientMock.on(ListOrganizationAdminAccountsCommand).resolves({ AdminAccounts: [] });
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
 
     await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
 
-    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 1);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
     expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
     expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 1);
   });
 
   it('should enable organization admin account when ListOrganizationAdminAccountsCommand empty response', async () => {
-    // no admin account set
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
+
+    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
+
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 1);
+  });
+
+  it('should retry enable organization admin account', async () => {
+    // throw error once
+    securityHubClientMock.on(EnableOrganizationAdminAccountCommand).rejectsOnce(new Error('Internal Error'));
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
+
+    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
+
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
+    // call twice because of retry
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 2);
+  });
+
+  it('should retry enable organization admin account even when not enabled successfully', async () => {
+    // admin account also not set after enabling
     securityHubClientMock.on(ListOrganizationAdminAccountsCommand).resolves({});
 
     await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
@@ -51,24 +91,9 @@ describe('enableOrganisationAdmin', () => {
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
 
-    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 1);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
     expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
-    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 1);
-  });
-
-  it('should retry enable organization admin account', async () => {
-    // no admin account set
-    securityHubClientMock.on(EnableOrganizationAdminAccountCommand).rejectsOnce(new Error('Internal Error'));
-    securityHubClientMock.on(ListOrganizationAdminAccountsCommand).resolves({ AdminAccounts: [] });
-
-    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-
-    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
-    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
-
-    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 1);
     // call twice because of retry
-    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
     expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 2);
   });
 
@@ -89,8 +114,11 @@ describe('enableOrganisationAdmin', () => {
   });
 
   it('should enable organization admin account and ignore ResourceConflictException', async () => {
-    // no admin account set
-    securityHubClientMock.on(ListOrganizationAdminAccountsCommand).resolves({ AdminAccounts: [] });
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
     securityHubClientMock
       .on(EnableSecurityHubCommand)
       .rejects(new ResourceConflictException({ $metadata: {}, message: 'Security Hub is already enabled' }));
@@ -100,14 +128,17 @@ describe('enableOrganisationAdmin', () => {
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
 
-    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 1);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
     expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
     expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 1);
   });
 
   it('throw error when enabling sechub when exception is not ResourceConflictException', async () => {
-    // no admin account set
-    securityHubClientMock.on(ListOrganizationAdminAccountsCommand).resolves({ AdminAccounts: [] });
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
     securityHubClientMock.on(EnableSecurityHubCommand).rejects('Internal Error');
 
     await expect(securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2')).rejects.toThrow(
