@@ -16,7 +16,7 @@ export class BackupPolicy extends Construct {
 
     new CustomResource(this, 'Resource', {
       serviceToken: BackupPolicyProvider.getOrCreate(this).provider.serviceToken,
-      resourceType: 'Custom::BackupPolicy',
+      resourceType: 'AWS::CloudFormation::CustomResource',
       properties: {
         Policy: props.policy,
         Attach: props.attach,

@@ -26,7 +26,7 @@ export class BackupStack extends NestedStack {
     super(scope, id, props);
 
     const describeOrganizationOutput = new AwsCustomResource(this, 'OrganizationsLookup', {
-      resourceType: 'Custom::DescribeOrganization',
+      resourceType: 'AWS::CloudFormation::CustomResource',
       installLatestAwsSdk: true,
       onUpdate: {
         service: 'organizations',
@@ -258,7 +258,7 @@ export class BackupStack extends NestedStack {
     );
 
     const enableCloudFormationStacksetsOrgAccess = new AwsCustomResource(this, 'EnableCloudFormationStacksetsOrgAccess', {
-      resourceType: 'Custom::DescribeOrganization',
+      resourceType: 'AWS::CloudFormation::CustomResource',
       installLatestAwsSdk: true,
       onUpdate: {
         service: 'cloudformation',
