@@ -6,11 +6,6 @@ Transform: AWS::Serverless-2016-10-31
 Description: Sets up Service Control Policies(SCP). (qs-1s3rsr7o0)
 
 Parameters:
-  IncludeSecurityHub:
-    AllowedValues:
-      - true
-      - false
-    Type: String
   IncludeBackup:
     AllowedValues:
       - true
@@ -18,16 +13,12 @@ Parameters:
     Type: String
 
 Conditions:
-  IncludeSecurityHub: !Equals [!Ref IncludeSecurityHub, true]
   IncludeBackup: !Equals [!Ref IncludeBackup, true]
-  RolloutSCPs: !And
-    - !Equals [!Ref IncludeSecurityHub, true]
-    - !Equals [!Ref IncludeBackup, true]
 
 Resources:
   SCPBaseline:
     Type: AWS::CloudFormation::CustomResource
-    Condition: RolloutSCPs
+    Condition: IncludeBackup
     Properties:
       ServiceToken: !GetAtt SCPCustomResource.Arn
       Policy: !Sub
@@ -41,29 +32,6 @@ Resources:
         - Statements: !Join
             - ","
             - - !If
-                - IncludeSecurityHub
-                - !Sub |
-                  {
-                      "Condition": {
-                          "ArnNotLike": {
-                              "aws:PrincipalARN": "arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution"
-                          }
-                      },
-                      "Action": [
-                          "securityhub:DeleteInvitations",
-                          "securityhub:DisableSecurityHub",
-                          "securityhub:DisassociateFromMasterAccount",
-                          "securityhub:DeleteMembers",
-                          "securityhub:DisassociateMembers"
-                      ],
-                      "Resource": [
-                          "*"
-                      ],
-                      "Effect": "Deny",
-                      "Sid": "SWProtectSecurityHub"
-                  }
-                - !Ref AWS::NoValue
-              - !If
                 - IncludeBackup
                 - !Sub |
                   {

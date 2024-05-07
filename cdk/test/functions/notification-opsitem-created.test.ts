@@ -32,11 +32,11 @@ describe('notifications_opsitems', () => {
       {
         detail: {
           responseElements: {
-            OpsItemId: opsItemId,
+            opsItemId: opsItemId,
           },
           requestParameters: {
-            Description: description,
-            Title: title,
+            description: description,
+            title: title,
           },
         },
       },
