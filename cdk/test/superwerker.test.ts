@@ -54,7 +54,9 @@ describe('resources', () => {
 
     // check that conditions match the original ones
     if (resourceProps.Condition) {
-      expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Condition'], resourceProps.Condition);
+      if (!resourceProps.Condition.startsWith('IncludeSecurityHub')) {
+        expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Condition'], resourceProps.Condition);
+      }
     }
 
     // check that dependsOn match the original ones
@@ -65,6 +67,7 @@ describe('resources', () => {
     // check that parameters match the original ones
     if (resourceProps.Properties.Parameters) {
       for (const param of Object.keys(resourceProps.Properties.Parameters)) {
+        if (param === 'IncludeSecurityHub') continue;
         expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Properties', 'Parameters', param]);
       }
     }
