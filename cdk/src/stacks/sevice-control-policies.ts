@@ -15,7 +15,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
     const backupStatement = new PolicyStatement({
       conditions: {
         ArnNotLike: {
-          'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
+          'aws:PrincipalARN': `arn:${Stack.of(this).partition}:iam::*:role/stacksets-exec-*`,
         },
       },
       actions: [
@@ -42,8 +42,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
     scpPolicyDocumentRoot.addStatements(backupStatement);
 
     new CustomResource(this, 'SCPBaseline', {
-      serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
-      resourceType: 'Custom::SCPRoot',
+      serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
+      resourceType: 'Custom::SCPBaseline',
       properties: {
         Policy: JSON.stringify(scpPolicyDocumentRoot),
         Attach: 'true',
@@ -51,17 +51,17 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     new CustomResource(this, 'SCPEnable', {
-      serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
-      resourceType: 'Custom::SCPSandbox',
+      serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
+      resourceType: 'Custom::SCPEnable',
     });
   }
 }
 
-class ServiceControlPolicyRootProvider extends Construct {
+class ServiceControlPolicyBaselineProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-root-provider';
-    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyRootProvider) || new ServiceControlPolicyRootProvider(stack, id);
+    const id = 'superwerker.service-control-policy-baseline-provider';
+    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyBaselineProvider) || new ServiceControlPolicyBaselineProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -70,8 +70,8 @@ class ServiceControlPolicyRootProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    this.provider = new Provider(this, 'service-control-policy-root-provider', {
-      onEventHandler: new PythonFunction(this, 'service-control-policy-root-on-event', {
+    this.provider = new Provider(this, 'service-control-policy-baseline-provider', {
+      onEventHandler: new PythonFunction(this, 'service-control-policy-baseline-on-event', {
         entry: path.join(__dirname, '..', 'functions', 'scp-create-setup'),
         runtime: Runtime.PYTHON_3_9,
         initialPolicy: [
@@ -99,11 +99,11 @@ class ServiceControlPolicyRootProvider extends Construct {
   }
 }
 
-class ServiceControlPolicySandboxProvider extends Construct {
+class ServiceControlPolicyEnableProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-sandbox-provider';
-    const x = (stack.node.tryFindChild(id) as ServiceControlPolicySandboxProvider) || new ServiceControlPolicySandboxProvider(stack, id);
+    const id = 'superwerker.service-control-policy-enable-provider';
+    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyEnableProvider) || new ServiceControlPolicyEnableProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -112,8 +112,8 @@ class ServiceControlPolicySandboxProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
-      onEventHandler: new PythonFunction(this, 'service-control-policy-sandbox-on-event', {
+    this.provider = new Provider(this, 'service-control-policy-enable-provider', {
+      onEventHandler: new PythonFunction(this, 'service-control-policy-enable-on-event', {
         timeout: Duration.seconds(200),
         entry: path.join(__dirname, '..', 'functions', 'scp-enable-setup'),
         runtime: Runtime.PYTHON_3_9,
