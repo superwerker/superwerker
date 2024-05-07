@@ -8,6 +8,9 @@ import { PrepareStack } from './prepare';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
 export class ControlTowerStack extends NestedStack {
+  public static accountIdLogArchiveParameter = '/superwerker/account_id_logarchive';
+  public static accountIdAuditParameter = '/superwerker/account_id_audit';
+
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
@@ -27,7 +30,7 @@ export class ControlTowerStack extends NestedStack {
     // due to legacy reasons and dependencies these parameters are named diffrently and managed seperately
     const logArchiveParam = new ssm.StringParameter(this, 'LogArchiveAccountParameter', {
       description: '(superwerker) account id of logarchive account',
-      parameterName: '/superwerker/account_id_logarchive',
+      parameterName: ControlTowerStack.accountIdLogArchiveParameter,
       stringValue: logArchiveAccount.attrAccountId,
     });
     (logArchiveParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('LogArchiveAccountParameter');
@@ -41,7 +44,7 @@ export class ControlTowerStack extends NestedStack {
 
     const auditAccountParam = new ssm.StringParameter(this, 'AuditAccountParameter', {
       description: '(superwerker) account id of audit account',
-      parameterName: '/superwerker/account_id_audit',
+      parameterName: ControlTowerStack.accountIdAuditParameter,
       stringValue: auditAccount.attrAccountId,
     });
     (auditAccountParam.node.defaultChild as ssm.CfnParameter).overrideLogicalId('AuditAccountParameter');

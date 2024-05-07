@@ -196,6 +196,7 @@ export class SuperwerkerStack extends Stack {
     const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
     (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
     (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
+    securityHubStack.addDependency(controlTowerStack);
 
     // ServiceControlPolicies
     const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
@@ -204,7 +205,6 @@ export class SuperwerkerStack extends Stack {
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
     const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
       parameters: {
-        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
         IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
       },
     });
