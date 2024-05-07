@@ -11,7 +11,6 @@ export class BackupTagPolicyEnable extends Construct {
 
     new CustomResource(this, 'Resource', {
       serviceToken: BackupTagPolicyEnableProvider.getOrCreate(this).provider.serviceToken,
-      resourceType: 'AWS::CloudFormation::CustomResource',
     });
   }
 }

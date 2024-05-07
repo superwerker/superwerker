@@ -16,7 +16,6 @@ export class BackupTagRemediationPublic extends Construct {
 
     new CustomResource(this, 'Resource', {
       serviceToken: BackupTagRemediationPublicProvider.getOrCreate(this).provider.serviceToken,
-      resourceType: 'AWS::CloudFormation::CustomResource',
       properties: {
         DocumentName: props.documentName,
       },
