@@ -1,7 +1,7 @@
 import os
 from unittest.mock import MagicMock, Mock, PropertyMock, patch
 import pytest
-from index import CREATE, handler
+from index import CREATE, enable_tag_policies
 
 
 
