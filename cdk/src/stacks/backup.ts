@@ -277,9 +277,6 @@ export class BackupStack extends NestedStack {
       ]),
       timeout: Duration.seconds(900), // give it more time since it installs dependencies on the fly
     });
-    ((enableCloudFormationStacksetsOrgAccess.node.findChild('Resource') as CfnResource).node.defaultChild as CfnResource).overrideLogicalId(
-      'EnableCloudFormationStacksetsOrgAccessCustomResource',
-    );
 
     const backupRolesStackSet = new CfnStackSet(this, 'BackupResources', {
       permissionModel: 'SERVICE_MANAGED',

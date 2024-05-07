@@ -35,10 +35,12 @@ describe('resources', () => {
   const stack = new UnderTestStack(app, 'stack', {}).inner;
   const expectedResources = Template.fromStack(originalStack).toJSON().Resources as { [key: string]: { [key: string]: any } };
 
-  // Ignore resources that are no longer needed, TODO : check if still needed for backward compatibility
+  // Ignore resources that are no longer needed, replacement not critical
   const removedKeys = [
+    'OrganizationsLookup',
     'OrganizationsLookupCustomResource',
     'AwsApiLibRole',
+    'EnableCloudFormationStacksetsOrgAccessCustomResource',
     'EnableCloudFormationStacksetsOrgAccessCustomResourceFunction',
   ];
   for (const key in expectedResources) {
