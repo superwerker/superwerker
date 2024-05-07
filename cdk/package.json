@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.3",
-    "@commitlint/config-conventional": "^19.0.3",
+    "@commitlint/config-conventional": "^19.2.2",
     "@tsconfig/node20": "^20.1.4",
     "@stylistic/eslint-plugin": "^1.7.2",
     "@types/async-retry": "^1.4.8",
