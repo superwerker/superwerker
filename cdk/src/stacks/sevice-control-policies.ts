@@ -42,7 +42,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     scpPolicyDocumentRoot.addStatements(backupStatement);
 
-    new CustomResource(this, 'SCPBaselineNew', {
+    new CustomResource(this, 'SCPBaseline', {
       serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
       properties: {
         Policy: JSON.stringify(scpPolicyDocumentRoot),
@@ -50,7 +50,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       },
     });
 
-    new CustomResource(this, 'SCPEnableNew', {
+    new CustomResource(this, 'SCPEnable', {
       serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
     });
   }
