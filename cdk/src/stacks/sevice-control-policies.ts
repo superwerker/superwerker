@@ -11,6 +11,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
     super(scope, id, props);
 
     const scpPolicyDocumentRoot = new PolicyDocument();
+
     //Backup
     const backupStatement = new PolicyStatement({
       conditions: {
