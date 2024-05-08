@@ -44,7 +44,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     new CustomResource(this, 'SCPBaseline', {
       serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
-      resourceType: 'Custom::SCPBaseline',
+      resourceType: 'AWS::CloudFormation::CustomResource',
       properties: {
         Policy: JSON.stringify(scpPolicyDocumentRoot),
         Attach: 'true',
@@ -53,7 +53,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     new CustomResource(this, 'SCPEnable', {
       serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
-      resourceType: 'Custom::SCPEnable',
+      resourceType: 'AWS::CloudFormation::CustomResource',
     });
   }
 }
