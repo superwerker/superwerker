@@ -44,6 +44,7 @@ class BackupPolicyEnableProvider extends Construct {
       ],
     });
     (backupPolicyEnableFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyEnableCustomResource');
+    (backupPolicyEnableFn.node.defaultChild as lambda.CfnFunction).addOverride('Type', 'AWS::Serverless::Function');
 
     this.provider = new cr.Provider(this, 'backup-policy-enable-provider', {
       onEventHandler: backupPolicyEnableFn,
