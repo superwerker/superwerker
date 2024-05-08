@@ -45,7 +45,7 @@ describe('resources', () => {
     if (key.startsWith('Generate')) delete expectedResources[key];
   }
 
-  // Ignore resources that are no longer needed, TODO : check if still needed for backward compatibility
+  // // Ignore resources that are no longer needed, TODO : check if still needed for backward compatibility
   const removedKeys = ['ServiceControlPolicies'];
   for (const key in expectedResources) {
     if (removedKeys.includes(key)) {

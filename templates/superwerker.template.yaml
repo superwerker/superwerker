@@ -19,7 +19,7 @@ Metadata:
       - IncludeGuardDuty
       - IncludeSecurityHub
       - IncludeBackup
-      # - IncludeServiceControlPolicies
+      - IncludeServiceControlPolicies
     - Label:
         default: Domain configuration
       Parameters:
@@ -50,8 +50,8 @@ Metadata:
         default: Include AWS Security Hub
       IncludeBackup:
         default: Include Automated Backups
-      # IncludeServiceControlPolicies:
-      #   default: Include service control policies
+      IncludeServiceControlPolicies:
+        default: Include service control policies
       QSS3BucketName:
         default: Quick Start S3 bucket name
       QSS3BucketRegion:
@@ -99,13 +99,13 @@ Parameters:
     Default: 'Yes'
     Type: String
     Description: Enable automated backups
-  # IncludeServiceControlPolicies:
-  #   AllowedValues:
-  #     - 'Yes'
-  #     - 'No'
-  #   Default: 'Yes'
-  #   Type: String
-  #   Description: Enable service control policies in AWS organizations
+  IncludeServiceControlPolicies:
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+    Type: String
+    Description: Enable service control policies in AWS organizations
   QSS3BucketName:
     AllowedPattern: '^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$'
     ConstraintDescription: The Quick Start bucket name can include numbers, lowercase
@@ -148,7 +148,7 @@ Conditions:
   IncludeGuardDuty: !Equals [ !Ref IncludeGuardDuty, 'Yes' ]
   IncludeSecurityHub: !Equals [ !Ref IncludeSecurityHub, 'Yes' ]
   IncludeBackup: !Equals [ !Ref IncludeBackup, 'Yes' ]
-  # IncludeServiceControlPolicies: !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
+  IncludeServiceControlPolicies: !Equals [ !Ref IncludeServiceControlPolicies, 'Yes' ]
 
 Resources:
   Budget:
@@ -293,25 +293,25 @@ Resources:
           - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
 
-  # ServiceControlPolicies:
-  #   Condition: IncludeServiceControlPolicies
-  #   Type: AWS::CloudFormation::Stack
-  #   DependsOn: ControlTower
-  #   Properties:
-  #     TemplateURL:
-  #       Fn::Sub:
-  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/service-control-policies.yaml'
-  #         - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
-  #           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-  #     Parameters:
-  #       IncludeSecurityHub: !If
-  #         - IncludeSecurityHub
-  #         - true
-  #         - false
-  #       IncludeBackup: !If
-  #         - IncludeBackup
-  #         - true
-  #         - false
+  ServiceControlPolicies:
+    Condition: IncludeServiceControlPolicies
+    Type: AWS::CloudFormation::Stack
+    DependsOn: ControlTower
+    Properties:
+      TemplateURL:
+        Fn::Sub:
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/service-control-policies.yaml'
+          - S3Region: !If [UsingDefaultBucket, !Sub '${AWS::Region}', !Ref QSS3BucketRegion]
+            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        IncludeSecurityHub: !If
+          - IncludeSecurityHub
+          - true
+          - false
+        IncludeBackup: !If
+          - IncludeBackup
+          - true
+          - false
 
   Notifications:
     Condition: IncludeNotifications
