@@ -10,7 +10,7 @@ import { NotificationsStack } from './notifications';
 import { PrepareStack } from './prepare';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
-import { ServiceControlPoliciesStack } from './sevice-control-policies';
+//import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
 
 export interface SuperwerkerStackProps extends StackProps {
@@ -84,12 +84,12 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
-      type: 'String',
-      description: 'Enable service control policies in AWS organizations',
-      allowedValues: ['Yes', 'No'],
-      default: 'Yes',
-    });
+    // const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
+    //   type: 'String',
+    //   description: 'Enable service control policies in AWS organizations',
+    //   allowedValues: ['Yes', 'No'],
+    //   default: 'Yes',
+    // });
 
     /**
      * Core Components
