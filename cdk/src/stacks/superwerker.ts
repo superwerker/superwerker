@@ -89,7 +89,7 @@ export class SuperwerkerStack extends Stack {
       type: 'String',
       description: 'Enable service control policies in AWS organizations',
       allowedValues: ['Yes', 'No'],
-      default: 'No',
+      default: 'Yes',
     });
 
     /**
