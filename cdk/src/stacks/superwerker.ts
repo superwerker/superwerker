@@ -10,6 +10,7 @@ import { NotificationsStack } from './notifications';
 import { PrepareStack } from './prepare';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
+import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
 
 export interface SuperwerkerStackProps extends StackProps {
@@ -84,11 +85,11 @@ export class SuperwerkerStack extends Stack {
       default: 'Yes',
     });
 
-    new CfnParameter(this, 'IncludeServiceControlPolicies', {
+    const includeServiceControlPolicies = new CfnParameter(this, 'IncludeServiceControlPolicies', {
       type: 'String',
       description: 'Enable service control policies in AWS organizations',
       allowedValues: ['Yes', 'No'],
-      default: 'Yes',
+      default: 'No',
     });
 
     /**
@@ -200,18 +201,18 @@ export class SuperwerkerStack extends Stack {
     securityHubStack.addDependency(controlTowerStack);
 
     // ServiceControlPolicies
-    // const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
-    //   expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
-    // });
-    // serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    // const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
-    //   parameters: {
-    //     IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
-    //   },
-    // });
-    // serviceControlPoliciesStack.addDependency(controlTowerStack);
-    // (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    // (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+    const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
+      expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
+    });
+    serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
+      parameters: {
+        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
+      },
+    });
+    serviceControlPoliciesStack.addDependency(controlTowerStack);
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
 
     // Billing
     const billingStack = new BillingStack(this, 'Billing', {});
