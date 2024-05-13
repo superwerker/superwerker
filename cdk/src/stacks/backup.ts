@@ -225,7 +225,9 @@ export class BackupStack extends NestedStack {
       .findChild('superwerker.backup-tag-remediation-public-provider')
       .node.findChild('backup-tag-remediation-public-provider')
       .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (backupTagRemediationPublicProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationCustomResource');
+    (backupTagRemediationPublicProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId(
+      'BackupTagRemediationPublicCustomResource',
+    );
 
     // EnableCloudFormationStacksetsOrgAccessCustomResourceRole
     const enableCloudFormationStacksetsOrgAccessCustomResourceRole = new iam.Role(

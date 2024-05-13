@@ -62,7 +62,7 @@ class BackupTagRemediationPublicProvider extends Construct {
         }),
       ],
     });
-    (backupTagRemedationPublicFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationHandlerFunction');
+    (backupTagRemedationPublicFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationPublicHandlerFunction');
 
     this.provider = new cr.Provider(this, 'backup-tag-remediation-public-provider', {
       onEventHandler: backupTagRemedationPublicFn,
