@@ -1,9 +1,8 @@
-import boto3
+from boto3 import client
 import time
 import random
-import re
 
-o = boto3.client("organizations")
+o = client("organizations")
 
 CREATE = 'Create'
 UPDATE = 'Update'
