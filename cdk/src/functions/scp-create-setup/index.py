@@ -71,7 +71,7 @@ def handler(event, context):
             listOfPolicies = o.list_policies_for_target(TargetId=root_id(), Filter='SERVICE_CONTROL_POLICY')['Policies']
             for p in listOfPolicies:
                 if(p["Name"] == "superwerker"):
-                    return {}
+                    return True
 
             print('Creating Policy: {}'.format(LogicalResourceId))
             response = with_retry(o.create_policy,
@@ -81,8 +81,9 @@ def handler(event, context):
             if Attach:
                 with_retry(o.attach_policy, PolicyId=policy_id, TargetId=root_id())
         elif RequestType == UPDATE:
-            print('Updating Policy: {}'.format(LogicalResourceId))
-            with_retry(o.update_policy, PolicyId=policy_id, **parameters)
+            return True
+            # print('Updating Policy: {}'.format(LogicalResourceId))
+            # with_retry(o.update_policy, PolicyId=policy_id, **parameters)
         elif RequestType == DELETE:
             return True
         else:

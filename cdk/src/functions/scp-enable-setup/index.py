@@ -38,14 +38,15 @@ def exception_handling(function):
 
 @exception_handling
 def handler(event, context):
-    RequestType = event["RequestType"]
-    if RequestType == CREATE and not scp_enabled():
-        r_id = root_id()
-        print('Enable SCP for root: {}'.format(r_id))
-        o.enable_policy_type(RootId=r_id, PolicyType=SCP)
-    return {
-            'PhysicalResourceId': 'SCP',
-    }
+    return True
+    # RequestType = event["RequestType"]
+    # if RequestType == CREATE and not scp_enabled():
+    #     r_id = root_id()
+    #     print('Enable SCP for root: {}'.format(r_id))
+    #     o.enable_policy_type(RootId=r_id, PolicyType=SCP)
+    # return {
+    #         'PhysicalResourceId': 'SCP',
+    # }
 
 
 def with_retry(function, **kwargs):
