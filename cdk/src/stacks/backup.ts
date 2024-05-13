@@ -333,8 +333,8 @@ export class BackupStack extends NestedStack {
       policy: JSON.stringify({
         tags: {
           'superwerker:backup': {
-            tag_value: ['none', 'daily'],
-            enforced_for: ['dynamodb:table', 'ec2:volume'],
+            tag_value: { '@@assign': ['none', 'daily'] },
+            enforced_for: { '@@assign': ['dynamodb:table', 'ec2:volume'] },
           },
         },
       }),
@@ -362,27 +362,31 @@ export class BackupStack extends NestedStack {
       policy: JSON.stringify({
         plans: {
           'superwerker-backup': {
-            regions: [Stack.of(this).region],
+            regions: {
+              '@@assign': [Stack.of(this).region],
+            },
             rules: {
               'backup-daily': {
                 lifecycle: {
-                  delete_after_days: 30,
+                  delete_after_days: { '@@assign': 30 },
                 },
-                target_backup_vault_name: 'Default',
+                target_backup_vault_name: { '@@assign': 'Default' },
               },
             },
             selections: {
               tags: {
                 'backup-daily': {
-                  iam_role_arn: Arn.format(
-                    {
-                      service: 'iam',
-                      resource: 'role/service-role/AWSBackupDefaultServiceRole',
-                    },
-                    Stack.of(this),
-                  ),
-                  tag_key: 'superwerker:backup',
-                  tag_value: ['daily'],
+                  iam_role_arn: {
+                    '@@assign': Arn.format(
+                      {
+                        service: 'iam',
+                        resource: 'role/service-role/AWSBackupDefaultServiceRole',
+                      },
+                      Stack.of(this),
+                    ),
+                  },
+                  tag_key: { '@@assign': 'superwerker:backup' },
+                  tag_value: { '@@assign': ['daily'] },
                 },
               },
             },
