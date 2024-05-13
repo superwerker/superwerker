@@ -61,8 +61,7 @@ class BackupTagPolicyProvider extends Construct {
         }),
       ],
     });
-    (tagPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyCustomResource');
-    (tagPolicyFn.node.defaultChild as lambda.CfnFunction).addOverride('Type', 'AWS::Serverless::Function');
+    (tagPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyHandlerFunction');
 
     this.provider = new cr.Provider(this, 'backup-tag-policy-provider', {
       onEventHandler: tagPolicyFn,

@@ -12,6 +12,7 @@ import {
   aws_iam as iam,
   aws_s3 as s3,
   aws_ssm as ssm,
+  aws_lambda as lambda,
 } from 'aws-cdk-lib';
 import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -220,6 +221,11 @@ export class BackupStack extends NestedStack {
     ((backupTagRemediationPublic.node.findChild('Resource') as CfnResource).node.defaultChild as CfnResource).overrideLogicalId(
       'BackupTagRemediationPublic',
     );
+    const backupTagRemediationPublicProviderFn = this.node
+      .findChild('superwerker.backup-tag-remediation-public-provider')
+      .node.findChild('backup-tag-remediation-public-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (backupTagRemediationPublicProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationCustomResource');
 
     // EnableCloudFormationStacksetsOrgAccessCustomResourceRole
     const enableCloudFormationStacksetsOrgAccessCustomResourceRole = new iam.Role(
@@ -315,6 +321,11 @@ export class BackupStack extends NestedStack {
     ((backupTagPolicyEnable.node.findChild('Resource') as CfnResource).node.defaultChild as CfnResource).overrideLogicalId(
       'TagPolicyEnable',
     );
+    const tagPolicyEnableProviderFn = this.node
+      .findChild('superwerker.backup-tag-policy-enable-provider')
+      .node.findChild('backup-tag-policy-enable-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (tagPolicyEnableProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyEnableCustomResource');
 
     const backupTagPolicy = new BackupTagPolicy(this, 'TagPolicy', {
       policy: JSON.stringify({
@@ -329,11 +340,21 @@ export class BackupStack extends NestedStack {
     });
     backupTagPolicy.node.addDependency(backupTagPolicyEnable.node.defaultChild as CfnResource);
     ((backupTagPolicy.node.findChild('Resource') as CfnResource).node.defaultChild as CfnResource).overrideLogicalId('TagPolicy');
+    const tagPolicyProviderFn = this.node
+      .findChild('superwerker.backup-tag-policy-provider')
+      .node.findChild('backup-tag-policy-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (tagPolicyProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyCustomResource');
 
     const backupPolicyEnable = new BackupPolicyEnable(this, 'BackupPolicyEnable');
     ((backupPolicyEnable.node.findChild('Resource') as CfnResource).node.defaultChild as CfnResource).overrideLogicalId(
       'BackupPolicyEnable',
     );
+    const backupPolicyEnableProviderFn = this.node
+      .findChild('superwerker.backup-policy-enable-provider')
+      .node.findChild('backup-policy-enable-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (backupPolicyEnableProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyEnableCustomResource');
 
     const backupPolicy = new BackupPolicy(this, 'BackupPolicy', {
       policy: JSON.stringify({
@@ -369,6 +390,11 @@ export class BackupStack extends NestedStack {
       attach: true,
     });
     ((backupPolicy.node.findChild('Resource') as CfnResource).node.defaultChild as CfnResource).overrideLogicalId('BackupPolicy');
+    const backupPolicyProviderFn = this.node
+      .findChild('superwerker.backup-policy-provider')
+      .node.findChild('backup-policy-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (backupPolicyProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyCustomResource');
     backupPolicy.node.addDependency(backupPolicyEnable.node.defaultChild as CfnResource);
   }
 }

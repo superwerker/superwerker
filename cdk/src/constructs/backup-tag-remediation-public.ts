@@ -62,8 +62,7 @@ class BackupTagRemediationPublicProvider extends Construct {
         }),
       ],
     });
-    (backupTagRemedationPublicFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationPublicCustomResource');
-    (backupTagRemedationPublicFn.node.defaultChild as lambda.CfnFunction).addOverride('Type', 'AWS::Serverless::Function');
+    (backupTagRemedationPublicFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationHandlerFunction');
 
     this.provider = new cr.Provider(this, 'backup-tag-remediation-public-provider', {
       onEventHandler: backupTagRemedationPublicFn,
