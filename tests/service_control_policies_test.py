@@ -30,17 +30,17 @@ def test_superwerker_service_control_policies():
             }
         },
         "Action": [
-            "iam:AttachRolePolicy",
-            "iam:CreateRole",
-            "iam:DeleteRole",
-            "iam:DeleteRolePermissionsBoundary",
-            "iam:DeleteRolePolicy",
-            "iam:DetachRolePolicy",
-            "iam:PutRolePermissionsBoundary",
-            "iam:PutRolePolicy",
-            "iam:UpdateAssumeRolePolicy",
-            "iam:UpdateRole",
-            "iam:UpdateRoleDescription"
+            'iam:AttachRolePolicy',
+            'iam:CreateRole',
+            'iam:DeleteRole',
+            'iam:DeleteRolePermissionsBoundary',
+            'iam:DeleteRolePolicy',
+            'iam:DetachRolePolicy',
+            'iam:PutRolePermissionsBoundary',
+            'iam:PutRolePolicy',
+            'iam:UpdateAssumeRolePolicy',
+            'iam:UpdateRole',
+            'iam:UpdateRoleDescription',
         ],
         "Resource": [
             "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
