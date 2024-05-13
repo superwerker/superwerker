@@ -1,8 +1,10 @@
-from boto3 import client
+import boto3
+import cfnresponse
 import time
 import random
+import re
 
-o = client("organizations")
+o = boto3.client("organizations")
 
 CREATE = 'Create'
 UPDATE = 'Update'
@@ -24,7 +26,7 @@ def exception_handling(function):
         except Exception as e:
             print(e)
             print(event)
-            raise e
+            cfnresponse.send(event, context, cfnresponse.FAILED, {})
 
     return catch
 
@@ -66,12 +68,6 @@ def handler(event, context):
 
     try:
         if RequestType == CREATE:
-
-            listOfPolicies = o.list_policies_for_target(TargetId=root_id(), Filter='SERVICE_CONTROL_POLICY')['Policies']
-            for p in listOfPolicies:
-                if(p["Name"] == "superwerker"):
-                    return True
-
             print('Creating Policy: {}'.format(LogicalResourceId))
             response = with_retry(o.create_policy,
                                 **parameters, Type=SCP
@@ -80,24 +76,25 @@ def handler(event, context):
             if Attach:
                 with_retry(o.attach_policy, PolicyId=policy_id, TargetId=root_id())
         elif RequestType == UPDATE:
-            listOfPolicies = o.list_policies_for_target(TargetId=root_id(), Filter='SERVICE_CONTROL_POLICY')['Policies']
-            for p in listOfPolicies:
-                if(p["Name"] == "superwerker"):
-                    policy_id=p["Id"]
             print('Updating Policy: {}'.format(LogicalResourceId))
             with_retry(o.update_policy, PolicyId=policy_id, **parameters)
         elif RequestType == DELETE:
-            return True
+            print('Deleting Policy: {}'.format(LogicalResourceId))
+            # Same as above
+            if re.match('p-[0-9a-z]+', policy_id):
+                if policy_attached(policy_id):
+                    with_retry(o.detach_policy, PolicyId=policy_id, TargetId=root_id())
+                with_retry(o.delete_policy, PolicyId=policy_id)
+            else:
+                print('{} is no valid PolicyId'.format(policy_id))
         else:
             raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
-        return {
-            'PhysicalResourceId': policy_id,
-        }
+        cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, policy_id)
     except Exception as e:
         print(e)
         print(event)
-        raise e
+        cfnresponse.send(event, context, cfnresponse.FAILED, {}, policy_id)
 
 def policy_attached(policy_id):
     return [p['Id'] for p in
