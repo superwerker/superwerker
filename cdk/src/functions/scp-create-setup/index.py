@@ -67,6 +67,12 @@ def handler(event, context):
 
     try:
         if RequestType == CREATE:
+
+            listOfPolicies = o.list_policies_for_target(TargetId=root_id(), Filter='SERVICE_CONTROL_POLICY')['Policies']
+            for p in listOfPolicies:
+                if(p["Name"] == "superwerker"):
+                    return {}
+
             print('Creating Policy: {}'.format(LogicalResourceId))
             response = with_retry(o.create_policy,
                                 **parameters, Type=SCP
