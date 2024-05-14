@@ -2,9 +2,6 @@ import boto3
 import time
 import random
 import re
-from aws_cdk.custom_resources import (
-    PhysicalResourceId,
-)
 
 o = boto3.client("organizations")
 
@@ -83,7 +80,7 @@ def handler(event, context):
             raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
         return {
-            PhysicalResourceId: policy_id,
+            'PhysicalResourceId': policy_id,
         }
     
     except Exception as e:
