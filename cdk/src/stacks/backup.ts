@@ -1,6 +1,5 @@
 import fs from 'fs';
 import {
-  Arn,
   CfnResource,
   CfnStackSet,
   Duration,
