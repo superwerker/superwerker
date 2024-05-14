@@ -11,8 +11,9 @@ import {
   aws_s3 as s3,
   aws_ssm as ssm,
   aws_lambda as lambda,
+  Fn,
 } from 'aws-cdk-lib';
-import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+import { AwsCustomResource, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 import { BackupPolicy } from '../constructs/backup-policy';
 import { BackupPolicyEnable } from '../constructs/backup-policy-enable';
@@ -23,6 +24,21 @@ import { BackupTagRemediationPublic } from '../constructs/backup-tag-remediation
 export class BackupStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
+
+    // this role gives administrator permissions
+    // we assign it to the custom resource and thereby essentially giving them all admin permissions,
+    // since the custom resource is internall resolved to a singleton resource
+    const enableCloudFormationStacksetsOrgAccessCustomResourceRole = new iam.Role(
+      this,
+      'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
+      {
+        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+        managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
+      },
+    );
+    (enableCloudFormationStacksetsOrgAccessCustomResourceRole.node.defaultChild as CfnResource).overrideLogicalId(
+      'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
+    );
 
     const describeOrganizationOutput = new AwsCustomResource(this, 'OrganizationsLookup', {
       resourceType: 'Custom::DescribeOrganization',
@@ -36,16 +52,41 @@ export class BackupStack extends NestedStack {
         service: 'organizations',
         action: 'describeOrganization',
       },
-      policy: AwsCustomResourcePolicy.fromStatements([
-        new iam.PolicyStatement({
-          resources: ['*'],
-          actions: ['organizations:ListRoots', 'organizations:DescribeOrganization'],
-          effect: iam.Effect.ALLOW,
-        }),
-      ]),
+      role: enableCloudFormationStacksetsOrgAccessCustomResourceRole,
+      // policy: AwsCustomResourcePolicy.fromStatements([
+      //   new iam.PolicyStatement({
+      //     resources: ['*'],
+      //     actions: ['organizations:DescribeOrganization'],
+      //     effect: iam.Effect.ALLOW,
+      //   }),
+      // ]),
     });
 
     const orgId = describeOrganizationOutput.getResponseField('Organization.Id');
+
+    const listRootsOutput = new AwsCustomResource(this, 'RootLookup', {
+      resourceType: 'Custom::ListRoots',
+      installLatestAwsSdk: false,
+      onCreate: {
+        service: 'organizations',
+        action: 'listRoots',
+        physicalResourceId: PhysicalResourceId.of('Organization'),
+      },
+      onUpdate: {
+        service: 'organizations',
+        action: 'listRoots',
+      },
+      role: enableCloudFormationStacksetsOrgAccessCustomResourceRole,
+      // policy: AwsCustomResourcePolicy.fromStatements([
+      //   new iam.PolicyStatement({
+      //     resources: ['*'],
+      //     actions: ['organizations:ListRoots'],
+      //     effect: iam.Effect.ALLOW,
+      //   }),
+      // ]),
+    });
+
+    const rootOrgId = listRootsOutput.getResponseField('Roots.0.Id');
 
     // Conformance Pack Bucket
     const conformancePackBucket = new s3.Bucket(this, 'OrganizationConformancePackBucket', {
@@ -226,19 +267,6 @@ export class BackupStack extends NestedStack {
       'BackupTagRemediationPublicCustomResource',
     );
 
-    // EnableCloudFormationStacksetsOrgAccessCustomResourceRole
-    const enableCloudFormationStacksetsOrgAccessCustomResourceRole = new iam.Role(
-      this,
-      'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
-      {
-        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-        managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess')],
-      },
-    );
-    (enableCloudFormationStacksetsOrgAccessCustomResourceRole.node.defaultChild as CfnResource).overrideLogicalId(
-      'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
-    );
-
     const enableCloudFormationStacksetsOrgAccess = new AwsCustomResource(this, 'EnableCloudFormationStacksetsOrgAccess', {
       resourceType: 'Custom::EnableCloudFormationStacksetsOrgAccess',
       installLatestAwsSdk: false,
@@ -251,12 +279,15 @@ export class BackupStack extends NestedStack {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
       },
-      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: AwsCustomResourcePolicy.ANY_RESOURCE }),
+      role: enableCloudFormationStacksetsOrgAccessCustomResourceRole,
     });
 
     const backupRolesStackSet = new CfnStackSet(this, 'BackupResources', {
+      stackSetName: 'superwerker-backup',
       permissionModel: 'SERVICE_MANAGED',
-      stackSetName: Stack.of(this).stackName,
+      operationPreferences: {
+        maxConcurrentPercentage: 50,
+      },
       capabilities: ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
       autoDeployment: {
         enabled: true,
@@ -265,19 +296,21 @@ export class BackupStack extends NestedStack {
       stackInstancesGroup: [
         {
           deploymentTargets: {
-            organizationalUnitIds: [orgId],
+            organizationalUnitIds: [rootOrgId],
           },
           regions: [Stack.of(this).region],
         },
       ],
-      templateBody: fs.readFileSync('./src/stacks/backup-service-remediation-role-stackset.yaml').toString(),
+      templateBody: Fn.sub(fs.readFileSync('./src/stacks/backup-service-remediation-role-stackset.yaml').toString()),
     });
     backupRolesStackSet.overrideLogicalId('BackupResources');
     backupRolesStackSet.node.addDependency(enableCloudFormationStacksetsOrgAccess);
 
     const backupTagsEnforcement = new config.CfnOrganizationConformancePack(this, 'BackupTagsEnforcement', {
       organizationConformancePackName: 'superwerker-backup-enforce',
-      templateBody: fs.readFileSync('./src/stacks/backup-organization-conformance-pack.yaml').toString(),
+      templateBody: Fn.sub(fs.readFileSync('./src/stacks/backup-organization-conformance-pack.yaml').toString(), {
+        BackupTagRemediation: backupTagRemediation.ref,
+      }),
       deliveryS3Bucket: conformancePackBucket.bucketName,
       deliveryS3KeyPrefix: 'BackupTagsEnforcement',
       excludedAccounts: [Stack.of(this).account], // exclude management account since it has no config recorder set up
