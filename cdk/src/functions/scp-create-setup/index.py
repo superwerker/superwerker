@@ -71,6 +71,7 @@ def handler(event, context):
 
             for policy in listOfPolicies:
                 if policy["Name"] == "superwerker":
+                    with_retry(o.update_policy, PolicyId=policy["Id"], **parameters)
                     return {"Success": "The Policy already exists"}
                 
             print('Creating Policy: {}'.format(LogicalResourceId))
