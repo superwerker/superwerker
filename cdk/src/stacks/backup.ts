@@ -377,13 +377,7 @@ export class BackupStack extends NestedStack {
               tags: {
                 'backup-daily': {
                   iam_role_arn: {
-                    '@@assign': Arn.format(
-                      {
-                        service: 'iam',
-                        resource: 'role/service-role/AWSBackupDefaultServiceRole',
-                      },
-                      Stack.of(this),
-                    ),
+                    '@@assign': 'arn:aws:iam::$account:role/service-role/AWSBackupDefaultServiceRole',
                   },
                   tag_key: { '@@assign': 'superwerker:backup' },
                   tag_value: { '@@assign': ['daily'] },
