@@ -42,6 +42,7 @@ describe('resources', () => {
     'AwsApiLibRole',
     'EnableCloudFormationStacksetsOrgAccessCustomResource',
     'EnableCloudFormationStacksetsOrgAccessCustomResourceFunction',
+    'EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy',
   ];
   for (const key in expectedResources) {
     if (removedKeys.includes(key)) {
@@ -64,8 +65,11 @@ describe('resources', () => {
     // check that dependsOn match the original ones
     if (resourceProps.DependsOn) {
       if (resource == 'BackupResources') {
-        //just checking that we have elements in the 'depends' array
-        expect(Template.fromStack(stack).toJSON().Resources.BackupResources.DependsOn).toHaveLength(2);
+        //we are re-creating the resource, so it will have an auto-generated suffix
+        expect(Template.fromStack(stack).toJSON().Resources.BackupResources.DependsOn).toHaveLength(1);
+        Template.fromStack(stack)
+          .toJSON()
+          .Resources.BackupResources.DependsOn.map((id: string) => expect(id).toContain('EnableCloudFormationStacksetsOrgAccess'));
       } else {
         expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'DependsOn'], resourceProps.DependsOn);
       }

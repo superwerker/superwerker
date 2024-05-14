@@ -12,7 +12,7 @@ import {
   aws_ssm as ssm,
   aws_lambda as lambda,
 } from 'aws-cdk-lib';
-import { AwsCustomResource, AwsCustomResourcePolicy } from 'aws-cdk-lib/custom-resources';
+import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 import { BackupPolicy } from '../constructs/backup-policy';
 import { BackupPolicyEnable } from '../constructs/backup-policy-enable';
@@ -26,12 +26,12 @@ export class BackupStack extends NestedStack {
 
     const describeOrganizationOutput = new AwsCustomResource(this, 'OrganizationsLookup', {
       resourceType: 'Custom::DescribeOrganization',
-      installLatestAwsSdk: true,
-      onUpdate: {
+      onCreate: {
         service: 'organizations',
         action: 'describeOrganization',
+        physicalResourceId: PhysicalResourceId.of('Organization'),
       },
-      onCreate: {
+      onUpdate: {
         service: 'organizations',
         action: 'describeOrganization',
       },
@@ -240,12 +240,12 @@ export class BackupStack extends NestedStack {
 
     const enableCloudFormationStacksetsOrgAccess = new AwsCustomResource(this, 'EnableCloudFormationStacksetsOrgAccess', {
       resourceType: 'Custom::EnableCloudFormationStacksetsOrgAccess',
-      installLatestAwsSdk: true,
-      onUpdate: {
+      onCreate: {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
+        physicalResourceId: PhysicalResourceId.of(Date.now().toString()),
       },
-      onCreate: {
+      onUpdate: {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
       },
