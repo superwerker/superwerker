@@ -1,5 +1,4 @@
 import boto3
-import cfnresponse
 import time
 import random
 import re
@@ -26,7 +25,7 @@ def exception_handling(function):
         except Exception as e:
             print(e)
             print(event)
-            cfnresponse.send(event, context, cfnresponse.FAILED, {})
+            raise e
 
     return catch
 
@@ -79,22 +78,17 @@ def handler(event, context):
             print('Updating Policy: {}'.format(LogicalResourceId))
             with_retry(o.update_policy, PolicyId=policy_id, **parameters)
         elif RequestType == DELETE:
-            print('Deleting Policy: {}'.format(LogicalResourceId))
-            # Same as above
-            if re.match('p-[0-9a-z]+', policy_id):
-                if policy_attached(policy_id):
-                    with_retry(o.detach_policy, PolicyId=policy_id, TargetId=root_id())
-                with_retry(o.delete_policy, PolicyId=policy_id)
-            else:
-                print('{} is no valid PolicyId'.format(policy_id))
+            return True
         else:
             raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, policy_id)
+        return {
+            'PhysicalResourceId': policy_id,
+        }
     except Exception as e:
         print(e)
         print(event)
-        cfnresponse.send(event, context, cfnresponse.FAILED, {}, policy_id)
+        raise e
 
 def policy_attached(policy_id):
     return [p['Id'] for p in
