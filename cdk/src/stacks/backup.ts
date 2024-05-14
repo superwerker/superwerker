@@ -26,6 +26,7 @@ export class BackupStack extends NestedStack {
 
     const describeOrganizationOutput = new AwsCustomResource(this, 'OrganizationsLookup', {
       resourceType: 'Custom::DescribeOrganization',
+      installLatestAwsSdk: false,
       onCreate: {
         service: 'organizations',
         action: 'describeOrganization',
@@ -38,7 +39,7 @@ export class BackupStack extends NestedStack {
       policy: AwsCustomResourcePolicy.fromStatements([
         new iam.PolicyStatement({
           resources: ['*'],
-          actions: ['organizations:DescribeOrganization'],
+          actions: ['organizations:ListRoots', 'organizations:DescribeOrganization'],
           effect: iam.Effect.ALLOW,
         }),
       ]),
@@ -240,6 +241,7 @@ export class BackupStack extends NestedStack {
 
     const enableCloudFormationStacksetsOrgAccess = new AwsCustomResource(this, 'EnableCloudFormationStacksetsOrgAccess', {
       resourceType: 'Custom::EnableCloudFormationStacksetsOrgAccess',
+      installLatestAwsSdk: false,
       onCreate: {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
