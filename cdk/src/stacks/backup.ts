@@ -2,7 +2,6 @@ import fs from 'fs';
 import {
   CfnResource,
   CfnStackSet,
-  Duration,
   NestedStack,
   NestedStackProps,
   RemovalPolicy,
@@ -13,7 +12,7 @@ import {
   aws_ssm as ssm,
   aws_lambda as lambda,
 } from 'aws-cdk-lib';
-import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+import { AwsCustomResource, AwsCustomResourcePolicy } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 import { BackupPolicy } from '../constructs/backup-policy';
 import { BackupPolicyEnable } from '../constructs/backup-policy-enable';
@@ -31,12 +30,10 @@ export class BackupStack extends NestedStack {
       onUpdate: {
         service: 'organizations',
         action: 'describeOrganization',
-        physicalResourceId: PhysicalResourceId.of('Organization'),
       },
       onCreate: {
         service: 'organizations',
         action: 'describeOrganization',
-        physicalResourceId: PhysicalResourceId.of('Organization'),
       },
       policy: AwsCustomResourcePolicy.fromStatements([
         new iam.PolicyStatement({
@@ -241,48 +238,18 @@ export class BackupStack extends NestedStack {
       'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
     );
 
-    // EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy
-    const enableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy = new iam.Policy(
-      this,
-      'EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy',
-      {
-        policyName: 'EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy',
-        statements: [
-          new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: ['sts:AssumeRole'],
-            resources: [enableCloudFormationStacksetsOrgAccessCustomResourceRole.roleArn],
-          }),
-        ],
-        roles: [enableCloudFormationStacksetsOrgAccessCustomResourceRole],
-      },
-    );
-    (enableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy.node.defaultChild as CfnResource).overrideLogicalId(
-      'EnableCloudFormationStacksetsOrgAccessCustomResourceRolePolicy',
-    );
-
     const enableCloudFormationStacksetsOrgAccess = new AwsCustomResource(this, 'EnableCloudFormationStacksetsOrgAccess', {
       resourceType: 'Custom::EnableCloudFormationStacksetsOrgAccess',
       installLatestAwsSdk: true,
       onUpdate: {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
-        physicalResourceId: PhysicalResourceId.of('Organization'),
       },
       onCreate: {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
-        physicalResourceId: PhysicalResourceId.of('Organization'),
       },
       role: enableCloudFormationStacksetsOrgAccessCustomResourceRole,
-      policy: AwsCustomResourcePolicy.fromStatements([
-        new iam.PolicyStatement({
-          resources: ['*'],
-          actions: ['organizations:DescribeOrganization'],
-          effect: iam.Effect.ALLOW,
-        }),
-      ]),
-      timeout: Duration.seconds(900), // give it more time since it installs dependencies on the fly
     });
 
     const backupRolesStackSet = new CfnStackSet(this, 'BackupResources', {
