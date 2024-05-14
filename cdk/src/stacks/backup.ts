@@ -266,12 +266,12 @@ export class BackupStack extends NestedStack {
       installLatestAwsSdk: true,
       onUpdate: {
         service: 'cloudformation',
-        action: 'activate_organizations_access',
+        action: 'ActivateOrganizationsAccess',
         physicalResourceId: PhysicalResourceId.of('Organization'),
       },
       onCreate: {
         service: 'cloudformation',
-        action: 'activate_organizations_access',
+        action: 'ActivateOrganizationsAccess',
         physicalResourceId: PhysicalResourceId.of('Organization'),
       },
       role: enableCloudFormationStacksetsOrgAccessCustomResourceRole,
