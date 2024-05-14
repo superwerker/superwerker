@@ -251,7 +251,7 @@ export class BackupStack extends NestedStack {
         service: 'cloudformation',
         action: 'ActivateOrganizationsAccess',
       },
-      role: enableCloudFormationStacksetsOrgAccessCustomResourceRole,
+      policy: AwsCustomResourcePolicy.fromSdkCalls({ resources: AwsCustomResourcePolicy.ANY_RESOURCE }),
     });
 
     const backupRolesStackSet = new CfnStackSet(this, 'BackupResources', {

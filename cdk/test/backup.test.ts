@@ -66,7 +66,7 @@ describe('resources', () => {
     if (resourceProps.DependsOn) {
       if (resource == 'BackupResources') {
         //we are re-creating the resource, so it will have an auto-generated suffix
-        expect(Template.fromStack(stack).toJSON().Resources.BackupResources.DependsOn).toHaveLength(1);
+        expect(Template.fromStack(stack).toJSON().Resources.BackupResources.DependsOn).toHaveLength(2);
         Template.fromStack(stack)
           .toJSON()
           .Resources.BackupResources.DependsOn.map((id: string) => expect(id).toContain('EnableCloudFormationStacksetsOrgAccess'));
