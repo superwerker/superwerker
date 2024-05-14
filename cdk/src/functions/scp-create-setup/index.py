@@ -67,6 +67,14 @@ def handler(event, context):
 
     try:
         if RequestType == CREATE:
+            listOfPolicy = o.list_policies_for_target(TargetId = root_id(), Filter='SERVICE_CONTROL_POLICY')
+
+            for policy in listOfPolicy:
+                if policy["Name"] == "superwerker":
+                    if policy_attached(policy["Id"]):
+                          with_retry(o.detach_policy, PolicyId=policy["Id"], TargetId=root_id())
+                    with_retry(o.delete_policy, PolicyId=policy["Id"])
+
             print('Creating Policy: {}'.format(LogicalResourceId))
             response = with_retry(o.create_policy,
                                 **parameters, Type=SCP
@@ -78,7 +86,13 @@ def handler(event, context):
             print('Updating Policy: {}'.format(LogicalResourceId))
             with_retry(o.update_policy, PolicyId=policy_id, **parameters)
         elif RequestType == DELETE:
-            return True
+            listOfPolicy = o.list_policies_for_target(TargetId = root_id(), Filter='SERVICE_CONTROL_POLICY')
+
+            for policy in listOfPolicy:
+                if policy["Name"] == "superwerker":
+                    if policy_attached(policy["Id"]):
+                          with_retry(o.detach_policy, PolicyId=policy["Id"], TargetId=root_id())
+                    with_retry(o.delete_policy, PolicyId=policy["Id"])
         else:
             raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
