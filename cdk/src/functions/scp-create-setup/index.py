@@ -67,14 +67,6 @@ def handler(event, context):
 
     try:
         if RequestType == CREATE:
-            listOfPolicy = o.list_policies_for_target(TargetId = root_id(), Filter='SERVICE_CONTROL_POLICY')
-
-            for policy in listOfPolicy:
-                if policy["Name"] == "superwerker":
-                    if policy_attached(policy["Id"]):
-                          with_retry(o.detach_policy, PolicyId=policy["Id"], TargetId=root_id())
-                    with_retry(o.delete_policy, PolicyId=policy["Id"])
-
             print('Creating Policy: {}'.format(LogicalResourceId))
             response = with_retry(o.create_policy,
                                 **parameters, Type=SCP
@@ -86,13 +78,14 @@ def handler(event, context):
             print('Updating Policy: {}'.format(LogicalResourceId))
             with_retry(o.update_policy, PolicyId=policy_id, **parameters)
         elif RequestType == DELETE:
-            listOfPolicy = o.list_policies_for_target(TargetId = root_id(), Filter='SERVICE_CONTROL_POLICY')
-
-            for policy in listOfPolicy:
-                if policy["Name"] == "superwerker":
-                    if policy_attached(policy["Id"]):
-                          with_retry(o.detach_policy, PolicyId=policy["Id"], TargetId=root_id())
-                    with_retry(o.delete_policy, PolicyId=policy["Id"])
+            print('Deleting Policy: {}'.format(LogicalResourceId))
+            # Same as above
+            if re.match('p-[0-9a-z]+', policy_id):
+                if policy_attached(policy_id):
+                    with_retry(o.detach_policy, PolicyId=policy_id, TargetId=root_id())
+                with_retry(o.delete_policy, PolicyId=policy_id)
+            else:
+                print('{} is no valid PolicyId'.format(policy_id))
         else:
             raise Exception('Unexpected RequestType: {}'.format(RequestType))
 
@@ -103,12 +96,6 @@ def handler(event, context):
         print(e)
         print(event)
         raise e
-
-def policy_attached(policy_id):
-    return [p['Id'] for p in
-            o.list_policies_for_target(TargetId=root_id(), Filter='SERVICE_CONTROL_POLICY')['Policies'] if
-            p['Id'] == policy_id]
-
 
 def policy_attached(policy_id):
     return [p['Id'] for p in
