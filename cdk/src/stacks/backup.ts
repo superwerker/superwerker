@@ -25,9 +25,9 @@ export class BackupStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    // this role gives administrator permissions
-    // we assign it to the custom resource and thereby essentially giving them all admin permissions,
-    // since the custom resource is internall resolved to a singleton resource
+    // This role gives administrator permissions
+    // Since the custom resource internally is a singleton resource, this role will apply to all `AwsCustomResource`
+    // instances in the stack
     const enableCloudFormationStacksetsOrgAccessCustomResourceRole = new iam.Role(
       this,
       'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
@@ -40,7 +40,7 @@ export class BackupStack extends NestedStack {
       'EnableCloudFormationStacksetsOrgAccessCustomResourceRole',
     );
 
-    const describeOrganizationOutput = new AwsCustomResource(this, 'OrganizationsLookup', {
+    const organizationsLookup = new AwsCustomResource(this, 'OrganizationsLookup', {
       resourceType: 'Custom::DescribeOrganization',
       installLatestAwsSdk: false,
       onCreate: {
@@ -62,9 +62,9 @@ export class BackupStack extends NestedStack {
       // ]),
     });
 
-    const orgId = describeOrganizationOutput.getResponseField('Organization.Id');
+    const orgId = organizationsLookup.getResponseField('Organization.Id');
 
-    const listRootsOutput = new AwsCustomResource(this, 'RootLookup', {
+    const rootLookup = new AwsCustomResource(this, 'RootLookup', {
       resourceType: 'Custom::ListRoots',
       installLatestAwsSdk: false,
       onCreate: {
@@ -86,7 +86,7 @@ export class BackupStack extends NestedStack {
       // ]),
     });
 
-    const rootOrgId = listRootsOutput.getResponseField('Roots.0.Id');
+    const rootOrgId = rootLookup.getResponseField('Roots.0.Id');
 
     // Conformance Pack Bucket
     const conformancePackBucket = new s3.Bucket(this, 'OrganizationConformancePackBucket', {
