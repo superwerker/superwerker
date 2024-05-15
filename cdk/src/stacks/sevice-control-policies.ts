@@ -10,7 +10,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const scpPolicyDocumentRoot = new PolicyDocument();
+    //const scpPolicyDocumentRoot = new PolicyDocument();
 
     //Backup
     const backupStatement = new PolicyStatement({
@@ -40,7 +40,10 @@ export class ServiceControlPoliciesStack extends NestedStack {
       sid: 'SWProtectBackup',
     });
 
-    scpPolicyDocumentRoot.addStatements(backupStatement);
+    //scpPolicyDocumentRoot.addStatements(backupStatement);
+    const scpPolicyDocumentRoot = new PolicyDocument({
+      statements: [backupStatement],
+    });
 
     new CustomResource(this, 'SCPBaseline', {
       serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
