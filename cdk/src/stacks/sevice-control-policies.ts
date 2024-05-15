@@ -20,7 +20,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
         },
       },
       actions: [
-        'iam:AttachRolePolicy',
+        // 'iam:AttachRolePolicy',
         'iam:CreateRole',
         'iam:DeleteRole',
         'iam:DeleteRolePermissionsBoundary',
