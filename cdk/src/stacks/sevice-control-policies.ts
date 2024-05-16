@@ -1,7 +1,7 @@
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
 import { CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -45,7 +45,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
     new CustomResource(this, 'SCPBaseline', {
       serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
       properties: {
-        Policy: JSON.stringify(scpPolicyDocumentRoot),
+        Policy: scpPolicyDocumentRoot,
         Attach: 'true',
       },
     });
