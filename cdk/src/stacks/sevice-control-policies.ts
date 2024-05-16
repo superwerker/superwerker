@@ -10,37 +10,37 @@ export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    const scpPolicyDocumentRoot = new PolicyDocument({});
-
-    //Backup
-    const backupStatement = new PolicyStatement({
-      conditions: {
-        ArnNotLike: {
-          'aws:PrincipalARN': `arn:${Stack.of(this).partition}:iam::*:role/stacksets-exec-*`,
-        },
-      },
-      actions: [
-        'iam:AttachRolePolicy',
-        'iam:CreateRole',
-        'iam:DeleteRole',
-        'iam:DeleteRolePermissionsBoundary',
-        'iam:DeleteRolePolicy',
-        'iam:DetachRolePolicy',
-        'iam:PutRolePermissionsBoundary',
-        'iam:PutRolePolicy',
-        'iam:UpdateAssumeRolePolicy',
-        'iam:UpdateRole',
-        'iam:UpdateRoleDescription',
-      ],
-      resources: [
-        `arn:${Stack.of(this).partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole`,
-        `arn:${Stack.of(this).partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole`,
-      ],
-      effect: Effect.DENY,
-      sid: 'SWProtectBackup',
-    });
-
-    scpPolicyDocumentRoot.addStatements(backupStatement);
+    const scpPolicyDocumentRoot = `{
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+          "Condition": {
+              "ArnNotLike": {
+              "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+              }
+          },
+          "Action": [
+              'iam:AttachRolePolicy',
+              'iam:CreateRole',
+              'iam:DeleteRole',
+              'iam:DeleteRolePermissionsBoundary',
+              'iam:DeleteRolePolicy',
+              'iam:DetachRolePolicy',
+              'iam:PutRolePermissionsBoundary',
+              'iam:PutRolePolicy',
+              'iam:UpdateAssumeRolePolicy',
+              'iam:UpdateRole',
+              'iam:UpdateRoleDescription',
+          ],
+          "Resource": [
+              "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+              "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
+          ],
+          "Effect": "Deny",
+          "Sid": "SWProtectBackup"
+          }
+      ]
+      }`;
 
     new CustomResource(this, 'SCPBaseline', {
       serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
