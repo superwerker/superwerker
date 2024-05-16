@@ -58,37 +58,4 @@ def test_superwerker_service_control_policies():
             acceptedPolicyJson = superwerker_policy['Policy']['Content']
             acceptedPolicyDict = json.loads(acceptedPolicyJson)
 
-            assert expectedPolicyDict == acceptedPolicyDict
-
-            assert ''.join(superwerker_policy['Policy']['Content'].split()) == ''.join('''{
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                "Condition": {
-                    "ArnNotLike": {
-                    "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
-                    }
-                },
-                "Action": [
-                    'iam:AttachRolePolicy',
-                    'iam:CreateRole',
-                    'iam:DeleteRole',
-                    'iam:DeleteRolePermissionsBoundary',
-                    'iam:DeleteRolePolicy',
-                    'iam:DetachRolePolicy',
-                    'iam:PutRolePermissionsBoundary',
-                    'iam:PutRolePolicy',
-                    'iam:UpdateAssumeRolePolicy',
-                    'iam:UpdateRole',
-                    'iam:UpdateRoleDescription',
-                ],
-                "Resource": [
-                    "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
-                    "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
-                ],
-                "Effect": "Deny",
-                "Sid": "SWProtectBackup"
-                }
-            ]
-            }'''.split()), 'Policy content does not match expected content'
-            
+            assert expectedPolicyDict == acceptedPolicyDict, 'Policy content does not match expected content'
