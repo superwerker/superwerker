@@ -18,7 +18,7 @@ const organizationsClientMock = mockClient(OrganizationsClient);
 
 const securityHubStandardsMgmt = new SecurityHubStandardsMgmt(new SecurityHubClient());
 
-const secHubStandards = [
+export const secHubStandards = [
   {
     Name: 'AWS Foundational Security Best Practices v1.0.0',
     StandardsArn: 'arn:aws:securityhub:eu-central-1::standards/aws-foundational-security-best-practices/v/1.0.0',

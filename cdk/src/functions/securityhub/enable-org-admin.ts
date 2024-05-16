@@ -25,6 +25,7 @@ import {
   ResourceConflictException,
   SecurityHubClient,
 } from '@aws-sdk/client-securityhub';
+import { getExistingEnabledStandards } from './enable-standards';
 import { delay, throttlingBackOff } from '../utils/throttle';
 
 export class SecurityHubOrganizationMgmt {
@@ -61,8 +62,19 @@ export class SecurityHubOrganizationMgmt {
     console.log('Enabling security hub in management account before creating delegation admin account');
     await this.enableSecurityHub();
 
-    console.log(`Started enableOrganizationAdminAccount in ${region} region for account ${this.securityAdminAccountId}`);
+    // wait for all standards to be ready
+    let existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
+    let allStandardsReady = false;
     let retries = 0;
+    while (!allStandardsReady && retries < 200) {
+      allStandardsReady = existingEnabledStandards.every((item) => item.StandardsStatus === 'READY');
+      existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
+      console.log('Waiting for all standards to get in status READY: ', existingEnabledStandards);
+      retries++;
+    }
+
+    console.log(`Started enableOrganizationAdminAccount in ${region} region for account ${this.securityAdminAccountId}`);
+    retries = 0;
     while (retries < 10) {
       await delay(retries ** 2 * 1000);
       try {
