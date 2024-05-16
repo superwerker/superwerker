@@ -27,8 +27,8 @@ import { throttlingBackOff } from '../utils/throttle';
 export class SecurityHubStandardsMgmt {
   private securityHubClient: SecurityHubClient;
 
-  constructor(organizationsClientAuditAccount: SecurityHubClient) {
-    this.securityHubClient = organizationsClientAuditAccount;
+  constructor(securityHubClientAuditAccount: SecurityHubClient) {
+    this.securityHubClient = securityHubClientAuditAccount;
   }
 
   async enableStandards(standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[]) {
@@ -46,6 +46,16 @@ export class SecurityHubStandardsMgmt {
       }
       nextToken = page.NextToken;
     } while (nextToken);
+
+    // wait for all standards to be ready
+    let allStandardsReady = false;
+    let retries = 0;
+    while (!allStandardsReady && retries < 200) {
+      let existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
+      allStandardsReady = existingEnabledStandards.every((item) => item.StandardsStatus === 'READY');
+      console.log('Waiting for all standards to get in status READY: ', existingEnabledStandards);
+      retries++;
+    }
 
     const standardsModificationList = await this.getStandardsModificationList(standardsToEnable, awsSecurityHubStandards);
 

@@ -63,12 +63,11 @@ export class SecurityHubOrganizationMgmt {
     await this.enableSecurityHub();
 
     // wait for all standards to be ready
-    let existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
     let allStandardsReady = false;
     let retries = 0;
     while (!allStandardsReady && retries < 200) {
+      let existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
       allStandardsReady = existingEnabledStandards.every((item) => item.StandardsStatus === 'READY');
-      existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
       console.log('Waiting for all standards to get in status READY: ', existingEnabledStandards);
       retries++;
     }
