@@ -60,6 +60,9 @@ class BackupTagPolicyProvider extends Construct {
           ],
         }),
       ],
+      bundling: {
+        assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
+      },
     });
     (tagPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyHandlerFunction');
 

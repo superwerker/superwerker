@@ -61,6 +61,9 @@ class BackupTagRemediationPublicProvider extends Construct {
           actions: ['ssm:ModifyDocumentPermission'],
         }),
       ],
+      bundling: {
+        assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
+      },
     });
     (backupTagRemedationPublicFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupTagRemediationPublicHandlerFunction');
 

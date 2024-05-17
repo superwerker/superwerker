@@ -42,6 +42,9 @@ class BackupTagPolicyEnableProvider extends Construct {
           actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
         }),
       ],
+      bundling: {
+        assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
+      },
     });
     (tagPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('TagPolicyEnableHandlerFunction');
 

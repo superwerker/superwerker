@@ -60,6 +60,9 @@ class BackupPolicyProvider extends Construct {
           ],
         }),
       ],
+      bundling: {
+        assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
+      },
     });
     (backupPolicyFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyHandlerFunction');
 

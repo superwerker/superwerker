@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { aws_iam as iam, CustomResource, Duration, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -42,6 +42,9 @@ class BackupPolicyEnableProvider extends Construct {
           actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
         }),
       ],
+      bundling: {
+        assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
+      },
     });
     (backupPolicyEnableFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BackupPolicyEnableHandlerFunction');
 
