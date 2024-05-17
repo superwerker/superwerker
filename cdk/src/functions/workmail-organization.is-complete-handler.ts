@@ -5,18 +5,14 @@ import {
   UpdateDefaultMailDomainCommand,
   WorkMailClient,
 } from '@aws-sdk/client-workmail';
+import { CdkCustomResourceIsCompleteEvent } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
 
 const workmail = new WorkMailClient({ region: 'eu-west-1' });
 const SSM = new SSMClient();
 
-export interface isCompleteEvent extends AWSLambda.CloudFormationCustomResourceEventCommon {
-  PhysicalResourceId: string;
-  RequestType: 'Create' | 'Update' | 'Delete';
-}
-
-export async function handler(event: isCompleteEvent) {
+export async function handler(event: CdkCustomResourceIsCompleteEvent) {
   const domain = event.ResourceProperties[PROP_DOMAIN];
   const propagationParamName = event.ResourceProperties[PROP_PARAM_NAME];
   const workmailOrgId = event.PhysicalResourceId!;

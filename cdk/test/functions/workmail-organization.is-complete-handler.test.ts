@@ -5,9 +5,10 @@ import {
   UpdateDefaultMailDomainCommand,
   WorkMailClient,
 } from '@aws-sdk/client-workmail';
+import { CdkCustomResourceIsCompleteEvent } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
-import { handler, isCompleteEvent } from '../../src/functions/workmail-organization.is-complete-handler';
+import { handler } from '../../src/functions/workmail-organization.is-complete-handler';
 
 const workmailClientMock = mockClient(WorkMailClient);
 const ssmClientMock = mockClient(SSMClient);
@@ -27,7 +28,7 @@ const event = {
     PropagationParamName: '/superwerker/propagation_status',
     HostedZoneId: 'hostedzoneid123',
   },
-} as isCompleteEvent;
+} as CdkCustomResourceIsCompleteEvent;
 
 describe('workmail-organization.is-complete-handler', () => {
   beforeEach(() => {
@@ -129,7 +130,7 @@ describe('workmail-organization.is-complete-handler', () => {
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as isCompleteEvent;
+    } as CdkCustomResourceIsCompleteEvent;
 
     const result = await handler(deleteEvent);
 
@@ -146,13 +147,19 @@ describe('workmail-organization.is-complete-handler', () => {
       PhysicalResourceId: 'orgid123',
       LogicalResourceId: 'WorkmailOrganization123',
       ResourceType: 'Custom::WorkmailOrganization',
+      OldResourceProperties: {
+        ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
+        Domain: 'aws.testdomain.com',
+        PropagationParamName: '/superwerker/propagation_status',
+        HostedZoneId: 'hostedzoneid123',
+      },
       ResourceProperties: {
         ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
         Domain: 'aws.testdomain.com',
         PropagationParamName: '/superwerker/propagation_status',
         HostedZoneId: 'hostedzoneid123',
       },
-    } as isCompleteEvent;
+    } as CdkCustomResourceIsCompleteEvent;
 
     const result = await handler(deleteEvent);
 
