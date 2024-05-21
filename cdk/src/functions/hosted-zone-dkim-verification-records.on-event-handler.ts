@@ -1,19 +1,20 @@
 import { SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
-import { CdkCustomResourceEvent, CloudFormationCustomResourceUpdateEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
 export const ATTR_VERIFICATION_TOKEN = 'VerificationToken';
 export const ATTR_DKIM_TOKENS = 'DkimTokens';
 
 const SES = new SESClient({ region: 'eu-west-1' });
 
-export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
+export async function handler(event: AWSLambda.CloudFormationCustomResourceEvent) {
   const domain = event.ResourceProperties[PROP_DOMAIN];
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
-      let physicalResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId;
+      let physicalResourceId: string;
       if (event.RequestType === 'Create') {
         physicalResourceId = event.RequestId;
+      } else {
+        physicalResourceId = event.PhysicalResourceId;
       }
 
       console.log(

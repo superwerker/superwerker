@@ -1,6 +1,5 @@
 import { Fn, Duration, aws_route53 as r53, aws_ssm as ssm, CfnResource } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { HostedZoneDKIMPropagation } from './rootmail-hosted-zone-dkim-propagation';
 import { HostedZoneDKIMAndVerificationRecords } from './rootmail-hosted-zone-dkim-verification-records';
 
 export interface HostedZoneDkimProps {
@@ -25,16 +24,6 @@ export interface HostedZoneDkimProps {
    * The Hosted Zone SSM Parameter Name for the NS records.
    */
   readonly hostedZoneSSMParameter: ssm.StringListParameter;
-
-  /**
-   * The SSM Parameter for DNS propagation status.
-   */
-  readonly propagationParameter: ssm.StringParameter;
-
-  /**
-   * The total time to wait for the DNS records to be available/wired.
-   */
-  readonly totalTimeToWireDNS: Duration;
 }
 
 export class HostedZoneDkim extends Construct {
@@ -108,10 +97,32 @@ export class HostedZoneDkim extends Construct {
     });
     (verificationRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneVerificationTokenRecord');
 
-    // 3: trigger SES DKIM propagation polling
-    new HostedZoneDKIMPropagation(this, 'HostedZoneDKIMPropagation', {
-      domain: `${subdomain}.${domain}`,
-      propagationParameter: props.propagationParameter,
+    const autoDiscoverRecord = new r53.RecordSet(this, 'HostedZoneAutoDiscoverRecord', {
+      deleteExisting: false,
+      zone: hostedZone,
+      target: r53.RecordTarget.fromValues('autodiscover.mail.eu-west-1.awsapps.com'),
+      recordName: `autodiscover.${subdomain}.${domain}`,
+      ttl: Duration.seconds(60),
+      recordType: r53.RecordType.CNAME,
     });
+    (autoDiscoverRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneAutoDiscoverRecord');
+
+    const spfRecord = new r53.TxtRecord(this, 'HostedZoneSpfRecord', {
+      zone: hostedZone,
+      values: ['v=spf1 include:amazonses.com ~all'],
+      deleteExisting: false,
+      recordName: `${subdomain}.${domain}`,
+      ttl: Duration.seconds(60),
+    });
+    (spfRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneSpfRecord');
+
+    const dmarcRecord = new r53.TxtRecord(this, 'HostedZoneDmarcRecord', {
+      zone: hostedZone,
+      values: ['v=DMARC1;p=quarantine;pct=100;fo=1'],
+      deleteExisting: false,
+      recordName: `_dmarc.${subdomain}.${domain}`,
+      ttl: Duration.seconds(60),
+    });
+    (dmarcRecord.node.defaultChild as CfnResource).overrideLogicalId('HostedZoneDmarcRecord');
   }
 }
