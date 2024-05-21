@@ -10,7 +10,7 @@ import { NotificationsStack } from './notifications';
 import { PrepareStack } from './prepare';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
-// import { ServiceControlPoliciesStack } from './sevice-control-policies';
+import { ServiceControlPoliciesStack } from './sevice-control-policies';
 import { GenerateEmailAddress } from '../constructs/generate-email-address';
 
 export interface SuperwerkerStackProps extends StackProps {
@@ -203,13 +203,13 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
     });
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    // const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {});
-    // const rolloutScps = new CfnCondition(this, 'rolloutscps', {
-    //   expression: Fn.conditionAnd(backupCondition, serviceControlPoliciesCondition),
-    // });
-    // serviceControlPoliciesStack.addDependency(controlTowerStack);
-    // (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    // (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = rolloutScps;
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {});
+    const rolloutScps = new CfnCondition(this, 'rolloutscps', {
+      expression: Fn.conditionAnd(backupCondition, serviceControlPoliciesCondition),
+    });
+    serviceControlPoliciesStack.addDependency(controlTowerStack);
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = rolloutScps;
 
     // Billing
     const billingStack = new BillingStack(this, 'Billing', {});
