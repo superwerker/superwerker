@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Provider } from 'aws-cdk-lib/custom-resources';
@@ -9,6 +9,18 @@ import { Construct } from 'constructs';
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
+
+    const scpBaselineProviderFn = this.node
+      .findChild('superwerker.service-control-policy-baseline-provider')
+      .node.findChild('service-control-policy-baseline-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (scpBaselineProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPBaseline');
+
+    const scpEnableProviderFn = this.node
+      .findChild('superwerker.service-control-policy-enable-provider')
+      .node.findChild('service-control-policy-enable-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (scpEnableProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPEnable');
 
     const scpPolicyDocumentRoot = new PolicyDocument({});
 
