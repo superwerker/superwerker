@@ -7,12 +7,14 @@ import {
   DisableOrganizationAdminAccountCommand,
   EnableOrganizationAdminAccountCommand,
   EnableSecurityHubCommand,
+  GetEnabledStandardsCommand,
   ListOrganizationAdminAccountsCommand,
   ResourceConflictException,
   SecurityHubClient,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
 import 'aws-sdk-client-mock-jest';
+import { secHubStandards } from './enable-standards.test';
 import { SecurityHubOrganizationMgmt } from '../../../src/functions/securityhub/enable-org-admin';
 
 const organizationsClientMock = mockClient(OrganizationsClient);
@@ -26,6 +28,8 @@ describe('enableOrganisationAdmin', () => {
   beforeEach(() => {
     organizationsClientMock.reset();
     securityHubClientMock.reset();
+
+    jest.useFakeTimers();
   });
 
   it('should enable organization admin account when not already set', async () => {
@@ -35,7 +39,22 @@ describe('enableOrganisationAdmin', () => {
       .resolvesOnce({ AdminAccounts: [] })
       .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
 
-    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
+      StandardsSubscriptions: [
+        {
+          StandardsSubscriptionArn:
+            'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+          StandardsArn: secHubStandards[0].StandardsArn,
+          StandardsInput: {},
+          StandardsStatus: 'READY',
+        },
+      ],
+      NextToken: undefined,
+    });
+
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
@@ -52,7 +71,22 @@ describe('enableOrganisationAdmin', () => {
       .resolvesOnce({ AdminAccounts: [] })
       .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
 
-    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
+      StandardsSubscriptions: [
+        {
+          StandardsSubscriptionArn:
+            'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+          StandardsArn: secHubStandards[0].StandardsArn,
+          StandardsInput: {},
+          StandardsStatus: 'READY',
+        },
+      ],
+      NextToken: undefined,
+    });
+
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
@@ -70,8 +104,116 @@ describe('enableOrganisationAdmin', () => {
       .on(ListOrganizationAdminAccountsCommand)
       .resolvesOnce({ AdminAccounts: [] })
       .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
+    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
+      StandardsSubscriptions: [
+        {
+          StandardsSubscriptionArn:
+            'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+          StandardsArn: secHubStandards[0].StandardsArn,
+          StandardsInput: {},
+          StandardsStatus: 'READY',
+        },
+      ],
+      NextToken: undefined,
+    });
 
-    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
+
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
+
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
+    // call twice because of retry
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 2);
+  });
+
+  it('should wait for all standards to be ready and enable organization admin account', async () => {
+    // throw error once
+    securityHubClientMock.on(EnableOrganizationAdminAccountCommand).rejectsOnce(new Error('Internal Error'));
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
+    securityHubClientMock
+      .on(GetEnabledStandardsCommand)
+      .resolvesOnce({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'PENDING',
+          },
+        ],
+        NextToken: undefined,
+      })
+      .resolvesOnce({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'PENDING',
+          },
+        ],
+        NextToken: undefined,
+      })
+      .resolves({
+        StandardsSubscriptions: [
+          {
+            StandardsSubscriptionArn:
+              'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+            StandardsArn: secHubStandards[0].StandardsArn,
+            StandardsInput: {},
+            StandardsStatus: 'READY',
+          },
+        ],
+        NextToken: undefined,
+      });
+
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
+
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
+    expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
+
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(ListOrganizationAdminAccountsCommand, 2);
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableSecurityHubCommand, 1);
+    // call twice because of retry
+    expect(securityHubClientMock).toHaveReceivedCommandTimes(EnableOrganizationAdminAccountCommand, 2);
+  });
+
+  it('should continue if standards are not ready after wating', async () => {
+    // throw error once
+    securityHubClientMock.on(EnableOrganizationAdminAccountCommand).rejectsOnce(new Error('Internal Error'));
+    // initally no admin account set
+    securityHubClientMock
+      .on(ListOrganizationAdminAccountsCommand)
+      .resolvesOnce({ AdminAccounts: [] })
+      .resolves({ AdminAccounts: [{ AccountId: auditAccount, Status: 'ENABLED' }] });
+    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
+      StandardsSubscriptions: [
+        {
+          StandardsSubscriptionArn:
+            'arn:aws:securityhub:eu-central-1:11223344556677:subscription/aws-foundational-security-best-practices/v/1.0.0',
+          StandardsArn: secHubStandards[0].StandardsArn,
+          StandardsInput: {},
+          StandardsStatus: 'FAILED',
+        },
+      ],
+      NextToken: undefined,
+    });
+
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
@@ -86,7 +228,14 @@ describe('enableOrganisationAdmin', () => {
     // admin account also not set after enabling
     securityHubClientMock.on(ListOrganizationAdminAccountsCommand).resolves({});
 
-    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
+      StandardsSubscriptions: [],
+      NextToken: undefined,
+    });
+
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });
@@ -122,8 +271,14 @@ describe('enableOrganisationAdmin', () => {
     securityHubClientMock
       .on(EnableSecurityHubCommand)
       .rejects(new ResourceConflictException({ $metadata: {}, message: 'Security Hub is already enabled' }));
+    securityHubClientMock.on(GetEnabledStandardsCommand).resolves({
+      StandardsSubscriptions: [],
+      NextToken: undefined,
+    });
 
-    await securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
+    await jest.advanceTimersByTimeAsync(1000);
+    await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableSecurityHubCommand, { EnableDefaultStandards: false });

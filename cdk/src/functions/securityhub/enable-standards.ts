@@ -27,8 +27,8 @@ import { throttlingBackOff } from '../utils/throttle';
 export class SecurityHubStandardsMgmt {
   private securityHubClient: SecurityHubClient;
 
-  constructor(organizationsClientAuditAccount: SecurityHubClient) {
-    this.securityHubClient = organizationsClientAuditAccount;
+  constructor(securityHubClientAuditAccount: SecurityHubClient) {
+    this.securityHubClient = securityHubClientAuditAccount;
   }
 
   async enableStandards(standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[]) {
@@ -46,6 +46,16 @@ export class SecurityHubStandardsMgmt {
       }
       nextToken = page.NextToken;
     } while (nextToken);
+
+    // wait for all standards to be ready
+    let allStandardsReady = false;
+    let retries = 0;
+    while (!allStandardsReady && retries < 200) {
+      let existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
+      allStandardsReady = existingEnabledStandards.every((item) => item.StandardsStatus === 'READY');
+      console.log('Waiting for all standards to get in status READY: ', existingEnabledStandards);
+      retries++;
+    }
 
     const standardsModificationList = await this.getStandardsModificationList(standardsToEnable, awsSecurityHubStandards);
 
@@ -101,7 +111,7 @@ export class SecurityHubStandardsMgmt {
   }
 
   async disableStandards() {
-    const existingEnabledStandards = await this.getExistingEnabledStandards();
+    const existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
     const subscriptionArns: string[] = [];
     existingEnabledStandards.forEach((standard) => {
       subscriptionArns.push(standard.StandardsSubscriptionArn);
@@ -116,28 +126,6 @@ export class SecurityHubStandardsMgmt {
     }
   }
 
-  private async getExistingEnabledStandards() {
-    const response = await throttlingBackOff(() => this.securityHubClient.send(new GetEnabledStandardsCommand({})));
-
-    // Get list of  existing enabled standards within securityhub
-    const existingEnabledStandardArns: {
-      StandardsArn: string;
-      StandardsInput: Record<string, string>;
-      StandardsStatus: StandardsStatus;
-      StandardsSubscriptionArn: string;
-    }[] = [];
-    response.StandardsSubscriptions!.forEach((item) => {
-      existingEnabledStandardArns.push({
-        StandardsArn: item.StandardsArn!,
-        StandardsInput: item.StandardsInput!,
-        StandardsStatus: item.StandardsStatus!,
-        StandardsSubscriptionArn: item.StandardsSubscriptionArn!,
-      });
-    });
-
-    return existingEnabledStandardArns;
-  }
-
   /**
    * Function to provide list of control arns for standards to be enable or disable
    * @param securityHubClient
@@ -148,7 +136,7 @@ export class SecurityHubStandardsMgmt {
     standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
     awsSecurityHubStandards: { [name: string]: string }[],
   ): Promise<{ disableStandardControlArns: string[]; enableStandardControlArns: string[] }> {
-    let existingEnabledStandards = await this.getExistingEnabledStandards();
+    let existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
     const disableStandardControls: string[] = [];
     const enableStandardControls: string[] = [];
 
@@ -167,7 +155,7 @@ export class SecurityHubStandardsMgmt {
               existingEnabledStandard = existingEnabledStandards.find(
                 (item) => item.StandardsArn === awsSecurityHubStandard[inputStandard.name] && item.StandardsStatus === 'READY',
               );
-              existingEnabledStandards = await this.getExistingEnabledStandards();
+              existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
               console.log('waiting for standard to get in status READY: ', existingEnabledStandards);
               retries++;
             }
@@ -219,7 +207,7 @@ export class SecurityHubStandardsMgmt {
     standardsToEnable: { name: string; enable: boolean; controlsToDisable: string[] | undefined }[],
     awsSecurityHubStandards: { [name: string]: string }[],
   ) {
-    const existingEnabledStandards = await this.getExistingEnabledStandards();
+    const existingEnabledStandards = await getExistingEnabledStandards(this.securityHubClient);
     const toEnableStandardRequests = [];
     const toDisableStandardArns: string[] | undefined = [];
 
@@ -271,4 +259,26 @@ export class SecurityHubStandardsMgmt {
       ),
     );
   }
+}
+
+export async function getExistingEnabledStandards(securityHubClient: SecurityHubClient) {
+  const response = await throttlingBackOff(() => securityHubClient.send(new GetEnabledStandardsCommand({})));
+
+  // Get list of  existing enabled standards within securityhub
+  const existingEnabledStandardArns: {
+    StandardsArn: string;
+    StandardsInput: Record<string, string>;
+    StandardsStatus: StandardsStatus;
+    StandardsSubscriptionArn: string;
+  }[] = [];
+  response.StandardsSubscriptions!.forEach((item) => {
+    existingEnabledStandardArns.push({
+      StandardsArn: item.StandardsArn!,
+      StandardsInput: item.StandardsInput!,
+      StandardsStatus: item.StandardsStatus!,
+      StandardsSubscriptionArn: item.StandardsSubscriptionArn!,
+    });
+  });
+
+  return existingEnabledStandardArns;
 }
