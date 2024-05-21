@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Provider } from 'aws-cdk-lib/custom-resources';
@@ -9,18 +9,6 @@ import { Construct } from 'constructs';
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-
-    const scpBaselineProviderFn = this.node
-      .findChild('superwerker.service-control-policy-baseline-provider')
-      .node.findChild('service-control-policy-baseline-provider')
-      .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpBaselineProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPBaseline');
-
-    const scpEnableProviderFn = this.node
-      .findChild('superwerker.service-control-policy-enable-provider')
-      .node.findChild('service-control-policy-enable-provider')
-      .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpEnableProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPEnable');
 
     const scpPolicyDocumentRoot = new PolicyDocument({});
 
@@ -54,7 +42,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     scpPolicyDocumentRoot.addStatements(backupStatement);
 
-    new CustomResource(this, 'SCPBaseline', {
+    const scpBaselineResource = new CustomResource(this, 'SCPBaseline', {
       serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
       properties: {
         Policy: JSON.stringify(scpPolicyDocumentRoot),
@@ -62,9 +50,25 @@ export class ServiceControlPoliciesStack extends NestedStack {
       },
     });
 
-    new CustomResource(this, 'SCPEnable', {
+    (scpBaselineResource.node.defaultChild as CfnResource).overrideLogicalId('SCPBaseline');
+
+    const scpBaselineProviderFn = this.node
+      .findChild('superwerker.service-control-policy-baseline-provider')
+      .node.findChild('service-control-policy-baseline-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (scpBaselineProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPBaselineCustomResource');
+
+    const scpEnableResource = new CustomResource(this, 'SCPEnable', {
       serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
     });
+
+    (scpEnableResource.node.defaultChild as CfnResource).overrideLogicalId('SCPEnable');
+
+    const scpEnableProviderFn = this.node
+      .findChild('superwerker.service-control-policy-enable-provider')
+      .node.findChild('service-control-policy-enable-provider')
+      .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    (scpEnableProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPEnableCustomResource');
   }
 }
 
@@ -80,32 +84,35 @@ class ServiceControlPolicyBaselineProvider extends Construct {
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
+    const scpBaselineFn = new PythonFunction(this, 'service-control-policy-baseline-on-event', {
+      entry: path.join(__dirname, '..', 'functions', 'scp-create-setup'),
+      runtime: Runtime.PYTHON_3_9,
+      initialPolicy: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          resources: ['*'],
+          actions: [
+            'organizations:EnablePolicyType',
+            'organizations:DisablePolicyType',
+            'organizations:ListRoots',
+            'organizations:CreatePolicy',
+            'organizations:UpdatePolicy',
+            'organizations:DeletePolicy',
+            'organizations:AttachPolicy',
+            'organizations:DetachPolicy',
+            'organizations:ListRoots',
+            'organizations:ListPolicies',
+            'organizations:ListPoliciesForTarget',
+          ],
+        }),
+      ],
+      timeout: Duration.seconds(200),
+    });
+
+    (scpBaselineFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('scpBaselineHandlerFunction');
 
     this.provider = new Provider(this, 'service-control-policy-baseline-provider', {
-      onEventHandler: new PythonFunction(this, 'service-control-policy-baseline-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'scp-create-setup'),
-        runtime: Runtime.PYTHON_3_9,
-        initialPolicy: [
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            resources: ['*'],
-            actions: [
-              'organizations:EnablePolicyType',
-              'organizations:DisablePolicyType',
-              'organizations:ListRoots',
-              'organizations:CreatePolicy',
-              'organizations:UpdatePolicy',
-              'organizations:DeletePolicy',
-              'organizations:AttachPolicy',
-              'organizations:DetachPolicy',
-              'organizations:ListRoots',
-              'organizations:ListPolicies',
-              'organizations:ListPoliciesForTarget',
-            ],
-          }),
-        ],
-        timeout: Duration.seconds(200),
-      }),
+      onEventHandler: scpBaselineFn,
     });
   }
 }
@@ -123,19 +130,23 @@ class ServiceControlPolicyEnableProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
+    const scpEnableFn = new PythonFunction(this, 'service-control-policy-enable-on-event', {
+      timeout: Duration.seconds(200),
+      entry: path.join(__dirname, '..', 'functions', 'scp-enable-setup'),
+      runtime: Runtime.PYTHON_3_9,
+      initialPolicy: [
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          resources: ['*'],
+          actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
+        }),
+      ],
+    });
+
+    (scpEnableFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('scpEnableHandlerFunction');
+
     this.provider = new Provider(this, 'service-control-policy-enable-provider', {
-      onEventHandler: new PythonFunction(this, 'service-control-policy-enable-on-event', {
-        timeout: Duration.seconds(200),
-        entry: path.join(__dirname, '..', 'functions', 'scp-enable-setup'),
-        runtime: Runtime.PYTHON_3_9,
-        initialPolicy: [
-          new PolicyStatement({
-            effect: Effect.ALLOW,
-            resources: ['*'],
-            actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
-          }),
-        ],
-      }),
+      onEventHandler: scpEnableFn,
     });
   }
 }
