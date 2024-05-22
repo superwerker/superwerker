@@ -56,7 +56,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       .findChild('superwerker.service-control-policy-baseline-provider')
       .node.findChild('service-control-policy-baseline-provider')
       .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpBaselineProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPBaselineCustomResource');
+    (scpBaselineProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPCustomResource');
 
     const scpEnableResource = new CustomResource(this, 'SCPEnable', {
       serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
@@ -92,9 +92,6 @@ class ServiceControlPolicyBaselineProvider extends Construct {
           effect: Effect.ALLOW,
           resources: ['*'],
           actions: [
-            'organizations:EnablePolicyType',
-            'organizations:DisablePolicyType',
-            'organizations:ListRoots',
             'organizations:CreatePolicy',
             'organizations:UpdatePolicy',
             'organizations:DeletePolicy',
