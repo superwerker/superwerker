@@ -21,9 +21,17 @@ NagSuppressions.addStackSuppressions(
   Stack.of(superwerkerStack),
   [
     { id: 'AwsSolutions-L1', reason: 'Custom resource lambdas are not using latest runtime' },
-    { id: 'AwsSolutions-IAM4', reason: 'Superwerker requires wildcard permssions for some resources' },
-    { id: 'AwsSolutions-IAM5', reason: 'Even Lambda Basic execution role triggers this' },
-    { id: 'AwsSolutions-S1', reason: 'S3 server access logging not always required' },
+    {
+      id: 'AwsSolutions-IAM4',
+      reason:
+        'Superwerker makes extensive usage of managed policies. Even Lambda Basic execution role added by custom resources triggers this.',
+    },
+    { id: 'AwsSolutions-IAM5', reason: 'Superwerker makes extensive usage of wildcard often required to make organization wide changes.' },
+    {
+      id: 'AwsSolutions-SNS2',
+      reason:
+        'Encryption-at-rest for SNS topics has been removed as a control for the AWS Foundational Security Best Practices (FSBP) standard in April 2024, https://docs.aws.amazon.com/securityhub/latest/userguide/sns-controls.html#sns-1',
+    },
   ],
   true,
 );
