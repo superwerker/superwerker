@@ -102,6 +102,13 @@ export class BackupStack extends NestedStack {
     conformancePackBucket.grantPut(new iam.ServicePrincipal('ses.amazonaws.com'), 'RootMail/*');
     (conformancePackBucket.policy!.node.defaultChild as CfnResource).overrideLogicalId('OrganizationConformancePackBucketPolicy');
 
+    NagSuppressions.addResourceSuppressions(conformancePackBucket, [
+      {
+        id: 'AwsSolutions-S1',
+        reason: 'S3 server access logging not required for organization conformance bucket',
+      },
+    ]);
+
     // AllowGetPutObject
     conformancePackBucket.addToResourcePolicy(
       new iam.PolicyStatement({
