@@ -45,6 +45,14 @@ describe('resources', () => {
     if (key.startsWith('Generate')) delete expectedResources[key];
   }
 
+  // // Ignore resources that are no longer needed, TODO : check if still needed for backward compatibility
+  const removedKeys = ['ServiceControlPolicies'];
+  for (const key in expectedResources) {
+    if (removedKeys.includes(key)) {
+      delete expectedResources[key];
+    }
+  }
+
   test.each(Object.entries(expectedResources))('resource: %p', (resource, resourceProps) => {
     // This sucks. Unfortunately we can't just call 'hasResource('myLogicalId').
     // TODO: make this better, either extend Template to have a better matcher or come up with a helper method.

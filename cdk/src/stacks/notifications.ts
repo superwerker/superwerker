@@ -12,7 +12,7 @@ import {
   aws_sns_subscriptions as subscriptions,
 } from 'aws-cdk-lib';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
-import { Alias } from 'aws-cdk-lib/aws-kms';
+import { ArnPrincipal } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
@@ -25,10 +25,8 @@ export class NotificationsStack extends NestedStack {
     });
 
     // NotificationTopic
-    const aws_sns_kms = Alias.fromAliasName(this, 'aws-managed-sns-kms-key', 'alias/aws/sns');
-
     const notificationTopic = new sns.Topic(this, 'NotificationTopic', {
-      masterKey: aws_sns_kms,
+      enforceSSL: true,
     });
     notificationTopic.addSubscription(new subscriptions.EmailSubscription(notificationsMail.valueAsString));
     (notificationTopic.node.defaultChild as sns.CfnTopic).overrideLogicalId('NotificationTopic');
@@ -46,15 +44,12 @@ export class NotificationsStack extends NestedStack {
 
     (notificationOpsItemCreatedFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('NotificationOpsItemCreated');
 
-    const snsPublishMessagePolicy = new iam.PolicyStatement({
-      actions: ['sns:Publish'],
-      resources: [notificationTopic.topicArn],
-      effect: iam.Effect.ALLOW,
-    });
-
-    notificationOpsItemCreatedFn.role!.attachInlinePolicy(
-      new iam.Policy(this, 'NotificationOpsItemCreatedPolicy', {
-        statements: [snsPublishMessagePolicy],
+    notificationTopic.addToResourcePolicy(
+      new iam.PolicyStatement({
+        actions: ['sns:Publish'],
+        resources: [notificationTopic.topicArn],
+        principals: [new ArnPrincipal(notificationOpsItemCreatedFn.role!.roleArn)],
+        effect: iam.Effect.ALLOW,
       }),
     );
 

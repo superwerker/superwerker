@@ -14,6 +14,7 @@ import {
   Fn,
 } from 'aws-cdk-lib';
 import { AwsCustomResource, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { BackupPolicy } from '../constructs/backup-policy';
 import { BackupPolicyEnable } from '../constructs/backup-policy-enable';
