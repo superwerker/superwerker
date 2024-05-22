@@ -83,9 +83,9 @@ def random_rds_instance_identifier(rds_client_audit):
 
     rds_client_audit.create_db_instance(
         DBInstanceIdentifier=db_instance_identifier,
-        DBInstanceClass='db.t2.micro',
+        DBInstanceClass='db.t4g.micro',
         Engine='mysql',
-        MasterUsername='arnonym',
+        MasterUsername='anonym',
         MasterUserPassword=db_instance_identifier,
         AllocatedStorage=20,
     )
