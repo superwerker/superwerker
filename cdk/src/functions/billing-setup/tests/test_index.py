@@ -5,7 +5,6 @@ from index import CREATE, handler
 
 
 
-
 def test_billing_features_enabled():
 
     os.environ['AWSAPILIB_BILLING_ROLE_ARN'] = 'apilib-role'
