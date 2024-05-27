@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Sets up backup service and remediation role for Superwerker Backup
+
+Resources:
+  AWSBackupDefaultServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AWSBackupDefaultServiceRole
+      Path: /service-role/
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: backup.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+        - arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
+  ConfigRemediationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SuperwerkerBackupTagsEnforcementRemediationRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ssm.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AllowTagging
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:TagResource
+                  - ec2:CreateTags
+                  - rds:AddTagsToResource
+                  - rds:DescribeDBInstances
+                Resource: "*"

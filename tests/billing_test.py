@@ -12,7 +12,7 @@ iam = boto3.client('iam')
 def billing_stack():
     stack_prefix = 'superwerker-Billing'
     stack_list = cfn.list_stacks(
-        StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE']
+        StackStatusFilter=['CREATE_COMPLETE', 'UPDATE_COMPLETE', 'UPDATE_ROLLBACK_COMPLETE']
     )
 
     stack = [stack for stack in stack_list['StackSummaries']
