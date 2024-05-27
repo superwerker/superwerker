@@ -39,6 +39,9 @@ class BillingSetupProvider extends Construct {
       handler: 'handler',
       runtime: Runtime.PYTHON_3_12,
       timeout: Duration.seconds(30),
+      bundling: {
+        assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
+      },
     });
     (billingSetupFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('BillingSetupFunction');
 
