@@ -1,6 +1,7 @@
 import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { BackupStack } from './backup';
+import { BillingStack } from './billing';
 import { BudgetStack } from './budget';
 import { ControlTowerStack } from './control-tower';
 import { GuardDutyStack } from './guardduty';
@@ -150,7 +151,9 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeBackup, 'Yes'),
     });
     backupCondition.overrideLogicalId('IncludeBackup');
-    const backupStack = new BackupStack(this, 'Backup', {});
+    const backupStack = new BackupStack(this, 'Backup', {
+      description: 'Sets up backup configuration and policies.',
+    });
     backupStack.addDependency(controlTowerStack);
     (backupStack.node.defaultChild as CfnStack).overrideLogicalId('Backup');
     (backupStack.node.defaultChild as CfnStack).cfnOptions.condition = backupCondition;
@@ -195,20 +198,24 @@ export class SuperwerkerStack extends Stack {
     const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
     (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
     (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
+    securityHubStack.addDependency(controlTowerStack);
 
     // ServiceControlPolicies
     const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
       expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
     });
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
-      parameters: {
-        IncludeSecurityHub: `${Fn.conditionIf('IncludeSecurityHub', 'true', 'false')}`,
-        IncludeBackup: `${Fn.conditionIf('IncludeBackup', 'true', 'false')}`,
-      },
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {});
+    const rolloutScps = new CfnCondition(this, 'rolloutscps', {
+      expression: Fn.conditionAnd(backupCondition, serviceControlPoliciesCondition),
     });
     serviceControlPoliciesStack.addDependency(controlTowerStack);
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = rolloutScps;
+
+    // Billing
+    const billingStack = new BillingStack(this, 'Billing', {});
+    billingStack.addDependency(controlTowerStack);
+    (billingStack.node.defaultChild as CfnStack).overrideLogicalId('Billing');
   }
 }

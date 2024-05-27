@@ -1,18 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
-Metadata:
-  SuperwerkerVersion: 0.0.0-DEVELOPMENT
-  cfn-lint:
-    config:
-      ignore_checks:
-        - E9007
-        - EPolicyWildcardPrincipal
-        - E1029
 
 Transform: AWS::Serverless-2016-10-31
 Description: Sets up backups. (qs-1s3rsr7la)
 
 Resources:
-
   OrganizationsLookup:
     Type: AWS::CloudFormation::CustomResource
     Properties:
@@ -86,7 +77,7 @@ Resources:
     Properties:
       Bucket: !Ref OrganizationConformancePackBucket
       PolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Sid: AllowGetPutObject
             Effect: Allow
@@ -110,6 +101,16 @@ Resources:
                 aws:PrincipalOrgID: !GetAtt OrganizationsLookup.OrgId
               ArnLike:
                 aws:PrincipalArn: !Sub arn:${AWS::Partition}:iam::*:role/aws-service-role/config-conforms.amazonaws.com/AWSServiceRoleForConfigConforms
+          - Sid: AllowSSLRequestsOnly
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !Sub ${OrganizationConformancePackBucket.Arn}
+              - !Sub ${OrganizationConformancePackBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
 
   BackupResources:
     Type: AWS::CloudFormation::StackSet
@@ -120,8 +121,8 @@ Resources:
       OperationPreferences:
         MaxConcurrentPercentage: 50
       Capabilities:
-          - CAPABILITY_IAM
-          - CAPABILITY_NAMED_IAM
+        - CAPABILITY_IAM
+        - CAPABILITY_NAMED_IAM
       AutoDeployment:
         Enabled: true
         RetainStacksOnAccountRemoval: false
@@ -298,14 +299,14 @@ Resources:
     Properties:
       DocumentType: Automation
       Content:
-        schemaVersion: '0.3'
-        assumeRole: '{{ AutomationAssumeRole }}'
+        schemaVersion: "0.3"
+        assumeRole: "{{ AutomationAssumeRole }}"
         parameters:
           ResourceValue:
             type: String
           AutomationAssumeRole:
             type: String
-            default: ''
+            default: ""
           ResourceType:
             type: String
         mainSteps:
@@ -314,34 +315,34 @@ Resources:
             inputs:
               Choices:
                 - NextStep: tagDynamoDbTable
-                  Variable: '{{ ResourceType }}'
+                  Variable: "{{ ResourceType }}"
                   StringEquals: AWS::DynamoDB::Table
                 - NextStep: tagEbsVolume
-                  Variable: '{{ ResourceType }}'
+                  Variable: "{{ ResourceType }}"
                   StringEquals: AWS::EC2::Volume
                 - NextStep: getRdsDBInstanceArnByDbInstanceResourceIdentifier
-                  Variable: '{{ ResourceType }}'
+                  Variable: "{{ ResourceType }}"
                   StringEquals: AWS::RDS::DBInstance
           - name: tagDynamoDbTable
-            action: 'aws:executeAwsApi'
+            action: "aws:executeAwsApi"
             inputs:
               Service: dynamodb
               Api: TagResource
               Tags:
-                - Key: 'superwerker:backup'
+                - Key: "superwerker:backup"
                   Value: daily
-              ResourceArn: !Sub 'arn:${AWS::Partition}:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}'
+              ResourceArn: !Sub "arn:${AWS::Partition}:dynamodb:{{ global:REGION }}:{{ global:ACCOUNT_ID }}:table/{{ ResourceValue }}"
             isEnd: true
           - name: tagEbsVolume
-            action: 'aws:executeAwsApi'
+            action: "aws:executeAwsApi"
             inputs:
               Service: ec2
               Api: CreateTags
               Tags:
-                - Key: 'superwerker:backup'
+                - Key: "superwerker:backup"
                   Value: daily
               Resources:
-                - '{{ ResourceValue }}'
+                - "{{ ResourceValue }}"
             isEnd: true
           - name: getRdsDBInstanceArnByDbInstanceResourceIdentifier
             action: aws:executeAwsApi
@@ -351,19 +352,19 @@ Resources:
               Filters:
                 - Name: dbi-resource-id
                   Values:
-                    - '{{ ResourceValue }}'
+                    - "{{ ResourceValue }}"
             outputs:
               - Name: DBInstanceArn
                 Selector: $.DBInstances[0].DBInstanceArn
           - name: tagRdsInstance
-            action: 'aws:executeAwsApi'
+            action: "aws:executeAwsApi"
             inputs:
               Service: rds
               Api: AddTagsToResource
               Tags:
-                - Key: 'superwerker:backup'
+                - Key: "superwerker:backup"
                   Value: daily
-              ResourceName: '{{ getRdsDBInstanceArnByDbInstanceResourceIdentifier.DBInstanceArn }}'
+              ResourceName: "{{ getRdsDBInstanceArnByDbInstanceResourceIdentifier.DBInstanceArn }}"
             isEnd: true
 
   BackupTagRemediationPublic:
@@ -570,7 +571,7 @@ Resources:
       cfn-lint:
         config:
           ignore_checks:
-          - EIAMPolicyWildcardResource
+            - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
       Runtime: python3.9

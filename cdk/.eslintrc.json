@@ -4,27 +4,17 @@
     "node": true
   },
   "root": true,
-  "plugins": [
-    "@typescript-eslint",
-    "import",
-    "prettier"
-  ],
+  "plugins": ["@typescript-eslint", "import", "prettier", "@stylistic"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2018,
     "sourceType": "module",
     "project": "**/tsconfig.json"
   },
-  "extends": [
-    "plugin:import/typescript",
-    "prettier"
-  ],
+  "extends": ["plugin:import/typescript", "prettier"],
   "settings": {
     "import/parsers": {
-      "@typescript-eslint/parser": [
-        ".ts",
-        ".tsx"
-      ]
+      "@typescript-eslint/parser": [".ts", ".tsx"]
     },
     "import/resolver": {
       "node": {
@@ -36,23 +26,11 @@
       }
     }
   },
-  "ignorePatterns": [
-    "*.js",
-    "!.projenrc.js",
-    "*.d.ts",
-    "node_modules/",
-    "*.generated.ts",
-    "coverage"
-  ],
+  "ignorePatterns": ["*.js", "!.projenrc.js", "*.d.ts", "node_modules/", "*.generated.ts", "coverage"],
   "rules": {
     "prettier/prettier": 2,
-    "indent": [
-      "off"
-    ],
-    "@typescript-eslint/indent": [
-      "error",
-      2
-    ],
+    "indent": ["off"],
+    "@stylistic/indent": ["error", 2],
     "quotes": [
       "error",
       "single",
@@ -60,10 +38,7 @@
         "avoidEscape": true
       }
     ],
-    "comma-dangle": [
-      "error",
-      "always-multiline"
-    ],
+    "comma-dangle": ["error", "always-multiline"],
     "comma-spacing": [
       "error",
       {
@@ -77,18 +52,9 @@
         "ignoreEOLComments": false
       }
     ],
-    "array-bracket-spacing": [
-      "error",
-      "never"
-    ],
-    "array-bracket-newline": [
-      "error",
-      "consistent"
-    ],
-    "object-curly-spacing": [
-      "error",
-      "always"
-    ],
+    "array-bracket-spacing": ["error", "never"],
+    "array-bracket-newline": ["error", "consistent"],
+    "object-curly-spacing": ["error", "always"],
     "object-curly-newline": [
       "error",
       {
@@ -102,9 +68,7 @@
         "allowAllPropertiesOnSameLine": true
       }
     ],
-    "keyword-spacing": [
-      "error"
-    ],
+    "keyword-spacing": ["error"],
     "brace-style": [
       "error",
       "1tbs",
@@ -112,21 +76,10 @@
         "allowSingleLine": true
       }
     ],
-    "space-before-blocks": [
-      "error"
-    ],
-    "curly": [
-      "error",
-      "multi-line",
-      "consistent"
-    ],
-    "@typescript-eslint/member-delimiter-style": [
-      "error"
-    ],
-    "semi": [
-      "error",
-      "always"
-    ],
+    "space-before-blocks": ["error"],
+    "curly": ["error", "multi-line", "consistent"],
+    "@stylistic/member-delimiter-style": "error",
+    "@stylistic/semi": "error",
     "max-len": [
       "error",
       {
@@ -138,74 +91,38 @@
         "ignoreRegExpLiterals": true
       }
     ],
-    "quote-props": [
-      "error",
-      "consistent-as-needed"
-    ],
-    "@typescript-eslint/no-require-imports": [
-      "error"
-    ],
+    "quote-props": ["error", "consistent-as-needed"],
+    "@typescript-eslint/no-require-imports": ["error"],
     "import/no-extraneous-dependencies": [
       "error",
       {
-        "devDependencies": [
-          "**/test/**",
-          "**/build-tools/**",
-          "**/scripts/**"
-        ],
+        "devDependencies": ["**/test/**", "**/build-tools/**", "**/scripts/**"],
         "optionalDependencies": false,
         "peerDependencies": true
       }
     ],
-    "import/no-unresolved": [
-      "error"
-    ],
+    "import/no-unresolved": ["error"],
     "import/order": [
       "warn",
       {
-        "groups": [
-          "builtin",
-          "external"
-        ],
+        "groups": ["builtin", "external"],
         "alphabetize": {
           "order": "asc",
           "caseInsensitive": true
         }
       }
     ],
-    "no-duplicate-imports": [
-      "error"
-    ],
-    "no-shadow": [
-      "off"
-    ],
-    "@typescript-eslint/no-shadow": [
-      "error"
-    ],
-    "key-spacing": [
-      "error"
-    ],
-    "no-multiple-empty-lines": [
-      "error"
-    ],
-    "@typescript-eslint/no-floating-promises": [
-      "error"
-    ],
-    "no-return-await": [
-      "off"
-    ],
-    "@typescript-eslint/return-await": [
-      "error"
-    ],
-    "no-trailing-spaces": [
-      "error"
-    ],
-    "dot-notation": [
-      "error"
-    ],
-    "no-bitwise": [
-      "error"
-    ],
+    "no-duplicate-imports": ["error"],
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": "error",
+    "key-spacing": ["error"],
+    "no-multiple-empty-lines": ["error"],
+    "@typescript-eslint/no-floating-promises": "error",
+    "no-return-await": ["off"],
+    "@typescript-eslint/return-await": "error",
+    "no-trailing-spaces": ["error"],
+    "dot-notation": ["error"],
+    "no-bitwise": ["error"],
     "@typescript-eslint/member-ordering": [
       "error",
       {
@@ -225,9 +142,7 @@
   },
   "overrides": [
     {
-      "files": [
-        ".projenrc.js"
-      ],
+      "files": [".projenrc.js"],
       "rules": {
         "@typescript-eslint/no-require-imports": "off",
         "import/no-extraneous-dependencies": "off"

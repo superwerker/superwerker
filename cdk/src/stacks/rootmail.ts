@@ -1,3 +1,4 @@
+import Fs from 'fs';
 import {
   Duration,
   aws_iam as iam,
@@ -11,11 +12,11 @@ import {
   Stack,
   CfnParameter,
 } from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib';
+import { CfnRole } from 'aws-cdk-lib/aws-iam';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
-import * as cdk from 'aws-cdk-lib';
-import Fs from 'fs';
-import { CfnRole } from 'aws-cdk-lib/aws-iam';
 
 export class RootmailStack extends NestedStack {
   public readonly emailBucket: s3.Bucket;
@@ -53,12 +54,17 @@ export class RootmailStack extends NestedStack {
     this.emailBucket = new s3.Bucket(this, 'EmailBucket', {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
     });
     (this.emailBucket.node.defaultChild as CfnResource).overrideLogicalId('EmailBucket');
     this.emailBucket.applyRemovalPolicy(RemovalPolicy.RETAIN);
 
     this.emailBucket.grantPut(new iam.ServicePrincipal('ses.amazonaws.com'), 'RootMail/*');
     (this.emailBucket.policy!.node.defaultChild as CfnResource).overrideLogicalId('EmailBucketPolicy');
+
+    NagSuppressions.addResourceSuppressions(this.emailBucket, [
+      { id: 'AwsSolutions-S1', reason: 'S3 server access logging not required for this bucket' },
+    ]);
 
     // Hosted zone
     const hostedZone = new r53.HostedZone(this, 'HostedZone', {

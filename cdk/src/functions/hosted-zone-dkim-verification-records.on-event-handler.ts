@@ -1,18 +1,17 @@
-// eslint-disable-next-line import/no-unresolved
 import { SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
-import * as AWSCDKAsyncCustomResource from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import { CdkCustomResourceEvent, CloudFormationCustomResourceUpdateEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 export const PROP_DOMAIN = 'Domain';
 export const ATTR_VERIFICATION_TOKEN = 'VerificationToken';
 export const ATTR_DKIM_TOKENS = 'DkimTokens';
 
 const SES = new SESClient({ region: 'eu-west-1' });
 
-export async function handler(event: AWSCDKAsyncCustomResource.OnEventRequest): Promise<AWSCDKAsyncCustomResource.OnEventResponse> {
+export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   const domain = event.ResourceProperties[PROP_DOMAIN];
   switch (event.RequestType) {
     case 'Create':
     case 'Update':
-      let physicalResourceId = event.PhysicalResourceId;
+      let physicalResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId;
       if (event.RequestType === 'Create') {
         physicalResourceId = event.RequestId;
       }

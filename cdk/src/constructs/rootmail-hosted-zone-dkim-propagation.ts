@@ -1,8 +1,8 @@
+import * as path from 'path';
 import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda, aws_ssm as ssm } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
-import * as path from 'path';
 import { PROP_DOMAIN, PROP_PARAM_NAME } from '../functions/hosted-zone-dkim-propagation.on-event-handler';
 
 export interface HostedZoneDKIMPropagationProps {

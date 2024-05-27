@@ -1,0 +1,95 @@
+import boto3
+import time
+import random
+import re
+
+o = boto3.client("organizations")
+
+CREATE = 'Create'
+UPDATE = 'Update'
+DELETE = 'Delete'
+TAG_POLICY = "TAG_POLICY"
+
+
+def root():
+    return o.list_roots()['Roots'][0]
+
+
+def root_id():
+    return root()['Id']
+
+def with_retry(function, **kwargs):
+    for i in [0, 3, 9, 15, 30]:
+        # Random sleep to not run into concurrency problems when adding or attaching multiple TAG_POLICYs
+        # They have to be added/updated/deleted one after the other
+        sleeptime = i + random.randint(0, 5)
+        print('Running {} with Sleep of {}'.format(function.__name__, sleeptime))
+        time.sleep(sleeptime)
+        try:
+            response = function(**kwargs)
+            print("Response for {}: {}".format(function.__name__, response))
+            return response
+        except o.exceptions.ConcurrentModificationException as e:
+            print('Exception: {}'.format(e))
+    raise Exception
+
+
+def handler(event, context):
+    RequestType = event["RequestType"]
+    Properties = event["ResourceProperties"]
+    LogicalResourceId = event["LogicalResourceId"]
+    PhysResourceId = event.get("PhysicalResourceId")
+    Policy = Properties["Policy"]
+    Attach = Properties["Attach"] == 'true'
+
+    print('RequestType: {}'.format(RequestType))
+    print('PhysicalResourceId: {}'.format(PhysResourceId))
+    print('LogicalResourceId: {}'.format(LogicalResourceId))
+    print('Attach: {}'.format(Attach))
+
+    parameters = dict(
+        Content=Policy,
+        Description="superwerker - {}".format(LogicalResourceId),
+        Name=LogicalResourceId,
+    )
+
+    policy_id = PhysResourceId
+
+    try:
+        if RequestType == CREATE:
+            print('Creating Policy: {}'.format(LogicalResourceId))
+            response = with_retry(o.create_policy,
+                                    **parameters, Type=TAG_POLICY
+                                    )
+            policy_id = response["Policy"]["PolicySummary"]["Id"]
+            if Attach:
+                with_retry(o.attach_policy, PolicyId=policy_id, TargetId=root_id())
+        elif RequestType == UPDATE:
+            print('Updating Policy: {}'.format(LogicalResourceId))
+            with_retry(o.update_policy, PolicyId=policy_id, **parameters)
+        elif RequestType == DELETE:
+            print('Deleting Policy: {}'.format(LogicalResourceId))
+            # Same as above
+            if re.match('p-[0-9a-z]+', policy_id):
+                if policy_attached(policy_id):
+                    with_retry(o.detach_policy, PolicyId=policy_id, TargetId=root_id())
+                with_retry(o.delete_policy, PolicyId=policy_id)
+            else:
+                print('{} is no valid PolicyId'.format(policy_id))
+        else:
+            raise Exception('Unexpected RequestType: {}'.format(RequestType))
+
+        return {
+            'PhysicalResourceId': policy_id,
+        }
+    
+    except Exception as e:
+        print(e)
+        print(event)
+        raise e
+
+
+def policy_attached(policy_id):
+    return [p['Id'] for p in
+            o.list_policies_for_target(TargetId=root_id(), Filter='TAG_POLICY')['Policies'] if
+            p['Id'] == policy_id]

@@ -16,6 +16,7 @@ export class BudgetStack extends NestedStack {
     super(scope, id, props);
 
     const budgetNotificationTopic = new sns.Topic(this, 'BudgetNotification');
+
     (budgetNotificationTopic.node.defaultChild as CfnTopic).overrideLogicalId('BudgetNotification');
 
     const snsTopicPolicy = new sns.TopicPolicy(this, 'BudgetNotificationPolicy', {
@@ -29,6 +30,7 @@ export class BudgetStack extends NestedStack {
           }),
         ],
       }),
+      enforceSSL: true,
       topics: [budgetNotificationTopic],
     });
     (snsTopicPolicy.node.defaultChild as CfnTopic).overrideLogicalId('BudgetNotificationPolicy');

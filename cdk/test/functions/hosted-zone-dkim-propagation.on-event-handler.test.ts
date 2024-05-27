@@ -1,4 +1,9 @@
-import { OnEventRequest } from 'aws-cdk-lib/custom-resources/lib/provider-framework/types';
+import {
+  CloudFormationCustomResourceCreateEvent,
+  CloudFormationCustomResourceDeleteEvent,
+  CloudFormationCustomResourceUpdateEvent,
+  Context,
+} from 'aws-lambda';
 import 'aws-sdk-client-mock-jest';
 import { handler } from '../../src/functions/hosted-zone-dkim-propagation.on-event-handler';
 
@@ -17,9 +22,9 @@ describe('hosted-zone-dkim-propagation.on-event-handler', () => {
         Domain: 'aws.testdomain.com',
         PropagationParamName: '/superwerker/propagation_status',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as CloudFormationCustomResourceCreateEvent;
 
-    const result = await handler(event);
+    const result = await handler(event, {} as Context);
 
     expect(result).toMatchObject({
       PhysicalResourceId: 'myRequestId123123',
@@ -40,9 +45,9 @@ describe('hosted-zone-dkim-propagation.on-event-handler', () => {
         ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
         Domain: 'aws.testdomain.com',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as CloudFormationCustomResourceDeleteEvent;
 
-    const result = await handler(event);
+    const result = await handler(event, {} as Context);
 
     expect(result).toMatchObject({
       PhysicalResourceId: 'myPhysicalResourceId',
@@ -63,9 +68,9 @@ describe('hosted-zone-dkim-propagation.on-event-handler', () => {
         ServiceToken: 'arn:aws:lambda:eu-central-1:123123:function:xxx',
         Domain: 'aws.testdomain.com',
       },
-    } as unknown as OnEventRequest;
+    } as unknown as CloudFormationCustomResourceUpdateEvent;
 
-    const result = await handler(event);
+    const result = await handler(event, {} as Context);
 
     expect(result).toMatchObject({
       PhysicalResourceId: 'myPhysicalResourceId',
