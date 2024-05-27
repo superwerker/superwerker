@@ -1,10 +1,7 @@
 {
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
-    "rootDirs": [
-      "src",
-      "test"
-    ],
+    "rootDirs": ["src", "test"],
     "outDir": "lib",
     "declaration": true,
     "experimentalDecorators": true,
@@ -15,15 +12,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "resolveJsonModule": true,
-    "stripInternal": true,
+    "stripInternal": true
   },
-  "include": [
-    "src/**/*.ts",
-    "test/**/*.ts"
-  ],
-  "exclude": [
-    "cdk.out",
-    "node_modules",
-    "lib"
-  ]
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["cdk.out", "node_modules", "lib"]
 }
