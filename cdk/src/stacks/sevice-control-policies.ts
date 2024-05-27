@@ -1,16 +1,14 @@
 import * as path from 'path';
-import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
 
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-
-    const scpPolicyDocumentRoot = new PolicyDocument({});
 
     //Backup
     const backupStatement = new PolicyStatement({
@@ -40,43 +38,73 @@ export class ServiceControlPoliciesStack extends NestedStack {
       sid: 'SWProtectBackup',
     });
 
-    scpPolicyDocumentRoot.addStatements(backupStatement);
+    const scpPolicyDocumentRoot = new PolicyDocument({
+      statements: [backupStatement],
+    });
 
-    const scpBaselineResource = new CustomResource(this, 'SCPBaseline', {
-      serviceToken: ServiceControlPolicyBaselineProvider.getOrCreate(this),
+    //Deny Expensive API Calls in the Sandbox OU
+    const denyExpensiveAPICallsStatement = new PolicyStatement({
+      sid: 'DenyExpensiveResourceCreation',
+      effect: Effect.DENY,
+      actions: [
+        'route53domains:RegisterDomain',
+        'route53domains:RenewDomain',
+        'route53domains:TransferDomain',
+        'ec2:ModifyReservedInstances',
+        'ec2:PurchaseHostReservation',
+        'ec2:PurchaseReservedInstancesOffering',
+        'ec2:PurchaseScheduledInstances',
+        'rds:PurchaseReservedDBInstancesOffering',
+        'dynamodb:PurchaseReservedCapacityOfferings',
+        's3:PutObjectRetention',
+        's3:PutObjectLegalHold',
+        's3:BypassGovernanceRetention',
+        's3:PutBucketObjectLockConfiguration',
+        'elasticache:PurchaseReservedCacheNodesOffering',
+        'redshift:PurchaseReservedNodeOffering',
+        'savingsplans:CreateSavingsPlan',
+        'aws-marketplace:AcceptAgreementApprovalRequest',
+        'aws-marketplace:Subscribe',
+        'shield:CreateSubscription',
+        'acm-pca:CreateCertificateAuthority',
+        'es:PurchaseReservedElasticsearchInstanceOffering',
+        'outposts:CreateOutpost',
+        'snowball:CreateCluster',
+        's3-object-lambda:PutObjectLegalHold',
+        's3-object-lambda:PutObjectRetention',
+        'glacier:InitiateVaultLock',
+        'glacier:CompleteVaultLock',
+        'es:PurchaseReservedInstanceOffering',
+        'backup:PutBackupVaultLockConfiguration',
+      ],
+      resources: ['*'],
+    });
+
+    const scpPolicyDocumentSandbox = new PolicyDocument({
+      statements: [denyExpensiveAPICallsStatement],
+    });
+
+    new CustomResource(this, 'SCPRoot', {
+      serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       properties: {
-        Policy: JSON.stringify(scpPolicyDocumentRoot),
-        Attach: 'true',
+        policyRoot: JSON.stringify(scpPolicyDocumentRoot),
+        policySandbox: JSON.stringify(scpPolicyDocumentSandbox),
+        scpNameRoot: 'superwerker-root',
+        scpNameSandbox: 'superwerker-sandbox',
       },
     });
 
-    (scpBaselineResource.node.defaultChild as CfnResource).overrideLogicalId('SCPBaseline');
-
-    const scpBaselineProviderFn = this.node
-      .findChild('superwerker.service-control-policy-baseline-provider')
-      .node.findChild('service-control-policy-baseline-provider')
-      .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpBaselineProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPCustomResource');
-
-    const scpEnableResource = new CustomResource(this, 'SCPEnable', {
-      serviceToken: ServiceControlPolicyEnableProvider.getOrCreate(this),
+    new CustomResource(this, 'SCPSandbox', {
+      serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
     });
-
-    (scpEnableResource.node.defaultChild as CfnResource).overrideLogicalId('SCPEnable');
-
-    const scpEnableProviderFn = this.node
-      .findChild('superwerker.service-control-policy-enable-provider')
-      .node.findChild('service-control-policy-enable-provider')
-      .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpEnableProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPEnableCustomResource');
   }
 }
 
-class ServiceControlPolicyBaselineProvider extends Construct {
+class ServiceControlPolicyRootProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-baseline-provider';
-    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyBaselineProvider) || new ServiceControlPolicyBaselineProvider(stack, id);
+    const id = 'superwerker.service-control-policy-root-provider';
+    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyRootProvider) || new ServiceControlPolicyRootProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -84,9 +112,9 @@ class ServiceControlPolicyBaselineProvider extends Construct {
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
-    const scpBaselineFn = new PythonFunction(this, 'service-control-policy-baseline-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'scp-create-setup'),
-      runtime: Runtime.PYTHON_3_9,
+    const scpBaselineFn = new NodejsFunction(this, 'service-control-policy-root-on-event', {
+      entry: path.join(__dirname, '..', 'functions', 'service-control-policies-root.ts'),
+      runtime: Runtime.NODEJS_20_X,
       initialPolicy: [
         new PolicyStatement({
           effect: Effect.ALLOW,
@@ -106,19 +134,17 @@ class ServiceControlPolicyBaselineProvider extends Construct {
       timeout: Duration.seconds(200),
     });
 
-    (scpBaselineFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('scpBaselineHandlerFunction');
-
-    this.provider = new Provider(this, 'service-control-policy-baseline-provider', {
+    this.provider = new Provider(this, 'service-control-policy-root-provider', {
       onEventHandler: scpBaselineFn,
     });
   }
 }
 
-class ServiceControlPolicyEnableProvider extends Construct {
+class ServiceControlPolicySandboxProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-enable-provider';
-    const x = (stack.node.tryFindChild(id) as ServiceControlPolicyEnableProvider) || new ServiceControlPolicyEnableProvider(stack, id);
+    const id = 'superwerker.service-control-policy-sandbox-provider';
+    const x = (stack.node.tryFindChild(id) as ServiceControlPolicySandboxProvider) || new ServiceControlPolicySandboxProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -127,10 +153,9 @@ class ServiceControlPolicyEnableProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    const scpEnableFn = new PythonFunction(this, 'service-control-policy-enable-on-event', {
-      timeout: Duration.seconds(200),
-      entry: path.join(__dirname, '..', 'functions', 'scp-enable-setup'),
-      runtime: Runtime.PYTHON_3_9,
+    const scpEnableFn = new NodejsFunction(this, 'service-control-policy-sandbox-on-event', {
+      entry: path.join(__dirname, '..', 'functions', 'service-control-policies-sandbox.ts'),
+      runtime: Runtime.NODEJS_20_X,
       initialPolicy: [
         new PolicyStatement({
           effect: Effect.ALLOW,
@@ -142,7 +167,7 @@ class ServiceControlPolicyEnableProvider extends Construct {
 
     (scpEnableFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('scpEnableHandlerFunction');
 
-    this.provider = new Provider(this, 'service-control-policy-enable-provider', {
+    this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
       onEventHandler: scpEnableFn,
     });
   }
