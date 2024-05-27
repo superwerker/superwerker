@@ -116,6 +116,7 @@ export class SuperwerkerStack extends Stack {
       parameters: {
         Domain: domain.valueAsString,
         Subdomain: subdomain.valueAsString,
+        NotificationsMail: notificationsMail.valueAsString,
         PropagationParameterName: SuperwerkerStack.PROPAGATION_PARAM_NAME,
         HostedZoneParameterName: SuperwerkerStack.HOSTEDZONE_PARAM_NAME,
         RootmailPasswordParameterName: SuperwerkerStack.ROOTMAIL_PASSWORD_PARAM_NAME,

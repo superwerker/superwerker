@@ -5,3 +5,4 @@ retrying
 pytest
 pytest-timeout
 pytest-retry
+pytest-dependency

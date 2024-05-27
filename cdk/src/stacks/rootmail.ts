@@ -1,3 +1,4 @@
+import * as path from 'path';
 import {
   aws_route53 as r53,
   aws_ssm as ssm,
@@ -11,12 +12,11 @@ import {
   aws_events as events,
   aws_events_targets as targets,
 } from 'aws-cdk-lib';
-import { Construct } from 'constructs';
-import * as path from 'path';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Construct } from 'constructs';
+import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 import { WorkmailOrganization } from '../constructs/rootmail-workmail-organization';
 import { WorkmailUser } from '../constructs/rootmail-workmail-user';
-import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 
 export class RootmailStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -30,6 +30,11 @@ export class RootmailStack extends NestedStack {
       type: 'String',
       default: 'aws',
     });
+
+    const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
+      type: 'String',
+    });
+    console.log(notificationsMail);
 
     const propagationParameterName = new CfnParameter(this, 'PropagationParameterName', {
       type: 'String',
@@ -45,6 +50,7 @@ export class RootmailStack extends NestedStack {
       type: 'String',
       default: '/superwerker/rootmail_password',
     });
+    console.log(rootmailPasswordParameterName);
 
     const hostedZone = new r53.HostedZone(this, 'HostedZone', {
       zoneName: `${subdomain.valueAsString}.${domain.valueAsString}`,
@@ -84,6 +90,7 @@ export class RootmailStack extends NestedStack {
       domain: `${subdomain.valueAsString}.${domain.valueAsString}`,
       workmailOrgId: workmailOrganization.workmailOrgId,
       passwordParam: rootmailPasswordParameterName.valueAsString,
+      notificationsMail: notificationsMail.valueAsString,
     });
 
     const sesRuleSetFunction = new NodejsFunction(this, 'sesRuleSetFunction', {

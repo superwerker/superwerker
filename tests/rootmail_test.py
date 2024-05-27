@@ -3,7 +3,13 @@ import boto3
 import uuid
 from retrying import retry
 import warnings
-from exchangelib import Credentials, Account, Configuration, DELEGATE, BASIC, Build, Version
+from exchangelib import Credentials, Account, Configuration, DELEGATE, BASIC, Build, Version, ExtendedProperty, Message
+
+
+class IconIndex(ExtendedProperty):
+    # https://learn.microsoft.com/en-us/office/client-developer/outlook/mapi/pidtagiconindex-canonical-property?redirectedfrom=MSDN
+    property_tag = 0x1080
+    property_type = "Integer"
 
 ses = boto3.client('ses', region_name='eu-west-1')
 ssm = boto3.client('ssm')
@@ -20,6 +26,36 @@ def domain():
         IdentityType='Domain',
     )
     return [identity for identity in res['Identities'] if "superwerker" in identity][0]
+
+@pytest.fixture(scope='session')
+def email_subject():
+    id = uuid.uuid4().hex
+    return id
+
+@pytest.fixture(scope='session')
+def email_account(domain):
+    ssmRes = ssm.get_parameter(
+        Name="/superwerker/rootmail_password", 
+        WithDecryption=True)
+    password = ssmRes['Parameter']['Value']
+
+    credentials = Credentials(username="root@{domain}".format(domain=domain), password=password)
+
+    config = Configuration(
+        credentials=credentials, 
+        service_endpoint='https://ews.mail.eu-west-1.awsapps.com/EWS/Exchange.asmx',
+        auth_type='basic'
+    )
+
+    account = Account(
+        primary_smtp_address="root@{domain}".format(domain=domain),
+        config=config,
+        autodiscover=False
+    )
+
+    Message.register("icon_index", IconIndex)
+
+    return account
 
 def test_workmail_resources_exist(domain):
 
@@ -40,17 +76,27 @@ def test_workmail_resources_exist(domain):
     assert 1 == len(userList['Users'])
     assert 'ENABLED' == userList['Users'][0]['State']
 
+@pytest.mark.dependency()
+def test_email_delivery(domain, email_subject, email_account):
 
-def test_email_delivery(domain):
+    send_email(domain, email_subject, 'This is a mail body')
 
-    id = uuid.uuid4().hex
-    send_email(domain, id, 'This is a mail body')
 
-    msg = get_email_by_subject(domain, id)
+    msg = get_email_by_subject(email_subject, email_account)
 
     assert "test@{domain}".format(domain=domain) == msg.sender.email_address
-    assert id == msg.subject
+    assert email_subject == msg.subject
 
+
+@pytest.mark.dependency(depends=['test_email_delivery'])
+def test_email_redirect_rule(email_subject, email_account):
+    msg = get_email_by_subject(email_subject, email_account)
+    print(msg.icon_index)
+    print(email_subject)
+
+    # Assert that message has been forwarded 
+    # https://learn.microsoft.com/en-us/office/client-developer/outlook/mapi/pidtagiconindex-canonical-property?redirectedfrom=MSDN
+    assert 262 == msg.icon_index 
 
 def send_email(domain, id, body_text=None, body_html=None, subject=None):
 
@@ -82,27 +128,7 @@ def send_email(domain, id, body_text=None, body_html=None, subject=None):
     return res
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=20000)
-def get_email_by_subject(domain, subject):
-
-    ssmRes = ssm.get_parameter(
-        Name="/superwerker/rootmail_password", 
-        WithDecryption=True)
-    password = ssmRes['Parameter']['Value']
-
-    credentials = Credentials(username="root@{domain}".format(domain=domain), password=password)
-
-    config = Configuration(
-        credentials=credentials, 
-        service_endpoint='https://ews.mail.eu-west-1.awsapps.com/EWS/Exchange.asmx',
-        auth_type='basic'
-    )
-
-    account = Account(
-        primary_smtp_address="root@{domain}".format(domain=domain),
-        config=config,
-        autodiscover=False
-    )
-
+def get_email_by_subject(subject, account):
     msgQuerySet = account.inbox.filter(subject__contains=subject)
 
     if msgQuerySet.count() == 0:

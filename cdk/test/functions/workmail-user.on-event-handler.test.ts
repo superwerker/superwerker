@@ -15,6 +15,34 @@ const ssmClientMock = mockClient(SSMClient);
 const workmailClientMock = mockClient(WorkMailClient);
 jest.mock('uuid', () => ({ v4: () => '123123123' }));
 
+jest.mock('ews-javascript-api', () => ({
+  ExchangeService: function () {
+    return {
+      UpdateInboxRules: jest.fn(),
+    };
+  },
+  WebCredentials: jest.fn(),
+  Uri: jest.fn(),
+  ExchangeVersion: {
+    Exchange2010_SP2: 'Exchange2010_SP2',
+  },
+  Rule: function () {
+    return {
+      Conditions: {
+        ContainsSenderStrings: {
+          Add: jest.fn(),
+        },
+      },
+      Actions: {
+        RedirectToRecipients: {
+          Add: jest.fn(),
+        },
+      },
+    };
+  },
+  CreateRuleOperation: jest.fn(),
+}));
+
 describe('workmail-user.on-event-handler', () => {
   beforeEach(() => {
     jest.resetAllMocks();
@@ -22,6 +50,7 @@ describe('workmail-user.on-event-handler', () => {
     workmailClientMock.reset();
   });
 
+  // TODO: fast forward setTimeout() so that we can reduce the time to run this test
   it('creates SSM parameter & workmail user on "create" event', async () => {
     workmailClientMock.on(CreateUserCommand).resolves({ UserId: 'userid123' });
 
@@ -66,10 +95,12 @@ describe('workmail-user.on-event-handler', () => {
       Email: 'root@aws.testdomain.com',
     });
 
+    // TODO: verify if ExchangeService.UpdateInboxRules was called
+
     expect(result).toMatchObject({
       PhysicalResourceId: 'userid123',
     });
-  });
+  }, 15000);
 
   it('deletes workmail user & SSM parameter when receiving "delete" event', async () => {
     const event = {

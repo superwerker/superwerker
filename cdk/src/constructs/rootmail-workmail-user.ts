@@ -1,18 +1,20 @@
+import * as path from 'path';
 import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
-import * as path from 'path';
-import { PROP_DOMAIN, PROP_ORG_ID, PROP_PASSWORD_PARAM } from '../functions/workmail-user.on-event-handler';
+import { PROP_DOMAIN, PROP_ORG_ID, PROP_PASSWORD_PARAM, PROP_NOTIF_EMAIL } from '../functions/workmail-user.on-event-handler';
 
 export interface WorkmailUserProps {
   readonly domain: string;
   readonly workmailOrgId: string;
   readonly passwordParam: string;
+  readonly notificationsMail: string;
 }
 
 /**
- * Setup Workmail User
+ * Setup Workmail user
+ * and inbox rule to redirect all mails to notificationEmail
  */
 
 export class WorkmailUser extends Construct {
@@ -26,6 +28,7 @@ export class WorkmailUser extends Construct {
         [PROP_DOMAIN]: props.domain,
         [PROP_ORG_ID]: props.workmailOrgId,
         [PROP_PASSWORD_PARAM]: props.passwordParam,
+        [PROP_NOTIF_EMAIL]: props.notificationsMail,
       },
     });
   }
@@ -55,7 +58,7 @@ class WorkmailUserProvider extends Construct {
       entry: path.join(__dirname, '..', 'functions', 'workmail-user.on-event-handler.ts'),
       runtime: lambda.Runtime.NODEJS_20_X,
       logRetention: 3,
-      timeout: Duration.seconds(10),
+      timeout: Duration.seconds(30),
     });
 
     onEventHandlerFunc.role!.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonWorkMailFullAccess'));
