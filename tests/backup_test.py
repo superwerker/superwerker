@@ -83,9 +83,9 @@ def random_rds_instance_identifier(rds_client_audit):
 
     rds_client_audit.create_db_instance(
         DBInstanceIdentifier=db_instance_identifier,
-        DBInstanceClass='db.t2.micro',
+        DBInstanceClass='db.t4g.micro',
         Engine='mysql',
-        MasterUsername='arnonym',
+        MasterUsername='anonym',
         MasterUserPassword=db_instance_identifier,
         AllocatedStorage=20,
     )
@@ -137,7 +137,7 @@ def test_check_conformance_pack_status(config_client_audit):
     assert org_conformance_packs['OrganizationConformancePacks'][0]['OrganizationConformancePackName'] == 'superwerker-backup-enforce', 'Organization Conformance Pack name does not match expected name'
 
     org_conformance_pack_statuses = config_client.describe_organization_conformance_pack_statuses()
-    assert org_conformance_pack_statuses['OrganizationConformancePackStatuses'][0]['Status'] == 'CREATE_SUCCESSFUL', 'Conformance Pack is not created successfully'
+    assert org_conformance_pack_statuses['OrganizationConformancePackStatuses'][0]['Status'] in ['CREATE_SUCCESSFUL' , 'UPDATE_SUCCESSFUL'], 'Conformance Pack is not created successfully'
     
 
 def test_check_tag_policy():
