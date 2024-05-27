@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -84,7 +84,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: [denyExpensiveAPICallsStatement],
     });
 
-    const scpRoot = new CustomResource(this, 'SCPRoot', {
+    //const scpRoot =
+    new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       properties: {
         policyRoot: JSON.stringify(scpPolicyDocumentRoot),
@@ -94,25 +95,26 @@ export class ServiceControlPoliciesStack extends NestedStack {
       },
     });
 
-    (scpRoot.node.defaultChild as CfnResource).overrideLogicalId('SCPRoot');
+    // (scpRoot.node.defaultChild as CfnResource).overrideLogicalId('SCPRoot');
 
-    const scpRootProviderFn = this.node
-      .findChild('superwerker.service-control-policy-root-provider')
-      .node.findChild('service-control-policy-root-provider')
-      .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpRootProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPRootCustomResource');
+    // const scpRootProviderFn = this.node
+    //   .findChild('superwerker.service-control-policy-root-provider')
+    //   .node.findChild('service-control-policy-root-provider')
+    //   .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    // (scpRootProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPRootCustomResource');
 
-    const scpSandbox = new CustomResource(this, 'SCPSandbox', {
+    //const scpSandbox =
+    new CustomResource(this, 'SCPSandbox', {
       serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
     });
 
-    (scpSandbox.node.defaultChild as CfnResource).overrideLogicalId('SCPSandbox');
+    // (scpSandbox.node.defaultChild as CfnResource).overrideLogicalId('SCPSandbox');
 
-    const scpSandboxProviderFn = this.node
-      .findChild('superwerker.service-control-policy-sandbox-provider')
-      .node.findChild('service-control-policy-sandbox-provider')
-      .node.findChild('framework-onEvent') as lambda.CfnFunction;
-    (scpSandboxProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPSandboxCustomResource');
+    // const scpSandboxProviderFn = this.node
+    //   .findChild('superwerker.service-control-policy-sandbox-provider')
+    //   .node.findChild('service-control-policy-sandbox-provider')
+    //   .node.findChild('framework-onEvent') as lambda.CfnFunction;
+    // (scpSandboxProviderFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPSandboxCustomResource');
   }
 }
 
