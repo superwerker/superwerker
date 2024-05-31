@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
