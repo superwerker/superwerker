@@ -38,8 +38,16 @@ export class ServiceControlPoliciesStack extends NestedStack {
       sid: 'SWProtectBackup',
     });
 
+    //Deny Leaving Organization
+    const denyLeavingOrganizationStatement = new PolicyStatement({
+      actions: ['organizations:LeaveOrganization'],
+      resources: ['*'],
+      effect: Effect.DENY,
+      sid: 'PreventLeavingOrganization',
+    });
+
     const scpPolicyDocumentRoot = new PolicyDocument({
-      statements: [backupStatement],
+      statements: [denyLeavingOrganizationStatement, backupStatement],
     });
 
     //Deny Expensive API Calls in the Sandbox OU
