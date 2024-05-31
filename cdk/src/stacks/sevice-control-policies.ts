@@ -95,12 +95,10 @@ export class ServiceControlPoliciesStack extends NestedStack {
     const scpRoot = new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       properties: {
-        // policyRoot: JSON.stringify(scpPolicyDocumentRoot),
-        // policySandbox: JSON.stringify(scpPolicyDocumentSandbox),
-        // scpNameRoot: 'superwerker-root',
-        // scpNameSandbox: 'superwerker-sandbox',
-        policy: JSON.stringify(scpPolicyDocumentRoot),
-        scpName: 'superwerker-root',
+        policyRoot: JSON.stringify(scpPolicyDocumentRoot),
+        policySandbox: JSON.stringify(scpPolicyDocumentSandbox),
+        scpNameRoot: 'superwerker-root',
+        scpNameSandbox: 'superwerker-sandbox',
       },
     });
 
