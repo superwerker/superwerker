@@ -58,21 +58,21 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       try {
         let rootId = await getRootId(client);
 
-        const commandCreatePolicyRoot = new CreatePolicyCommand({
+        const commandCreatePolicy = new CreatePolicyCommand({
           Type: PolicyType.SERVICE_CONTROL_POLICY,
           Description: `superwerker - ${event.LogicalResourceId}`,
           Name: event.ResourceProperties.scpName,
           Content: event.ResourceProperties.policy,
         });
 
-        const responseCreatePolicyRoot = await client.send(commandCreatePolicyRoot);
+        const responseCreatePolicy = await client.send(commandCreatePolicy);
 
-        const commandAttachPolicyRoot = new AttachPolicyCommand({
-          PolicyId: responseCreatePolicyRoot.Policy?.PolicySummary?.Id || '',
+        const commandAttachPolicy = new AttachPolicyCommand({
+          PolicyId: responseCreatePolicy.Policy?.PolicySummary?.Id || '',
           TargetId: rootId,
         });
 
-        await client.send(commandAttachPolicyRoot);
+        await client.send(commandAttachPolicy);
 
         return { SUCCESS: 'SCPs have been successfully created for Root account' };
       } catch (e) {

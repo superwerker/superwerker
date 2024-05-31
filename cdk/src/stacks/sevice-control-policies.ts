@@ -95,10 +95,12 @@ export class ServiceControlPoliciesStack extends NestedStack {
     const scpRoot = new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       properties: {
-        policyRoot: JSON.stringify(scpPolicyDocumentRoot),
-        policySandbox: JSON.stringify(scpPolicyDocumentSandbox),
-        scpNameRoot: 'superwerker-root',
-        scpNameSandbox: 'superwerker-sandbox',
+        // policyRoot: JSON.stringify(scpPolicyDocumentRoot),
+        // policySandbox: JSON.stringify(scpPolicyDocumentSandbox),
+        // scpNameRoot: 'superwerker-root',
+        // scpNameSandbox: 'superwerker-sandbox',
+        policy: JSON.stringify(scpPolicyDocumentRoot),
+        scpName: 'superwerker-root',
       },
     });
 
@@ -106,6 +108,10 @@ export class ServiceControlPoliciesStack extends NestedStack {
 
     const scpSandbox = new CustomResource(this, 'SCPSandbox', {
       serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
+      properties: {
+        policy: JSON.stringify(scpPolicyDocumentSandbox),
+        scpName: 'superwerker-sandbox',
+      },
     });
 
     (scpSandbox.node.defaultChild as CfnResource).overrideLogicalId('SCPSandbox');
@@ -124,7 +130,7 @@ class ServiceControlPolicyRootProvider extends Construct {
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
-    const scpBaselineFn = new NodejsFunction(this, 'service-control-policy-root-on-event', {
+    const scpRootFn = new NodejsFunction(this, 'service-control-policy-root-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'service-control-policies-root.ts'),
       runtime: Runtime.NODEJS_20_X,
       initialPolicy: [
@@ -147,7 +153,7 @@ class ServiceControlPolicyRootProvider extends Construct {
     });
 
     this.provider = new Provider(this, 'service-control-policy-root-provider', {
-      onEventHandler: scpBaselineFn,
+      onEventHandler: scpRootFn,
     });
   }
 }
@@ -165,7 +171,7 @@ class ServiceControlPolicySandboxProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
 
-    const scpEnableFn = new NodejsFunction(this, 'service-control-policy-sandbox-on-event', {
+    const scpSandboxFn = new NodejsFunction(this, 'service-control-policy-sandbox-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'service-control-policies-sandbox.ts'),
       runtime: Runtime.NODEJS_20_X,
       initialPolicy: [
@@ -177,10 +183,8 @@ class ServiceControlPolicySandboxProvider extends Construct {
       ],
     });
 
-    (scpEnableFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('scpEnableHandlerFunction');
-
     this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
-      onEventHandler: scpEnableFn,
+      onEventHandler: scpSandboxFn,
     });
   }
 }
