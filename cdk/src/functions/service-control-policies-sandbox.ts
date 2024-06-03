@@ -94,6 +94,8 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
 
     case 'Update':
       console.log('Updating Policy: ', event.LogicalResourceId);
+      console.log('Updating Policy: ', event.ResourceProperties.scpName);
+      console.log('Policy ID: ', await getPolicyId(client, event.ResourceProperties.scpName));
       const commandUpdatePolicy = new UpdatePolicyCommand({
         PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
         Description: `superwerker - ${event.LogicalResourceId}`,
