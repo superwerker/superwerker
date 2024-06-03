@@ -22,7 +22,7 @@ def test_superwerker_service_control_policies():
             assert superwerker_policy['Policy']['PolicySummary']['Description'] == 'superwerker - SCPRoot'
 
             expectedPolicyJson = '''{
-            "Version": '2012-10-17',
+            "Version": "2012-10-17",
             "Statement": [
                 {
                     "Action": "organizations:LeaveOrganization",
@@ -72,41 +72,46 @@ def test_superwerker_service_control_policies():
             assert superwerker_policy['Policy']['PolicySummary']['Description'] == 'superwerker - sandbox - SCPSandbox'
 
             expectedPolicyJson = '''{
-                "Sid": "DenyExpensiveResourceCreation",
-                "Effect": "Deny",
-                "Action": [
-                    "route53domains:RegisterDomain",
-                    "route53domains:RenewDomain",
-                    "route53domains:TransferDomain",
-                    "ec2:ModifyReservedInstances",
-                    "ec2:PurchaseHostReservation",
-                    "ec2:PurchaseReservedInstancesOffering",
-                    "ec2:PurchaseScheduledInstances",
-                    "rds:PurchaseReservedDBInstancesOffering",
-                    "dynamodb:PurchaseReservedCapacityOfferings",
-                    "s3:PutObjectRetention",
-                    "s3:PutObjectLegalHold",
-                    "s3:BypassGovernanceRetention",
-                    "s3:PutBucketObjectLockConfiguration",
-                    "elasticache:PurchaseReservedCacheNodesOffering",
-                    "redshift:PurchaseReservedNodeOffering",
-                    "savingsplans:CreateSavingsPlan",
-                    "aws-marketplace:AcceptAgreementApprovalRequest",
-                    "aws-marketplace:Subscribe",
-                    "shield:CreateSubscription",
-                    "acm-pca:CreateCertificateAuthority",
-                    "es:PurchaseReservedElasticsearchInstanceOffering",
-                    "outposts:CreateOutpost",
-                    "snowball:CreateCluster",
-                    "s3-object-lambda:PutObjectLegalHold",
-                    "s3-object-lambda:PutObjectRetention",
-                    "glacier:InitiateVaultLock",
-                    "glacier:CompleteVaultLock",
-                    "es:PurchaseReservedInstanceOffering",
-                    "backup:PutBackupVaultLockConfiguration"
+                "Statement": [
+                    {
+                        "Action": [
+                            "route53domains:RegisterDomain",
+                            "route53domains:RenewDomain",
+                            "route53domains:TransferDomain",
+                            "ec2:ModifyReservedInstances",
+                            "ec2:PurchaseHostReservation",
+                            "ec2:PurchaseReservedInstancesOffering",
+                            "ec2:PurchaseScheduledInstances",
+                            "rds:PurchaseReservedDBInstancesOffering",
+                            "dynamodb:PurchaseReservedCapacityOfferings",
+                            "s3:PutObjectRetention",
+                            "s3:PutObjectLegalHold",
+                            "s3:BypassGovernanceRetention",
+                            "s3:PutBucketObjectLockConfiguration",
+                            "elasticache:PurchaseReservedCacheNodesOffering",
+                            "redshift:PurchaseReservedNodeOffering",
+                            "savingsplans:CreateSavingsPlan",
+                            "aws-marketplace:AcceptAgreementApprovalRequest",
+                            "aws-marketplace:Subscribe",
+                            "shield:CreateSubscription",
+                            "acm-pca:CreateCertificateAuthority",
+                            "es:PurchaseReservedElasticsearchInstanceOffering",
+                            "outposts:CreateOutpost",
+                            "snowball:CreateCluster",
+                            "s3-object-lambda:PutObjectLegalHold",
+                            "s3-object-lambda:PutObjectRetention",
+                            "glacier:InitiateVaultLock",
+                            "glacier:CompleteVaultLock",
+                            "es:PurchaseReservedInstanceOffering",
+                            "backup:PutBackupVaultLockConfiguration"
+                        ],
+                        "Effect": "Deny",
+                        "Resource": "*",
+                        "Sid": "DenyExpensiveResourceCreation"
+                    }
                 ],
-                "Resource": "*"
-                }'''
+                "Version": "2012-10-17"
+            }'''
 
             expectedPolicyDict = json.loads(expectedPolicyJson)
 
