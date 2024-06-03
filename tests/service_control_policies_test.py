@@ -69,13 +69,12 @@ def test_superwerker_service_control_policies():
         elif scp['Name'] == 'superwerker-sandbox':
             superwerker_policy_id = scp['Id']
             superwerker_policy=organizations.describe_policy(PolicyId=superwerker_policy_id)
-            assert superwerker_policy['Policy']['PolicySummary']['Description'] == 'superwerker - sandbox - SCPSandbox'
+            assert superwerker_policy['Policy']['PolicySummary']['Description'] == 'superwerker - SCPSandbox'
 
             expectedPolicyJson = '''{
                 "Statement": [
                     {
                         "Action": [
-                            "route53domains:RegisterDomain",
                             "route53domains:RenewDomain",
                             "route53domains:TransferDomain",
                             "ec2:ModifyReservedInstances",
