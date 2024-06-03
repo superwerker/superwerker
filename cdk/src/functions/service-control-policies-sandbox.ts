@@ -55,7 +55,7 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
     }
   });
 
-  return 'error';
+  return policyId;
 }
 
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {

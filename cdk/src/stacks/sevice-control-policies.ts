@@ -18,6 +18,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
         },
       },
       actions: [
+        'iam:AttachRolePolicy',
         'iam:CreateRole',
         'iam:DeleteRole',
         'iam:DeleteRolePermissionsBoundary',
@@ -54,6 +55,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       sid: 'DenyExpensiveResourceCreation',
       effect: Effect.DENY,
       actions: [
+        'route53domains:RegisterDomain',
         'route53domains:RenewDomain',
         'route53domains:TransferDomain',
         'ec2:ModifyReservedInstances',
