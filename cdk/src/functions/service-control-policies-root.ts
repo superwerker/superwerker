@@ -13,22 +13,17 @@ import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-
 
 async function getRootId(organizationClient: OrganizationsClient): Promise<string | undefined> {
   let id = '';
-  try {
-    const command = new ListRootsCommand({});
-    const response = await organizationClient.send(command);
+  const command = new ListRootsCommand({});
+  const response = await organizationClient.send(command);
 
-    if (!response.Roots || response.Roots.length === 0) {
-      console.warn('No roots found in the organization');
-      return 'No roots';
-    }
-
-    const root = response.Roots[0];
-    id = root.Id || '';
-    return id;
-  } catch (error) {
-    console.error(`Error getting root accounts for ${id}`, error);
-    return `Error: ${error}`;
+  if (!response.Roots || response.Roots.length === 0) {
+    console.warn('No roots found in the organization');
+    return 'error';
   }
+
+  const root = response.Roots[0];
+  id = root.Id || '';
+  return id;
 }
 
 async function getPolicyId(organizationClient: OrganizationsClient, policyName: string) {
@@ -46,7 +41,7 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
     });
   }
 
-  return '';
+  return 'error';
 }
 
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
@@ -84,31 +79,59 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       console.log('Updating Policy: ', event.LogicalResourceId);
       console.log('Updating Policy: ', event.ResourceProperties.scpName);
       console.log('Policy ID: ', await getPolicyId(client, event.ResourceProperties.scpName));
-      const commandUpdatePolicy = new UpdatePolicyCommand({
-        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
-        Description: `superwerker - ${event.LogicalResourceId}`,
-        Name: event.ResourceProperties.scpName,
-        Content: event.ResourceProperties.policy,
-      });
+      try {
+        const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
 
-      const responseUpdatePolicy = await client.send(commandUpdatePolicy);
-      return responseUpdatePolicy;
+        if (policyId == 'error') {
+          return { ErrorMessage: `Error during Update. No Policy ID found for the policy: ${event.ResourceProperties.scpName}` };
+        }
+
+        const commandUpdatePolicy = new UpdatePolicyCommand({
+          PolicyId: policyId,
+          Description: `superwerker - ${event.LogicalResourceId}`,
+          Name: event.ResourceProperties.scpName,
+          Content: event.ResourceProperties.policy,
+        });
+
+        const responseUpdatePolicy = await client.send(commandUpdatePolicy);
+        return responseUpdatePolicy;
+      } catch (e) {
+        console.log('Error during Updating Policy: ', e);
+        return { ErrorMessage: `Error during updating policy: ${e}` };
+      }
 
     case 'Delete':
       console.log('Deleting Policy: ', event.LogicalResourceId);
 
-      const commandDetachPolicy = new DetachPolicyCommand({
-        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
-        TargetId: await getRootId(client),
-      });
+      try {
+        const rootId = await getRootId(client);
 
-      await client.send(commandDetachPolicy);
+        if (rootId == 'error') {
+          return { ErrorMessage: `Error during Delete. No Root ID found for the policy: ${event.ResourceProperties.scpName}` };
+        }
 
-      const commandDeletePolicy = new DeletePolicyCommand({
-        PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
-      });
+        const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
 
-      const responseDeletePolicy = await client.send(commandDeletePolicy);
-      return responseDeletePolicy;
+        if (policyId == 'error') {
+          return { ErrorMessage: `Error during Delete. No Policy ID found for the policy: ${event.ResourceProperties.scpName}` };
+        }
+
+        const commandDetachPolicy = new DetachPolicyCommand({
+          PolicyId: policyId,
+          TargetId: rootId,
+        });
+
+        await client.send(commandDetachPolicy);
+
+        const commandDeletePolicy = new DeletePolicyCommand({
+          PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
+        });
+
+        const responseDeletePolicy = await client.send(commandDeletePolicy);
+        return responseDeletePolicy;
+      } catch (e) {
+        console.log('Error during Deleting Policy: ', e);
+        return { ErrorMessage: `Error during deleting policy: ${e}` };
+      }
   }
 }
