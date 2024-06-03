@@ -51,7 +51,7 @@
     "@aws-sdk/client-eventbridge": "3.540.0",
     "@aws-sdk/client-organizations": "3.540.0",
     "@aws-sdk/client-securityhub": "3.540.0",
-    "@aws-sdk/client-ses": "3.540.0",
+    "@aws-sdk/client-ses": "3.588.0",
     "@aws-sdk/client-sns": "3.540.0",
     "@aws-sdk/client-ssm": "3.540.0",
     "@aws-sdk/client-sts": "3.540.0",
