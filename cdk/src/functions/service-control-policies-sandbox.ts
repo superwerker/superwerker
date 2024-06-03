@@ -47,13 +47,13 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
 
   const response = await organizationClient.send(commandListPolicies);
 
-  if (response.Policies?.length) {
-    response.Policies.forEach((policy) => {
-      if (policy.Name && policy.Name == policyName) {
-        return policy.Id;
-      }
-    });
-  }
+  let policyId = 'error'; //set to error. Update if superwerker-root SCP is found.
+
+  response.Policies?.forEach((policy) => {
+    if (policy.Name === policyName) {
+      policyId = policy.Id;
+    }
+  });
 
   return 'error';
 }

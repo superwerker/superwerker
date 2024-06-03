@@ -187,7 +187,6 @@ class ServiceControlPolicySandboxProvider extends Construct {
             'organizations:ListPoliciesForTarget',
             'organizations:EnablePolicyType',
             'organizations:DisablePolicyType',
-            'organizations:ListOrganizationalUnitsForParentCommand',
           ],
         }),
       ],
