@@ -15,7 +15,7 @@
     "@commitlint/cli": "^19.0.3",
     "@commitlint/config-conventional": "^19.2.2",
     "@tsconfig/node20": "^20.1.4",
-    "@stylistic/eslint-plugin": "^1.7.2",
+    "@stylistic/eslint-plugin": "^2.1.0",
     "@types/async-retry": "^1.4.8",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.10",
