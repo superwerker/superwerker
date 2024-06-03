@@ -147,7 +147,7 @@ class ServiceControlPolicyRootProvider extends Construct {
           ],
         }),
       ],
-      timeout: Duration.seconds(200),
+      timeout: Duration.seconds(300),
     });
 
     this.provider = new Provider(this, 'service-control-policy-root-provider', {
@@ -190,6 +190,7 @@ class ServiceControlPolicySandboxProvider extends Construct {
           ],
         }),
       ],
+      timeout: Duration.seconds(300),
     });
 
     this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
