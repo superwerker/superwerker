@@ -75,6 +75,7 @@ def test_superwerker_service_control_policies():
                 "Statement": [
                     {
                         "Action": [
+                            "route53domains:RegisterDomain",
                             "route53domains:RenewDomain",
                             "route53domains:TransferDomain",
                             "ec2:ModifyReservedInstances",
