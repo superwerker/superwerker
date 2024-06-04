@@ -50,48 +50,6 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: [denyLeavingOrganizationStatement, backupStatement],
     });
 
-    //Deny Expensive API Calls in the Sandbox OU
-    const denyExpensiveAPICallsStatement = new PolicyStatement({
-      sid: 'DenyExpensiveResourceCreation',
-      effect: Effect.DENY,
-      actions: [
-        'route53domains:RegisterDomain',
-        'route53domains:RenewDomain',
-        'route53domains:TransferDomain',
-        'ec2:ModifyReservedInstances',
-        'ec2:PurchaseHostReservation',
-        'ec2:PurchaseReservedInstancesOffering',
-        'ec2:PurchaseScheduledInstances',
-        'rds:PurchaseReservedDBInstancesOffering',
-        'dynamodb:PurchaseReservedCapacityOfferings',
-        's3:PutObjectRetention',
-        's3:PutObjectLegalHold',
-        's3:BypassGovernanceRetention',
-        's3:PutBucketObjectLockConfiguration',
-        'elasticache:PurchaseReservedCacheNodesOffering',
-        'redshift:PurchaseReservedNodeOffering',
-        'savingsplans:CreateSavingsPlan',
-        'aws-marketplace:AcceptAgreementApprovalRequest',
-        'aws-marketplace:Subscribe',
-        'shield:CreateSubscription',
-        'acm-pca:CreateCertificateAuthority',
-        'es:PurchaseReservedElasticsearchInstanceOffering',
-        'outposts:CreateOutpost',
-        'snowball:CreateCluster',
-        's3-object-lambda:PutObjectLegalHold',
-        's3-object-lambda:PutObjectRetention',
-        'glacier:InitiateVaultLock',
-        'glacier:CompleteVaultLock',
-        'es:PurchaseReservedInstanceOffering',
-        'backup:PutBackupVaultLockConfiguration',
-      ],
-      resources: ['*'],
-    });
-
-    const scpPolicyDocumentSandbox = new PolicyDocument({
-      statements: [denyExpensiveAPICallsStatement],
-    });
-
     const scpRoot = new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       properties: {
@@ -101,16 +59,6 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     (scpRoot.node.defaultChild as CfnResource).overrideLogicalId('SCPRoot');
-
-    const scpSandbox = new CustomResource(this, 'SCPSandbox', {
-      serviceToken: ServiceControlPolicySandboxProvider.getOrCreate(this),
-      properties: {
-        policy: JSON.stringify(scpPolicyDocumentSandbox),
-        scpName: 'superwerker-sandbox',
-      },
-    });
-
-    (scpSandbox.node.defaultChild as CfnResource).overrideLogicalId('SCPSandbox');
   }
 }
 
@@ -152,50 +100,6 @@ class ServiceControlPolicyRootProvider extends Construct {
 
     this.provider = new Provider(this, 'service-control-policy-root-provider', {
       onEventHandler: scpRootFn,
-    });
-  }
-}
-
-class ServiceControlPolicySandboxProvider extends Construct {
-  public static getOrCreate(scope: Construct) {
-    const stack = Stack.of(scope);
-    const id = 'superwerker.service-control-policy-sandbox-provider';
-    const x = (stack.node.tryFindChild(id) as ServiceControlPolicySandboxProvider) || new ServiceControlPolicySandboxProvider(stack, id);
-    return x.provider.serviceToken;
-  }
-
-  private readonly provider: Provider;
-
-  constructor(scope: Construct, id: string) {
-    super(scope, id);
-
-    const scpSandboxFn = new NodejsFunction(this, 'service-control-policy-sandbox-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'service-control-policies-sandbox.ts'),
-      runtime: Runtime.NODEJS_20_X,
-      initialPolicy: [
-        new PolicyStatement({
-          effect: Effect.ALLOW,
-          resources: ['*'],
-          actions: [
-            'organizations:CreatePolicy',
-            'organizations:UpdatePolicy',
-            'organizations:DeletePolicy',
-            'organizations:AttachPolicy',
-            'organizations:DetachPolicy',
-            'organizations:ListRoots',
-            'organizations:ListPolicies',
-            'organizations:ListPoliciesForTarget',
-            'organizations:EnablePolicyType',
-            'organizations:DisablePolicyType',
-            'organizations:ListOrganizationalUnitsForParent',
-          ],
-        }),
-      ],
-      timeout: Duration.seconds(300),
-    });
-
-    this.provider = new Provider(this, 'service-control-policy-sandbox-provider', {
-      onEventHandler: scpSandboxFn,
     });
   }
 }
