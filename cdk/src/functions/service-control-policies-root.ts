@@ -12,17 +12,17 @@ import {
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 
 async function getRootId(organizationClient: OrganizationsClient): Promise<string | undefined> {
-  let id = '';
+  let id = 'error'; //set to error. Update if root ID is found. Then, update it to Root Id.
   const command = new ListRootsCommand({});
   const response = await organizationClient.send(command);
 
   if (!response.Roots || response.Roots.length === 0) {
     console.warn('No roots found in the organization');
-    return 'error';
+    return id;
   }
 
   const root = response.Roots[0];
-  id = root.Id || '';
+  id = root.Id || 'error';
   return id;
 }
 
@@ -33,7 +33,7 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
 
   const response = await organizationClient.send(commandListPolicies);
 
-  let policyId = 'error'; //set to error. Update if superwerker-root SCP is found.
+  let policyId = 'error'; //set to error. Update if superwerker-root SCP policy is found. Then, update it to SCP Policy Id.
 
   response.Policies?.forEach((policy) => {
     if (policy.Name === policyName) {

@@ -47,7 +47,7 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
 
   const response = await organizationClient.send(commandListPolicies);
 
-  let policyId = 'error'; //set to error. Update if superwerker-root SCP is found.
+  let policyId = 'error'; //set to error. Update if superwerker-root SCP policy is found. Then, update it to SCP Policy Id.
 
   response.Policies?.forEach((policy) => {
     if (policy.Name === policyName) {
