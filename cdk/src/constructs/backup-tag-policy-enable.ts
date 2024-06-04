@@ -33,7 +33,7 @@ class BackupTagPolicyEnableProvider extends Construct {
 
     const tagPolicyFn = new PythonFunction(this, 'backup-tag-policy-enable-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'backup-tag-policy-enable'),
-      handler: 'index.enable_tag_policies',
+      handler: 'enable_tag_policies',
       runtime: Runtime.PYTHON_3_9,
       timeout: Duration.seconds(200),
       initialPolicy: [
