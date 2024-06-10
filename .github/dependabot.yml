@@ -13,6 +13,9 @@ updates:
       aws-sdk:
         patterns:
           - "@aws-sdk/*"
+      development:
+        dependency-type: "development"
+    open-pull-requests-limit: 10
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
