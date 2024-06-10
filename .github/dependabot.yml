@@ -9,6 +9,10 @@ updates:
     directory: "cdk/"
     schedule:
       interval: "weekly"
+    groups:
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
