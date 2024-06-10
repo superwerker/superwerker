@@ -13,6 +13,8 @@ updates:
       aws-sdk:
         patterns:
           - "@aws-sdk/*"
+      development:
+        dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
