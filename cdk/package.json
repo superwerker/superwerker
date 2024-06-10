@@ -18,7 +18,7 @@
     "@stylistic/eslint-plugin": "^2.1.0",
     "@types/async-retry": "^1.4.8",
     "@types/jest": "^29.5.11",
-    "@types/node": "^20.11.10",
+    "@types/node": "^20.14.2",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^6.19.1",
     "aws-sdk-client-mock": "^4.0.0",
