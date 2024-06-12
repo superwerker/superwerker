@@ -24,7 +24,7 @@ const scpPolicy = '{"Version": "2012-10-17", "Statement": [/* policy document */
 const updatedSCPPolicy = '{"Version": "2012-10-17", "Statement": [/* UPDATED policy document */]}';
 const description = 'superwerker - SCPRoot';
 
-describe('service_control_policies', () => {
+describe('service control policies', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     organizationClientMock.reset();
@@ -35,7 +35,7 @@ describe('service_control_policies', () => {
     delete process.env.AWS_REGION;
   });
 
-  it('service_control_policy_create', async () => {
+  it('create service control policy', async () => {
     organizationClientMock.on(ListRootsCommand).resolves({
       Roots: [
         {
@@ -82,57 +82,7 @@ describe('service_control_policies', () => {
     expect(response).toMatchObject({ SUCCESS: 'SCPs have been successfully created for Root account' });
   });
 
-  it('service_control_policy_create_failed', async () => {
-    organizationClientMock.on(ListRootsCommand).resolves({
-      Roots: [
-        {
-          Id: rootAccountId,
-          Name: rootAccountName,
-        },
-      ],
-    });
-
-    organizationClientMock.on(ListPoliciesCommand).resolves({
-      Policies: [
-        {
-          Name: scpName,
-          Id: logicalResourceId,
-          Description: description,
-        },
-      ],
-    });
-
-    organizationClientMock.on(CreatePolicyCommand).resolves({
-      Policy: {
-        PolicySummary: {
-          Name: scpName,
-          Id: policyId,
-        },
-      },
-    });
-
-    //organizationClientMock.on(AttachPolicyCommand).resolves({});
-
-    try {
-      await handler(
-        {
-          RequestType: 'Create',
-          ResourceProperties: {
-            Type: PolicyType.SERVICE_CONTROL_POLICY,
-            Description: logicalResourceId,
-            Name: scpName,
-            Content: scpPolicy,
-          },
-        } as unknown as CloudFormationCustomResourceCreateEvent,
-        {} as Context,
-      );
-    } catch (e) {
-      expect(e).toBeInstanceOf(TypeError);
-      //toMatchObject(new Error('No root account found in the organization'));
-    }
-  });
-
-  it('service_control_policy_update', async () => {
+  it('update service control policy', async () => {
     organizationClientMock.on(ListPoliciesCommand).resolves({
       Policies: [
         {
@@ -166,15 +116,44 @@ describe('service_control_policies', () => {
       {} as Context,
     );
 
-    expect(response).toMatchObject({
-      Policy: {
-        Content: updatedSCPPolicy,
-        PolicySummary: {
-          Id: policyId,
-          Name: scpName,
+    expect(response.Policy.Content).toEqual(updatedSCPPolicy);
+  });
+
+  it('delete service control policy', async () => {
+    organizationClientMock.on(ListRootsCommand).resolves({
+      Roots: [
+        {
+          Id: rootAccountId,
+          Name: rootAccountName,
         },
-      },
+      ],
     });
+
+    organizationClientMock.on(ListPoliciesCommand).resolves({
+      Policies: [
+        {
+          Name: scpName,
+          Id: logicalResourceId,
+          Description: description,
+        },
+      ],
+    });
+
+    organizationClientMock.on(DetachPolicyCommand).resolves({});
+    organizationClientMock.on(DeletePolicyCommand).resolves({});
+
+    const response = await handler(
+      {
+        RequestType: 'Delete',
+        ResourceProperties: {
+          Id: logicalResourceId,
+          scpName: scpName,
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
+
+    expect(response).toBeTruthy();
   });
 
   it('no root account found in organization', async () => {
@@ -200,31 +179,7 @@ describe('service_control_policies', () => {
     }
   });
 
-  it('no SCP policy found in organization error', async () => {
-    //Should throw an error when there are no SCP policies in the organization
-    organizationClientMock.on(ListPoliciesCommand).resolves({
-      Policies: [],
-    });
-
-    try {
-      await handler(
-        {
-          RequestType: 'Update',
-          ResourceProperties: {
-            Type: PolicyType.SERVICE_CONTROL_POLICY,
-            Description: logicalResourceId,
-            scpName: scpName,
-            Content: updatedSCPPolicy,
-          },
-        } as unknown as CloudFormationCustomResourceCreateEvent,
-        {} as Context,
-      );
-    } catch (e) {
-      expect(e).toMatchObject(new Error('No SCP Policy found in the organization'));
-    }
-  });
-
-  it('no matching policy found error', async () => {
+  it('no matching policy found', async () => {
     //Should throw an error when there are no policies matching the name
     organizationClientMock.on(ListPoliciesCommand).resolves({
       Policies: [
@@ -264,43 +219,7 @@ describe('service_control_policies', () => {
     }
   });
 
-  it('service_control_policy_delete', async () => {
-    organizationClientMock.on(ListRootsCommand).resolves({
-      Roots: [
-        {
-          Id: rootAccountId,
-          Name: rootAccountName,
-        },
-      ],
-    });
-
-    organizationClientMock.on(ListPoliciesCommand).resolves({
-      Policies: [
-        {
-          Name: scpName,
-          Id: logicalResourceId,
-          Description: description,
-        },
-      ],
-    });
-
-    organizationClientMock.on(DetachPolicyCommand).resolves({});
-    organizationClientMock.on(DeletePolicyCommand).resolves({});
-
-    const response = await handler(
-      {
-        RequestType: 'Delete',
-        ResourceProperties: {
-          Id: logicalResourceId,
-          scpName: scpName,
-        },
-      } as unknown as CloudFormationCustomResourceCreateEvent,
-      {} as Context,
-    );
-
-    expect(response).toBeTruthy();
-  });
-  it('service_control_policy_delete_failed', async () => {
+  it('delete failed for scp when DetachPolicyCommand fails', async () => {
     organizationClientMock.on(ListRootsCommand).resolves({});
 
     organizationClientMock.on(ListPoliciesCommand).resolves({

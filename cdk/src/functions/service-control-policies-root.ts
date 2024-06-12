@@ -32,14 +32,12 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
   const response = await throttlingBackOff(() => organizationClient.send(commandListPolicies));
 
   // Check if there are any policies
-  if (!response.Policies?.length) {
-    throw new Error('No SCP Policy found in the organization');
-  }
-
-  // Iterate through each policy object
-  for (const policy of response.Policies) {
-    if (policy.Name === policyName) {
-      return policy.Id;
+  if (response.Policies?.length) {
+    // Iterate through each policy object
+    for (const policy of response.Policies) {
+      if (policy.Name === policyName) {
+        return policy.Id;
+      }
     }
   }
 
@@ -65,7 +63,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
         const responseCreatePolicy = await throttlingBackOff(() => client.send(commandCreatePolicy));
 
         const commandAttachPolicy = new AttachPolicyCommand({
-          PolicyId: responseCreatePolicy.Policy?.PolicySummary?.Id || '',
+          PolicyId: responseCreatePolicy.Policy?.PolicySummary?.Id,
           TargetId: rootId,
         });
 
