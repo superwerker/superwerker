@@ -10,38 +10,40 @@ import {
   ListPoliciesCommand,
 } from '@aws-sdk/client-organizations';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
+import { throttlingBackOff } from './utils/throttle';
 
 async function getRootId(organizationClient: OrganizationsClient): Promise<string | undefined> {
-  let id = 'error'; //set to error. Update if root ID is found. Then, update it to Root Id.
   const command = new ListRootsCommand({});
-  const response = await organizationClient.send(command);
+  const response = await throttlingBackOff(() => organizationClient.send(command));
 
   if (!response.Roots || response.Roots.length === 0) {
-    console.warn('No roots found in the organization');
-    return id;
+    console.warn('No root account found in the organization');
+    throw new Error('No root account found in the organization');
   }
 
-  const root = response.Roots[0];
-  id = root.Id || 'error';
-  return id;
+  return response.Roots[0].Id;
 }
 
-async function getPolicyId(organizationClient: OrganizationsClient, policyName: string) {
+async function getPolicyId(organizationClient: OrganizationsClient, policyName: string): Promise<string | undefined> {
   const commandListPolicies = new ListPoliciesCommand({
     Filter: PolicyType.SERVICE_CONTROL_POLICY,
   });
 
-  const response = await organizationClient.send(commandListPolicies);
+  const response = await throttlingBackOff(() => organizationClient.send(commandListPolicies));
 
-  let policyId = 'error'; //set to error. Update if superwerker-root SCP policy is found. Then, update it to SCP Policy Id.
+  // Check if there are any policies
+  if (!response.Policies?.length) {
+    throw new Error('No SCP Policy found in the organization');
+  }
 
-  response.Policies?.forEach((policy) => {
+  // Iterate through each policy object
+  for (const policy of response.Policies) {
     if (policy.Name === policyName) {
-      policyId = policy.Id;
+      return policy.Id;
     }
-  });
+  }
 
-  return policyId;
+  throw new Error(`No SCP Policy found for the name: ${policyName}`);
 }
 
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
@@ -60,31 +62,24 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
           Content: event.ResourceProperties.policy,
         });
 
-        const responseCreatePolicy = await client.send(commandCreatePolicy);
+        const responseCreatePolicy = await throttlingBackOff(() => client.send(commandCreatePolicy));
 
         const commandAttachPolicy = new AttachPolicyCommand({
           PolicyId: responseCreatePolicy.Policy?.PolicySummary?.Id || '',
           TargetId: rootId,
         });
 
-        await client.send(commandAttachPolicy);
+        await throttlingBackOff(() => client.send(commandAttachPolicy));
 
         return { SUCCESS: 'SCPs have been successfully created for Root account' };
       } catch (e) {
         console.log('Error during Creating Policy: ', e);
-        return { ErrorMessage: `Error during creating policy: ${e}` };
+        throw e;
       }
 
     case 'Update':
-      console.log('Updating Policy: ', event.LogicalResourceId);
-      console.log('Updating Policy: ', event.ResourceProperties.scpName);
-      console.log('Policy ID: ', await getPolicyId(client, event.ResourceProperties.scpName));
       try {
         const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
-
-        if (policyId == 'error') {
-          return { ErrorMessage: `Error during Update. No Policy ID found for the policy: ${event.ResourceProperties.scpName}` };
-        }
 
         const commandUpdatePolicy = new UpdatePolicyCommand({
           PolicyId: policyId,
@@ -93,11 +88,11 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
           Content: event.ResourceProperties.policy,
         });
 
-        const responseUpdatePolicy = await client.send(commandUpdatePolicy);
+        const responseUpdatePolicy = await throttlingBackOff(() => client.send(commandUpdatePolicy));
         return responseUpdatePolicy;
       } catch (e) {
         console.log('Error during Updating Policy: ', e);
-        return { ErrorMessage: `Error during updating policy: ${e}` };
+        throw e;
       }
 
     case 'Delete':
@@ -106,32 +101,24 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       try {
         const rootId = await getRootId(client);
 
-        if (rootId == 'error') {
-          return { ErrorMessage: `Error during Delete. No Root ID found for the policy: ${event.ResourceProperties.scpName}` };
-        }
-
         const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
-
-        if (policyId == 'error') {
-          return { ErrorMessage: `Error during Delete. No Policy ID found for the policy: ${event.ResourceProperties.scpName}` };
-        }
 
         const commandDetachPolicy = new DetachPolicyCommand({
           PolicyId: policyId,
           TargetId: rootId,
         });
 
-        await client.send(commandDetachPolicy);
+        await throttlingBackOff(() => client.send(commandDetachPolicy));
 
         const commandDeletePolicy = new DeletePolicyCommand({
           PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
         });
 
-        const responseDeletePolicy = await client.send(commandDeletePolicy);
+        const responseDeletePolicy = await throttlingBackOff(() => client.send(commandDeletePolicy));
         return responseDeletePolicy;
       } catch (e) {
         console.log('Error during Deleting Policy: ', e);
-        return { ErrorMessage: `Error during deleting policy: ${e}` };
+        throw e;
       }
   }
 }
