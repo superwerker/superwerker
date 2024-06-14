@@ -1,6 +1,9 @@
 import * as path from 'path';
 import { CustomResource, Duration, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { Rule } from 'aws-cdk-lib/aws-events';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -81,6 +84,7 @@ class MemberAccountRemediationActionsProvider extends Construct {
           'ec2:DescribeSecurityGroups',
           'ec2:DescribeSubnets',
           'ec2:DescribeVpcs',
+          'organizations:DescribeAccount',
         ],
         resources: ['*'],
         effect: iam.Effect.ALLOW,
@@ -94,9 +98,27 @@ class MemberAccountRemediationActionsProvider extends Construct {
         resources: [
           `arn:aws:iam::${props.auditAccountId}:role/${props.crossAccountRoleName}`,
           `arn:aws:iam::${props.loggingAccountId}:role/${props.crossAccountRoleName}`,
+          'arn:aws:iam::*:role/AWSControlTowerExecution',
         ],
       }),
     );
+
+    const createMemberEventRule = new Rule(this, 'CreateMemberEventRule', {
+      eventPattern: {
+        source: ['aws.controltower'],
+        detailType: ['AWS Service Event via CloudTrail'],
+        detail: {
+          eventName: ['CreateManagedAccount'],
+        },
+      },
+    });
+
+    createMemberEventRule.addTarget(new LambdaFunction(onEventHandlerFunc));
+
+    onEventHandlerFunc.addPermission('allowEventsInvocation', {
+      principal: new ServicePrincipal('events.amazonaws.com'),
+      sourceArn: createMemberEventRule.ruleArn,
+    });
 
     this.provider = new cr.Provider(this, 'member-account-remediation-actions-provider', {
       onEventHandler: onEventHandlerFunc,

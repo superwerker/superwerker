@@ -16,43 +16,131 @@ import {
   DeleteNetworkAclCommand,
 } from '@aws-sdk/client-ec2';
 import { IAMClient, UpdateAccountPasswordPolicyCommand } from '@aws-sdk/client-iam';
+import { OrganizationsClient, DescribeAccountCommand } from '@aws-sdk/client-organizations';
 import { S3ControlClient, PutPublicAccessBlockCommand } from '@aws-sdk/client-s3-control';
+import { SecurityHubClient, CreateAutomationRuleCommand } from '@aws-sdk/client-securityhub';
 import { STS } from '@aws-sdk/client-sts';
-import { CdkCustomResourceEvent, CloudFormationCustomResourceUpdateEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
+import {
+  CdkCustomResourceEvent,
+  CloudFormationCustomResourceUpdateEvent,
+  CdkCustomResourceResponse,
+  Context,
+  EventBridgeEvent,
+} from 'aws-lambda';
 import { getCredsFromAssumeRole } from './utils/assume-role';
 import { throttlingBackOff } from './utils/throttle';
 
-export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
-  //const region = event.ResourceProperties['region'];
+export async function handler(
+  event: CdkCustomResourceEvent | EventBridgeEvent<any, any>,
+  _context: Context,
+): Promise<CdkCustomResourceResponse> {
   const homeRegion = process.env.homeRegion!;
   const loggingAccountId = process.env.loggingAccountId!;
   const auditAccountId = process.env.auditAccountId!;
   const crossAccountRoleName = process.env.crossAccountRoleName!;
 
-  switch (event.RequestType) {
-    case 'Create':
-    case 'Update':
-      let physicalResourceId = (event as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId;
-      if (event.RequestType === 'Create') {
-        physicalResourceId = 'securityhub-member-remediations';
-      }
+  console.log(event);
 
-      await remediationActions(loggingAccountId, crossAccountRoleName, homeRegion);
-      await remediationActions(auditAccountId, crossAccountRoleName, homeRegion);
+  if ((event as CdkCustomResourceEvent).RequestType !== undefined) {
+    console.log('Event is a custom resource request from CloudFormation.');
 
-      return {
-        PhysicalResourceId: physicalResourceId,
-      };
-    case 'Delete':
-      console.log('Do nothing');
+    const cfnEvent = event as CdkCustomResourceEvent;
 
-      return {
-        PhysicalResourceId: event.PhysicalResourceId,
-      };
+    switch (cfnEvent.RequestType) {
+      case 'Create':
+      case 'Update':
+        let physicalResourceId = (cfnEvent as CloudFormationCustomResourceUpdateEvent).PhysicalResourceId;
+        if (cfnEvent.RequestType === 'Create') {
+          physicalResourceId = 'securityhub-member-remediations';
+        }
+
+        await remediationActions(loggingAccountId, crossAccountRoleName, homeRegion);
+        await remediationActions(auditAccountId, crossAccountRoleName, homeRegion);
+        await suppressS3AccessLogFinding(auditAccountId, loggingAccountId, crossAccountRoleName, homeRegion);
+
+        return {
+          PhysicalResourceId: physicalResourceId,
+        };
+      case 'Delete':
+        console.log('Do nothing');
+
+        return {
+          PhysicalResourceId: cfnEvent.PhysicalResourceId,
+        };
+    }
+  } else {
+    console.log('Event is an EventBridge event.');
+    const eventBridgeEvent = event as EventBridgeEvent<any, any>;
+    console.log(eventBridgeEvent.detail.serviceEventDetails);
+
+    const accountId = eventBridgeEvent.detail.serviceEventDetails.createManagedAccountStatus.account.accountId;
+    const region = eventBridgeEvent.detail.awsRegion;
+
+    const orgClient = new OrganizationsClient({});
+    const accountRes = await orgClient.send(new DescribeAccountCommand({ AccountId: accountId }));
+    console.log(`Account joined method: ${accountRes.Account?.JoinedMethod}`);
+
+    if (accountRes.Account?.JoinedMethod === 'CREATED') {
+      await remediationActions(accountId, 'AWSControlTowerExecution', region);
+    } else {
+      console.log('Account is invited, do nothing');
+    }
+
+    return {
+      PhysicalResourceId: 'securityhub-member-remediations',
+    };
   }
 }
 
+async function suppressS3AccessLogFinding(auditAccountId: string, loggingAccountId: string, roleName: string, region: string) {
+  console.log('Suppress "S3 access log" finding for s3-access-logs bucket');
+
+  const stsClient = new STS();
+  const crossAccountRoleArn = `arn:aws:iam::${auditAccountId}:role/${roleName}`;
+  const creds = await getCredsFromAssumeRole(stsClient, crossAccountRoleArn, 'SecurityHubRemediations');
+  const securityHub = new SecurityHubClient({ credentials: creds, region: region });
+
+  await securityHub.send(
+    new CreateAutomationRuleCommand({
+      RuleName: 'Suppress S3 Logging Bucket finding',
+      RuleOrder: 1,
+      Description: 'Suppress S3 logging bucket',
+      IsTerminal: false,
+      RuleStatus: 'ENABLED',
+      Criteria: {
+        AwsAccountId: [
+          {
+            Comparison: 'EQUALS',
+            Value: loggingAccountId,
+          },
+        ],
+        Title: [
+          {
+            Comparison: 'EQUALS',
+            Value: 'S3 general purpose buckets should have server access logging enabled',
+          },
+        ],
+        ResourceId: [
+          {
+            Comparison: 'CONTAINS',
+            Value: 's3-access-logs',
+          },
+        ],
+      },
+      Actions: [
+        {
+          Type: 'FINDING_FIELDS_UPDATE',
+          FindingFieldsUpdate: {
+            Workflow: { Status: 'SUPPRESSED' },
+          },
+        },
+      ],
+    }),
+  );
+}
+
 async function remediationActions(accountId: string, roleName: string, region: string) {
+  console.log(`Perform remediation actions for account: ${accountId}`);
   const crossAccountRoleArn = `arn:aws:iam::${accountId}:role/${roleName}`;
 
   const stsClient = new STS();
@@ -66,6 +154,7 @@ async function remediationActions(accountId: string, roleName: string, region: s
   await updatePasswordPolicy(IAM).catch((e) => console.log(e));
 
   // Set EBS default encryption
+  console.log('Setting EBS default encryption');
   await EC2.send(
     new EnableEbsEncryptionByDefaultCommand({
       DryRun: false,
@@ -91,6 +180,7 @@ async function remediationActions(accountId: string, roleName: string, region: s
 }
 
 async function updatePasswordPolicy(IAM: IAMClient) {
+  console.log('Update IAM password Policy');
   await IAM.send(
     new UpdateAccountPasswordPolicyCommand({
       MinimumPasswordLength: 8,
