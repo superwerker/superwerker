@@ -234,19 +234,26 @@ describe('service control policies', () => {
   });
 
   it('delete failed for scp when DetachPolicyCommand fails', async () => {
-    organizationClientMock.on(ListRootsCommand).resolves({});
+    organizationClientMock.on(ListRootsCommand).resolves({
+      Roots: [
+        {
+          Id: rootAccountId,
+          Name: rootAccountName,
+        },
+      ],
+    });
 
     organizationClientMock.on(ListPoliciesCommand).resolves({
       Policies: [
         {
           Name: scpName,
-          Id: logicalResourceId,
+          Id: policyId,
           Description: description,
         },
       ],
     });
 
-    //organizationClientMock.on(DetachPolicyCommand).resolves({});
+    organizationClientMock.on(DetachPolicyCommand).rejects(new Error('PolicyNotAttachedException'));
     organizationClientMock.on(DeletePolicyCommand).resolves({});
 
     try {
@@ -254,13 +261,13 @@ describe('service control policies', () => {
         {
           RequestType: 'Delete',
           ResourceProperties: {
-            Id: logicalResourceId,
+            scpName: scpName,
           },
         } as unknown as CloudFormationCustomResourceCreateEvent,
         {} as Context,
       );
     } catch (e) {
-      expect(e).toBeInstanceOf(Error); //toMatchObject(new Error('No root account found in the organization'));
+      expect(e).toMatchObject(new Error('PolicyNotAttachedException'));
     }
   });
 });
