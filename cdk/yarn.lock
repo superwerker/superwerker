@@ -35,20 +35,20 @@
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda-python-alpha/-/aws-lambda-python-alpha-2.66.1-alpha.0.tgz#fad09f0d7132fa3b19ad2d7497f5b0e56edc53e5"
   integrity sha512-iRP6uhMzkY3dDneSbtp12iY7/7Bs7hs7TuDD8gdylAu482omFcP3gjDowXMQjogCYT9B4cJwOsKI54bnvJZg9g==
 
-"@aws-cdk/cloud-assembly-schema@2.145.0":
-  version "2.145.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-2.145.0.tgz#84c71f93e4cd062a51ccaf00ea537a1d59b01035"
-  integrity sha512-zJz//seSq/fTSCL19Agoowvyblx+OABFlrandRSNEFbw8Oq2qDuaZvNSYb84v/9Fv93sR3J5ghQj6JsTCP38fg==
+"@aws-cdk/cloud-assembly-schema@2.146.0":
+  version "2.146.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-2.146.0.tgz#50c2d30c47f7f2dbf9d0b44caad26c2550c5209b"
+  integrity sha512-z/yHHzjVXrd1HVm6M6x+aw97pnxkdzK3rgzlKw6k6zRrKp7xM2G4WWcDTRrLI4BD3+lPOSuF2GqGEhk9/Djjsg==
   dependencies:
     jsonschema "^1.4.1"
-    semver "^7.6.0"
+    semver "^7.6.2"
 
-"@aws-cdk/cx-api@2.145.0":
-  version "2.145.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/cx-api/-/cx-api-2.145.0.tgz#2901830763c01698aecb7e6a8b65e6388bc69387"
-  integrity sha512-HwO7Sey9mT51ggRyO/F/h7hKvb62/axzXa/Erp7BiZ2Oj7TdrSPt23z4LRDW/guYnE65F4ypZiIgAq/Z63gyvg==
+"@aws-cdk/cx-api@2.146.0":
+  version "2.146.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/cx-api/-/cx-api-2.146.0.tgz#a2acf37b2d0cd42498647b0e1d6e9f34ea9cdb88"
+  integrity sha512-3hJtaFaAqPNGMBkUl3EuCou8P61BpGhPiRDvWqoQvIQcn0gQgur0MX8c+Sf24b2hOwRegugyrK1KvdUSNeaWbA==
   dependencies:
-    semver "^7.6.0"
+    semver "^7.6.2"
 
 "@aws-crypto/sha256-browser@5.2.0":
   version "5.2.0"
@@ -2878,10 +2878,10 @@ aws-sdk-client-mock@^4.0.1:
     sinon "^16.1.3"
     tslib "^2.1.0"
 
-aws-sdk@^2.1610.0:
-  version "2.1639.0"
-  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1639.0.tgz#cb5e3695ef9a16b6695a67e355a2cf0e1f1bfaa4"
-  integrity sha512-3vi9ONXhROfXTjsulFurKtJ/vBjiXirhwrRY6C7QRJyI/+m9lphtBivSYynnu7q2saAqC9ArlkEWQLRFUPy+Zg==
+aws-sdk@^2.1639.0:
+  version "2.1644.0"
+  resolved "https://registry.yarnpkg.com/aws-sdk/-/aws-sdk-2.1644.0.tgz#998b5a7fc059b13f760e19013948cc8b2317165c"
+  integrity sha512-9DkVmQWrL766uxeag6wLbXNahwodrIvxZlh1JZ6bzMoNXLCx38GhQfdtLhCoqK7+k0c5QIzHhjPqyqwPM4ohJw==
   dependencies:
     buffer "4.9.2"
     events "1.1.1"
@@ -3104,15 +3104,15 @@ case@1.6.3:
   resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
-cdk-assets@^2.145.0:
-  version "2.145.0"
-  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.145.0.tgz#0c87e770e1d10fd7309f7510b22809ef12138ef7"
-  integrity sha512-7KEqqEBbAOes2Lulbe+VEt7Bt4L6KPjUI0+I/EzdhHDZqgUYvU2cVo5UixGPXlnZOrctpkBkJloy1Rqkc74Mvw==
+cdk-assets@^2.146.0:
+  version "2.146.0"
+  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.146.0.tgz#ecb4b7cc534da8bcbe4ef7d71e50725f08f3ca52"
+  integrity sha512-kt58LzAc/H1SOWiGj6G7maVYW8sRvX9+ey8XXCdDBOnb6WIL7zx/KNgtgDDjd2ks22++9FKuviO5Cai9Lx+PaQ==
   dependencies:
-    "@aws-cdk/cloud-assembly-schema" "2.145.0"
-    "@aws-cdk/cx-api" "2.145.0"
+    "@aws-cdk/cloud-assembly-schema" "2.146.0"
+    "@aws-cdk/cx-api" "2.146.0"
     archiver "^5.3.2"
-    aws-sdk "^2.1610.0"
+    aws-sdk "^2.1639.0"
     glob "^7.2.3"
     mime "^2.6.0"
     yargs "^16.2.0"
@@ -5952,6 +5952,11 @@ semver@^6.3.0, semver@^6.3.1:
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
 semver@^7.5.3, semver@^7.5.4, semver@^7.6.0, semver@^7.6.2:
+  version "7.6.2"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
+  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
+
+semver@^7.6.2:
   version "7.6.2"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
   integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
