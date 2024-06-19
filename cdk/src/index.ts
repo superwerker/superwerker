@@ -36,6 +36,10 @@ NagSuppressions.addStackSuppressions(
       id: 'AwsSolutions-SF1',
       reason: 'Tracing for Stepfunction is not necessary in our case',
     },
+    {
+      id: 'AwsSolutions-SF2',
+      reason: 'Tracing for Stepfunction is not necessary in our case',
+    },
   ],
   true,
 );
