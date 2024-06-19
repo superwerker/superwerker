@@ -9,6 +9,16 @@ updates:
     directory: "cdk/"
     schedule:
       interval: "weekly"
+    groups:
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
+      development:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 10
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
