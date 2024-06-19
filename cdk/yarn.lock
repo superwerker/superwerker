@@ -3152,10 +3152,10 @@ cdk-assets@^2.145.0:
     mime "^2.6.0"
     yargs "^16.2.0"
 
-cdk-nag@^2.28.140:
-  version "2.28.140"
-  resolved "https://registry.yarnpkg.com/cdk-nag/-/cdk-nag-2.28.140.tgz#1ee58ab3a21a1587b98248867e53d2d673c81489"
-  integrity sha512-ydjSN5Xizu+Ty4qVKqK3VhzSdYSy0tsUuf8V/jILOfHXUjA+Ep50tK5uOWAKLw5Gxuf8hnYD5CWBw9l85y6lvg==
+cdk-nag@^2.28.144:
+  version "2.28.144"
+  resolved "https://registry.yarnpkg.com/cdk-nag/-/cdk-nag-2.28.144.tgz#83d68ac87de36b91146b29bb05494d797a287d26"
+  integrity sha512-KzjHyEC9TOntnl90KPquAXi0tVKFGFrJXMp8R57VXBBatz22EgvV7irtIqvPUFCuluMLGfPM1bJi3PGnf8r8tA==
 
 chalk@5.3.0, chalk@^5.3.0:
   version "5.3.0"
