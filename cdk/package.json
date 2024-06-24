@@ -50,7 +50,7 @@
     "@aws-sdk/client-controltower": "3.600.0",
     "@aws-sdk/client-eventbridge": "3.600.0",
     "@aws-sdk/client-organizations": "3.600.0",
-    "@aws-sdk/client-securityhub": "3.600.0",
+    "@aws-sdk/client-securityhub": "3.602.0",
     "@aws-sdk/client-ses": "3.600.0",
     "@aws-sdk/client-sns": "3.600.0",
     "@aws-sdk/client-ssm": "3.600.0",
