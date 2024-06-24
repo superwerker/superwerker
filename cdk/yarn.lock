@@ -35,18 +35,18 @@
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda-python-alpha/-/aws-lambda-python-alpha-2.66.1-alpha.0.tgz#fad09f0d7132fa3b19ad2d7497f5b0e56edc53e5"
   integrity sha512-iRP6uhMzkY3dDneSbtp12iY7/7Bs7hs7TuDD8gdylAu482omFcP3gjDowXMQjogCYT9B4cJwOsKI54bnvJZg9g==
 
-"@aws-cdk/cloud-assembly-schema@2.146.0":
-  version "2.146.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-2.146.0.tgz#50c2d30c47f7f2dbf9d0b44caad26c2550c5209b"
-  integrity sha512-z/yHHzjVXrd1HVm6M6x+aw97pnxkdzK3rgzlKw6k6zRrKp7xM2G4WWcDTRrLI4BD3+lPOSuF2GqGEhk9/Djjsg==
+"@aws-cdk/cloud-assembly-schema@2.147.0":
+  version "2.147.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-2.147.0.tgz#79b5f5e5a40ed411978ae5e889a3df9f52b5a44f"
+  integrity sha512-ZSTAntEJhuMVAS/GGaASZdrJKUnZBZuVzZL1aCozMFfkXsoymS5EIuCfh/il29ZTgnO9VqhWq4fwaHLBFe6IIw==
   dependencies:
     jsonschema "^1.4.1"
     semver "^7.6.2"
 
-"@aws-cdk/cx-api@2.146.0":
-  version "2.146.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/cx-api/-/cx-api-2.146.0.tgz#a2acf37b2d0cd42498647b0e1d6e9f34ea9cdb88"
-  integrity sha512-3hJtaFaAqPNGMBkUl3EuCou8P61BpGhPiRDvWqoQvIQcn0gQgur0MX8c+Sf24b2hOwRegugyrK1KvdUSNeaWbA==
+"@aws-cdk/cx-api@2.147.0":
+  version "2.147.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/cx-api/-/cx-api-2.147.0.tgz#2cb5656b5b3295fe636ca552f69f77a045556165"
+  integrity sha512-2npVsGhROwpJ7KsdriHdUm6n9ttc/kHNRuHzmBUqEjDgXXlBaS1c63HQ00JjweuE1hvAzz8IT6mtu2gRoc5snw==
   dependencies:
     semver "^7.6.2"
 
@@ -3102,13 +3102,13 @@ case@1.6.3:
   resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
-cdk-assets@^2.146.0:
-  version "2.146.0"
-  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.146.0.tgz#ecb4b7cc534da8bcbe4ef7d71e50725f08f3ca52"
-  integrity sha512-kt58LzAc/H1SOWiGj6G7maVYW8sRvX9+ey8XXCdDBOnb6WIL7zx/KNgtgDDjd2ks22++9FKuviO5Cai9Lx+PaQ==
+cdk-assets@^2.147.0:
+  version "2.147.0"
+  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-2.147.0.tgz#1ed19c284b72d57e55de7fd3b5066acfac31f8e4"
+  integrity sha512-ytx/fG8fvrgpU3Lovh3/AuLot5IFJQ2CoYEkLwmK4zKMn4f8u6PjGiSLWh0vduOMn9JqjDqx4kvwMnfLV2eZxQ==
   dependencies:
-    "@aws-cdk/cloud-assembly-schema" "2.146.0"
-    "@aws-cdk/cx-api" "2.146.0"
+    "@aws-cdk/cloud-assembly-schema" "2.147.0"
+    "@aws-cdk/cx-api" "2.147.0"
     archiver "^5.3.2"
     aws-sdk "^2.1639.0"
     glob "^7.2.3"
@@ -5937,11 +5937,6 @@ semver@^6.3.0, semver@^6.3.1:
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
 semver@^7.5.3, semver@^7.5.4, semver@^7.6.0, semver@^7.6.2:
-  version "7.6.2"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
-  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
-
-semver@^7.6.2:
   version "7.6.2"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
   integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
