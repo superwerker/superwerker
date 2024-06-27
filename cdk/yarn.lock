@@ -137,10 +137,10 @@
     "@smithy/util-waiter" "^3.0.1"
     tslib "^2.6.2"
 
-"@aws-sdk/client-controltower@3.600.0":
-  version "3.600.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/client-controltower/-/client-controltower-3.600.0.tgz#7c0244de469439dc92be4921e3f17d72b80b3d8c"
-  integrity sha512-71euyBJ6WTQVPjCdylAmVxYQoSv/V9YLYoHigAsna2mHZ1aD5Yeh7DBWx0EIxf/xEN1hvDP0oOsnKS8QjkJfoQ==
+"@aws-sdk/client-controltower@3.605.0":
+  version "3.605.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/client-controltower/-/client-controltower-3.605.0.tgz#4580f60cfb7188075ff82362c9673acac6adc9b1"
+  integrity sha512-TmpkIPXN3UdxaPTm0D8eERXsq07U3u61g1tFDeD/ZUuQX8TOJDSSsrxGyMAnQiH7E/KSsRiazb6ZpdSwo1VwLQ==
   dependencies:
     "@aws-crypto/sha256-browser" "5.2.0"
     "@aws-crypto/sha256-js" "5.2.0"
@@ -278,10 +278,10 @@
     "@smithy/util-utf8" "^3.0.0"
     tslib "^2.6.2"
 
-"@aws-sdk/client-securityhub@3.600.0":
-  version "3.600.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/client-securityhub/-/client-securityhub-3.600.0.tgz#a96ba6f44b3316e3d62f2b0f5378dd759c51f57e"
-  integrity sha512-UV8b9zwNiA3JyV5zQ0+P3vhc5dPxEeBPGOJES/UBVjLR9rYrGrA3FTATQqrsAGhiigL/V8TAnb1k9XJVv8YxBA==
+"@aws-sdk/client-securityhub@3.602.0":
+  version "3.602.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/client-securityhub/-/client-securityhub-3.602.0.tgz#89029153e339487788048380e5da38f05a2f35f4"
+  integrity sha512-wh+stG/xicKp34qaccuIdtCHv/ZQJCpcPFCdHGyhppKyfMQveEW8gnBgOtZW6zFzWzbCxdb/CkwaEThQ6LHZNw==
   dependencies:
     "@aws-crypto/sha256-browser" "5.2.0"
     "@aws-crypto/sha256-js" "5.2.0"
@@ -420,10 +420,10 @@
     "@smithy/util-utf8" "^3.0.0"
     tslib "^2.6.2"
 
-"@aws-sdk/client-ssm@3.600.0":
-  version "3.600.0"
-  resolved "https://registry.yarnpkg.com/@aws-sdk/client-ssm/-/client-ssm-3.600.0.tgz#fee6f638cf87c730a21c911adceb1ba01b38d8f9"
-  integrity sha512-HleBvyteNNaqnsSZz4IcI6S+J+tNvRI4tjbfzrJoVHj86wDeH4eRQhxqJjmFEiJZJuM2EybclRuoCT/2U7SWdQ==
+"@aws-sdk/client-ssm@3.603.0":
+  version "3.603.0"
+  resolved "https://registry.yarnpkg.com/@aws-sdk/client-ssm/-/client-ssm-3.603.0.tgz#17925086bd94e23eee791e958df95f1d023824e9"
+  integrity sha512-KyHp8mxIFUDeAkjSiPzfDTFcrP3WSjQeNUYBTG76cowkmYZgc0QqVfgQwjOt3rQvmkG8R7M/vmDIwLTh1xx/7A==
   dependencies:
     "@aws-crypto/sha256-browser" "5.2.0"
     "@aws-crypto/sha256-js" "5.2.0"
