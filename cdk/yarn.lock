@@ -2839,10 +2839,10 @@ available-typed-arrays@^1.0.5, available-typed-arrays@^1.0.6, available-typed-ar
   dependencies:
     possible-typed-array-names "^1.0.0"
 
-aws-cdk-lib@^2.146.0:
-  version "2.146.0"
-  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.146.0.tgz#01265f9181a1144b4dff6f76a2505f57af6b4d38"
-  integrity sha512-W3F2zH+P7hUxmu2dlEKJBBi6Twc4//NsJJW00h2LN0dKU+2302QY8jR+P7jgEYzZ7U50phtH4zO6BPmJrhLVEg==
+aws-cdk-lib@^2.147.2:
+  version "2.147.2"
+  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.147.2.tgz#513e3c9743165dfbfe5a4c9731bb914188c0dc7e"
+  integrity sha512-TBx7sjxx8adL5UxsyOFaV1N9e5oAAuXuXONbLm6H/OQ2OxnV1fLFsXahwok9j9ibnVWEh0/2CyXEjZXOJ/WnuQ==
   dependencies:
     "@aws-cdk/asset-awscli-v1" "^2.2.202"
     "@aws-cdk/asset-kubectl-v20" "^2.1.2"
