@@ -65,3 +65,57 @@ def test_superwerker_service_control_policies():
             acceptedPolicyDict = json.loads(acceptedPolicyJson)
 
             assert expectedPolicyDict == acceptedPolicyDict, 'Policy content does not match expected content'
+
+        if scp['Name'] == 'superwerker-sandbox':
+            superwerker_policy_id = scp['Id']
+            superwerker_policy=organizations.describe_policy(PolicyId=superwerker_policy_id)
+            assert superwerker_policy['Policy']['PolicySummary']['Description'] == 'superwerker - SCPSandbox'
+
+            expectedPolicyJson = '''{
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": [
+                        'route53domains:RegisterDomain',
+                        'route53domains:RenewDomain',
+                        'route53domains:TransferDomain',
+                        'ec2:ModifyReservedInstances',
+                        'ec2:PurchaseHostReservation',
+                        'ec2:PurchaseReservedInstancesOffering',
+                        'ec2:PurchaseScheduledInstances',
+                        'rds:PurchaseReservedDBInstancesOffering',
+                        'dynamodb:PurchaseReservedCapacityOfferings',
+                        's3:PutObjectRetention',
+                        's3:PutObjectLegalHold',
+                        's3:BypassGovernanceRetention',
+                        's3:PutBucketObjectLockConfiguration',
+                        'elasticache:PurchaseReservedCacheNodesOffering',
+                        'redshift:PurchaseReservedNodeOffering',
+                        'savingsplans:CreateSavingsPlan',
+                        'aws-marketplace:AcceptAgreementApprovalRequest',
+                        'aws-marketplace:Subscribe',
+                        'shield:CreateSubscription',
+                        'acm-pca:CreateCertificateAuthority',
+                        'es:PurchaseReservedElasticsearchInstanceOffering',
+                        'outposts:CreateOutpost',
+                        'snowball:CreateCluster',
+                        's3-object-lambda:PutObjectLegalHold',
+                        's3-object-lambda:PutObjectRetention',
+                        'glacier:InitiateVaultLock',
+                        'glacier:CompleteVaultLock',
+                        'es:PurchaseReservedInstanceOffering',
+                        'backup:PutBackupVaultLockConfiguration',
+                    ],
+                    "Effect": "Deny",
+                    "Resource": "*",
+                    "Sid": "DenyExpensiveResourceCreation"
+                },
+            ]
+            }'''
+
+            expectedPolicyDict = json.loads(expectedPolicyJson)
+
+            acceptedPolicyJson = superwerker_policy['Policy']['Content']
+            acceptedPolicyDict = json.loads(acceptedPolicyJson)
+
+            assert expectedPolicyDict == acceptedPolicyDict, 'Policy content does not match expected content'
