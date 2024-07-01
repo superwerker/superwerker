@@ -205,13 +205,14 @@ export class SuperwerkerStack extends Stack {
       expression: Fn.conditionEquals(includeServiceControlPolicies, 'Yes'),
     });
     serviceControlPoliciesCondition.overrideLogicalId('IncludeServiceControlPolicies');
-    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {});
-    const rolloutScps = new CfnCondition(this, 'rolloutscps', {
-      expression: Fn.conditionAnd(backupCondition, serviceControlPoliciesCondition),
+    const serviceControlPoliciesStack = new ServiceControlPoliciesStack(this, 'ServiceControlPolicies', {
+      parameters: {
+        IncludeBackup: includeBackup.value.toString(),
+      },
     });
     serviceControlPoliciesStack.addDependency(controlTowerStack);
     (serviceControlPoliciesStack.node.defaultChild as CfnStack).overrideLogicalId('ServiceControlPolicies');
-    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = rolloutScps;
+    (serviceControlPoliciesStack.node.defaultChild as CfnStack).cfnOptions.condition = serviceControlPoliciesCondition;
 
     // Billing
     const billingStack = new BillingStack(this, 'Billing', {});

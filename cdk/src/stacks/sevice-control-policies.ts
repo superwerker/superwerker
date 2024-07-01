@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { CfnParameter, CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -9,6 +9,10 @@ import { Construct } from 'constructs';
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
+
+    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
+      type: 'String',
+    });
 
     //Backup
     const backupStatement = new PolicyStatement({
@@ -47,8 +51,12 @@ export class ServiceControlPoliciesStack extends NestedStack {
     });
 
     const scpPolicyDocumentRoot = new PolicyDocument({
-      statements: [denyLeavingOrganizationStatement, backupStatement],
+      statements: [denyLeavingOrganizationStatement],
     });
+
+    if (includeBackup.valueAsString === 'Yes') {
+      scpPolicyDocumentRoot.addStatements(backupStatement);
+    }
 
     const scpRoot = new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
@@ -172,7 +180,16 @@ class ServiceControlPolicySandboxProvider extends Construct {
         new PolicyStatement({
           effect: Effect.ALLOW,
           resources: ['*'],
-          actions: ['organizations:EnablePolicyType', 'organizations:DisablePolicyType', 'organizations:ListRoots'],
+          actions: [
+            'organizations:CreatePolicy',
+            'organizations:UpdatePolicy',
+            'organizations:DeletePolicy',
+            'organizations:AttachPolicy',
+            'organizations:DetachPolicy',
+            'organizations:ListRoots',
+            'organizations:ListPolicies',
+            'organizations:ListOrganizationalUnitsForParent',
+          ],
         }),
       ],
       timeout: Duration.seconds(300),
