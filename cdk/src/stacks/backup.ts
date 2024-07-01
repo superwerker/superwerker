@@ -376,6 +376,9 @@ export class BackupStack extends NestedStack {
             },
             rules: {
               'backup-daily': {
+                schedule_expression: {
+                  '@@assign': 'cron(0 5 ? * * *)',
+                },
                 lifecycle: {
                   delete_after_days: { '@@assign': 30 },
                 },
