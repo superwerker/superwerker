@@ -13,6 +13,15 @@ updates:
       aws-sdk:
         patterns:
           - "@aws-sdk/*"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+      development:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 10
   - package-ecosystem: "pip"
     directory: "/"
     schedule:

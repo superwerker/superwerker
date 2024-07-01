@@ -32,6 +32,14 @@ NagSuppressions.addStackSuppressions(
       reason:
         'Encryption-at-rest for SNS topics has been removed as a control for the AWS Foundational Security Best Practices (FSBP) standard in April 2024, https://docs.aws.amazon.com/securityhub/latest/userguide/sns-controls.html#sns-1',
     },
+    {
+      id: 'AwsSolutions-SF1',
+      reason: 'Tracing for Stepfunction is not necessary in our case',
+    },
+    {
+      id: 'AwsSolutions-SF2',
+      reason: 'Tracing for Stepfunction is not necessary in our case',
+    },
   ],
   true,
 );
