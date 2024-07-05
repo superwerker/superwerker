@@ -29,8 +29,9 @@ export async function handler(event: any, _context: any) {
   await snsClient.send(
     new PublishCommand({
       Message: messageBody,
-      Subject: messageTitle,
-      TopicArn: topicARN, //process.env.TOPIC_ARN,
+      // `Subject` is limited to 100 characters (source: https://docs.aws.amazon.com/sns/latest/api/API_Publish.html)
+      Subject: messageTitle.length > 100 ? `${messageTitle.substring(0, 97)}...` : messageTitle,
+      TopicArn: topicARN,
     }),
   );
 }
