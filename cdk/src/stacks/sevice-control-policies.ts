@@ -5,6 +5,7 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
+import { PrepareStack } from './prepare';
 
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -116,6 +117,7 @@ export class ServiceControlPoliciesStack extends NestedStack {
       properties: {
         policy: JSON.stringify(scpPolicyDocumentSandbox),
         scpName: 'superwerker-sandbox',
+        sandboxOUParameterPath: PrepareStack.controlTowerSandboxOuSsmParameter,
       },
     });
 
@@ -200,7 +202,7 @@ class ServiceControlPolicySandboxProvider extends Construct {
               {
                 service: 'ssm',
                 resource: 'parameter',
-                resourceName: 'superwerker/controltower/sandbox_ou_name',
+                resourceName: 'superwerker/*',
               },
               Stack.of(this),
             ),

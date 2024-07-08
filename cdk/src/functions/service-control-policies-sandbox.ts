@@ -14,7 +14,7 @@ import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 import { throttlingBackOff } from './utils/throttle';
 
-async function getSandboxId(organizationClient: OrganizationsClient): Promise<string | undefined> {
+async function getSandboxId(organizationClient: OrganizationsClient, sandboxOUParameterPath: string): Promise<string | undefined> {
   const command = new ListRootsCommand({});
   const response = await throttlingBackOff(() => organizationClient.send(command));
 
@@ -32,10 +32,7 @@ async function getSandboxId(organizationClient: OrganizationsClient): Promise<st
 
   const ssmClient = new SSMClient();
 
-  const input = {
-    Name: '/superwerker/controltower/sandbox_ou_name',
-  };
-  const getParameterCommand = new GetParameterCommand(input);
+  const getParameterCommand = new GetParameterCommand({ Name: sandboxOUParameterPath });
   const getParameterResponse = await ssmClient.send(getParameterCommand);
 
   for (const oUnit of oUnits) {
@@ -70,11 +67,13 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   let client = new OrganizationsClient({ region: 'us-east-1' });
 
+  const sandboxOUParameterPath = event.ResourceProperties.sandboxOUParameterPath;
+
   switch (event.RequestType) {
     case 'Create':
       console.log('Creating Policy for : ', event.LogicalResourceId);
       try {
-        let sandboxId = await getSandboxId(client);
+        let sandboxId = await getSandboxId(client, sandboxOUParameterPath);
 
         const commandCreatePolicy = new CreatePolicyCommand({
           Type: PolicyType.SERVICE_CONTROL_POLICY,
@@ -120,7 +119,7 @@ export async function handler(event: CdkCustomResourceEvent, _context: Context):
       console.log('Deleting Policy: ', event.LogicalResourceId);
 
       try {
-        const sandboxId = await getSandboxId(client);
+        const sandboxId = await getSandboxId(client, sandboxOUParameterPath);
 
         const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
 
