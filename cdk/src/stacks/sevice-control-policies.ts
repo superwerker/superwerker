@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { CfnParameter, CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { Arn, CfnParameter, CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -54,7 +54,8 @@ export class ServiceControlPoliciesStack extends NestedStack {
       statements: [denyLeavingOrganizationStatement],
     });
 
-    if (includeBackup.valueAsString === 'Yes') {
+    //Include Backup SCP if Backup is included
+    if (includeBackup.value.toString() === 'Yes') {
       scpPolicyDocumentRoot.addStatements(backupStatement);
     }
 
@@ -189,6 +190,20 @@ class ServiceControlPolicySandboxProvider extends Construct {
             'organizations:ListRoots',
             'organizations:ListPolicies',
             'organizations:ListOrganizationalUnitsForParent',
+          ],
+        }),
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ['ssm:GetParameter'],
+          resources: [
+            Arn.format(
+              {
+                service: 'ssm',
+                resource: 'parameter',
+                resourceName: 'superwerker/controltower/sandbox_ou_name',
+              },
+              Stack.of(this),
+            ),
           ],
         }),
       ],

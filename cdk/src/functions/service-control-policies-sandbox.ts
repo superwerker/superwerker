@@ -10,6 +10,7 @@ import {
   ListPoliciesCommand,
   ListOrganizationalUnitsForParentCommand,
 } from '@aws-sdk/client-organizations';
+import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 import { throttlingBackOff } from './utils/throttle';
 
@@ -29,8 +30,16 @@ async function getSandboxId(organizationClient: OrganizationsClient): Promise<st
 
   const oUnits = responseListOUs.OrganizationalUnits || [];
 
+  const ssmClient = new SSMClient();
+
+  const input = {
+    Name: '/superwerker/controltower/sandbox_ou_name',
+  };
+  const getParameterCommand = new GetParameterCommand(input);
+  const getParameterResponse = await ssmClient.send(getParameterCommand);
+
   for (const oUnit of oUnits) {
-    if (oUnit.Name == 'Sandbox') {
+    if (oUnit.Name == getParameterResponse.Parameter?.Value) {
       return oUnit.Id;
     }
   }
