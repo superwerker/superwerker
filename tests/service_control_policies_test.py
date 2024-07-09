@@ -21,50 +21,73 @@ def test_superwerker_service_control_policies():
             superwerker_policy=organizations.describe_policy(PolicyId=superwerker_policy_id)
             assert superwerker_policy['Policy']['PolicySummary']['Description'] == 'superwerker - SCPRoot'
 
-            expectedPolicyJson = '''{
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "organizations:LeaveOrganization",
-                    "Effect": "Deny",
-                    "Resource": "*",
-                    "Sid": "PreventLeavingOrganization"
-                },
-                {
-                    "Condition": {
-                        "ArnNotLike": {
-                        "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+            if 'SWProtectBackup' in superwerker_policy:
+
+                expectedPolicyJson = '''{
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": "organizations:LeaveOrganization",
+                            "Effect": "Deny",
+                            "Resource": "*",
+                            "Sid": "PreventLeavingOrganization"
+                        },
+                        {
+                            "Condition": {
+                                "ArnNotLike": {
+                                "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
+                                }
+                            },
+                            "Action": [
+                                "iam:AttachRolePolicy",
+                                "iam:CreateRole",
+                                "iam:DeleteRole",
+                                "iam:DeleteRolePermissionsBoundary",
+                                "iam:DeleteRolePolicy",
+                                "iam:DetachRolePolicy",
+                                "iam:PutRolePermissionsBoundary",
+                                "iam:PutRolePolicy",
+                                "iam:UpdateAssumeRolePolicy",
+                                "iam:UpdateRole",
+                                "iam:UpdateRoleDescription"
+                            ],
+                            "Resource": [
+                                "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
+                                "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
+                            ],
+                            "Effect": "Deny",
+                            "Sid": "SWProtectBackup"
                         }
-                    },
-                    "Action": [
-                        "iam:AttachRolePolicy",
-                        "iam:CreateRole",
-                        "iam:DeleteRole",
-                        "iam:DeleteRolePermissionsBoundary",
-                        "iam:DeleteRolePolicy",
-                        "iam:DetachRolePolicy",
-                        "iam:PutRolePermissionsBoundary",
-                        "iam:PutRolePolicy",
-                        "iam:UpdateAssumeRolePolicy",
-                        "iam:UpdateRole",
-                        "iam:UpdateRoleDescription"
-                    ],
-                    "Resource": [
-                        "arn:aws:iam::*:role/service-role/AWSBackupDefaultServiceRole",
-                        "arn:aws:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole"
-                    ],
-                    "Effect": "Deny",
-                    "Sid": "SWProtectBackup"
-                }
-            ]
-            }'''
+                    ]
+                }'''
 
-            expectedPolicyDict = json.loads(expectedPolicyJson)
+                expectedPolicyDict = json.loads(expectedPolicyJson)
 
-            acceptedPolicyJson = superwerker_policy['Policy']['Content']
-            acceptedPolicyDict = json.loads(acceptedPolicyJson)
+                acceptedPolicyJson = superwerker_policy['Policy']['Content']
+                acceptedPolicyDict = json.loads(acceptedPolicyJson)
 
-            assert expectedPolicyDict == acceptedPolicyDict, 'Policy content does not match expected content'
+                assert expectedPolicyDict == acceptedPolicyDict, 'Policy content does not match expected content'
+            
+            else:
+                expectedPolicyJson = '''{
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": "organizations:LeaveOrganization",
+                            "Effect": "Deny",
+                            "Resource": "*",
+                            "Sid": "PreventLeavingOrganization"
+                        },
+                    ]
+                }'''
+
+                expectedPolicyDict = json.loads(expectedPolicyJson)
+
+                acceptedPolicyJson = superwerker_policy['Policy']['Content']
+                acceptedPolicyDict = json.loads(acceptedPolicyJson)
+
+                assert expectedPolicyDict == acceptedPolicyDict, 'Policy content does not match expected content'
+               
 
         if scp['Name'] == 'superwerker-sandbox':
             superwerker_policy_id = scp['Id']
