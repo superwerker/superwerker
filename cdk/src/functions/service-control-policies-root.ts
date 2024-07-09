@@ -8,6 +8,7 @@ import {
   PolicyType,
   UpdatePolicyCommand,
   ListPoliciesCommand,
+  DuplicatePolicyException,
 } from '@aws-sdk/client-organizations';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 import { throttlingBackOff } from './utils/throttle';
@@ -44,79 +45,107 @@ async function getPolicyId(organizationClient: OrganizationsClient, policyName: 
   throw new Error(`No SCP Policy found for the name: ${policyName}`);
 }
 
+async function createPolicy(
+  organizationClient: OrganizationsClient,
+  event: CdkCustomResourceEvent,
+  _context: Context,
+): Promise<CdkCustomResourceResponse> {
+  console.log('Creating Policy for : ', event.LogicalResourceId);
+  try {
+    let rootId = await getRootId(organizationClient);
+
+    const commandCreatePolicy = new CreatePolicyCommand({
+      Type: PolicyType.SERVICE_CONTROL_POLICY,
+      Description: `superwerker - ${event.LogicalResourceId}`,
+      Name: event.ResourceProperties.scpName,
+      Content: event.ResourceProperties.policy,
+    });
+
+    const responseCreatePolicy = await throttlingBackOff(() => organizationClient.send(commandCreatePolicy));
+
+    const commandAttachPolicy = new AttachPolicyCommand({
+      PolicyId: responseCreatePolicy.Policy?.PolicySummary?.Id,
+      TargetId: rootId,
+    });
+
+    await throttlingBackOff(() => organizationClient.send(commandAttachPolicy));
+
+    return { SUCCESS: 'SCPs have been successfully created for Root account' };
+  } catch (e) {
+    if (e instanceof DuplicatePolicyException) {
+      return updatePolicy(organizationClient, event, _context);
+    } else {
+      console.log('Error during Creating Policy: ', e);
+      throw e;
+    }
+  }
+}
+
+async function updatePolicy(
+  organizationClient: OrganizationsClient,
+  event: CdkCustomResourceEvent,
+  _context: Context,
+): Promise<CdkCustomResourceResponse> {
+  try {
+    const policyId = await getPolicyId(organizationClient, event.ResourceProperties.scpName);
+
+    const commandUpdatePolicy = new UpdatePolicyCommand({
+      PolicyId: policyId,
+      Description: `superwerker - ${event.LogicalResourceId}`,
+      Name: event.ResourceProperties.scpName,
+      Content: event.ResourceProperties.policy,
+    });
+
+    const responseUpdatePolicy = await throttlingBackOff(() => organizationClient.send(commandUpdatePolicy));
+    return responseUpdatePolicy;
+  } catch (e) {
+    console.log('Error during Updating Policy: ', e);
+    throw e;
+  }
+}
+
+async function deletePolicy(
+  organizationClient: OrganizationsClient,
+  event: CdkCustomResourceEvent,
+  _context: Context,
+): Promise<CdkCustomResourceResponse> {
+  console.log('Deleting Policy: ', event.LogicalResourceId);
+
+  try {
+    const rootId = await getRootId(organizationClient);
+
+    const policyId = await getPolicyId(organizationClient, event.ResourceProperties.scpName);
+
+    const commandDetachPolicy = new DetachPolicyCommand({
+      PolicyId: policyId,
+      TargetId: rootId,
+    });
+
+    await throttlingBackOff(() => organizationClient.send(commandDetachPolicy));
+
+    const commandDeletePolicy = new DeletePolicyCommand({
+      PolicyId: await getPolicyId(organizationClient, event.ResourceProperties.scpName),
+    });
+
+    const responseDeletePolicy = await throttlingBackOff(() => organizationClient.send(commandDeletePolicy));
+    return responseDeletePolicy;
+  } catch (e) {
+    console.log('Error during Deleting Policy: ', e);
+    throw e;
+  }
+}
+
 export async function handler(event: CdkCustomResourceEvent, _context: Context): Promise<CdkCustomResourceResponse> {
   let client = new OrganizationsClient({ region: 'us-east-1' });
 
   switch (event.RequestType) {
     case 'Create':
-      console.log('Creating Policy for : ', event.LogicalResourceId);
-      try {
-        let rootId = await getRootId(client);
-
-        const commandCreatePolicy = new CreatePolicyCommand({
-          Type: PolicyType.SERVICE_CONTROL_POLICY,
-          Description: `superwerker - ${event.LogicalResourceId}`,
-          Name: event.ResourceProperties.scpName,
-          Content: event.ResourceProperties.policy,
-        });
-
-        const responseCreatePolicy = await throttlingBackOff(() => client.send(commandCreatePolicy));
-
-        const commandAttachPolicy = new AttachPolicyCommand({
-          PolicyId: responseCreatePolicy.Policy?.PolicySummary?.Id,
-          TargetId: rootId,
-        });
-
-        await throttlingBackOff(() => client.send(commandAttachPolicy));
-
-        return { SUCCESS: 'SCPs have been successfully created for Root account' };
-      } catch (e) {
-        console.log('Error during Creating Policy: ', e);
-        throw e;
-      }
+      return createPolicy(client, event, _context);
 
     case 'Update':
-      try {
-        const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
-
-        const commandUpdatePolicy = new UpdatePolicyCommand({
-          PolicyId: policyId,
-          Description: `superwerker - ${event.LogicalResourceId}`,
-          Name: event.ResourceProperties.scpName,
-          Content: event.ResourceProperties.policy,
-        });
-
-        const responseUpdatePolicy = await throttlingBackOff(() => client.send(commandUpdatePolicy));
-        return responseUpdatePolicy;
-      } catch (e) {
-        console.log('Error during Updating Policy: ', e);
-        throw e;
-      }
+      return updatePolicy(client, event, _context);
 
     case 'Delete':
-      console.log('Deleting Policy: ', event.LogicalResourceId);
-
-      try {
-        const rootId = await getRootId(client);
-
-        const policyId = await getPolicyId(client, event.ResourceProperties.scpName);
-
-        const commandDetachPolicy = new DetachPolicyCommand({
-          PolicyId: policyId,
-          TargetId: rootId,
-        });
-
-        await throttlingBackOff(() => client.send(commandDetachPolicy));
-
-        const commandDeletePolicy = new DeletePolicyCommand({
-          PolicyId: await getPolicyId(client, event.ResourceProperties.scpName),
-        });
-
-        const responseDeletePolicy = await throttlingBackOff(() => client.send(commandDeletePolicy));
-        return responseDeletePolicy;
-      } catch (e) {
-        console.log('Error during Deleting Policy: ', e);
-        throw e;
-      }
+      return deletePolicy(client, event, _context);
   }
 }
