@@ -70,16 +70,16 @@ def test_superwerker_service_control_policies():
             
             else:
                 expectedPolicyJson = '''{
-                    "Version": "2012-10-17",
                     "Statement": [
                         {
-                            "Action": "organizations:LeaveOrganization",
-                            "Effect": "Deny",
-                            "Resource": "*",
-                            "Sid": "PreventLeavingOrganization"
-                        },
-                    ]
-                }'''
+                        "Action": "organizations:LeaveOrganization",
+                        "Effect": "Deny",
+                        "Resource": "*",
+                        "Sid": "PreventLeavingOrganization"
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                    }'''
 
                 expectedPolicyDict = json.loads(expectedPolicyJson)
 
