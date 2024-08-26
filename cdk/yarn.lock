@@ -43,6 +43,14 @@
     jsonschema "^1.4.1"
     semver "^7.6.2"
 
+"@aws-cdk/cloud-assembly-schema@^36.0.5":
+  version "36.0.17"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-36.0.17.tgz#9f550601efbff7bd200abf5f62d6ddd1baa3aede"
+  integrity sha512-qZeSDHZCWSigPN9kXAYVHaYMECVNYWpv7I9W9ZDXux0kCmR/JUnj6bmWNG0b8boTn9bxMr4O4cdOKIhDmK6iag==
+  dependencies:
+    jsonschema "^1.4.1"
+    semver "^7.6.3"
+
 "@aws-cdk/cx-api@2.147.3":
   version "2.147.3"
   resolved "https://registry.yarnpkg.com/@aws-cdk/cx-api/-/cx-api-2.147.3.tgz#85c4900f4236b71993082a406dd528716a5d8553"
@@ -2843,14 +2851,15 @@ available-typed-arrays@^1.0.5, available-typed-arrays@^1.0.6, available-typed-ar
   dependencies:
     possible-typed-array-names "^1.0.0"
 
-aws-cdk-lib@^2.147.2:
-  version "2.147.2"
-  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.147.2.tgz#513e3c9743165dfbfe5a4c9731bb914188c0dc7e"
-  integrity sha512-TBx7sjxx8adL5UxsyOFaV1N9e5oAAuXuXONbLm6H/OQ2OxnV1fLFsXahwok9j9ibnVWEh0/2CyXEjZXOJ/WnuQ==
+aws-cdk-lib@^2.154.1:
+  version "2.154.1"
+  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.154.1.tgz#92888bca6b196ab3ae27adad43e85a14fa81f9c4"
+  integrity sha512-XV04/XyNKJ2yyMfYsiSmWx+rIKwTrcrd87p61t4xhE240Iy6Y6LxXVdvkNEOjjbeXVmOUQ7JBG9cW1BeeFiDgg==
   dependencies:
     "@aws-cdk/asset-awscli-v1" "^2.2.202"
     "@aws-cdk/asset-kubectl-v20" "^2.1.2"
     "@aws-cdk/asset-node-proxy-agent-v6" "^2.0.3"
+    "@aws-cdk/cloud-assembly-schema" "^36.0.5"
     "@balena/dockerignore" "^1.0.2"
     case "1.6.3"
     fs-extra "^11.2.0"
@@ -5941,10 +5950,10 @@ semver@^6.3.0, semver@^6.3.1:
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.1.tgz#556d2ef8689146e46dcea4bfdd095f3434dffcb4"
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
-semver@^7.5.3, semver@^7.5.4, semver@^7.6.0, semver@^7.6.2:
-  version "7.6.2"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.2.tgz#1e3b34759f896e8f14d6134732ce798aeb0c6e13"
-  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
+semver@^7.5.3, semver@^7.5.4, semver@^7.6.0, semver@^7.6.2, semver@^7.6.3:
+  version "7.6.3"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-7.6.3.tgz#980f7b5550bc175fb4dc09403085627f9eb33143"
+  integrity sha512-oVekP1cKtI+CTDvHWYFUcMtsK/00wmAEfyqKfNdARm8u1wNVhSgaX7A8d4UuIlUI5e84iEwOhs7ZPYRmzU9U6A==
 
 set-function-length@^1.2.1:
   version "1.2.1"
