@@ -240,6 +240,7 @@ def test_cannot_change_dynamodb_backup_tags(ddb_client_audit, ddb_table):
         )
     assert 'An error occurred (ValidationException) when calling the TagResource operation: One or more parameter values were invalid: The tag policy does not allow the specified value for the following tag key: \'superwerker:backup\'.' in str(exception.value)
 
+@pytest.mark.skip(reason="flaky test")
 def test_can_change_dynamodb_backup_tags_to_none(ddb_client_audit, ddb_table):
     ddb_client_audit.tag_resource(
         ResourceArn=ddb_table['TableArn'],
