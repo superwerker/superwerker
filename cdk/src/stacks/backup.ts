@@ -1,3 +1,22 @@
+import path from 'path';
+import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
+import { Construct } from 'constructs';
+
+export class BackupStack extends NestedStack {
+  constructor(scope: Construct, id: string, props: NestedStackProps) {
+    super(scope, id, props);
+    new CfnInclude(this, 'SuperwerkerTemplate', {
+      templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'backup.yaml'),
+    });
+  }
+}
+
+// Backup feature with Custom Resource still flacky
+// using for now old SSM based Approach
+
+/*
+
 import fs from 'fs';
 import {
   CfnResource,
@@ -410,3 +429,5 @@ export class BackupStack extends NestedStack {
     backupPolicy.node.addDependency(backupPolicyEnable.node.defaultChild as CfnResource);
   }
 }
+
+*/
