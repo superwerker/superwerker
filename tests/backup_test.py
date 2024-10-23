@@ -94,7 +94,11 @@ def random_rds_instance_identifier(rds_client_audit):
 @pytest.fixture
 def ddb_table(ddb_client_audit, create_random_table):
     yield create_random_table
-    ddb_client_audit.delete_table(TableName=create_random_table['TableName'])
+    delete_ddb_table(ddb_client_audit, create_random_table)
+    
+@retry(stop_max_delay=1800000, wait_fixed=20000)
+def delete_ddb_table(ddb_client_audit, table):
+    ddb_client_audit.delete_table(TableName=table['TableName'])
 
 @pytest.fixture
 def ebs_volume_id(ec2_client_audit, random_ebs_volume_id):
@@ -137,7 +141,7 @@ def test_check_conformance_pack_status(config_client_audit):
     assert org_conformance_packs['OrganizationConformancePacks'][0]['OrganizationConformancePackName'] == 'superwerker-backup-enforce', 'Organization Conformance Pack name does not match expected name'
 
     org_conformance_pack_statuses = config_client.describe_organization_conformance_pack_statuses()
-    assert org_conformance_pack_statuses['OrganizationConformancePackStatuses'][0]['Status'] == 'CREATE_SUCCESSFUL', 'Conformance Pack is not created successfully'
+    assert org_conformance_pack_statuses['OrganizationConformancePackStatuses'][0]['Status'] in ['CREATE_SUCCESSFUL', 'UPDATE_SUCCESSFUL'], 'Conformance Pack is not created successfully'
     
 
 def test_check_tag_policy():
