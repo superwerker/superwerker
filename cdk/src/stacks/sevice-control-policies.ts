@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { CfnParameter, CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -10,44 +10,82 @@ export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
 
-    //Backup
-    const backupStatement = new PolicyStatement({
-      conditions: {
-        ArnNotLike: {
-          'aws:PrincipalARN': `arn:${Stack.of(this).partition}:iam::*:role/stacksets-exec-*`,
-        },
-      },
-      actions: [
-        'iam:AttachRolePolicy',
-        'iam:CreateRole',
-        'iam:DeleteRole',
-        'iam:DeleteRolePermissionsBoundary',
-        'iam:DeleteRolePolicy',
-        'iam:DetachRolePolicy',
-        'iam:PutRolePermissionsBoundary',
-        'iam:PutRolePolicy',
-        'iam:UpdateAssumeRolePolicy',
-        'iam:UpdateRole',
-        'iam:UpdateRoleDescription',
-      ],
-      resources: [
-        `arn:${Stack.of(this).partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole`,
-        `arn:${Stack.of(this).partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole`,
-      ],
-      effect: Effect.DENY,
-      sid: 'SWProtectBackup',
+    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
+      type: 'String',
     });
+
+    const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
+      type: 'String',
+    });
+
+    let initialPolicy = [];
+
+    if (includeBackup.valueAsString == 'true') {
+      initialPolicy.push(
+        new PolicyStatement({
+          conditions: {
+            ArnNotLike: {
+              'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
+            },
+          },
+          actions: [
+            'iam:AttachRolePolicy',
+            'iam:CreateRole',
+            'iam:DeleteRole',
+            'iam:DeleteRolePermissionsBoundary',
+            'iam:DeleteRolePolicy',
+            'iam:DetachRolePolicy',
+            'iam:PutRolePermissionsBoundary',
+            'iam:PutRolePolicy',
+            'iam:UpdateAssumeRolePolicy',
+            'iam:UpdateRole',
+            'iam:UpdateRoleDescription',
+          ],
+          resources: [
+            'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
+            'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
+          ],
+          effect: Effect.DENY,
+        }),
+      );
+    }
+
+    if (includeSecurityHub.valueAsString == 'true') {
+      initialPolicy.push(
+        new PolicyStatement({
+          conditions: {
+            ArnNotLike: {
+              'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution',
+            },
+          },
+          actions: [
+            'securityhub:DeleteInvitations',
+            'securityhub:DisableSecurityHub',
+            'securityhub:DisassociateFromMasterAccount',
+            'securityhub:DeleteMembers',
+            'securityhub:DisassociateMembers',
+          ],
+          resources: [
+            'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
+            'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
+          ],
+          effect: Effect.DENY,
+        }),
+      );
+    }
 
     //Deny Leaving Organization
-    const denyLeavingOrganizationStatement = new PolicyStatement({
-      actions: ['organizations:LeaveOrganization'],
-      resources: ['*'],
-      effect: Effect.DENY,
-      sid: 'PreventLeavingOrganization',
-    });
+    initialPolicy.push(
+      new PolicyStatement({
+        actions: ['organizations:LeaveOrganization'],
+        resources: ['*'],
+        effect: Effect.DENY,
+        sid: 'PreventLeavingOrganization',
+      }),
+    );
 
     const scpPolicyDocumentRoot = new PolicyDocument({
-      statements: [denyLeavingOrganizationStatement, backupStatement],
+      statements: [...initialPolicy],
     });
 
     const scpRoot = new CustomResource(this, 'SCPRoot', {
