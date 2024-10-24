@@ -198,7 +198,8 @@ export class SuperwerkerStack extends Stack {
     const securityHubStack = new SecurityHubStack(this, 'SecurityHub', {});
     (securityHubStack.node.defaultChild as CfnStack).overrideLogicalId('SecurityHub');
     (securityHubStack.node.defaultChild as CfnStack).cfnOptions.condition = securityHubCondition;
-    securityHubStack.addDependency(controlTowerStack);
+    // Following line is needed for SecHub rolled out via Custom Resources, not SSM Automation
+    // securityHubStack.addDependency(controlTowerStack);
 
     // ServiceControlPolicies
     const serviceControlPoliciesCondition = new CfnCondition(this, 'IncludeServiceControlPoliciesCondition', {
