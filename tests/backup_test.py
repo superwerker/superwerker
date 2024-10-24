@@ -4,6 +4,7 @@ import botocore
 from retrying import retry
 import warnings
 import pytest
+import json
 
 sts = boto3.client('sts')
 ssm = boto3.client('ssm')
@@ -151,7 +152,7 @@ def test_check_tag_policy():
     tag_policy_id = tag_policies[0]['Id']
     tag_policy=organizations.describe_policy(PolicyId=tag_policy_id)
     assert tag_policy['Policy']['PolicySummary']['Description'] == 'superwerker - TagPolicy'
-    assert ''.join(tag_policy['Policy']['Content'].split()) == ''.join('''{
+    assert json.loads(tag_policy['Policy']['Content']) == json.loads('''{
     "tags": {
         "superwerker:backup": {
         "tag_value": {
@@ -168,7 +169,7 @@ def test_check_tag_policy():
         }
         }
     }
-    }'''.split()), 'Policy content does not match expected content'
+    }'''), 'Policy content does not match expected content'
 
 def test_check_backup_policy():
     root_id = organizations.list_roots()['Roots'][0]['Id']
@@ -177,9 +178,54 @@ def test_check_backup_policy():
     backup_policy_id = backup_policies[0]['Id']
     backup_policy=organizations.describe_policy(PolicyId=backup_policy_id)
     assert backup_policy['Policy']['PolicySummary']['Description'] == 'superwerker - BackupPolicy'
+    assert json.loads(backup_policy['Policy']['Content']) == json.loads('''{
+    "plans": {
+        "superwerker-backup": {
+            "regions":{
+                "@@assign":
+                [
+                    "eu-central-1"
+                ]
+            },
+            "rules": {
+                "backup-daily": {
+                    "lifecycle": {
+                        "delete_after_days": {
+                            "@@assign": 30
+                        }
+                    },
+                    "schedule_expression": {
+                        "@@assign": "cron(0 5 ? * * *)"
+                    },
+                    "target_backup_vault_name": {
+                        "@@assign": "Default"
+                    }
+                }
+            },
+            "selections": {
+                "tags": {
+                    "backup-daily": {
+                        "iam_role_arn": {
+                            "@@assign": "arn:aws:iam::$account:role/service-role/AWSBackupDefaultServiceRole"
+                        },
+                        "tag_key": {
+                            "@@assign": "superwerker:backup"
+                        },
+                        "tag_value": {
+                            "@@assign":
+                            [
+                                "daily"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}'''), 'Policy content does not match expected content'
 
 # sometimes it can take some time before the attached tap policy takes effect, therefore we retry this test
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.flaky(retries=5, delay=2)
 def test_cannot_change_ebs_backup_tags(ec2_client_audit, ebs_volume_id):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
         wait_for_create_tags(ec2_client_audit, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'iamnotvalid'}])
@@ -189,7 +235,7 @@ def test_can_change_ebs_backup_tags_to_none(ec2_client_audit, ebs_volume_id):
     wait_for_create_tags(ec2_client_audit, ebs_volume_id, [{'Key': 'superwerker:backup', 'Value': 'none'}])
 
 # sometimes it can take some time before the attached tap policy takes effect, therefore we retry this test
-@pytest.mark.flaky(retries=3, delay=1)
+@pytest.mark.flaky(retries=5, delay=2)
 def test_cannot_change_dynamodb_backup_tags(ddb_client_audit, ddb_table):
     with pytest.raises(botocore.exceptions.ClientError) as exception:
         ddb_client_audit.tag_resource(
