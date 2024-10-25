@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { CfnParameter, CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
-import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Provider } from 'aws-cdk-lib/custom-resources';
@@ -18,80 +18,12 @@ export class ServiceControlPoliciesStack extends NestedStack {
       type: 'String',
     });
 
-    let initialPolicy = [];
-
-    if (includeBackup.valueAsString == 'true') {
-      initialPolicy.push(
-        new PolicyStatement({
-          conditions: {
-            ArnNotLike: {
-              'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/stacksets-exec-*',
-            },
-          },
-          actions: [
-            'iam:AttachRolePolicy',
-            'iam:CreateRole',
-            'iam:DeleteRole',
-            'iam:DeleteRolePermissionsBoundary',
-            'iam:DeleteRolePolicy',
-            'iam:DetachRolePolicy',
-            'iam:PutRolePermissionsBoundary',
-            'iam:PutRolePolicy',
-            'iam:UpdateAssumeRolePolicy',
-            'iam:UpdateRole',
-            'iam:UpdateRoleDescription',
-          ],
-          resources: [
-            'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
-            'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
-          ],
-          effect: Effect.DENY,
-        }),
-      );
-    }
-
-    if (includeSecurityHub.valueAsString == 'true') {
-      initialPolicy.push(
-        new PolicyStatement({
-          conditions: {
-            ArnNotLike: {
-              'aws:PrincipalARN': 'arn:${AWS::Partition}:iam::*:role/AWSControlTowerExecution',
-            },
-          },
-          actions: [
-            'securityhub:DeleteInvitations',
-            'securityhub:DisableSecurityHub',
-            'securityhub:DisassociateFromMasterAccount',
-            'securityhub:DeleteMembers',
-            'securityhub:DisassociateMembers',
-          ],
-          resources: [
-            'arn:${AWS::Partition}:iam::*:role/service-role/AWSBackupDefaultServiceRole',
-            'arn:${AWS::Partition}:iam::*:role/SuperwerkerBackupTagsEnforcementRemediationRole',
-          ],
-          effect: Effect.DENY,
-        }),
-      );
-    }
-
-    //Deny Leaving Organization
-    initialPolicy.push(
-      new PolicyStatement({
-        actions: ['organizations:LeaveOrganization'],
-        resources: ['*'],
-        effect: Effect.DENY,
-        sid: 'PreventLeavingOrganization',
-      }),
-    );
-
-    const scpPolicyDocumentRoot = new PolicyDocument({
-      statements: [...initialPolicy],
-    });
-
     const scpRoot = new CustomResource(this, 'SCPRoot', {
       serviceToken: ServiceControlPolicyRootProvider.getOrCreate(this),
       properties: {
-        policy: JSON.stringify(scpPolicyDocumentRoot),
+        includeSecHub: includeSecurityHub.valueAsString,
+        includeBackup: includeBackup.valueAsString,
+        partition: Stack.of(this).partition,
         scpName: 'superwerker-root',
       },
     });

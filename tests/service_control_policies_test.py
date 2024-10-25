@@ -33,6 +33,25 @@ def test_superwerker_service_control_policies():
                 {
                     "Condition": {
                         "ArnNotLike": {
+                        "aws:PrincipalARN": "arn:aws:iam::*:role/AWSControlTowerExecution"
+                        }
+                    },
+                    "Action": [
+                        "securityhub:DeleteInvitations",
+                        "securityhub:DisableSecurityHub",
+                        "securityhub:DisassociateFromMasterAccount",
+                        "securityhub:DeleteMembers",
+                        "securityhub:DisassociateMembers"
+                    ],
+                    "Effect": "Deny",
+                    "Resource": [
+                        "*"
+                    ],
+                    "Sid": "SWProtectSecurityHub"
+                },
+                {
+                    "Condition": {
+                        "ArnNotLike": {
                         "aws:PrincipalARN": "arn:aws:iam::*:role/stacksets-exec-*"
                         }
                     },
