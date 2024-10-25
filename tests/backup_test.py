@@ -191,7 +191,7 @@ def test_check_backup_policy():
                 "backup-daily": {
                     "lifecycle": {
                         "delete_after_days": {
-                            "@@assign": 30
+                            "@@assign": "30"
                         }
                     },
                     "schedule_expression": {
