@@ -6,7 +6,6 @@ import {
   ListPoliciesCommand,
   ListRootsCommand,
   OrganizationsClient,
-  PolicyType,
   UpdatePolicyCommand,
 } from '@aws-sdk/client-organizations';
 import { CloudFormationCustomResourceCreateEvent, Context } from 'aws-lambda';
@@ -20,7 +19,6 @@ const rootAccountId = 'test-root-id';
 const logicalResourceId = 'superwerker - SCPRoot';
 const scpName = 'superwerker-root';
 const policyId = 'test-policy-id';
-const scpPolicy = '{"Version": "2012-10-17", "Statement": [/* policy document */]}';
 const updatedSCPPolicy = '{"Version": "2012-10-17", "Statement": [/* UPDATED policy document */]}';
 const description = 'superwerker - SCPRoot';
 
@@ -70,10 +68,57 @@ describe('service control policies', () => {
       {
         RequestType: 'Create',
         ResourceProperties: {
-          Type: PolicyType.SERVICE_CONTROL_POLICY,
-          Description: logicalResourceId,
+          includeSecHub: 'Yes',
+          includeBackup: 'Yes',
+          partition: 'eu-central-1',
+          scpName: 'superwerker-root',
+        },
+      } as unknown as CloudFormationCustomResourceCreateEvent,
+      {} as Context,
+    );
+
+    expect(response).toMatchObject({ SUCCESS: 'SCPs have been successfully created for Root account' });
+  });
+
+  it('create service control policy sechub', async () => {
+    organizationClientMock.on(ListRootsCommand).resolves({
+      Roots: [
+        {
+          Id: rootAccountId,
+          Name: rootAccountName,
+        },
+      ],
+    });
+
+    organizationClientMock.on(ListPoliciesCommand).resolves({
+      Policies: [
+        {
           Name: scpName,
-          Content: scpPolicy,
+          Id: logicalResourceId,
+          Description: description,
+        },
+      ],
+    });
+
+    organizationClientMock.on(CreatePolicyCommand).resolves({
+      Policy: {
+        PolicySummary: {
+          Name: scpName,
+          Id: policyId,
+        },
+      },
+    });
+
+    organizationClientMock.on(AttachPolicyCommand).resolves({});
+
+    const response = await handler(
+      {
+        RequestType: 'Create',
+        ResourceProperties: {
+          includeSecHub: 'No',
+          includeBackup: 'No',
+          partition: 'eu-central-1',
+          scpName: 'superwerker-root',
         },
       } as unknown as CloudFormationCustomResourceCreateEvent,
       {} as Context,
@@ -107,10 +152,10 @@ describe('service control policies', () => {
       {
         RequestType: 'Update',
         ResourceProperties: {
-          Type: PolicyType.SERVICE_CONTROL_POLICY,
-          Description: logicalResourceId,
-          scpName: scpName,
-          Content: updatedSCPPolicy,
+          includeSecHub: 'Yes',
+          includeBackup: 'Yes',
+          partition: 'eu-central-1',
+          scpName: 'superwerker-root',
         },
       } as unknown as CloudFormationCustomResourceCreateEvent,
       {} as Context,
@@ -181,10 +226,8 @@ describe('service control policies', () => {
         {
           RequestType: 'Create',
           ResourceProperties: {
-            Type: PolicyType.SERVICE_CONTROL_POLICY,
             Description: logicalResourceId,
             scpName: scpName,
-            Content: updatedSCPPolicy,
           },
         } as unknown as CloudFormationCustomResourceCreateEvent,
         {} as Context,
@@ -220,10 +263,8 @@ describe('service control policies', () => {
         {
           RequestType: 'Update',
           ResourceProperties: {
-            Type: PolicyType.SERVICE_CONTROL_POLICY,
             Description: logicalResourceId,
             scpName: 'mock-scp-name', //should throw an error since there will be no matching policy for this name
-            Content: updatedSCPPolicy,
           },
         } as unknown as CloudFormationCustomResourceCreateEvent,
         {} as Context,
