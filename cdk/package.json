@@ -17,7 +17,7 @@
     "@tsconfig/node20": "^20.1.4",
     "@stylistic/eslint-plugin": "^2.9.0",
     "@types/async-retry": "^1.4.9",
-    "@types/jest": "^29.5.13",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.14.9",
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
