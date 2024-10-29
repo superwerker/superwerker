@@ -44,9 +44,7 @@ def test_superwerker_service_control_policies():
                         "securityhub:DisassociateMembers"
                     ],
                     "Effect": "Deny",
-                    "Resource": [
-                        "*"
-                    ],
+                    "Resource": "*",
                     "Sid": "SWProtectSecurityHub"
                 },
                 {
