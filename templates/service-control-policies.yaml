@@ -29,11 +29,7 @@ Resources:
                   ${Statements}
               ]
           }
-        - Statements: !Join
-            - ","
-            - - !If
-                - IncludeBackup
-                - !Sub |
+        - Statements: !Sub |
                   {
                       "Condition": {
                           "ArnNotLike": {
@@ -60,7 +56,6 @@ Resources:
                       "Effect": "Deny",
                       "Sid": "SWProtectBackup"
                   }
-                - !Ref AWS::NoValue
       Attach: true
 
   SCPCustomResource:

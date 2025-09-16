@@ -36,6 +36,7 @@ on:
 # the defaults
 env:
   SUPERWERKER_REGION: eu-central-1
+  AWS_DEFAULT_REGION: eu-central-1
   UPDATE_FROM_LATEST_RELEASE: false
 jobs:
   pr-conventions:
