@@ -48,7 +48,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: set up node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
       - name: check PR title
@@ -70,7 +70,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: set up node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
       - name: install dependencies
