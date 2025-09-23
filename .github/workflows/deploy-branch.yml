@@ -5,6 +5,10 @@ on:
   push:
     branches: ['*']
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,12 +31,12 @@ jobs:
       run: scripts/versioning.sh ${{ steps.extract_branch.outputs.branch }}
       id: version_templates
 
-    - uses: shallwefootball/s3-upload-action@master
-      name: Upload S3
-      id: S3
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws_key_id: ${{ secrets.AWS_ACCESS_KEY }}
-        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-        aws_bucket: ${{ secrets.AWS_BUCKET_NAME}}
-        source_dir: templates/
-        destination_dir: ${{ steps.extract_branch.outputs.branch }}/templates/
+        role-to-assume: ${{ vars.AWS_DEPLOY_ROLE }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Upload s3
+      shell: bash
+      run: aws s3 sync templates/ s3://${{ vars.AWS_S3_BUCKET }}/${{ steps.extract_branch.outputs.branch }}/templates/ --delete
