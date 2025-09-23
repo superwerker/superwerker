@@ -18,7 +18,7 @@ describe('generate-mail-address', () => {
   });
 
   it('cannot generate email address for long domain names', async () => {
-    expect(() => generateEmail('aws.this-company-name-is-way-too-long-for-aws-control-tower.io')).toThrowError(
+    expect(() => generateEmail('aws.this-company-name-is-way-too-long-for-aws-control-tower.io')).toThrow(
       new Error('Unable to generate email address with more than 64 characters (Control Tower requirement)'),
     );
   });
