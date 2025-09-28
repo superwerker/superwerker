@@ -97,12 +97,12 @@ def test_security_hub_cannot_be_disabled_in_member_account(log_archive_account_i
     # assert that SCP forbids disabling of security hub
     with pytest.raises(botocore.exceptions.ClientError) as exception:
         scp_test_session_security_hub.disable_security_hub()
-    assert f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:{scp_test_session.region_name}:{log_archive_account_id}:hub/default with an explicit deny' == str(exception.value)
+    assert f'An error occurred (AccessDeniedException) when calling the DisableSecurityHub operation: User: arn:aws:sts::{log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisableSecurityHub on resource: arn:aws:securityhub:{scp_test_session.region_name}:{log_archive_account_id}:hub/default with an explicit deny in a service control policy' == str(exception.value)
 
     # assert that SCP forbids leaving
     with pytest.raises(botocore.exceptions.ClientError) as exception:
         scp_test_session_security_hub.disassociate_from_master_account()
-    assert f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:{scp_test_session.region_name}:{log_archive_account_id}:hub/default with an explicit deny' == str(exception.value)
+    assert f'An error occurred (AccessDeniedException) when calling the DisassociateFromMasterAccount operation: User: arn:aws:sts::{log_archive_account_id}:assumed-role/SuperWerkerScpTestRole/SuperWerkerScpTest is not authorized to perform: securityhub:DisassociateFromMasterAccount on resource: arn:aws:securityhub:{scp_test_session.region_name}:{log_archive_account_id}:hub/default with an explicit deny in a service control policy' == str(exception.value)
 
 # Wait for up to 1 minute, exponentially increasing by 2^x * 1000ms
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=60000)
