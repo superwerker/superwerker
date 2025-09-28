@@ -211,7 +211,7 @@ def get_ops_item_by_title(title):
     )
 
     if len(res['Entities']) == 0:
-        raise  # mail has probably not arrived yet
+        raise  ValueError(f"ops item '{title}' not found") # mail has probably not arrived yet
     return res
 
 @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000, stop_max_delay=20000)
