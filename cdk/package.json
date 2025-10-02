@@ -61,7 +61,7 @@
     "aws-cdk": "^2.1029.3",
     "aws-cdk-lib": "^2.216.0",
     "axios": "^1.12.2",
-    "cdk-assets": "^4.2.0",
+    "cdk-assets": "^4.2.1",
     "cdk-nag": "^2.37.38",
     "constructs": "^10.4.2",
     "endent": "^2.1.0",

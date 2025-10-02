@@ -3226,10 +3226,10 @@ case@1.6.3:
   resolved "https://registry.yarnpkg.com/case/-/case-1.6.3.tgz#0a4386e3e9825351ca2e6216c60467ff5f1ea1c9"
   integrity sha512-mzDSXIPaFwVDvZAHqZ9VlbyF4yyXRuX6IvB06WvPYkqJVO24kX1PPhv9bfpKNFZyxYFmmgo03HUiD8iklmJYRQ==
 
-cdk-assets@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-4.2.0.tgz#10485c96ee153e24b0031002ec08114fdb7553b9"
-  integrity sha512-4SG4ls5Y+8IotRZgD2v+DW44PmH5fxQJMu1NRhYzxw9tZCIHIA002A/AukFPLBkR2rrIzBvewBRqlmScuXfENg==
+cdk-assets@^4.2.1:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-4.2.1.tgz#5bcaa475d551423780074a0eb588a7bb52185e1f"
+  integrity sha512-ZZxO2XVqeCV4zwWJQz1yEIg+aeFwiRZlKdwAdLdz6KVhgRYH0Xh/iRGsUkG8sEiUOsNqfQoEHR3JHu673vc2QQ==
 
 cdk-nag@^2.37.38:
   version "2.37.38"
