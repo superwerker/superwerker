@@ -12,7 +12,7 @@
     "format": "prettier --write --ignore-unknown ."
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
+    "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^19.8.1",
     "@stylistic/eslint-plugin": "^5.4.0",
     "@tsconfig/node20": "^20.1.6",
