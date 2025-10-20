@@ -5,16 +5,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    automerged_updates:
-      - match:
-          update_type: "semver:patch"
-        merge_method: "squash"
-        merge_when_pipeline_succeeds: true
-      - match:
-          update_type: "semver:minor"
-        merge_method: "squash"
-        merge_when_pipeline_succeeds: true
-
   - package-ecosystem: "npm"
     directory: "cdk/"
     schedule:
@@ -32,26 +22,7 @@ updates:
           - "minor"
           - "patch"
     open-pull-requests-limit: 5
-    automerged_updates:
-      - match:
-          update_type: "semver:patch"
-        merge_method: "squash"
-        merge_when_pipeline_succeeds: true
-      - match:
-          update_type: "semver:minor"
-        merge_method: "squash"
-        merge_when_pipeline_succeeds: true
-
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
-    automerged_updates:
-      - match:
-          update_type: "semver:patch"
-        merge_method: "squash"
-        merge_when_pipeline_succeeds: true
-      - match:
-          update_type: "semver:minor"
-        merge_method: "squash"
-        merge_when_pipeline_succeeds: true
