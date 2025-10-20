@@ -3232,10 +3232,10 @@ cdk-assets@^4.2.1:
   resolved "https://registry.yarnpkg.com/cdk-assets/-/cdk-assets-4.2.1.tgz#5bcaa475d551423780074a0eb588a7bb52185e1f"
   integrity sha512-ZZxO2XVqeCV4zwWJQz1yEIg+aeFwiRZlKdwAdLdz6KVhgRYH0Xh/iRGsUkG8sEiUOsNqfQoEHR3JHu673vc2QQ==
 
-cdk-nag@^2.37.45:
-  version "2.37.45"
-  resolved "https://registry.yarnpkg.com/cdk-nag/-/cdk-nag-2.37.45.tgz#8ebed1144e3fda9030253f7c187dfeab35ef1794"
-  integrity sha512-P7V/U58FNCi7qVxy8gVEJbX0SSCtDZ4KobEEkRiHBfm1Jle2+/mY1H2rh+YMYbSdlr+qR27odokHA7dRtfyqOQ==
+cdk-nag@^2.37.55:
+  version "2.37.55"
+  resolved "https://registry.yarnpkg.com/cdk-nag/-/cdk-nag-2.37.55.tgz#438f6bb99a08bedee8c8067a0a16ede952a5f10e"
+  integrity sha512-xcAkygwbph3pp7N0UEzJBmXUH/MIsluV7DYJSeZ/V3yCr0Y0QaRGO298WyD6mi4K+Rmnpl+EJoWUxcOblOqLKA==
 
 chai@^5.2.0:
   version "5.3.3"
