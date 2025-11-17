@@ -22,7 +22,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
 
       - name: Bounce version and create git tags
-        uses: cycjimmy/semantic-release-action@v4
+        uses: cycjimmy/semantic-release-action@v6
         id: semantic
         with:
           semantic_version: 22.0.8
