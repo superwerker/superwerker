@@ -2401,10 +2401,10 @@
   dependencies:
     "@types/retry" "*"
 
-"@types/aws-lambda@^8.10.157":
-  version "8.10.157"
-  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.157.tgz#0ef9fbe5790f5593f938b7ef5170b0a0ff7b2738"
-  integrity sha512-ofjcRCO1N7tMZDSO11u5bFHPDfUFD3Q9YK9g4S4w8UDKuG3CNlw2lNK1sd3Itdo7JORygZmG4h9ZykS8dlXvMA==
+"@types/aws-lambda@^8.10.159":
+  version "8.10.159"
+  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.159.tgz#0ab559f4519e42732a393b28c21564da9763c5aa"
+  integrity sha512-SAP22WSGNN12OQ8PlCzGzRCZ7QDCwI85dQZbmpz7+mAk+L7j+wI7qnvmdKh+o7A5LaOp6QnOZ2NJphAZQTTHQg==
 
 "@types/babel__core@^7.20.5":
   version "7.20.5"
