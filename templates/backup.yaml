@@ -13,7 +13,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -377,7 +377,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -445,7 +445,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: index.handler
-      Runtime: python3.11
+      Runtime: python3.14
       Timeout: 900 # give it more time since it installs dependencies on the fly
       Role: !GetAtt EnableCloudFormationStacksetsOrgAccessCustomResourceRole.Arn # provide explicit role to avoid circular dependency with AwsApiLibRole
       Policies:
@@ -574,7 +574,7 @@ Resources:
             - EIAMPolicyWildcardResource
     Properties:
       Timeout: 200
-      Runtime: python3.9
+      Runtime: python3.14
       Handler: index.handler
       Policies:
         - Version: 2012-10-17
@@ -695,7 +695,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - Version: 2012-10-17
           Statement:
@@ -831,7 +831,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 200
-      Runtime: python3.9
+      Runtime: python3.14
       Handler: index.handler
       Policies:
         - Version: 2012-10-17
@@ -953,7 +953,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.enable_tag_policies
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - Version: 2012-10-17
           Statement:

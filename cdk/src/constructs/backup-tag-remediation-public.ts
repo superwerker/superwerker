@@ -44,7 +44,7 @@ class BackupTagRemediationPublicProvider extends Construct {
     const backupTagRemedationPublicFn = new PythonFunction(this, 'backup-tag-remediation-public-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'backup-tag-remediation-public'),
       handler: 'handler',
-      runtime: Runtime.PYTHON_3_9,
+      runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(3),
       initialPolicy: [
         new iam.PolicyStatement({
