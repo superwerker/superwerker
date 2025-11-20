@@ -124,7 +124,7 @@ Resources:
             DashboardName='superwerker',
             DashboardBody=json.dumps({"widgets": [{"type": "text","x": 0,"y": 0,"width": 24,"height": 20,"properties": {"markdown": markdown}}]}),
           )
-      Runtime: python3.9
+      Runtime: python3.14
       Timeout: 60
 
 Metadata:
