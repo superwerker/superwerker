@@ -42,7 +42,7 @@ Resources:
                 eventSource:
                   - ssm.amazonaws.com
       Handler: index.handler
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt NotificationTopic.TopicName
