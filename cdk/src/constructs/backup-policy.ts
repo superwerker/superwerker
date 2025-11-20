@@ -43,7 +43,7 @@ class BackupPolicyProvider extends Construct {
     const backupPolicyFn = new PythonFunction(this, 'backup-policy-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'backup-policy'),
       handler: 'handler',
-      runtime: Runtime.PYTHON_3_9,
+      runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(200),
       initialPolicy: [
         new iam.PolicyStatement({
