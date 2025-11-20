@@ -62,7 +62,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 200
-      Runtime: python3.9
+      Runtime: python3.14
       Handler: index.handler
       Policies:
         - Version: 2012-10-17
@@ -198,7 +198,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.enable_service_control_policies
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - Version: 2012-10-17
           Statement:
