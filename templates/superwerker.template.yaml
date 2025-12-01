@@ -188,7 +188,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.handler
-      Runtime: python3.9
+      Runtime: python3.14
       Policies:
         - LambdaInvokePolicy:
             FunctionName: !GetAtt RootMail.Outputs.EmailGeneratorFunction

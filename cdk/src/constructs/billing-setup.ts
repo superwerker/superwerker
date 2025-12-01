@@ -37,7 +37,7 @@ class BillingSetupProvider extends Construct {
     const billingSetupFn = new PythonFunction(this, 'billing-setup-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'billing-setup'),
       handler: 'handler',
-      runtime: Runtime.PYTHON_3_12,
+      runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(30),
       bundling: {
         assetExcludes: ['__pycache__', 'tests', '.pytest_cache', '.venv'],
