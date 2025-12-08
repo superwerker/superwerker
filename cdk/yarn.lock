@@ -17,10 +17,10 @@
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda-python-alpha/-/aws-lambda-python-alpha-2.216.0-alpha.0.tgz#01f27b00425d3f5c426df496a46ccd8f1c79e844"
   integrity sha512-Q3QEIUSM3wPR7mZJkFEsA5Xk9+bYx+aMOLXvAlbRZR93XwGRGMs2r24NJ6baylvKvoR71yiYUH4gAB4YOT2NCA==
 
-"@aws-cdk/cloud-assembly-schema@^48.6.0":
-  version "48.10.0"
-  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-48.10.0.tgz#2f03b703b04f9d0035e86272025bcc8ab1979160"
-  integrity sha512-Y9wkKUiH9ey8jTmSgbYD3ZbEzmog9dXCb6V6KwfAwqfn3yiFq0l0BoQKIkhcuLQnrB8cYGM3MdmzdViwTL1F9g==
+"@aws-cdk/cloud-assembly-schema@^48.20.0":
+  version "48.20.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/cloud-assembly-schema/-/cloud-assembly-schema-48.20.0.tgz#a2b60373cfbe228f901f62f0d7e2c5e2fe40702d"
+  integrity sha512-+eeiav9LY4wbF/EFuCt/vfvi/Zoxo8bf94PW5clbMraChEliq83w4TbRVy0jB9jE0v1ooFTtIjSQkowSPkfISg==
   dependencies:
     jsonschema "~1.4.1"
     semver "^7.7.2"
@@ -2986,23 +2986,23 @@ available-typed-arrays@^1.0.7:
   dependencies:
     possible-typed-array-names "^1.0.0"
 
-aws-cdk-lib@^2.230.0:
-  version "2.230.0"
-  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.230.0.tgz#551a35de9e72ad9625484099f9d341b53930e894"
-  integrity sha512-hA1cWZAHpvrwJE55N77Km/aPUgN9NfbGm98vi91OeLKFgMVhdCXM57lJUAYTq0e8JHWFRWmsVlm9R8pq5jTJeA==
+aws-cdk-lib@^2.232.1:
+  version "2.232.1"
+  resolved "https://registry.yarnpkg.com/aws-cdk-lib/-/aws-cdk-lib-2.232.1.tgz#cd2ded9ef33d06d054f96213b71cab356b8e06ba"
+  integrity sha512-F1vNcpWBo85pSxa0DJ5DO4k7Ok4vVp0vh1cFO4Y12LLX07ixOcnJn/6B97/XVC0fgZNvzPx/sYgioEd0u8oKkQ==
   dependencies:
     "@aws-cdk/asset-awscli-v1" "2.2.242"
     "@aws-cdk/asset-node-proxy-agent-v6" "^2.1.0"
-    "@aws-cdk/cloud-assembly-schema" "^48.6.0"
+    "@aws-cdk/cloud-assembly-schema" "^48.20.0"
     "@balena/dockerignore" "^1.0.2"
     case "1.6.3"
-    fs-extra "^11.3.1"
+    fs-extra "^11.3.2"
     ignore "^5.3.2"
     jsonschema "^1.5.0"
     mime-types "^2.1.35"
     minimatch "^3.1.2"
     punycode "^2.3.1"
-    semver "^7.7.2"
+    semver "^7.7.3"
     table "^6.9.0"
     yaml "1.10.2"
 
@@ -4113,7 +4113,7 @@ form-data@^4.0.4:
     hasown "^2.0.2"
     mime-types "^2.1.12"
 
-fs-extra@^11.3.1:
+fs-extra@^11.3.2:
   version "11.3.2"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-11.3.2.tgz#c838aeddc6f4a8c74dd15f85e11fe5511bfe02a4"
   integrity sha512-Xr9F6z6up6Ws+NjzMCZc6WXg2YFRlrLP9NQDO3VQrWrfiojdhS56TzueT88ze0uBdCTwEIhQ3ptnmKeWGFAe0A==
