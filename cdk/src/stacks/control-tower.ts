@@ -76,6 +76,7 @@ export class ControlTowerStack extends NestedStack {
       roleName: 'AWSControlTowerCloudTrailRole',
       assumedBy: new iam.ServicePrincipal('cloudtrail.amazonaws.com'),
       path: '/service-role/',
+      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerCloudTrailRolePolicy')],
       inlinePolicies: {
         AWSControlTowerCloudTrailRolePolicy: new iam.PolicyDocument({
           statements: [
@@ -149,32 +150,33 @@ export class ControlTowerStack extends NestedStack {
       },
     ).stringValue;
 
-    const SECURITY_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
-      parameterName: PrepareStack.controlTowerSecurityOuSsmParameter,
-      forceDynamicReference: true,
-    }).stringValue;
-
-    const SANDBOX_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
-      parameterName: PrepareStack.controlTowerSandboxOuSsmParameter,
-      forceDynamicReference: true,
-    }).stringValue;
-
+    // https://docs.aws.amazon.com/controltower/latest/userguide/lz-api-launch.html
     const landingZone = new CfnLandingZone(this, 'LandingZone', {
       manifest: {
         governedRegions: ctGovernedRegions,
-        organizationStructure: {
-          security: {
-            name: SECURITY_OU_NAME,
-          },
-          sandbox: {
-            name: SANDBOX_OU_NAME,
-          },
-        },
+
         securityRoles: {
           accountId: auditAccount.attrAccountId,
+          enabled: true,
         },
         accessManagement: {
           enabled: true,
+        },
+        backup: {
+          enabled: false,
+        },
+        config: {
+          accountId: auditAccount.attrAccountId,    // Config aggregator account
+          enabled: true,                // Required - Controls AWS Config integration
+          configurations: {
+            accessLoggingBucket: {
+              "retentionDays": 365    // Minimum value: 1
+            },
+            loggingBucket: {
+              "retentionDays": 365    // Minimum value: 1
+            },
+            kmsKeyArn: ctKmsKeyArn
+          }
         },
         centralizedLogging: {
           accountId: logArchiveAccount.attrAccountId,
