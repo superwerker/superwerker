@@ -8,7 +8,7 @@ import { SSMClient, PutParameterCommand, ParameterType, PutParameterCommandOutpu
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 import axios from 'axios';
 
-const CT_VERSION = '3.3';
+const CT_VERSION = '4.0';
 const CT_SECURITY_OU_NAME = 'Security';
 const CT_SANDBOX_OU_NAME = 'Sandbox';
 const CT_BUCKET_RETENTION_LOGGING = '90';
