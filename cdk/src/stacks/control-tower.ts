@@ -149,34 +149,22 @@ export class ControlTowerStack extends NestedStack {
       },
     ).stringValue;
 
-    const SECURITY_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SecurityOuParameterLookup', {
-      parameterName: PrepareStack.controlTowerSecurityOuSsmParameter,
-      forceDynamicReference: true,
-    }).stringValue;
-
-    const SANDBOX_OU_NAME = ssm.StringParameter.fromStringParameterAttributes(this, 'SandboxOuParameterLookup', {
-      parameterName: PrepareStack.controlTowerSandboxOuSsmParameter,
-      forceDynamicReference: true,
-    }).stringValue;
-
     const landingZone = new CfnLandingZone(this, 'LandingZone', {
       manifest: {
         governedRegions: ctGovernedRegions,
-        organizationStructure: {
-          security: {
-            name: SECURITY_OU_NAME,
-          },
-          sandbox: {
-            name: SANDBOX_OU_NAME,
-          },
-        },
-        securityRoles: {
-          accountId: auditAccount.attrAccountId,
-        },
+        // `organizationStructure` was removed in Control Tower landing zone v4.0;
+        // OU layout is now managed directly in AWS Organizations. Sending it makes the
+        // v4.0 manifest fail with "contains fields that are not recognized".
         accessManagement: {
           enabled: true,
         },
+        securityRoles: {
+          // v4.0 requires an explicit `enabled` flag on every service integration.
+          enabled: true,
+          accountId: auditAccount.attrAccountId,
+        },
         centralizedLogging: {
+          enabled: true,
           accountId: logArchiveAccount.attrAccountId,
           configurations: {
             loggingBucket: {
@@ -187,7 +175,27 @@ export class ControlTowerStack extends NestedStack {
             },
             kmsKeyArn: ctKmsKeyArn,
           },
+        },
+        config: {
+          // New in v4.0: AWS Config is an explicit integration. Kept enabled with the
+          // aggregator in the Audit account to match v3.x behaviour. Disabling it would
+          // force disabling securityRoles/accessManagement/backup as well.
           enabled: true,
+          accountId: auditAccount.attrAccountId,
+          configurations: {
+            loggingBucket: {
+              retentionDays: ctBucketRetetionLogging,
+            },
+            accessLoggingBucket: {
+              retentionDays: ctBucketRetetionAccessLogging,
+            },
+            kmsKeyArn: ctKmsKeyArn,
+          },
+        },
+        backup: {
+          // superwerker provides AWS Backup through its own Backup stack (organization
+          // backup policies), not the Control Tower backup integration, so this stays off.
+          enabled: false,
         },
       },
       version: ctVersion,
