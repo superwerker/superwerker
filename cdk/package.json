@@ -49,6 +49,7 @@
     "@aws-sdk/client-cloudwatch": "^3.940.0",
     "@aws-sdk/client-controltower": "^3.940.0",
     "@aws-sdk/client-eventbridge": "^3.940.0",
+    "@aws-sdk/client-iam": "^3.940.0",
     "@aws-sdk/client-organizations": "^3.940.0",
     "@aws-sdk/client-securityhub": "^3.940.0",
     "@aws-sdk/client-ses": "^3.940.0",

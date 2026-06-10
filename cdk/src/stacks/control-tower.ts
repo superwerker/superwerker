@@ -1,10 +1,11 @@
-import { CfnParameter, NestedStack, NestedStackProps, RemovalPolicy, aws_iam as iam } from 'aws-cdk-lib';
+import { CfnParameter, NestedStack, NestedStackProps, RemovalPolicy, Stack, aws_iam as iam } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 import { PrepareStack } from './prepare';
+import { ControlTowerPrerequisites } from '../constructs/control-tower-prerequisites';
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
 
 export class ControlTowerStack extends NestedStack {
@@ -154,6 +155,18 @@ export class ControlTowerStack extends NestedStack {
       },
     ).stringValue;
 
+    // Control Tower landing zone v4.0 no longer provisions the Security OU or the
+    // AWSControlTowerExecution roles for pre-existing (Organizations-created) shared accounts.
+    // Ensure those prerequisites exist before creating the landing zone.
+    const controlTowerPrerequisites = new ControlTowerPrerequisites(this, 'ControlTowerPrerequisites', {
+      auditAccountId: auditAccount.attrAccountId,
+      logArchiveAccountId: logArchiveAccount.attrAccountId,
+      managementAccountId: Stack.of(this).account,
+      securityOuName: 'Security',
+    });
+    controlTowerPrerequisites.node.addDependency(auditAccount);
+    controlTowerPrerequisites.node.addDependency(logArchiveAccount);
+
     const landingZone = new CfnLandingZone(this, 'LandingZone', {
       manifest: {
         governedRegions: ctGovernedRegions,
@@ -219,6 +232,7 @@ export class ControlTowerStack extends NestedStack {
       controlTowerConfigAggregatorRole,
       logArchiveAccount,
       auditAccount,
+      controlTowerPrerequisites,
     );
 
     //create function to trigger enabling of features after landing zone has been installed
