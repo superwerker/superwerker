@@ -76,6 +76,11 @@ export class ControlTowerStack extends NestedStack {
       roleName: 'AWSControlTowerCloudTrailRole',
       assumedBy: new iam.ServicePrincipal('cloudtrail.amazonaws.com'),
       path: '/service-role/',
+      // Control Tower landing zone v4.0 validates that this role carries the AWS managed
+      // policy AWSControlTowerCloudTrailRolePolicy; an inline policy of the same name is no
+      // longer accepted ("does not exist or have sufficient permissions"). The inline policy
+      // below is kept for backward parity with the documented setup.
+      managedPolicies: [iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSControlTowerCloudTrailRolePolicy')],
       inlinePolicies: {
         AWSControlTowerCloudTrailRolePolicy: new iam.PolicyDocument({
           statements: [
