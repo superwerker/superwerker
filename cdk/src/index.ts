@@ -9,10 +9,16 @@ Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
 
 const superwerkerVersion = process.env.SUPERWERKER_VERSION || '0.0.0-DEVELOPMENT';
 
+// Asset bucket name. S3 bucket names are global, and the upstream default
+// (superwerker-resources-<region>) is owned by the superwerker project, so a fork
+// that hosts its own assets must override the prefix. Set SUPERWERKER_ASSET_BUCKET_PREFIX
+// to your own bucket prefix; the '-<region>' suffix is appended automatically.
+const assetBucketName = (process.env.SUPERWERKER_ASSET_BUCKET_PREFIX || 'superwerker-resources') + '-${AWS::Region}';
+
 const superwerkerStack = new SuperwerkerStack(app, 'SuperwerkerStack', {
   version: superwerkerVersion,
   synthesizer: new CliCredentialsStackSynthesizer({
-    fileAssetsBucketName: 'superwerker-resources-${AWS::Region}',
+    fileAssetsBucketName: assetBucketName,
     bucketPrefix: `${superwerkerVersion}/`,
   }),
 });
