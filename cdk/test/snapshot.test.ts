@@ -5,7 +5,7 @@ import { SuperwerkerStack } from '../src/stacks/superwerker';
 
 // Covers CDK-managed lambdas (provider framework, log retention) too, so a runtime only changes
 // here deliberately - including when it changes because aws-cdk-lib was upgraded.
-const EXPECTED_RUNTIMES = ['nodejs20.x', 'nodejs22.x', 'python3.14'];
+const EXPECTED_RUNTIMES = ['nodejs24.x', 'python3.14'];
 
 // Masked: asset hashes vary by machine; the org-access physical resource id comes from Date.now()
 // at synth time (backup.ts).
