@@ -54,7 +54,7 @@ class HostedZoneDKIMAndVerificationRecordsProvider extends Construct {
     super(scope, id);
 
     const onEventHandlerFunc = new NodejsFunction(this, 'on-event-handler', {
-      entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-verification-records.on-event-handler.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'hosted-zone-dkim-verification-records.on-event-handler.ts'),
       runtime: lambda.Runtime.NODEJS_24_X,
       logGroup: new LogGroup(this, 'on-event-handler-logs', {
         retention: RetentionDays.THREE_DAYS,

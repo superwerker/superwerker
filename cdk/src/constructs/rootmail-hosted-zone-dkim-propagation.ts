@@ -53,7 +53,7 @@ class HostedZoneDKIMPropagationProvider extends Construct {
     super(scope, id);
 
     const isCompleteHandlerFunc = new NodejsFunction(this, 'is-complete-handler', {
-      entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-propagation.is-complete-handler.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'hosted-zone-dkim-propagation.is-complete-handler.ts'),
       runtime: lambda.Runtime.NODEJS_24_X,
       logGroup: new LogGroup(this, 'is-complete-handler-logs', {
         retention: RetentionDays.THREE_DAYS,
@@ -84,7 +84,7 @@ class HostedZoneDKIMPropagationProvider extends Construct {
     );
 
     const onEventHandlerFunc = new NodejsFunction(this, 'on-event-handler', {
-      entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-propagation.on-event-handler.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'hosted-zone-dkim-propagation.on-event-handler.ts'),
       runtime: lambda.Runtime.NODEJS_24_X,
       logGroup: new LogGroup(this, 'on-event-handler-logs', {
         retention: RetentionDays.THREE_DAYS,

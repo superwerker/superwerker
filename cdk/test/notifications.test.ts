@@ -22,7 +22,7 @@ export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     new CfnInclude(this, 'NotificationsTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'notifications.yaml'),
+      templateFile: path.join(import.meta.dirname, '..', '..', 'templates', 'notifications.yaml'),
     });
   }
 }

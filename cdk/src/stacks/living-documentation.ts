@@ -22,7 +22,7 @@ export class LivingDocumentationStack extends NestedStack {
 
     // DashboardGeneratorFunction
     const dashboardGeneratorFunction = new NodejsFunction(this, 'DashboardGeneratorFunction', {
-      entry: path.join(__dirname, '..', 'functions', 'living-docs-dashboard-generator.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'living-docs-dashboard-generator.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: Duration.minutes(1),

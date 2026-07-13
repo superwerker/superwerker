@@ -1,6 +1,10 @@
 {
   "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
+    // The cdk app is run by tsx and the handlers are bundled by esbuild; nothing runs the emitted
+    // javascript through node, so relative imports do not need the ".js" extension node16 wants.
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "rootDirs": ["src", "test"],
     "outDir": "lib",
     "declaration": true,

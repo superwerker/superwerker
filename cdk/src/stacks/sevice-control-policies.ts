@@ -45,7 +45,7 @@ class ServiceControlPolicyRootProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
     const scpRootFn = new NodejsFunction(this, 'service-control-policy-root-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'service-control-policies-root.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'service-control-policies-root.ts'),
       runtime: Runtime.NODEJS_24_X,
       initialPolicy: [
         new PolicyStatement({

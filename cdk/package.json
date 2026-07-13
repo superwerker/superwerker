@@ -1,6 +1,7 @@
 {
   "name": "superwerker-cdk",
   "packageManager": "yarn@4.17.1",
+  "type": "module",
   "engines": {
     "node": ">=24"
   },

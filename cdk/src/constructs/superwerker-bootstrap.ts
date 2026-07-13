@@ -39,7 +39,7 @@ class SuperwerkerBootstrapProvider extends Construct {
 
     this.provider = new cr.Provider(this, 'superwerker-bootstrap-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'superwerker-bootstrap-provider-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'superwerker-bootstrap-function.ts'),
+        entry: path.join(import.meta.dirname, '..', 'functions', 'superwerker-bootstrap-function.ts'),
         runtime: Runtime.NODEJS_24_X,
         initialPolicy: [
           new iam.PolicyStatement({

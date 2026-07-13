@@ -18,7 +18,7 @@ export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     new CfnInclude(this, 'BudgetTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'budget.yaml'),
+      templateFile: path.join(import.meta.dirname, '..', '..', 'templates', 'budget.yaml'),
     });
   }
 }

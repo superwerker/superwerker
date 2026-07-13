@@ -55,7 +55,7 @@ class GenerateEmailAddressProvider extends Construct {
 
     this.provider = new cr.Provider(this, 'generate-email-address-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'generate-email-address-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'generate-mail-address.ts'),
+        entry: path.join(import.meta.dirname, '..', 'functions', 'generate-mail-address.ts'),
         runtime: Runtime.NODEJS_24_X,
         initialPolicy: [
           new iam.PolicyStatement({

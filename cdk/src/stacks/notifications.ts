@@ -33,7 +33,7 @@ export class NotificationsStack extends NestedStack {
 
     // NotificationOpsItemCreated
     const notificationOpsItemCreatedFn = new NodejsFunction(this, 'NotificationOpsItemCreated', {
-      entry: path.join(__dirname, '..', 'functions', 'notification-opsitem-created.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'notification-opsitem-created.ts'),
       handler: 'handler',
       runtime: lambda.Runtime.NODEJS_24_X,
       timeout: Duration.seconds(30),

@@ -41,7 +41,7 @@ class BackupTagPolicyProvider extends Construct {
     super(scope, id);
 
     const tagPolicyFn = new PythonFunction(this, 'backup-tag-policy-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'backup-tag-policy'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'backup-tag-policy'),
       handler: 'handler',
       runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(200),

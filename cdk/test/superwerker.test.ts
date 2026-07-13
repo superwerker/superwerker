@@ -10,7 +10,7 @@ export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     new CfnInclude(this, 'SuperwerkerTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'superwerker.template.yaml'),
+      templateFile: path.join(import.meta.dirname, '..', '..', 'templates', 'superwerker.template.yaml'),
     });
   }
 }

@@ -32,7 +32,7 @@ class BackupPolicyEnableProvider extends Construct {
     super(scope, id);
 
     const backupPolicyEnableFn = new PythonFunction(this, 'backup-policy-enable-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'backup-policy-enable'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'backup-policy-enable'),
       handler: 'enable_tag_policies',
       runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(200),

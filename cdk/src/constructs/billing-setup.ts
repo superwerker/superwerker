@@ -35,7 +35,7 @@ class BillingSetupProvider extends Construct {
     super(scope, id);
 
     const billingSetupFn = new PythonFunction(this, 'billing-setup-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'billing-setup'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'billing-setup'),
       handler: 'handler',
       runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(30),

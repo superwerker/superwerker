@@ -18,7 +18,7 @@ export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     new CfnInclude(this, 'GuarddutyTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'guardduty.yaml'),
+      templateFile: path.join(import.meta.dirname, '..', '..', 'templates', 'guardduty.yaml'),
     });
   }
 }
