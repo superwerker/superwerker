@@ -6,8 +6,9 @@
   },
   "scripts": {
     "synth": "cdk synth --version-reporting false",
-    "test": "make test && jest --silent",
-    "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts",
+    "test": "make test && tsc && jest --silent",
+    "typecheck": "tsc",
+    "publish-assets": "npx tsx src/scripts/publish-assets.ts",
     "prepare": "cd .. && husky cdk/.husky",
     "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
     "format": "prettier --write --ignore-unknown ."
@@ -38,7 +39,7 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.3",
     "ts-jest": "^29.4.5",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.23.1",
     "typescript": "^5.9.3"
   },
   "lint-staged": {
