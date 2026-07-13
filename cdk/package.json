@@ -1,7 +1,7 @@
 {
   "name": "superwerker-cdk",
   "engines": {
-    "node": "^18 || ^20"
+    "node": ">=24"
   },
   "scripts": {
     "synth": "cdk synth --version-reporting false",
@@ -15,7 +15,7 @@
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@stylistic/eslint-plugin": "^5.6.1",
-    "@tsconfig/node20": "^20.1.8",
+    "@tsconfig/node24": "^24.0.4",
     "@types/async-retry": "^1.4.9",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
