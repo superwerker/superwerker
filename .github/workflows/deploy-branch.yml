@@ -16,7 +16,7 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Branch name
       run: echo running on branch ${GITHUB_REF##*/}
@@ -32,7 +32,7 @@ jobs:
       id: version_templates
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: ${{ vars.AWS_DEPLOY_ROLE }}
         aws-region: ${{ vars.AWS_REGION }}
