@@ -10,7 +10,7 @@ import {
 } from '@aws-sdk/client-organizations';
 import { CloudFormationCustomResourceCreateEvent, Context } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
 import { handler } from '../../src/functions/service-control-policies-root';
 
 const organizationClientMock = mockClient(OrganizationsClient);
@@ -24,7 +24,7 @@ const description = 'superwerker - SCPRoot';
 
 describe('service control policies', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     organizationClientMock.reset();
     process.env.AWS_REGION = 'us-east-1';
   });

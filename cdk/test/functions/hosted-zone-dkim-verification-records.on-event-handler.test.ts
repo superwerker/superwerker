@@ -1,14 +1,14 @@
 import { DeleteIdentityCommand, SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
 import { CloudFormationCustomResourceCreateEvent, CloudFormationCustomResourceDeleteEvent, Context } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
 import { handler } from '../../src/functions/hosted-zone-dkim-verification-records.on-event-handler';
 
 const sesClientMock = mockClient(SESClient);
 
 describe('hosted-zone-dkim-verification-records.on-event-handler', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     sesClientMock.reset();
   });
 

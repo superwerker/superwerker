@@ -12,8 +12,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "resolveJsonModule": true,
-    "stripInternal": true
+    "stripInternal": true,
+    // vitest runs with globals: true, so describe/it/expect/vi need declaring.
+    "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.d.ts", "vitest.config.ts"],
   "exclude": ["cdk.out", "node_modules", "lib"]
 }

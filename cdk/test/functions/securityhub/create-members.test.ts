@@ -8,7 +8,7 @@ import {
   DeleteMembersCommand,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
 import { SecurityHubMemberMgmt } from '../../../src/functions/securityhub/create-members';
 
 const securityHubClientMock = mockClient(SecurityHubClient);

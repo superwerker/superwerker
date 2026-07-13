@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`lambda runtimes inventory matches snapshot 1`] = `
+exports[`lambda runtimes > inventory matches snapshot 1`] = `
 {
   "SuperwerkerStack/Backup/AWS679f53fac002430cb0da5b7982bd22872D164C4C": "nodejs24.x",
   "SuperwerkerStack/Backup/BackupPolicyCustomResource": "nodejs24.x",
@@ -35,7 +35,7 @@ exports[`lambda runtimes inventory matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack matches snapshot 1`] = `
 {
   "Conditions": {
     "IncludeBackup": {
@@ -829,7 +829,7 @@ exports[`templates SuperwerkerStack matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/Backup matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/Backup matches snapshot 1`] = `
 {
   "Description": "Sets up backup configuration and policies.",
   "Resources": {
@@ -2625,7 +2625,7 @@ Resources:
 }
 `;
 
-exports[`templates SuperwerkerStack/Billing matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/Billing matches snapshot 1`] = `
 {
   "Outputs": {
     "AwsApiLibRoleName": {
@@ -2886,7 +2886,7 @@ exports[`templates SuperwerkerStack/Billing matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/Budget matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/Budget matches snapshot 1`] = `
 {
   "Resources": {
     "BudgetAlarm": {
@@ -3018,7 +3018,7 @@ exports[`templates SuperwerkerStack/Budget matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/ControlTower matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/ControlTower matches snapshot 1`] = `
 {
   "Description": "Sets up the landing zone with control tower.",
   "Parameters": {
@@ -3548,7 +3548,7 @@ exports[`templates SuperwerkerStack/ControlTower matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/GuardDuty matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/GuardDuty matches snapshot 1`] = `
 {
   "Resources": {
     "EnableGuardDutyExistingAccounts": {
@@ -4187,7 +4187,7 @@ exports[`templates SuperwerkerStack/GuardDuty matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/LivingDocumentation matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/LivingDocumentation matches snapshot 1`] = `
 {
   "Parameters": {
     "HostedZoneParamName": {
@@ -4386,7 +4386,7 @@ exports[`templates SuperwerkerStack/LivingDocumentation matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/Notifications matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/Notifications matches snapshot 1`] = `
 {
   "Outputs": {
     "NotificationTopicArn": {
@@ -4579,7 +4579,7 @@ exports[`templates SuperwerkerStack/Notifications matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/Prepare matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/Prepare matches snapshot 1`] = `
 {
   "Description": "Prepares the AWS account for Superwerker.",
   "Resources": {
@@ -4991,7 +4991,7 @@ exports[`templates SuperwerkerStack/Prepare matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/RootMail matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/RootMail matches snapshot 1`] = `
 {
   "Parameters": {
     "Domain": {
@@ -6978,7 +6978,7 @@ Resources:
 }
 `;
 
-exports[`templates SuperwerkerStack/SecurityHub matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/SecurityHub matches snapshot 1`] = `
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Sets up SecurityHub with a delegated administor and automatically enabled for all AWS accounts in the AWS Organization. (qs-1s3rsr7n9)",
@@ -7735,7 +7735,7 @@ exports[`templates SuperwerkerStack/SecurityHub matches snapshot 1`] = `
 }
 `;
 
-exports[`templates SuperwerkerStack/ServiceControlPolicies matches snapshot 1`] = `
+exports[`templates > SuperwerkerStack/ServiceControlPolicies matches snapshot 1`] = `
 {
   "Parameters": {
     "IncludeBackup": {

@@ -85,12 +85,14 @@ describe('resources', () => {
 });
 
 describe('email generation', () => {
-  const app = new App({ context });
-  const stack = new SuperwerkerStack(app, 'stack', {});
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.AUDIT_ACCOUNT,
-  });
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+  it('generates an email address for the audit and log archive accounts', () => {
+    const app = new App({ context });
+    const stack = new SuperwerkerStack(app, 'stack', {});
+    Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+      Name: SuperwerkerStack.AUDIT_ACCOUNT,
+    });
+    Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+      Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+    });
   });
 });

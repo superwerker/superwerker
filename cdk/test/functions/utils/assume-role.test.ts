@@ -10,7 +10,7 @@ describe('getCredsFromAssumeRole', () => {
   const roleSessionName = 'MySession';
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should return credentials when assume role succeeds', async () => {

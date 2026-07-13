@@ -1,4 +1,4 @@
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
 import {
   OrganizationsClient,
   CreateOrganizationCommand,
@@ -13,14 +13,15 @@ import {
   Context,
 } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
+import type { Mocked } from 'vitest';
 import axios from 'axios';
 import { handler } from '../../src/functions/./prepare-account';
 
 const organizationsClientMock = mockClient(OrganizationsClient);
 const ssmClientMock = mockClient(SSMClient);
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('create organizations function', () => {
   beforeEach(() => {

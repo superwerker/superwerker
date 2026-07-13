@@ -51,7 +51,7 @@ export default tseslint.config(
       'import/no-extraneous-dependencies': [
         'error',
         {
-          devDependencies: ['**/test/**', '**/scripts/**'],
+          devDependencies: ['**/test/**', '**/scripts/**', '**/*.config.ts'],
           optionalDependencies: false,
           peerDependencies: true,
         },

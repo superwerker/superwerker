@@ -1,6 +1,6 @@
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
 import { handler } from '../../src/functions/notification-opsitem-created';
 
 const snsClientMock = mockClient(SNSClient);
@@ -14,7 +14,7 @@ const url = `https://${region}.console.aws.amazon.com/systems-manager/opsitems/$
 
 describe('notifications_opsitems', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     snsClientMock.reset();
     process.env.AWS_REGION = 'us-east-1';
     process.env.TOPIC_ARN = 'no arn';

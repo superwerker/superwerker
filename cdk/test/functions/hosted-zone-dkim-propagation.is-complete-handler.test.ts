@@ -12,7 +12,7 @@ import {
   CloudFormationCustomResourceUpdateEvent,
   Context,
 } from 'aws-lambda';
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
 import { mockClient } from 'aws-sdk-client-mock';
 import { handler } from '../../src/functions/hosted-zone-dkim-propagation.is-complete-handler';
 
@@ -36,7 +36,7 @@ const event = {
 
 describe('hosted-zone-dkim-propagation.is-complete-handler', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     sesClientMock.reset();
     ssmClientMock.reset();
 
