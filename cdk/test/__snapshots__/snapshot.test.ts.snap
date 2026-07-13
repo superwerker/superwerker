@@ -21,7 +21,6 @@ exports[`lambda runtimes inventory matches snapshot 1`] = `
   "SuperwerkerStack/Notifications/NotificationOpsItemCreated": "nodejs24.x",
   "SuperwerkerStack/Prepare/superwerkerprepareaccountproviderframeworkonEvent64C391EF": "nodejs24.x",
   "SuperwerkerStack/Prepare/superwerkerprepareaccountproviderprepareaccountoneventCDA2BFD8": "nodejs24.x",
-  "SuperwerkerStack/RootMail/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": "nodejs24.x",
   "SuperwerkerStack/RootMail/rootmailhostedzonedkimpropagationproviderframeworkisComplete165FE163": "nodejs24.x",
   "SuperwerkerStack/RootMail/rootmailhostedzonedkimpropagationproviderframeworkonEvent15357119": "nodejs24.x",
   "SuperwerkerStack/RootMail/rootmailhostedzonedkimpropagationproviderframeworkonTimeout7D8A73CD": "nodejs24.x",
@@ -5469,85 +5468,6 @@ exports[`templates SuperwerkerStack/RootMail matches snapshot 1`] = `
       },
       "Type": "AWS::Route53::RecordSet",
     },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
-      "DependsOn": [
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": {
-            "Fn::Sub": "cdk-hnb659fds-assets-\${AWS::AccountId}-\${AWS::Region}",
-          },
-          "S3Key": "ASSET_HASH.zip",
-        },
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs24.x",
-        "Timeout": 900,
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "logs:PutRetentionPolicy",
-                "logs:DeleteRetentionPolicy",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "Roles": [
-          {
-            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
     "PropagationParameterC6E13F7B": {
       "Properties": {
         "Name": {
@@ -6530,6 +6450,11 @@ Resources:
           "S3Key": "ASSET_HASH.zip",
         },
         "Handler": "index.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "rootmailhostedzonedkimpropagationprovideriscompletehandlerlogs4BD3B50D",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "rootmailhostedzonedkimpropagationprovideriscompletehandlerServiceRoleDFD2C35E",
@@ -6540,29 +6465,6 @@ Resources:
         "Timeout": 30,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "rootmailhostedzonedkimpropagationprovideriscompletehandlerLogRetentionA997105A": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "rootmailhostedzonedkimpropagationprovideriscompletehandlerB67C8E91",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 3,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "rootmailhostedzonedkimpropagationprovideriscompletehandlerServiceRoleDFD2C35E": {
       "Properties": {
@@ -6648,6 +6550,14 @@ Resources:
       },
       "Type": "AWS::IAM::Policy",
     },
+    "rootmailhostedzonedkimpropagationprovideriscompletehandlerlogs4BD3B50D": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 3,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
     "rootmailhostedzonedkimpropagationprovideroneventhandlerC59BDC16": {
       "DependsOn": [
         "rootmailhostedzonedkimpropagationprovideroneventhandlerServiceRole02FD73CE",
@@ -6660,6 +6570,11 @@ Resources:
           "S3Key": "ASSET_HASH.zip",
         },
         "Handler": "index.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "rootmailhostedzonedkimpropagationprovideroneventhandlerlogs0FC7D406",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "rootmailhostedzonedkimpropagationprovideroneventhandlerServiceRole02FD73CE",
@@ -6670,29 +6585,6 @@ Resources:
         "Timeout": 10,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "rootmailhostedzonedkimpropagationprovideroneventhandlerLogRetentionD97E8A18": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "rootmailhostedzonedkimpropagationprovideroneventhandlerC59BDC16",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 3,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "rootmailhostedzonedkimpropagationprovideroneventhandlerServiceRole02FD73CE": {
       "Properties": {
@@ -6724,6 +6616,14 @@ Resources:
         ],
       },
       "Type": "AWS::IAM::Role",
+    },
+    "rootmailhostedzonedkimpropagationprovideroneventhandlerlogs0FC7D406": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 3,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
     "rootmailhostedzonedkimpropagationproviderwaiterstatemachine2C629ADB": {
       "DependsOn": [
@@ -6875,6 +6775,9 @@ Resources:
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "rootmailhostedzonedkimverificationrecordsproviderhostedzonedkimverificationrecordsproviderlogsCCA10037",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -6886,29 +6789,6 @@ Resources:
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "rootmailhostedzonedkimverificationrecordsproviderframeworkonEventLogRetention64AEF97C": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "rootmailhostedzonedkimverificationrecordsproviderframeworkonEvent801E57DE",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 3,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "rootmailhostedzonedkimverificationrecordsproviderframeworkonEventServiceRoleA09812EA": {
       "Properties": {
@@ -6993,6 +6873,14 @@ Resources:
       },
       "Type": "AWS::IAM::Policy",
     },
+    "rootmailhostedzonedkimverificationrecordsproviderhostedzonedkimverificationrecordsproviderlogsCCA10037": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 3,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
     "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerADD3C0BE": {
       "DependsOn": [
         "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerServiceRoleDefaultPolicy5C0E86C8",
@@ -7006,6 +6894,11 @@ Resources:
           "S3Key": "ASSET_HASH.zip",
         },
         "Handler": "index.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerlogs44E2E1E8",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerServiceRole83E5B139",
@@ -7016,29 +6909,6 @@ Resources:
         "Timeout": 200,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerLogRetentionCA165FC4": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerADD3C0BE",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 3,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerServiceRole83E5B139": {
       "Properties": {
@@ -7095,6 +6965,14 @@ Resources:
         ],
       },
       "Type": "AWS::IAM::Policy",
+    },
+    "rootmailhostedzonedkimverificationrecordsprovideroneventhandlerlogs44E2E1E8": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 3,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
   },
 }
