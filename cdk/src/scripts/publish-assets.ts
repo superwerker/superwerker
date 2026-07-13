@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import * as path from 'path';
+
 import retry from 'async-retry';
 
 // run scripts/superwerker-regions.sh for updating list of regions

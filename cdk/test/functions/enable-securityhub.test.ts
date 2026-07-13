@@ -1,6 +1,7 @@
 import { ControlTowerClient, GetLandingZoneCommand, ListLandingZonesCommand } from '@aws-sdk/client-controltower';
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import { handler } from '../../src/functions/enable-securityhub';
 import { SecurityHubAggregatorMgmt } from '../../src/functions/securityhub/create-finding-aggregator';
 import { SecurityHubMemberMgmt } from '../../src/functions/securityhub/create-members';

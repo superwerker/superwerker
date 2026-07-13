@@ -41,13 +41,6 @@ export default tseslint.config(
       'no-duplicate-imports': 'error',
 
       'import/no-unresolved': 'error',
-      'import/order': [
-        'warn',
-        {
-          groups: ['builtin', 'external'],
-          alphabetize: { order: 'asc', caseInsensitive: true },
-        },
-      ],
       'import/no-extraneous-dependencies': [
         'error',
         {

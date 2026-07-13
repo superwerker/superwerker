@@ -1,5 +1,6 @@
-import { CfnOutput, NestedStack, NestedStackProps, aws_iam as iam } from 'aws-cdk-lib';
+import { CfnOutput, aws_iam as iam, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+
 import { BillingSetup } from '../constructs/billing-setup';
 
 export class BillingStack extends NestedStack {

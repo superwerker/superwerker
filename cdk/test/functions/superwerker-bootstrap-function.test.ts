@@ -1,12 +1,14 @@
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
 import {
   CloudFormationCustomResourceCreateEvent,
-  CloudFormationCustomResourceUpdateEvent,
   CloudFormationCustomResourceDeleteEvent,
+  CloudFormationCustomResourceUpdateEvent,
   Context,
 } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import 'aws-sdk-client-mock-jest/vitest';
+
 import { handler } from '../../src/functions/superwerker-bootstrap-function';
 
 var eventBridgeClientMock = mockClient(EventBridgeClient);

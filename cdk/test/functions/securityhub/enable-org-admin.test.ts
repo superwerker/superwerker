@@ -13,9 +13,11 @@ import {
   SecurityHubClient,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import 'aws-sdk-client-mock-jest/vitest';
-import { secHubStandards } from './enable-standards.test';
+
 import { SecurityHubOrganizationMgmt } from '../../../src/functions/securityhub/enable-org-admin';
+import { secHubStandards } from './enable-standards.test';
 
 const organizationsClientMock = mockClient(OrganizationsClient);
 const securityHubClientMock = mockClient(SecurityHubClient);

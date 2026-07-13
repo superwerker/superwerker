@@ -1,6 +1,7 @@
 import path from 'path';
-import { NestedStack, NestedStackProps, aws_lambda as lambda, aws_iam as iam, Duration, Arn, ArnFormat, CfnParameter } from 'aws-cdk-lib';
-import { Dashboard, CustomWidget } from 'aws-cdk-lib/aws-cloudwatch';
+
+import { Arn, ArnFormat, CfnParameter, Duration, aws_iam as iam, aws_lambda as lambda, NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { CustomWidget, Dashboard } from 'aws-cdk-lib/aws-cloudwatch';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 

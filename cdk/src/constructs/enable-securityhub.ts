@@ -1,4 +1,5 @@
 import * as path from 'path';
+
 import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import { Rule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';

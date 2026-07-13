@@ -9,7 +9,9 @@ import {
   UpdateStandardsControlCommand,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import 'aws-sdk-client-mock-jest/vitest';
+
 import { standardsToEnable } from '../../../src/functions/enable-securityhub';
 import { SecurityHubStandardsMgmt } from '../../../src/functions/securityhub/enable-standards';
 

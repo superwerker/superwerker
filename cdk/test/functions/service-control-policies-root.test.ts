@@ -10,7 +10,9 @@ import {
 } from '@aws-sdk/client-organizations';
 import { CloudFormationCustomResourceCreateEvent, Context } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import 'aws-sdk-client-mock-jest/vitest';
+
 import { handler } from '../../src/functions/service-control-policies-root';
 
 const organizationClientMock = mockClient(OrganizationsClient);

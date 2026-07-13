@@ -1,12 +1,14 @@
 import * as path from 'path';
-import { CfnResource, CustomResource, Duration, RemovalPolicy, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
+
+import { CfnResource, CustomResource, Duration, aws_iam as iam, aws_lambda as lambda, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
+
 import {
-  ATTR_VERIFICATION_TOKEN,
   ATTR_DKIM_TOKENS,
+  ATTR_VERIFICATION_TOKEN,
   PROP_DOMAIN,
 } from '../functions/hosted-zone-dkim-verification-records.on-event-handler';
 

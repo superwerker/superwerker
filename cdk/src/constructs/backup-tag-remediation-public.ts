@@ -1,6 +1,7 @@
 import * as path from 'path';
+
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { aws_iam as iam, CustomResource, Duration, Stack, aws_lambda as lambda, Arn } from 'aws-cdk-lib';
+import { Arn, CustomResource, Duration, aws_iam as iam, aws_lambda as lambda, Stack } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';

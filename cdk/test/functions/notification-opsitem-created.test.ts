@@ -1,6 +1,8 @@
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import 'aws-sdk-client-mock-jest/vitest';
+
 import { handler } from '../../src/functions/notification-opsitem-created';
 
 const snsClientMock = mockClient(SNSClient);

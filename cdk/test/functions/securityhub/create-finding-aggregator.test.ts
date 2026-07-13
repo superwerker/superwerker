@@ -7,7 +7,9 @@ import {
   UpdateFindingAggregatorCommand,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import 'aws-sdk-client-mock-jest/vitest';
+
 import { SecurityHubAggregatorMgmt } from '../../../src/functions/securityhub/create-finding-aggregator';
 
 const securityHubClientMock = mockClient(SecurityHubClient);

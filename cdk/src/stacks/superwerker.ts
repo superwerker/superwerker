@@ -1,5 +1,7 @@
 import { CfnCondition, CfnParameter, CfnStack, Fn, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+
+import { GenerateEmailAddress } from '../constructs/generate-email-address';
 import { BackupStack } from './backup';
 import { BillingStack } from './billing';
 import { BudgetStack } from './budget';
@@ -11,7 +13,6 @@ import { PrepareStack } from './prepare';
 import { RootmailStack } from './rootmail';
 import { SecurityHubStack } from './security-hub';
 import { ServiceControlPoliciesStack } from './sevice-control-policies';
-import { GenerateEmailAddress } from '../constructs/generate-email-address';
 
 export interface SuperwerkerStackProps extends StackProps {
   readonly version?: string;

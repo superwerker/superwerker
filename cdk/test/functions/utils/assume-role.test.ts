@@ -1,5 +1,6 @@
-import { STS, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import { AssumeRoleCommand, STS } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import { getCredsFromAssumeRole } from '../../../src/functions/utils/assume-role';
 
 const stsClientMock = mockClient(STS);
