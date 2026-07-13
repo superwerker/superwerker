@@ -5,6 +5,12 @@ on:
   push:
     branches: ['*']
 
+# Runs for the same branch are serialized rather than cancelled: this syncs to S3 with --delete, and
+# aborting one part way through would leave the bucket half written.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read

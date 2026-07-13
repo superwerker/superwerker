@@ -2,6 +2,11 @@ name: Lint CloudFormation Templates
 
 on: [push, pull_request]
 
+# A new push to a pull request makes the run for the previous commit pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
