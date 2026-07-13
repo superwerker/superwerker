@@ -6,3 +6,4 @@ tmp
 
 *.pyc
 tests/test-results.xml
+.idea/
