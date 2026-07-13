@@ -52,4 +52,17 @@ describe('lambda runtimes', () => {
     const unexpected = runtimes.filter(([, runtime]) => !EXPECTED_RUNTIMES.includes(runtime));
     expect(unexpected).toEqual([]);
   });
+
+  // The rootmail stackset carries its own lambdas inside a template body, where they are a string
+  // rather than a resource, so the whole serialized template is searched.
+  test('no unexpected runtime anywhere in the templates, including stackset bodies', () => {
+    const found = allStacks.flatMap(([name, stack]) =>
+      [...JSON.stringify(Template.fromStack(stack).toJSON()).matchAll(/(?:nodejs[\d.]+x|python[\d.]+)/g)].map(
+        (match): [string, string] => [name, match[0]],
+      ),
+    );
+
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.filter(([, runtime]) => !EXPECTED_RUNTIMES.includes(runtime))).toEqual([]);
+  });
 });

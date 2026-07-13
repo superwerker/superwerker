@@ -5556,7 +5556,7 @@ Resources:
     Properties:
       Timeout: 200
       Handler: index.handler
-      Runtime: python3.9
+      Runtime: python3.14
       Role: !GetAtt SESReceiptRuleSetActivationCustomResourceRole.Arn
       Code:
         ZipFile: !Sub | # TODO: adopt function to new ADR for inline python lambdas
@@ -5690,7 +5690,7 @@ Resources:
     Properties:
       Timeout: 60
       Handler: index.handler
-      Runtime: python3.9
+      Runtime: python3.14
       Role: !GetAtt OpsSantaFunctionRole.Arn
       Code:
         ZipFile: !Sub |
