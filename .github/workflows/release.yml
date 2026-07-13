@@ -44,8 +44,7 @@ jobs:
         if: steps.semantic.outputs.new_release_published == 'true'
         run: |
           pip install cfn-flip
-          yarn global add aws-cdk
-          yarn
+          yarn install --immutable
           yarn test
           yarn synth
           cat cdk.out/SuperwerkerStack.assets.json
