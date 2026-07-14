@@ -55,7 +55,7 @@ class EnableSecurityHubProvider extends Construct {
 
     const onEventLambda = new lambda.NodejsFunction(this, 'EnableSecurityHubProvider-on-event', {
       entry: path.join(__dirname, '..', 'functions', 'enable-securityhub.ts'),
-      runtime: Runtime.NODEJS_20_X,
+      runtime: Runtime.NODEJS_24_X,
       timeout: Duration.seconds(180),
       environment: {
         homeRegion: Stack.of(this).region,

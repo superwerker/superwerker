@@ -11,6 +11,6 @@ test('Accounts closed successfully', () => {
 
   template.hasResourceProperties("AWS::Lambda::Function",{
     Handler: "index.handler",
-    Runtime: "python3.9"
+    Runtime: "python3.14"
   });
 });

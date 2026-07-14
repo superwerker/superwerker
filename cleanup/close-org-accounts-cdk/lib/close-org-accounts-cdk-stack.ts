@@ -36,7 +36,7 @@ export class CloseOrgAccountsCdkStack extends Stack {
     const handler = new lambda.Function(this, 'CloseOrgAccountsLambda', {
       handler: 'index.handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda')),
-      runtime: lambda.Runtime.PYTHON_3_12,
+      runtime: lambda.Runtime.PYTHON_3_14,
       timeout: cdk.Duration.minutes(5),
       role: closeOrgAccountsRole,
       retryAttempts: 0
