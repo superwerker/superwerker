@@ -1,11 +1,12 @@
-import { CfnParameter, NestedStack, NestedStackProps, RemovalPolicy, aws_iam as iam } from 'aws-cdk-lib';
+import { CfnParameter, aws_iam as iam, NestedStack, NestedStackProps, RemovalPolicy } from 'aws-cdk-lib';
 import { CfnLandingZone } from 'aws-cdk-lib/aws-controltower';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { CfnAccount } from 'aws-cdk-lib/aws-organizations';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
-import { PrepareStack } from './prepare';
+
 import { SuperwerkerBootstrap } from '../constructs/superwerker-bootstrap';
+import { PrepareStack } from './prepare';
 
 export class ControlTowerStack extends NestedStack {
   public static accountIdLogArchiveParameter = '/superwerker/account_id_logarchive';

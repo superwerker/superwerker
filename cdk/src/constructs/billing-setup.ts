@@ -1,6 +1,7 @@
 import * as path from 'path';
+
 import { PythonFunction } from '@aws-cdk/aws-lambda-python-alpha';
-import { CustomResource, Duration, Stack, aws_lambda as lambda } from 'aws-cdk-lib';
+import { CustomResource, Duration, aws_lambda as lambda, Stack } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
@@ -35,7 +36,7 @@ class BillingSetupProvider extends Construct {
     super(scope, id);
 
     const billingSetupFn = new PythonFunction(this, 'billing-setup-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'billing-setup'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'billing-setup'),
       handler: 'handler',
       runtime: Runtime.PYTHON_3_14,
       timeout: Duration.seconds(30),

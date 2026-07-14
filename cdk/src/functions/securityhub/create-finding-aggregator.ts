@@ -18,6 +18,7 @@ import {
   SecurityHubClient,
   UpdateFindingAggregatorCommand,
 } from '@aws-sdk/client-securityhub';
+
 import { throttlingBackOff } from '../utils/throttle';
 
 export class SecurityHubAggregatorMgmt {

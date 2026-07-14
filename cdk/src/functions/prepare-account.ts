@@ -1,10 +1,10 @@
 import {
-  OrganizationsClient,
+  AlreadyInOrganizationException,
   CreateOrganizationCommand,
   CreateOrganizationCommandOutput,
-  AlreadyInOrganizationException,
+  OrganizationsClient,
 } from '@aws-sdk/client-organizations';
-import { SSMClient, PutParameterCommand, ParameterType, PutParameterCommandOutput, ParameterAlreadyExists } from '@aws-sdk/client-ssm';
+import { ParameterAlreadyExists, ParameterType, PutParameterCommand, PutParameterCommandOutput, SSMClient } from '@aws-sdk/client-ssm';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
 import axios from 'axios';
 

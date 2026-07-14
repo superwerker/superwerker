@@ -1,28 +1,30 @@
 {
   "name": "superwerker-cdk",
+  "packageManager": "yarn@4.17.1",
+  "type": "module",
   "engines": {
-    "node": "^18 || ^20"
+    "node": ">=24"
   },
   "scripts": {
     "synth": "cdk synth --version-reporting false",
-    "test": "make test && jest --silent",
-    "publish-assets": "npx ts-node -P tsconfig.json --prefer-ts-exts src/scripts/publish-assets.ts",
+    "test": "make test && tsc --noEmit && vitest run",
+    "typecheck": "tsc --noEmit",
+    "publish-assets": "npx tsx src/scripts/publish-assets.ts",
     "prepare": "cd .. && husky cdk/.husky",
-    "lint": "eslint '*/**/*.{js,ts,tsx}' --fix",
+    "lint": "eslint . --fix",
     "format": "prettier --write --ignore-unknown ."
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
-    "@stylistic/eslint-plugin": "^5.6.1",
-    "@tsconfig/node20": "^20.1.8",
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "@tsconfig/node24": "^24.0.4",
     "@types/async-retry": "^1.4.9",
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.0",
-    "@typescript-eslint/parser": "^8.48.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
+    "chalk": "^5",
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
@@ -30,22 +32,22 @@
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^17.7.0",
     "husky": "^9.1.7",
-    "jest": "^30.2.0",
-    "jest-junit": "^16.0.0",
     "json-schema": "^0.4.0",
     "lint-staged": "^16.2.7",
-    "prettier": "^3.7.3",
-    "ts-jest": "^29.4.5",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "prettier": "^3.9.5",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
   },
   "lint-staged": {
     "*.{ts,tsx,js}": "eslint --fix",
     "*.{json,js,ts,jsx,tsx,html}": "prettier --write --ignore-unknown"
   },
   "dependencies": {
-    "@aws-cdk/aws-lambda-python-alpha": "^2.216.0-alpha.0",
+    "@aws-cdk/aws-lambda-python-alpha": "^2.261.0-alpha.0",
     "@aws-sdk/client-cloudwatch": "^3.940.0",
     "@aws-sdk/client-controltower": "^3.940.0",
     "@aws-sdk/client-eventbridge": "^3.940.0",
@@ -58,12 +60,12 @@
     "@aws-sdk/credential-provider-node": "^3.894.0",
     "@types/aws-lambda": "^8.10.159",
     "async-retry": "^1.3.3",
-    "aws-cdk": "^2.1033.0",
-    "aws-cdk-lib": "^2.230.0",
+    "aws-cdk": "^2.1130.0",
+    "aws-cdk-lib": "^2.261.0",
     "axios": "^1.13.2",
     "cdk-assets": "^4.2.2",
     "cdk-nag": "^2.37.55",
-    "constructs": "^10.4.3",
+    "constructs": "^10.5.0",
     "endent": "^2.1.0",
     "exponential-backoff": "^3.1.3",
     "handlebars": "^4.7.8",
@@ -71,5 +73,8 @@
     "yaml": "^2.8.1"
   },
   "license": "Apache-2.0",
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "resolutions": {
+    "@vitest/expect": "4.1.10"
+  }
 }

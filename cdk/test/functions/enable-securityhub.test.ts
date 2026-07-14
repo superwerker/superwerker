@@ -1,6 +1,7 @@
 import { ControlTowerClient, GetLandingZoneCommand, ListLandingZonesCommand } from '@aws-sdk/client-controltower';
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { mockClient } from 'aws-sdk-client-mock';
+
 import { handler } from '../../src/functions/enable-securityhub';
 import { SecurityHubAggregatorMgmt } from '../../src/functions/securityhub/create-finding-aggregator';
 import { SecurityHubMemberMgmt } from '../../src/functions/securityhub/create-members';
@@ -37,14 +38,14 @@ describe('handler', () => {
   });
 
   it('should enable Security Hub for audit account', async () => {
-    const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
-    enableOrganisationAdmin.mockImplementation();
-    const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
-    createFindingAggregator.mockImplementation();
-    const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
-    createMembers.mockImplementation();
-    const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
-    enableStandards.mockImplementation();
+    const enableOrganisationAdmin = vi.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
+    enableOrganisationAdmin.mockImplementation(async () => {});
+    const createFindingAggregator = vi.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
+    createFindingAggregator.mockImplementation(async () => {});
+    const createMembers = vi.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
+    createMembers.mockImplementation(async () => {});
+    const enableStandards = vi.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
+    enableStandards.mockImplementation(async () => {});
 
     controlTowerClientMock.on(ListLandingZonesCommand).resolves({
       landingZones: [
@@ -77,14 +78,14 @@ describe('handler', () => {
   });
 
   it('should disable Security Hub for audit account', async () => {
-    const disableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'disableOrganisationAdmin');
-    disableOrganisationAdmin.mockImplementation();
-    const deleteFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'deleteFindingAggregator');
-    deleteFindingAggregator.mockImplementation();
-    const deleteMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'deleteMembers');
-    deleteMembers.mockImplementation();
-    const disableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'disableStandards');
-    disableStandards.mockImplementation();
+    const disableOrganisationAdmin = vi.spyOn(SecurityHubOrganizationMgmt.prototype, 'disableOrganisationAdmin');
+    disableOrganisationAdmin.mockImplementation(async () => {});
+    const deleteFindingAggregator = vi.spyOn(SecurityHubAggregatorMgmt.prototype, 'deleteFindingAggregator');
+    deleteFindingAggregator.mockImplementation(async () => {});
+    const deleteMembers = vi.spyOn(SecurityHubMemberMgmt.prototype, 'deleteMembers');
+    deleteMembers.mockImplementation(async () => {});
+    const disableStandards = vi.spyOn(SecurityHubStandardsMgmt.prototype, 'disableStandards');
+    disableStandards.mockImplementation(async () => {});
 
     const event = {
       RequestType: 'Delete',
@@ -99,14 +100,14 @@ describe('handler', () => {
   });
 
   it('should execute update when invoked manually or via eventbridge', async () => {
-    const enableOrganisationAdmin = jest.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
-    enableOrganisationAdmin.mockImplementation();
-    const createFindingAggregator = jest.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
-    createFindingAggregator.mockImplementation();
-    const createMembers = jest.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
-    createMembers.mockImplementation();
-    const enableStandards = jest.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
-    enableStandards.mockImplementation();
+    const enableOrganisationAdmin = vi.spyOn(SecurityHubOrganizationMgmt.prototype, 'enableOrganisationAdmin');
+    enableOrganisationAdmin.mockImplementation(async () => {});
+    const createFindingAggregator = vi.spyOn(SecurityHubAggregatorMgmt.prototype, 'createFindingAggregator');
+    createFindingAggregator.mockImplementation(async () => {});
+    const createMembers = vi.spyOn(SecurityHubMemberMgmt.prototype, 'createMembers');
+    createMembers.mockImplementation(async () => {});
+    const enableStandards = vi.spyOn(SecurityHubStandardsMgmt.prototype, 'enableStandards');
+    enableStandards.mockImplementation(async () => {});
 
     const event = {} as AWSLambda.CloudFormationCustomResourceEvent;
 

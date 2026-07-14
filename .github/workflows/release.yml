@@ -13,10 +13,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: cdk/yarn.lock
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: eu-central-1
           role-to-assume: ${{ secrets.AWS_RELEASE_ROLE }}
@@ -37,8 +44,7 @@ jobs:
         if: steps.semantic.outputs.new_release_published == 'true'
         run: |
           pip install cfn-flip
-          yarn global add aws-cdk
-          yarn
+          yarn install --immutable
           yarn test
           yarn synth
           cat cdk.out/SuperwerkerStack.assets.json

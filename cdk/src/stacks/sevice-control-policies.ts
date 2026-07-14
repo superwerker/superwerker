@@ -1,4 +1,5 @@
 import * as path from 'path';
+
 import { CfnParameter, CfnResource, CustomResource, Duration, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -45,8 +46,8 @@ class ServiceControlPolicyRootProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
     const scpRootFn = new NodejsFunction(this, 'service-control-policy-root-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'service-control-policies-root.ts'),
-      runtime: Runtime.NODEJS_20_X,
+      entry: path.join(import.meta.dirname, '..', 'functions', 'service-control-policies-root.ts'),
+      runtime: Runtime.NODEJS_24_X,
       initialPolicy: [
         new PolicyStatement({
           effect: Effect.ALLOW,

@@ -9,3 +9,12 @@ cdk.out
 /lambda/__pycache__
 /*/__pycache__/*
 /lambda/event.json
+
+# Yarn: the release binary is committed, the cache is not.
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

@@ -1,4 +1,5 @@
 import * as path from 'path';
+
 import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -60,8 +61,8 @@ class PrepareAccountProvider extends Construct {
 
     this.provider = new cr.Provider(this, 'prepare-account-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'prepare-account-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'prepare-account.ts'),
-        runtime: Runtime.NODEJS_20_X,
+        entry: path.join(import.meta.dirname, '..', 'functions', 'prepare-account.ts'),
+        runtime: Runtime.NODEJS_24_X,
         timeout: Duration.seconds(60),
         initialPolicy: [
           new iam.PolicyStatement({

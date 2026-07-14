@@ -1,11 +1,14 @@
 import * as path from 'path';
-import { CfnResource, CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda } from 'aws-cdk-lib';
+
+import { CfnResource, CustomResource, Duration, aws_iam as iam, aws_lambda as lambda, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
+
 import {
-  ATTR_VERIFICATION_TOKEN,
   ATTR_DKIM_TOKENS,
+  ATTR_VERIFICATION_TOKEN,
   PROP_DOMAIN,
 } from '../functions/hosted-zone-dkim-verification-records.on-event-handler';
 
@@ -53,9 +56,12 @@ class HostedZoneDKIMAndVerificationRecordsProvider extends Construct {
     super(scope, id);
 
     const onEventHandlerFunc = new NodejsFunction(this, 'on-event-handler', {
-      entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-verification-records.on-event-handler.ts'),
-      runtime: lambda.Runtime.NODEJS_20_X,
-      logRetention: 3,
+      entry: path.join(import.meta.dirname, '..', 'functions', 'hosted-zone-dkim-verification-records.on-event-handler.ts'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      logGroup: new LogGroup(this, 'on-event-handler-logs', {
+        retention: RetentionDays.THREE_DAYS,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }),
       timeout: Duration.seconds(200),
     });
 
@@ -68,7 +74,10 @@ class HostedZoneDKIMAndVerificationRecordsProvider extends Construct {
 
     this.provider = new cr.Provider(this, 'hosted-zone-dkim-verification-records-provider', {
       onEventHandler: onEventHandlerFunc,
-      logRetention: 3,
+      logGroup: new LogGroup(this, 'hosted-zone-dkim-verification-records-provider-logs', {
+        retention: RetentionDays.THREE_DAYS,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }),
       providerFunctionName: 'HostedZoneDKIMAndVerificationRecordsCustomResource',
     });
   }

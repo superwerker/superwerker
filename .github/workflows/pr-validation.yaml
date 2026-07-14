@@ -7,53 +7,30 @@ on:
       - reopened
       - synchronize
   workflow_dispatch:
-    inputs:
-      superwerker-region:
-        description: 'The region to deploy superwerker to'
-        required: true
-        type: choice
-        options:
-        - ap-northeast-1
-        - ap-northeast-2
-        - ap-south-1
-        - ap-southeast-1
-        - ap-southeast-2
-        - ca-central-1
-        - eu-central-1
-        - eu-north-1
-        - eu-west-1
-        - eu-west-2
-        - eu-west-3
-        - sa-east-1
-        - us-east-1
-        - us-east-2
-        - us-west-2
-      update-from-latest-release:
-        description: 'Check the box for TRUE if the installation shall be updated from the last release version, leave it for FALSE (default) if it shall be fresh superwerker installation'
-        required: true
-        type: boolean
-        default: false
-# the defaults
-env:
-  SUPERWERKER_REGION: eu-central-1
-  AWS_DEFAULT_REGION: eu-central-1
-  UPDATE_FROM_LATEST_RELEASE: false
+
+# A new push to a pull request makes the run for the previous commit pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   pr-conventions:
     runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - name: checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: set up node
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: cdk/yarn.lock
       - name: check PR title
         if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: deepakputhraya/action-pr-title@master
+        uses: deepakputhraya/action-pr-title@v1.0.2
         with:
           allowed_prefixes: 'build,chore,ci,docs,feat,fix,perf,refactor,revert,style,test'
       - name: check commit messages
@@ -68,11 +45,13 @@ jobs:
     needs: pr-conventions
     steps:
       - name: checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: set up node
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: cdk/yarn.lock
       - name: install dependencies
         run: yarn install
         working-directory: cdk

@@ -1,5 +1,6 @@
-import { Fn, Duration, aws_route53 as r53, aws_ssm as ssm, CfnResource } from 'aws-cdk-lib';
+import { CfnResource, Duration, Fn, aws_route53 as r53, aws_ssm as ssm } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+
 import { HostedZoneDKIMPropagation } from './rootmail-hosted-zone-dkim-propagation';
 import { HostedZoneDKIMAndVerificationRecords } from './rootmail-hosted-zone-dkim-verification-records';
 

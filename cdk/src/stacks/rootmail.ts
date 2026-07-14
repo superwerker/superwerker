@@ -1,21 +1,23 @@
 import Fs from 'fs';
+
 import {
+  CfnParameter,
+  CfnResource,
   Duration,
   aws_iam as iam,
-  aws_route53 as r53,
-  aws_s3 as s3,
-  aws_ssm as ssm,
-  CfnResource,
-  RemovalPolicy,
   NestedStack,
   NestedStackProps,
+  aws_route53 as r53,
+  RemovalPolicy,
+  aws_s3 as s3,
+  aws_ssm as ssm,
   Stack,
-  CfnParameter,
 } from 'aws-cdk-lib';
 import * as cdk from 'aws-cdk-lib';
 import { CfnRole } from 'aws-cdk-lib/aws-iam';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+
 import { HostedZoneDkim } from '../constructs/rootmail-hosted-zone-dkim';
 
 export class RootmailStack extends NestedStack {

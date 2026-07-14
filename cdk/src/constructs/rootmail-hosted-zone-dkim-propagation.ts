@@ -1,8 +1,11 @@
 import * as path from 'path';
-import { CustomResource, Duration, Stack, aws_iam as iam, aws_lambda as lambda, aws_ssm as ssm } from 'aws-cdk-lib';
+
+import { CustomResource, Duration, aws_iam as iam, aws_lambda as lambda, RemovalPolicy, aws_ssm as ssm, Stack } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { LogGroup, RetentionDays } from 'aws-cdk-lib/aws-logs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct, Node } from 'constructs';
+
 import { PROP_DOMAIN, PROP_PARAM_NAME } from '../functions/hosted-zone-dkim-propagation.on-event-handler';
 
 export interface HostedZoneDKIMPropagationProps {
@@ -52,9 +55,12 @@ class HostedZoneDKIMPropagationProvider extends Construct {
     super(scope, id);
 
     const isCompleteHandlerFunc = new NodejsFunction(this, 'is-complete-handler', {
-      entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-propagation.is-complete-handler.ts'),
-      runtime: lambda.Runtime.NODEJS_20_X,
-      logRetention: 3,
+      entry: path.join(import.meta.dirname, '..', 'functions', 'hosted-zone-dkim-propagation.is-complete-handler.ts'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      logGroup: new LogGroup(this, 'is-complete-handler-logs', {
+        retention: RetentionDays.THREE_DAYS,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }),
       timeout: Duration.seconds(30),
     });
 
@@ -80,9 +86,12 @@ class HostedZoneDKIMPropagationProvider extends Construct {
     );
 
     const onEventHandlerFunc = new NodejsFunction(this, 'on-event-handler', {
-      entry: path.join(__dirname, '..', 'functions', 'hosted-zone-dkim-propagation.on-event-handler.ts'),
-      runtime: lambda.Runtime.NODEJS_20_X,
-      logRetention: 3,
+      entry: path.join(import.meta.dirname, '..', 'functions', 'hosted-zone-dkim-propagation.on-event-handler.ts'),
+      runtime: lambda.Runtime.NODEJS_24_X,
+      logGroup: new LogGroup(this, 'on-event-handler-logs', {
+        retention: RetentionDays.THREE_DAYS,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }),
       timeout: Duration.seconds(10),
     });
 

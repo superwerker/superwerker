@@ -1,21 +1,23 @@
 import fs from 'fs';
+
 import {
   CfnResource,
   CfnStackSet,
+  aws_config as config,
+  Fn,
+  aws_iam as iam,
+  aws_lambda as lambda,
   NestedStack,
   NestedStackProps,
   RemovalPolicy,
-  Stack,
-  aws_config as config,
-  aws_iam as iam,
   aws_s3 as s3,
   aws_ssm as ssm,
-  aws_lambda as lambda,
-  Fn,
+  Stack,
 } from 'aws-cdk-lib';
 import { AwsCustomResource, PhysicalResourceId } from 'aws-cdk-lib/custom-resources';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+
 import { BackupPolicy } from '../constructs/backup-policy';
 import { BackupPolicyEnable } from '../constructs/backup-policy-enable';
 import { BackupTagPolicy } from '../constructs/backup-tag-policy';
