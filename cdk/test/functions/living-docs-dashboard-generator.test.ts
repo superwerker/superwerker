@@ -1,15 +1,17 @@
 import { CloudWatchClient, DeleteDashboardsCommand } from '@aws-sdk/client-cloudwatch';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
-import { handler, createDnsDelegationText, WidgetContent } from '../../src/functions/living-docs-dashboard-generator';
+
+import 'aws-sdk-client-mock-jest/vitest';
+
+import { createDnsDelegationText, handler, WidgetContent } from '../../src/functions/living-docs-dashboard-generator';
 
 const ssmClientMock = mockClient(SSMClient);
 const cwClientMock = mockClient(CloudWatchClient);
 
 describe('living-docs-dashboard-generator', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     ssmClientMock.reset();
     cwClientMock.reset();
     process.env.SUPERWERKER_DOMAIN = 'example.com';

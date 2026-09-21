@@ -1,9 +1,11 @@
 import * as path from 'path';
+
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { BUNDLING_STACKS } from 'aws-cdk-lib/cx-api';
 import { Construct } from 'constructs';
+
 import { RootmailStack } from '../src/stacks/rootmail';
 
 export class UnderTestStack extends Stack {
@@ -18,7 +20,7 @@ export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     new CfnInclude(this, 'GuarddutyTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'rootmail.yaml'),
+      templateFile: path.join(import.meta.dirname, '..', '..', 'templates', 'rootmail.yaml'),
     });
   }
 }

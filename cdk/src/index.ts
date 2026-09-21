@@ -1,5 +1,6 @@
 import { App, Aspects, CliCredentialsStackSynthesizer, Stack } from 'aws-cdk-lib';
 import { AwsSolutionsChecks, NagSuppressions } from 'cdk-nag';
+
 import { SuperwerkerStack } from './stacks/superwerker';
 
 const app = new App();

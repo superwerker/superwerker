@@ -1,13 +1,14 @@
 import path from 'path';
+
 import {
   CfnOutput,
   CfnParameter,
   Duration,
-  NestedStack,
-  NestedStackProps,
   aws_events as events,
   aws_iam as iam,
   aws_lambda as lambda,
+  NestedStack,
+  NestedStackProps,
   aws_sns as sns,
   aws_sns_subscriptions as subscriptions,
 } from 'aws-cdk-lib';
@@ -33,9 +34,9 @@ export class NotificationsStack extends NestedStack {
 
     // NotificationOpsItemCreated
     const notificationOpsItemCreatedFn = new NodejsFunction(this, 'NotificationOpsItemCreated', {
-      entry: path.join(__dirname, '..', 'functions', 'notification-opsitem-created.ts'),
+      entry: path.join(import.meta.dirname, '..', 'functions', 'notification-opsitem-created.ts'),
       handler: 'handler',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       timeout: Duration.seconds(30),
       environment: {
         TOPIC_ARN: notificationTopic.topicArn,

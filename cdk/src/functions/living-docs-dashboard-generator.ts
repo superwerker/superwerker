@@ -1,5 +1,5 @@
 import { CloudWatchClient, DeleteDashboardsCommand } from '@aws-sdk/client-cloudwatch';
-import { SSMClient, GetParameterCommand } from '@aws-sdk/client-ssm';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import endent from 'endent';
 
 const ssmClient = new SSMClient();

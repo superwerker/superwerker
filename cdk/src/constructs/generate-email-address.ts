@@ -1,10 +1,12 @@
 import * as path from 'path';
+
 import { CustomResource, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
+
 import { ATTR_EMAIL, PROP_DOMAIN, PROP_NAME } from '../functions/generate-mail-address';
 
 interface GenerateEmailAddressProps {
@@ -55,8 +57,8 @@ class GenerateEmailAddressProvider extends Construct {
 
     this.provider = new cr.Provider(this, 'generate-email-address-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'generate-email-address-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'generate-mail-address.ts'),
-        runtime: Runtime.NODEJS_20_X,
+        entry: path.join(import.meta.dirname, '..', 'functions', 'generate-mail-address.ts'),
+        runtime: Runtime.NODEJS_24_X,
         initialPolicy: [
           new iam.PolicyStatement({
             resources: ['*'],

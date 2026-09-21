@@ -7,6 +7,7 @@ import {
 } from '@aws-sdk/client-ses';
 import { PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import { CdkCustomResourceEvent, Context } from 'aws-lambda';
+
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
 

@@ -1,4 +1,5 @@
 import * as path from 'path';
+
 import { CustomResource, Duration, Stack } from 'aws-cdk-lib';
 import { Rule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
@@ -54,8 +55,8 @@ class EnableSecurityHubProvider extends Construct {
     super(scope, id);
 
     const onEventLambda = new lambda.NodejsFunction(this, 'EnableSecurityHubProvider-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'enable-securityhub.ts'),
-      runtime: Runtime.NODEJS_20_X,
+      entry: path.join(import.meta.dirname, '..', 'functions', 'enable-securityhub.ts'),
+      runtime: Runtime.NODEJS_24_X,
       timeout: Duration.seconds(180),
       environment: {
         homeRegion: Stack.of(this).region,

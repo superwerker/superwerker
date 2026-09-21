@@ -1,10 +1,12 @@
 import * as path from 'path';
+
 import { Arn, CustomResource, Stack } from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import * as lambda from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import { Construct } from 'constructs';
+
 import { ATTR_EMAIL } from '../functions/generate-mail-address';
 
 export class SuperwerkerBootstrap extends Construct {
@@ -39,8 +41,8 @@ class SuperwerkerBootstrapProvider extends Construct {
 
     this.provider = new cr.Provider(this, 'superwerker-bootstrap-provider', {
       onEventHandler: new lambda.NodejsFunction(this, 'superwerker-bootstrap-provider-on-event', {
-        entry: path.join(__dirname, '..', 'functions', 'superwerker-bootstrap-function.ts'),
-        runtime: Runtime.NODEJS_20_X,
+        entry: path.join(import.meta.dirname, '..', 'functions', 'superwerker-bootstrap-function.ts'),
+        runtime: Runtime.NODEJS_24_X,
         initialPolicy: [
           new iam.PolicyStatement({
             resources: [

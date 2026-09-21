@@ -46,3 +46,14 @@ junit.xml
 /cdk.out/
 .cdk.staging/
 .parcel-cache/
+
+# Yarn. The release binary is committed so every checkout builds with the same yarn, without
+# depending on whatever the machine or the CI runner happens to have installed. The cache is not
+# committed (no zero-installs), so everything else under .yarn/ is ignored.
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

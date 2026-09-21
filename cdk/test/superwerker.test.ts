@@ -1,16 +1,18 @@
 import * as path from 'path';
+
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { BUNDLING_STACKS } from 'aws-cdk-lib/cx-api';
 import { Construct } from 'constructs';
+
 import { SuperwerkerStack } from '../src/stacks/superwerker';
 
 export class OriginalStack extends Stack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props);
     new CfnInclude(this, 'SuperwerkerTemplate', {
-      templateFile: path.join(__dirname, '..', '..', 'templates', 'superwerker.template.yaml'),
+      templateFile: path.join(import.meta.dirname, '..', '..', 'templates', 'superwerker.template.yaml'),
     });
   }
 }
@@ -85,12 +87,14 @@ describe('resources', () => {
 });
 
 describe('email generation', () => {
-  const app = new App({ context });
-  const stack = new SuperwerkerStack(app, 'stack', {});
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.AUDIT_ACCOUNT,
-  });
-  Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
-    Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+  it('generates an email address for the audit and log archive accounts', () => {
+    const app = new App({ context });
+    const stack = new SuperwerkerStack(app, 'stack', {});
+    Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+      Name: SuperwerkerStack.AUDIT_ACCOUNT,
+    });
+    Template.fromStack(stack).hasResourceProperties('Custom::GenerateEmailAddress', {
+      Name: SuperwerkerStack.LOG_ARCHIVE_ACCOUNT,
+    });
   });
 });

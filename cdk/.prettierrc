@@ -1,8 +1,19 @@
 {
-    "semi": true,
-    "trailingComma": "all",
-    "singleQuote": true,
-    "printWidth": 140,  
-    "tabWidth": 2,
-    "useTabs": false
-  }
+  "semi": true,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "printWidth": 140,
+  "tabWidth": 2,
+  "useTabs": false,
+  "plugins": [
+    "@ianvs/prettier-plugin-sort-imports"
+  ],
+  "importOrder": [
+    "<BUILTIN_MODULES>",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "^[.]"
+  ],
+  "importOrderTypeScriptVersion": "5.9.3"
+}

@@ -2,6 +2,7 @@ import { Arn, CfnWaitCondition, CfnWaitConditionHandle, NestedStack, NestedStack
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import { Construct } from 'constructs';
+
 import { PrepareAccount } from '../constructs/prepare-account';
 
 export class PrepareStack extends NestedStack {

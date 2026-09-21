@@ -25,8 +25,9 @@ import {
   ResourceConflictException,
   SecurityHubClient,
 } from '@aws-sdk/client-securityhub';
-import { getExistingEnabledStandards } from './enable-standards';
+
 import { delay, throttlingBackOff } from '../utils/throttle';
+import { getExistingEnabledStandards } from './enable-standards';
 
 export class SecurityHubOrganizationMgmt {
   private securityAdminAccountId: string;
