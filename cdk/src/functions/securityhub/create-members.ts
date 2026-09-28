@@ -20,6 +20,7 @@ import {
   SecurityHubClient,
   UpdateOrganizationConfigurationCommand,
 } from '@aws-sdk/client-securityhub';
+
 import { throttlingBackOff } from '../utils/throttle';
 
 export class SecurityHubMemberMgmt {

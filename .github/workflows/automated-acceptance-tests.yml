@@ -27,18 +27,24 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
+
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: yarn
+          cache-dependency-path: cdk/yarn.lock
 
       - name: Assume Superwerker AWS Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_SUPERWERKER_RELEASE_ROLE }}
 
       - name: Build Superwerker
         run: |
-          yarn global add aws-cdk
-          yarn install
+          yarn install --immutable
           yarn test
           yarn synth
           yarn publish-assets
@@ -49,7 +55,7 @@ jobs:
         working-directory: cdk
 
       - name: Assume Pipeline AWS Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
@@ -67,7 +73,7 @@ jobs:
         working-directory: cdk
 
       - name: Assume Superwerker AWS Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_SUPERWERKER_RELEASE_ROLE }}
@@ -85,7 +91,7 @@ jobs:
         working-directory: cdk
 
       - name: Assume Pipeline AWS Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
@@ -122,10 +128,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Assume Superwerker AWS Role
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.AWS_AAC_ROLE }}
@@ -138,7 +144,7 @@ jobs:
 
       - name: Surface failing tests
         if: always()
-        uses: pmeier/pytest-results-action@main
+        uses: pmeier/pytest-results-action@v0.9.0
         with:
           path: ./tests/test-results.xml
           summary: true

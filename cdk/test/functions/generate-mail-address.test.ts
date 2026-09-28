@@ -1,5 +1,6 @@
 import { CloudFormationCustomResourceCreateEvent, CloudFormationCustomResourceDeleteEvent, Context } from 'aws-lambda';
-import { handler, generateEmail } from '../../src/functions/generate-mail-address';
+
+import { generateEmail, handler } from '../../src/functions/generate-mail-address';
 
 describe('generate-mail-address', () => {
   it('generates new email', async () => {

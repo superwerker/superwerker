@@ -1,5 +1,7 @@
 import { randomUUID } from 'crypto';
+
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
+
 export const PROP_DOMAIN = 'Domain';
 export const PROP_NAME = 'Name';
 export const ATTR_EMAIL = 'Email';

@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import * as path from 'path';
+
 import retry from 'async-retry';
 
 // run scripts/superwerker-regions.sh for updating list of regions
@@ -31,7 +32,7 @@ const regions = process.env.NODE_ENV != 'development' ? REGIONS : REGIONS_DEV;
 // Publish assets into all regional buckets
 // e.g. superwerker-assets-eu-central-1 etc.
 const main = async () => {
-  const assetManifestPath = path.resolve(__dirname, '..', '..', 'cdk.out', 'SuperwerkerStack.assets.json');
+  const assetManifestPath = path.resolve(import.meta.dirname, '..', '..', 'cdk.out', 'SuperwerkerStack.assets.json');
   for (const region of regions) {
     const command = `AWS_REGION=${region} yarn cdk-assets publish -p ${assetManifestPath}`;
     console.log(command);

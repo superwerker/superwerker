@@ -1,14 +1,16 @@
 import { AccountStatus, ListAccountsCommand, OrganizationsClient } from '@aws-sdk/client-organizations';
 import {
-  SecurityHubClient,
   CreateMembersCommand,
-  UpdateOrganizationConfigurationCommand,
-  ListMembersCommand,
-  DisassociateMembersCommand,
   DeleteMembersCommand,
+  DisassociateMembersCommand,
+  ListMembersCommand,
+  SecurityHubClient,
+  UpdateOrganizationConfigurationCommand,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
+
+import 'aws-sdk-client-mock-jest/vitest';
+
 import { SecurityHubMemberMgmt } from '../../../src/functions/securityhub/create-members';
 
 const securityHubClientMock = mockClient(SecurityHubClient);

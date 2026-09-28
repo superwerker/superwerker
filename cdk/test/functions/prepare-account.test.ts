@@ -1,26 +1,29 @@
-import 'aws-sdk-client-mock-jest';
+import 'aws-sdk-client-mock-jest/vitest';
+
 import {
-  OrganizationsClient,
-  CreateOrganizationCommand,
-  AlreadyInOrganizationException,
   AccountOwnerNotVerifiedException,
+  AlreadyInOrganizationException,
+  CreateOrganizationCommand,
+  OrganizationsClient,
 } from '@aws-sdk/client-organizations';
 import { ParameterAlreadyExists, ParameterLimitExceeded, PutParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 import {
   CloudFormationCustomResourceCreateEvent,
-  CloudFormationCustomResourceUpdateEvent,
   CloudFormationCustomResourceDeleteEvent,
+  CloudFormationCustomResourceUpdateEvent,
   Context,
 } from 'aws-lambda';
 import { mockClient } from 'aws-sdk-client-mock';
 import axios from 'axios';
+import type { Mocked } from 'vitest';
+
 import { handler } from '../../src/functions/./prepare-account';
 
 const organizationsClientMock = mockClient(OrganizationsClient);
 const ssmClientMock = mockClient(SSMClient);
 
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
+const mockedAxios = axios as Mocked<typeof axios>;
 
 describe('create organizations function', () => {
   beforeEach(() => {

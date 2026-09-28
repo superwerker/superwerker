@@ -1,4 +1,5 @@
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
+
 export const PROP_DOMAIN = 'Domain';
 export const PROP_PARAM_NAME = 'PropagationParamName';
 

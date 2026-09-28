@@ -3,14 +3,15 @@ import {
   CreatePolicyCommand,
   DeletePolicyCommand,
   DetachPolicyCommand,
+  ListPoliciesCommand,
   ListRootsCommand,
   OrganizationsClient,
   PolicyType,
   UpdatePolicyCommand,
-  ListPoliciesCommand,
 } from '@aws-sdk/client-organizations';
 import { Effect, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { CdkCustomResourceEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
+
 import { throttlingBackOff } from './utils/throttle';
 
 const denyLeavingOrganizationStatement = new PolicyStatement({

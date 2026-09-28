@@ -2,6 +2,7 @@ import { ControlTowerClient, GetLandingZoneCommand, ListLandingZonesCommand } fr
 import { OrganizationsClient } from '@aws-sdk/client-organizations';
 import { SecurityHubClient } from '@aws-sdk/client-securityhub';
 import { STS } from '@aws-sdk/client-sts';
+
 import { SecurityHubAggregatorMgmt } from './securityhub/create-finding-aggregator';
 import { SecurityHubMemberMgmt } from './securityhub/create-members';
 import { SecurityHubOrganizationMgmt } from './securityhub/enable-org-admin';

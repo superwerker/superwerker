@@ -13,9 +13,11 @@ import {
   SecurityHubClient,
 } from '@aws-sdk/client-securityhub';
 import { mockClient } from 'aws-sdk-client-mock';
-import 'aws-sdk-client-mock-jest';
-import { secHubStandards } from './enable-standards.test';
+
+import 'aws-sdk-client-mock-jest/vitest';
+
 import { SecurityHubOrganizationMgmt } from '../../../src/functions/securityhub/enable-org-admin';
+import { secHubStandards } from './enable-standards.test';
 
 const organizationsClientMock = mockClient(OrganizationsClient);
 const securityHubClientMock = mockClient(SecurityHubClient);
@@ -29,7 +31,7 @@ describe('enableOrganisationAdmin', () => {
     organizationsClientMock.reset();
     securityHubClientMock.reset();
 
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   it('should enable organization admin account when not already set', async () => {
@@ -53,7 +55,7 @@ describe('enableOrganisationAdmin', () => {
     });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
@@ -85,7 +87,7 @@ describe('enableOrganisationAdmin', () => {
     });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
@@ -118,7 +120,7 @@ describe('enableOrganisationAdmin', () => {
     });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
@@ -178,7 +180,7 @@ describe('enableOrganisationAdmin', () => {
       });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
@@ -212,7 +214,7 @@ describe('enableOrganisationAdmin', () => {
     });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
@@ -234,7 +236,7 @@ describe('enableOrganisationAdmin', () => {
     });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });
@@ -277,7 +279,7 @@ describe('enableOrganisationAdmin', () => {
     });
 
     const result = securityHubOrganizationMgmt.enableOrganisationAdmin('us-west-2');
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
     await result;
 
     expect(securityHubClientMock).toHaveReceivedCommandWith(EnableOrganizationAdminAccountCommand, { AdminAccountId: auditAccount });

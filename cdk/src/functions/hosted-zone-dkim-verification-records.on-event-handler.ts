@@ -1,5 +1,6 @@
 import { SESClient, VerifyDomainDkimCommand, VerifyDomainIdentityCommand } from '@aws-sdk/client-ses';
-import { CdkCustomResourceEvent, CloudFormationCustomResourceUpdateEvent, CdkCustomResourceResponse, Context } from 'aws-lambda';
+import { CdkCustomResourceEvent, CdkCustomResourceResponse, CloudFormationCustomResourceUpdateEvent, Context } from 'aws-lambda';
+
 export const PROP_DOMAIN = 'Domain';
 export const ATTR_VERIFICATION_TOKEN = 'VerificationToken';
 export const ATTR_DKIM_TOKENS = 'DkimTokens';

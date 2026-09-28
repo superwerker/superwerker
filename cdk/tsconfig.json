@@ -1,6 +1,10 @@
 {
-  "extends": "@tsconfig/node20/tsconfig.json",
+  "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
+    // The cdk app is run by tsx and the handlers are bundled by esbuild; nothing runs the emitted
+    // javascript through node, so relative imports do not need the ".js" extension node16 wants.
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "rootDirs": ["src", "test"],
     "outDir": "lib",
     "declaration": true,
@@ -12,8 +16,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "resolveJsonModule": true,
-    "stripInternal": true
+    "stripInternal": true,
+    // vitest runs with globals: true, so describe/it/expect/vi need declaring.
+    "types": ["vitest/globals"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "include": ["src/**/*.ts", "test/**/*.ts", "test/**/*.d.ts", "vitest.config.ts"],
   "exclude": ["cdk.out", "node_modules", "lib"]
 }

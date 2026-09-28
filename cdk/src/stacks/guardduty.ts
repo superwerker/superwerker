@@ -1,4 +1,4 @@
-import { Arn, aws_events as events, aws_iam as iam, aws_ssm as ssm, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { Arn, aws_events as events, aws_iam as iam, NestedStack, NestedStackProps, aws_ssm as ssm, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
 export class GuardDutyStack extends NestedStack {

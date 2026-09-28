@@ -1,20 +1,8 @@
 {
-  "app": "npx ts-node -P tsconfig.json --prefer-ts-exts src",
+  "app": "npx tsx src/index.ts",
   "output": "cdk.out",
   "watch": {
-    "include": [
-      "src/**/*.ts",
-      "test/**/*.ts"
-    ],
-    "exclude": [
-      "README.md",
-      "cdk*.json",
-      "**/*.d.ts",
-      "**/*.js",
-      "tsconfig.json",
-      "package*.json",
-      "yarn.lock",
-      "node_modules"
-    ]
+    "include": ["src/**/*.ts", "test/**/*.ts"],
+    "exclude": ["README.md", "cdk*.json", "**/*.d.ts", "**/*.js", "tsconfig.json", "package*.json", "yarn.lock", "node_modules"]
   }
 }

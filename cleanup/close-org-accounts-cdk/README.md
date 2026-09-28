@@ -11,7 +11,7 @@ It is needed for keeping the testing enviornment clean due to the AWS Account cl
 get credentials form cloudshell via create-iam-user.sh
 
 ```
-npm install
+yarn install
 cdk bootstrap
 cdk synth
 cdk deploy

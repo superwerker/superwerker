@@ -4,7 +4,9 @@ import {
   CloudFormationCustomResourceUpdateEvent,
   Context,
 } from 'aws-lambda';
-import 'aws-sdk-client-mock-jest';
+
+import 'aws-sdk-client-mock-jest/vitest';
+
 import { handler } from '../../src/functions/hosted-zone-dkim-propagation.on-event-handler';
 
 describe('hosted-zone-dkim-propagation.on-event-handler', () => {
